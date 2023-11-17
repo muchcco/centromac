@@ -240,7 +240,7 @@ $(document).ready(function() {
           { "width": "25" },
           { "width": "" },
           { "width": "" },
-          { "width": "480px" },
+          { "width": "680px" },
           { "width": "" },
           { "width": "" }
       ]
@@ -301,6 +301,7 @@ $.ajax({
     success:function(data){
         $("#modal_show_modal").modal('hide');
         $( "#table_servicios" ).load(window.location.href + " #table_servicios" ); 
+        location.reload();
             
             Swal.fire({
                 icon: "info",
