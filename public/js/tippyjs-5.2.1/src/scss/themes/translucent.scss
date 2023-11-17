@@ -1,0 +1,24 @@
+@import '../_mixins.scss';
+@import '../_vars.scss';
+
+$color: rgba(0, 0, 0, 0.7);
+
+.#{$namespace-prefix}-tooltip.translucent-theme {
+  background-color: $color;
+
+  @each $placement in $placements {
+    &[data-placement^='#{$placement}'] {
+      > .#{$namespace-prefix}-arrow {
+        @include arrow($placement, $arrow-size, $color);
+      }
+    }
+  }
+
+  > .#{$namespace-prefix}-backdrop {
+    background-color: $color;
+  }
+
+  > .#{$namespace-prefix}-svg-arrow {
+    fill: $color;
+  }
+}
