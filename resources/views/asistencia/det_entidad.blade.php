@@ -85,7 +85,8 @@
             <div class="card-header" style="background-color:#132842">
                 <h4 class="card-title text-white">ASISTENCIA DEL CENTRO MAC -  
                     @php
-                        $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->first();
+                        $us_id = auth()->user()->idcentro_mac;
+                        $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
 
                         echo $user->NOMBRE_MAC;
                     @endphp

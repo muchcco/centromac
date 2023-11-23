@@ -6,6 +6,8 @@ use App\Http\Controllers\Modulo\AsistenciaController;
 use App\Http\Controllers\Modulo\AsesoresController;
 use App\Http\Controllers\Administrador\UsuariosController;
 use App\Http\Controllers\Modulo\ServiciosController;
+use App\Http\Controllers\Modulo\UsuarioController;
+use App\Http\Controllers\Modulo\PcmController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -36,6 +38,10 @@ Route::group(['middleware' => ['auth']], function () {
 
     //PAGINA DE INICIO
     Route::get('/' , [PagesController::class, 'index'])->name('inicio');
+
+    Route::get('/home', function(){
+        return redirect('/');
+    });
 
     Route::group(['prefix'=>'asistencia','as'=>'asistencia.' ],function () {
 
@@ -80,6 +86,11 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/pcm' , [PcmController::class, 'pcm'])->name('pcm');
         Route::get('/tablas/tb_pcm' , [PcmController::class, 'tb_pcm'])->name('tablas.tb_pcm');
+        Route::post('/modals/md_add_pcm' , [PcmController::class, 'md_add_pcm'])->name('modals.md_add_pcm');
+        Route::post('/store_pcm' , [PcmController::class, 'store_pcm'])->name('store_pcm');
+        Route::post('/modals/md_edit_pcm' , [PcmController::class, 'md_edit_pcm'])->name('modals.md_edit_pcm');
+        Route::post('/update_pcm' , [PcmController::class, 'update_pcm'])->name('update_pcm');
+        Route::post('/delete_pcm' , [PcmController::class, 'delete_pcm'])->name('delete_pcm');
 
     });
 
@@ -91,6 +102,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/store_servicio' , [ServiciosController::class, 'store_servicio'])->name('store_servicio');
         Route::post('/update_servicio' , [ServiciosController::class, 'update_servicio'])->name('update_servicio');
         Route::post('/delete_servicio' , [ServiciosController::class, 'delete_servicio'])->name('delete_servicio');
+        Route::get('/export_serv_entidad' , [ServiciosController::class, 'export_serv_entidad'])->name('export_serv_entidad');
     });
     
 
@@ -98,9 +110,15 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::group(['prefix'=>'usuarios','as'=>'usuarios.' ],function () {
         
-        Route::get('/index' , [indexController::class, 'index'])->name('index');
-        Route::get('/tablas/tb_index' , [indexController::class, 'tb_index'])->name('tablas.tb_index');
-        
+        Route::get('/index' , [UsuarioController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index' , [UsuarioController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_usuario' , [UsuarioController::class, 'md_add_usuario'])->name('modals.md_add_usuario');
+        Route::post('/modals/md_edit_usuario' , [UsuarioController::class, 'md_edit_usuario'])->name('modals.md_edit_usuario');
+        Route::post('/modals/md_password_usuario' , [UsuarioController::class, 'md_password_usuario'])->name('modals.md_password_usuario');
+        Route::post('/store_user' , [UsuarioController::class, 'store_user'])->name('store_user');
+        Route::post('/update_user' , [UsuarioController::class, 'update_user'])->name('update_user');
+        Route::post('/updatepass_user' , [UsuarioController::class, 'updatepass_user'])->name('updatepass_user');
+        Route::post('/delete_user' , [UsuarioController::class, 'delete_user'])->name('delete_user');
         
     });
 });

@@ -9,14 +9,15 @@ use App\Models\Entidad;
 use App\Models\Personal;
 use App\Models\User;
 
-class AsesoresController extends Controller
+class PcmController extends Controller
 {
-    public function asesores()
+
+    public function pcm()
     {
-        return view('personal.asesores');
+        return view('personal.pcm');
     }
 
-    public function tb_asesores(Request $request)
+    public function tb_pcm(Request $request)
     {
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
@@ -97,15 +98,15 @@ class AsesoresController extends Controller
                                         ) AS DIFERENCIA_CAMPOS")
                                     )
                                     ->where('MP.IDMAC', '=', $idmac)
-                                    ->whereNot('MP.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
+                                    ->where('MP.IDENTIDAD', 17) //SOLO ACEPTAMOS DEL REGISTRO A PERSONAL DE PCM
                                     ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
                                     ->get();
 
 
-        return view('personal.tablas.tb_asesores', compact('query'));
+        return view('personal.tablas.tb_pcm', compact('query'));
     }
 
-    public function md_add_asesores(Request $request)
+    public function md_add_pcm(Request $request)
     {
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
@@ -119,15 +120,15 @@ class AsesoresController extends Controller
         $entidad = DB::table('M_MAC_ENTIDAD')
                             ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
                             ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idmac)
+                            ->where('M_ENTIDAD.IDENTIDAD', 17)
                             ->get();
 
-        $view = view('personal.modals.md_add_asesores', compact('entidad'))->render();
+        $view = view('personal.modals.md_add_pcm', compact('entidad'))->render();
 
         return response()->json(['html' => $view]); 
     }
 
-    public function store_asesores(Request $request)
+    public function store_pcm(Request $request)
     {
         try{
             $validated = $request->validate([
@@ -182,5 +183,4 @@ class AsesoresController extends Controller
             return $response_;
         }
     }
-
 }

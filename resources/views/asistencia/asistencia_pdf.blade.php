@@ -82,7 +82,14 @@
                     </tr>
                     <tr>
                         <th>Centro MAC</th>
-                        <th>Junín</th>
+                        <th>
+                            @php
+                                $us_id = auth()->user()->idcentro_mac;
+                                $user = Ap\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+
+                                echo $user->NOMBRE_MAC;
+                            @endphp 
+                        </th>
                         <th>MES:</th>
                         <th colspan="3">{{ $nombreMES }}</th>
                     </tr>

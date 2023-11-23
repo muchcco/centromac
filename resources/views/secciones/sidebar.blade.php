@@ -1,54 +1,3 @@
-{{-- <div id="sidebar-collapse">
-    <div class="admin-block d-flex">
-        <div>
-            <img src="{{ asset('assets/img/admin-avatar.png')}}" width="45px" />
-        </div>
-        <div class="admin-info">
-            <div class="font-strong">{{ auth()->user()->name }}</div><small> 
-                @php
-                    $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->first();
-
-                    echo 'Centro MAC - '.$user->NOMBRE_MAC;
-                @endphp
-             </small></div>
-    </div>
-    <ul class="side-menu metismenu">
-        <li>
-            <a class="@if (Request::is('/')) active @endif" href="{{ route('inicio') }}"><i class="sidebar-item-icon fa fa-th-large"></i>
-                <span class="nav-label">Panel de Inicio</span>
-            </a>
-        </li>
-        <li class="heading">MODULO</li>
-        <li>
-            <a class="@if (Request::is('asistencia/asistencia')) active @endif"  href="{{ route('asistencia.asistencia') }}"><i class="sidebar-item-icon fa fa-th-large"></i>
-                <span class="nav-label">Asistencia</span>
-            </a>
-        </li>
-        <li class="@if (Request::is('personal*')) active @endif">
-            <a href="javascript:;"><i class="sidebar-item-icon fa fa-bookmark"></i>
-                <span class="nav-label">Personal</span><i class="fa fa-angle-left arrow"></i></a>
-            <ul class="nav-2-level collapse">
-                <li>
-                    <a class="@if (Request::is('personal/asesores*')) active @endif" href="{{route('personal.asesores')}}">Asesores</a>
-                </li>
-                <li>
-                    <a href="typography.html">PCM</a>
-                </li>
-            </ul>
-        </li>
-        <li class="heading">ADMINISTRADOR</li>
-        <li>
-            <li>
-                <a class="@if (Request::is('usuarios*')) active @endif" href="{{ route('usuarios.index') }}"><i class="sidebar-item-icon fa fa-users"></i>
-                    <span class="nav-label">Usuarios</span>
-                </a>
-            </li>
-        </li>
-    </ul>
-</div> --}}
-
-<!--             ************************************************************     -->
-
 <style type="text/css">
     .left-sidenav .brand {
         text-align: center;
@@ -77,7 +26,7 @@
             </div>
             <p class="mb-2">{{ auth()->user()->name }}</p>
             <p class="mb-0">{{ auth()->user()->email }}</p>
-            {{-- <p class="mb-0">Rol: {{ auth()->user()->roles()->first()->descripcion }}</p> --}}
+            <p id="act_role_sidebar" class="mb-0">Rol: {{ auth()->user()->roles->pluck('name')->implode(', ') }} </p>
         </div>
         <div class="menu-content h-100" data-simplebar>
             <ul class="metismenu left-sidenav-menu">
@@ -105,12 +54,13 @@
                 <!--<li>
                     <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('documentos/bandeja*')) mm-active @endif"></i><span>Mi Bandeja</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
                     <ul class="nav-second-level" aria-expanded="false">-->
-                        <li>
-                            <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('personal*')) mm-active @endif"></i><span>Personal</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
-                            <ul class="nav-second-level" aria-expanded="false">
-                                <li class="nav-item @if (Request::is('personal/asesores*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.asesores') }}"><i class="ti-control-record"></i>Asesores</a></li>
-                            </ul>
-                        </li>
+                    <li>
+                        <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('personal*')) mm-active @endif"></i><span>Personal</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
+                        <ul class="nav-second-level" aria-expanded="false">
+                            <li class="nav-item @if (Request::is('personal/asesores*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.asesores') }}"><i class="ti-control-record"></i>Asesores</a></li>
+                            <li class="nav-item @if (Request::is('personal/pcm*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.pcm') }}"><i class="ti-control-record"></i>Pcm</a></li>
+                        </ul>
+                    </li>
                 <!--    </ul>
                 </li>-->
 

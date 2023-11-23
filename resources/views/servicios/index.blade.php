@@ -38,9 +38,45 @@
     <div class="col-lg-12">
         <div class="card">
             <div class="card-header" style="background-color:#132842">
+                <h4 class="card-title text-white">Filtro de Búsqueda</h4>
+            </div><!--end card-header-->
+            <div class="card-body bootstrap-select-1">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="mb-3">Entidad:</label>
+                            <select name="entidad" id="entidad" class="form-control col-sm-12 select2">
+                                <option value="" selected>-- Selecciones una opción --</option>
+                                @forelse ($entidad as $ent)
+                                    <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }}</option>
+                                @empty
+                                    <option value="">No hay datos disponibles</option>
+                                @endforelse
+                            </select>
+                        </div>
+                    </div><!-- end col -->
+                    <div class="col-md-4">
+                        <div class="form-group" style="margin-top: 2.6em">
+                            <button type="button" class="btn btn-primary" id="filtro" onclick="execute_filter()"><i class="fa fa-search" aria-hidden="true"></i> Buscar</button>
+                            <button class="btn btn-dark" id="limpiar"><i class="fa fa-undo" aria-hidden="true"></i> Limpiar</button>
+                            <button class="btn btn-success" id="excel_serv" onclick="ExcelServicios()"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</button>
+                            <button class="btn btn-danger" id="limpiar"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</button>
+                        </div>
+                    </div><!-- end col --> 
+                </div>
+            </div><!-- end card-body --> 
+        </div> <!-- end card -->                               
+    </div> <!-- end col -->
+</div> <!-- end row -->
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header" style="background-color:#132842">
                 <h4 class="card-title text-white">SERVICOS POR ENTIDAD DEL CENTRO MAC -  
                     @php
-                        $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->first();
+                        $us_id = auth()->user()->idcentro_mac;
+                        $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
 
                         echo $user->NOMBRE_MAC;
                     @endphp
@@ -105,16 +141,17 @@
 <script src="{{asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js')}}"></script>
 <script src="{{asset('nuevo/assets/pages/jquery.datatable.init.js')}}"></script>
 
+
 <script>
 $(document).ready(function() {
     tabla_seccion();
 });
 
-function tabla_seccion(fecha = '', entidad = '', estado = '' ) {
+function tabla_seccion(entidad = '') {
     $.ajax({
         type: 'GET',
         url: "{{ route('servicios.tablas.tb_index') }}", // Ruta que devuelve la vista en HTML
-        data: {fecha: fecha, entidad: entidad, estado: estado},
+        data: {entidad: entidad},
         beforeSend: function () {
             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
         },
@@ -123,6 +160,92 @@ function tabla_seccion(fecha = '', entidad = '', estado = '' ) {
         }
     });
 }
+
+/***********************************************************   BOTONES DE BUSQUEDA   ***************************************************************************/
+function Validar_Filtros(){
+
+    var r = { flag: true, mensaje: "" }
+
+    if ($("#entidad").val() == "") {
+        r.flag = false;
+        r.mensaje = "Debe ingresar una entidad para que realize esta acción!";
+        return r;
+    }
+
+    return r;
+}
+
+
+function execute_filter (){
+
+    r = Validar_Filtros();
+    console.log(r);
+    if(r.flag){
+        var entidad = $('#entidad').val();
+        $.ajax({
+            type:'get',
+            url: "{{ route('servicios.tablas.tb_index') }}" ,
+            dataType: "",
+            data: {entidad : entidad },
+            beforeSend: function () {
+                document.getElementById("filtro").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Buscando';
+                document.getElementById("filtro").style.disabled = true;
+            },
+            success:function(data){
+                document.getElementById("filtro").innerHTML = '<i class="fa fa-search"></i> Buscar';
+                document.getElementById("filtro").style.disabled = false;
+                tabla_seccion(entidad);
+            },
+            error: function(xhr, status, error){
+                console.log("error");
+                console.log('Error:', error);
+            }
+        });
+    }else{
+        Swal.fire({
+            icon: "info",
+            text: r.mensaje,
+            confirmButtonText: "Aceptar"
+        })
+    }    
+}
+
+$("#limpiar").on("click", function(e) {
+
+    document.getElementById('entidad').value = "";
+
+    tabla_seccion();
+
+})
+
+function ExcelServicios () {
+    r = Validar_Filtros();
+    console.log(r);
+    if(r.flag){
+        var entidad = $('#entidad').val();
+        var link_up = "{{ route('servicios.export_serv_entidad') }}";
+
+        // Crear la URL con las variables como parámetros de consulta
+        var href = link_up + '?entidad=' + entidad;
+
+        window.open(href);
+        // window.location.href = href;
+
+        Swal.fire({
+            icon: "success",
+            text: "El archivo se descargo con Exito!",
+            confirmButtonText: "Aceptar"
+        })
+    }else{
+        Swal.fire({
+            icon: "info",
+            text: r.mensaje,
+            confirmButtonText: "Aceptar"
+        })
+    }    
+}
+
+/******************************************************************************************************************************************************************/
 
 function btnAddServicio() {
     $.ajax({

@@ -27,7 +27,7 @@
                     <h4 class="page-title">Registro de personal</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{route('inicio') }}"><i data-feather="home" class="align-self-center" style="height: 70%; display: block;"></i></a></li>
-                        <li class="breadcrumb-item"><a href="javascript:void(0);" style="color: #7081b9;">Asesores</a></li>
+                        <li class="breadcrumb-item"><a href="javascript:void(0);" style="color: #7081b9;">PCM</a></li>
                     </ol>
                 </div><!--end col--> 
             </div><!--end row-->                                                              
@@ -39,7 +39,7 @@
     <div class="col-lg-12">
         <div class="card">
             <div class="card-header" style="background-color:#132842">
-                <h4 class="card-title text-white">PERSONAL ASESORES CENTRO MAC -  
+                <h4 class="card-title text-white">PERSONAL PCM CENTRO MAC -  
                     @php
                         $us_id = auth()->user()->idcentro_mac;
                         $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
@@ -51,7 +51,7 @@
             <div class="card-body bootstrap-select-1">
                 <div class="row">
                     <div class="col-12 mb-3">
-                        <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal" onclick="btnAddAsesores()"><i class="fa fa-plus" aria-hidden="true"></i>
+                        <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal" onclick="btnAddPcm()"><i class="fa fa-plus" aria-hidden="true"></i>
                             Agregar Personal</button>
                     </div>
                 </div>
@@ -113,7 +113,7 @@ $(document).ready(function() {
 function tabla_seccion() {
     $.ajax({
         type: 'GET',
-        url: "{{ route('personal.tablas.tb_asesores') }}", // Ruta que devuelve la vista en HTML
+        url: "{{ route('personal.tablas.tb_pcm') }}", // Ruta que devuelve la vista en HTML
         data: {},
         beforeSend: function () {
             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
@@ -124,11 +124,11 @@ function tabla_seccion() {
     });
 }
 
-function btnAddAsesores ()  {
+function btnAddPcm ()  {
 
     $.ajax({
         type:'post',
-        url: "{{ route('personal.modals.md_add_asesores') }}",
+        url: "{{ route('personal.modals.md_add_pcm') }}",
         dataType: "json",
         data:{"_token": "{{ csrf_token() }}"},
         success:function(data){
@@ -139,7 +139,7 @@ function btnAddAsesores ()  {
 }
 
 
-var btnStoreAsesor = () => {
+var btnStorePcm = () => {
 
 if ($('#nombre').val() == null || $('#nombre').val() == '') {
     $('#nombre').addClass("hasError");
@@ -196,7 +196,7 @@ formData.append("_token", $("input[name=_token]").val());
 
 $.ajax({
     type:'post',
-    url: "{{ route('personal.store_asesores') }}",
+    url: "{{ route('personal.store_pcm') }}",
     dataType: "json",
     data:formData,
     processData: false,

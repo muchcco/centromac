@@ -2,7 +2,7 @@
     <thead class="tenca">
         <tr>
             <th class="text-white" width="50px">N°</th>
-            <th class="text-white">Asesor</th>
+            <th class="text-white">Personal</th>
             <th class="text-white">Número de Documento</th>
             <th class="text-white">Entidad</th>
             <th class="text-white">Centro MAC</th>
@@ -34,7 +34,7 @@
                 <td>{{ $que->CORREO }}</td>
                 <td>
                     <a href="{{ route('formdata', $que->NUM_DOC) }}" class="nobtn bandejTool" data-tippy-content="Editar personal" target="_blank"><i class="las la-pen text-secondary font-16 text-success"></i></a>
-                    <button class="nobtn bandejTool" data-tippy-content="Eliminar personal" onclick="btnElimnarServicio('{{ $que->IDPERSONAL }}' )"><i class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
+                    <button class="nobtn bandejTool" data-tippy-content="Eliminar personal" onclick="btnElimnarPersonal('{{ $que->IDPERSONAL }}' )"><i class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
                 </td>
             </tr>
         @endforeach
