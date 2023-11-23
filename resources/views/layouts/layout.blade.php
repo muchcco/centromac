@@ -210,6 +210,26 @@
             }
         </script>
 
+        <script>
+            // Esperar 8 segundos y recargar solo si la página no se ha cargado completamente
+            var cargaCompleta = false;
+
+            setTimeout(function() {
+                cargaCompleta = true;
+            }, 8000);
+
+            window.addEventListener('load', function() {
+                cargaCompleta = true;
+            });
+
+            // Verificar si la carga está completa después de 8 segundos y recargar si es necesario
+            setTimeout(function() {
+                if (!cargaCompleta) {
+                    window.location.reload();
+                }
+            }, 8000);
+        </script>
+
         <!--JAVASCRIPT-->
         <!--=================================================-->
         <!--Tooltip [ RECOMENDADO ]-->

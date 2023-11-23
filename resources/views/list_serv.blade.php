@@ -122,6 +122,9 @@
               <h2>Revisar servicios asignados a su entidad:</h2>
             </div>
             <div class="card-body">
+
+              <a href="{{ url()->previous() }}" class="btn btn-danger mb-3">Regresar</a>
+
               <table class="table table-striped table-bordered table-hover" id="table_servicios">
                 <thead class="tenca">
                     <tr class="bg-dark">
