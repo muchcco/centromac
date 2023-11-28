@@ -56,6 +56,52 @@
     <div class="col-lg-12">
         <div class="card">
             <div class="card-header" style="background-color:#132842">
+                <h4 class="card-title text-white">Leyenda</h4>
+            </div><!--end card-header-->
+            <div class="card-body bootstrap-select-1">
+                <div class="row">
+                    <div class="col-md-6 border-end">
+                        <table class="table table-bordered ">
+                            <thead>
+                                <tr>
+                                    <th colspan="5" class="text-center">CUADRO DE PUNTUACIÓN</th>
+                                </tr>
+                                <tr>
+                                    <th class="text-center">1</th>
+                                    <th class="text-center">2</th>
+                                    <th class="text-center">3</th>
+                                    <th class="text-center">4</th>
+                                    <th class="text-center">5</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center">0 a 20 % <br /> Deficiente</td>
+                                    <td class="text-center">20 a 40 % <br /> Regular</td>
+                                    <td class="text-center">40 a 60 % <br /> Bueno</td>
+                                    <td class="text-center">60 a 80 % <br /> Muy Bueno</td>
+                                    <td class="text-center">80 a 100 % <br /> Excelente</td>
+                                </tr>
+                            </tbody>
+    
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h5>Reporte </h5>
+                        <button class="btn btn-success">Reportes</button>
+                    </div>
+                    
+                </div>
+            </div><!-- end card-body --> 
+        </div> <!-- end card -->                               
+    </div> <!-- end col -->
+</div> <!-- end row -->
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header" style="background-color:#132842">
                 <h4 class="card-title text-white">EVALUACION MOTIVACIONAL CENTRO MAC -  
                     @php
                         $us_id = auth()->user()->idcentro_mac;
@@ -109,6 +155,7 @@
         </div>
     </div>
 </div>
+
 
 
 

@@ -28,5 +28,5 @@ class EvaluacionMotivacional extends Model
                             'IDPERSONA_REGISTRA',                            
                         ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 }

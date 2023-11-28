@@ -28,6 +28,7 @@ class EvalMotivacionalController extends Controller
 
     public function index()
     {
+        // dd(auth()->user()->idpersonal);
         return view('formatos.evaluacion_motivacional.index');
     }
 
@@ -47,11 +48,14 @@ class EvalMotivacionalController extends Controller
             $fecha_año = date('Y', strtotime($fecha_A));
         }
 
-        $query = DB::select("CALL SP_F_EVALUACIONMOT(:p_mes, :p_id_centro_mac, :p_anio)", [
+        $query = DB::select("CALL SP_F_EVALUACIONMOT(:p_mes, :p_id_centro_mac, :p_anio, :idpersonalreg)", [
             'p_mes' => $fecha_mes,
             'p_id_centro_mac' => $this->centro_mac()->idmac,
             'p_anio' => $fecha_año,
+            'idpersonalreg' => auth()->user()->idpersonal,
         ]);
+
+        // dd($query);
 
 
         return view('formatos.evaluacion_motivacional.tablas.tb_index', compact('query', 'fecha_mes', 'fecha_año'));
@@ -65,6 +69,7 @@ class EvalMotivacionalController extends Controller
                             ->where('IDCENTRO_MAC', $this->centro_mac()->idmac)
                             ->where('MES', $request['mes'])
                             ->where('AÑO', $request['año'])
+                            ->where('IDPERSONA_REGISTRA', auth()->user()->idpersonal)
                             ->first();
 
             // $suma = 0;
@@ -119,7 +124,7 @@ class EvalMotivacionalController extends Controller
                 $save->COMPROMISO = $compromiso;
                 $save->VESTIMENTA = $vestimenta;
                 // $save->TOTAL_P = $suma;
-                $save->IDPERSONA_REGISTRA = auth()->user()->id;
+                $save->IDPERSONA_REGISTRA = auth()->user()->idpersonal;
                 $save->save();
                 
             }else{
@@ -135,7 +140,7 @@ class EvalMotivacionalController extends Controller
                     'MES' => $request['mes'],
                     'AÑO' => $request['año'],
                     'FLAG' => 1,
-                    'IDPERSONA_REGISTRA' => auth()->user()->id,
+                    'IDPERSONA_REGISTRA' => auth()->user()->idpersonal,
                 ]);
             }
 
@@ -154,7 +159,16 @@ class EvalMotivacionalController extends Controller
 
     public function delete_datos(Request $request)
     {
-        dd($request->all());
+        // dd($request->all());
+
+        $del = DB::table('F_EVAL_MOTIVACIONAL')->where('IDEEVAL_MOTIVACIONAL', $request->id)->update([
+            'PROACTIVIDAD' => NULL,
+            'CALIDAD_SERVICIO' => NULL,
+            'COMPROMISO' => NULL,
+            'VESTIMENTA' => NULL,
+        ]);
+
+        return $del;
     }
 
 }

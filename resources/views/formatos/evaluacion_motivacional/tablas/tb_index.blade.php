@@ -28,12 +28,12 @@
     </thead>
     <tbody>
         @forelse ($query as $i =>$que)
-            <tr>
+            <tr id="del-text">
                 <td>{{ $i + 1 }}</td>
                 <td>{{ $que->ABREV_ENTIDAD }}</td>
                 <td>{{ $que->NUM_DOC }}</td>
-                <td>{{ $que->NOMBREU }}</td>
-                <td class="text-center">
+                <td>{{ $que->NOMBREU }} {{ $que->PROACTIVIDAD  }} </td>
+                <td class="text-center" >
                     {{-- <input type="button" value="{{ is_null($que->PROACTIVIDAD) ? 0 : $que->PROACTIVIDAD }}" data-fila="{{ $i }}" class="proactividad bandejTool {{ !is_null($que->PROACTIVIDAD) ? 'seleccionado' : '' }}" data-tippy-content="Malo"> --}}
                     <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
 
@@ -44,7 +44,7 @@
                     <input type="button" value="{{ $que->PROACTIVIDAD == '4' ? '4' : '4' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="4_{{ $i }}" class="{{ $que->PROACTIVIDAD == '4' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Muy Bueno">
                     <input type="button" value="{{ $que->PROACTIVIDAD == '5' ? '5' : '5' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="5_{{ $i }}" class="{{ $que->PROACTIVIDAD == '5' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Excelente">
                 </td>
-                <td class="text-center">
+                <td class="text-center" >
                     {{-- <input type="button" value="{{ is_null($que->CALIDAD_SERVICIO) ? 0 : $que->CALIDAD_SERVICIO }}" id="calidad_servicio" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="0_{{ $i }}" class="{{ !is_null($que->CALIDAD_SERVICIO) ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Malo"> --}}
                     <input type="button" value="{{ $que->CALIDAD_SERVICIO == '1' ? '1' : '1' }}" id="calidad_servicio" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="1_{{ $i }}" class="{{ $que->CALIDAD_SERVICIO == '1' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Deficiente">
                     <input type="button" value="{{ $que->CALIDAD_SERVICIO == '2' ? '2' : '2' }}" id="calidad_servicio" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="2_{{ $i }}" class="{{ $que->CALIDAD_SERVICIO == '2' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Regular">
@@ -52,7 +52,7 @@
                     <input type="button" value="{{ $que->CALIDAD_SERVICIO == '4' ? '4' : '4' }}" id="calidad_servicio" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="4_{{ $i }}" class="{{ $que->CALIDAD_SERVICIO == '4' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Muy Bueno">
                     <input type="button" value="{{ $que->CALIDAD_SERVICIO == '5' ? '5' : '5' }}" id="calidad_servicio" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="5_{{ $i }}" class="{{ $que->CALIDAD_SERVICIO == '5' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Excelente">
                 </td>              
-                <td class="text-center">
+                <td class="text-center" >
                     {{-- <input type="button" value="{{ is_null($que->COMPROMISO) ? 0 : $que->COMPROMISO }}" id="compromiso" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="0_{{ $i }}" class="{{ !is_null($que->COMPROMISO) ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Malo"> --}}
                     <input type="button" value="{{ $que->COMPROMISO == '1' ? '1' : '1' }}" id="compromiso" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="1_{{ $i }}" class="{{ $que->COMPROMISO == '1' ? 'seleccionado' : ''}} bandejTool" data-tippy-content="Deficiente">
                     <input type="button" value="{{ $que->COMPROMISO == '2' ? '2' : '2' }}" id="compromiso" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="2_{{ $i }}" class="{{ $que->COMPROMISO == '2' ? 'seleccionado' : ''}} bandejTool" data-tippy-content="Regular">
@@ -61,7 +61,7 @@
                     <input type="button" value="{{ $que->COMPROMISO == '5' ? '5' : '5' }}" id="compromiso" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="5_{{ $i }}" class="{{ $que->COMPROMISO == '5' ? 'seleccionado' : ''}} bandejTool" data-tippy-content="Excelente">
 
                 </td>
-                <td class="text-center">
+                <td class="text-center" >
                     {{-- <input type="button" value="{{ is_null($que->VESTIMENTA) ? 0 : $que->VESTIMENTA }}" id="vestimenta" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="0_{{ $i }}" class="{{ !is_null($que->VESTIMENTA) ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Malo"> --}}
                     <input type="button" value="{{ $que->VESTIMENTA == '1' ? '1' : '1' }}" id="vestimenta" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="1_{{ $i }}" class="{{ $que->VESTIMENTA == '1' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Deficiente">
                     <input type="button" value="{{ $que->VESTIMENTA == '2' ? '2' : '2' }}" id="vestimenta" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="2_{{ $i }}" class="{{ $que->VESTIMENTA == '2' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Regular">
@@ -216,7 +216,8 @@ function btnEliminarRegistro (id) {
                     success: function(response){
                         console.log(response);
 
-                        tabla_seccion(); 
+                        // tabla_seccion(); 
+                        $( "#del-text" ).load(window.location.href + " #del-text" ); 
 
                         Toastify({
                             text: "Se eliminó calificación",
