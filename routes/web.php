@@ -8,6 +8,7 @@ use App\Http\Controllers\Administrador\UsuariosController;
 use App\Http\Controllers\Modulo\ServiciosController;
 use App\Http\Controllers\Modulo\UsuarioController;
 use App\Http\Controllers\Modulo\PcmController;
+use App\Http\Controllers\Formatos\EvalMotivacionalController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -31,6 +32,11 @@ Route::post('update_obsev' , [PagesController::class, 'update_obsev'])->name('up
 Route::get('provincias/{departamento_id}', [PagesController::class, 'provincias'])->name('provincias');
 Route::get('distritos/{provincia_id}', [PagesController::class, 'distritos'])->name('distritos');
 Route::get('subtipo_vehiculo/{idsubtipo_vehiculo}', [PagesController::class, 'subtipo_vehiculo'])->name('subtipo_vehiculo');
+
+
+/******************  DATOS DE LOGIN  ******************************/
+
+Route::get('/login_verificacion/get/' , [PagesController::class, 'login_verificacion'])->name('login_verificacion.get');
 
 Auth::routes();
 
@@ -104,7 +110,21 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/delete_servicio' , [ServiciosController::class, 'delete_servicio'])->name('delete_servicio');
         Route::get('/export_serv_entidad' , [ServiciosController::class, 'export_serv_entidad'])->name('export_serv_entidad');
     });
+
+    /******************************************************   FORMATOS *****************************************************************************/
     
+    Route::group(['prefix'=>'formatos','as'=>'formatos.' ],function () {
+        
+        Route::group(['prefix' => 'evaluacion_motivacional', 'as' => 'evaluacion_motivacional.'], function(){
+
+            Route::get('/index' , [EvalMotivacionalController::class, 'index'])->name('index');
+            Route::get('/tablas/tb_index' , [EvalMotivacionalController::class, 'tb_index'])->name('tablas.tb_index');
+            Route::post('/store_datos' , [EvalMotivacionalController::class, 'store_datos'])->name('store_datos');
+            Route::post('/delete_datos' , [EvalMotivacionalController::class, 'delete_datos'])->name('delete_datos');
+
+        });
+
+    });
 
     /******************************************************   ADMINISTRADOR ************************************************************************/
 

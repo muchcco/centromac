@@ -95,7 +95,9 @@ class UsuarioController extends Controller
             // sync roles
             $save->syncRoles($roles);
 
-            Mail::to("kevinmuchcco@gmail.com")->send(new CreaUsuario($personal));
+            if($personal->CORREO){
+                Mail::to($personal->CORREO)->send(new CreaUsuario($personal));
+            }
 
             return $save;
 

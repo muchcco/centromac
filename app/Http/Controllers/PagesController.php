@@ -9,6 +9,7 @@ use App\Models\Mac;
 use App\Models\Entidad;
 use App\Models\Archivoper;
 use App\Models\Servicio;
+use App\Models\User;
 
 class PagesController extends Controller
 {
@@ -410,5 +411,26 @@ class PagesController extends Controller
         }
 
         return $options;
+    }
+
+    /******************************************************** DATOS DE LOGIN ***********************************************************************************/
+
+    public function login_verificacion(Request $request)
+    {
+        $usuario = User::where('email',$request->email)->first();
+        $models = DB::select("select * from modelhasrolestemp where model_id = '".$usuario->id."' and estado = '1'");
+        // dd($models);
+        if($models){
+            foreach($models as $model){
+
+                // dd($model);
+                DB::insert("insert into model_has_roles (role_id,model_type,model_id) values('".$model->role_id."','App\\Models\\User','".$model->model_id."')");
+            }
+        }
+        //DB::delete("delete from modelhasrolestemp where model_id = '".$usuario->id."'");
+        DB::update("update modelhasrolestemp set estado = '0' where model_id = '".$usuario->id."'");
+        $select_roles = DB::select("select * from model_has_roles join roles on role_id = id where model_id = '".$usuario->id."'");
+        // dd($select_roles)
+        return Response()->json($select_roles);
     }
 }

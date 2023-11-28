@@ -68,6 +68,12 @@
                     <a href="{{ route('servicios.index') }}" class="@if (Request::is('servicios/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por Entidad</span></a>
                 </li>
 
+                <li class="menu-label mt-0">FORMATOS</li>
+                
+                <li class="@if (Request::is('formatos/evaluacion_motivacional*')) mm-active @endif">
+                    <a href="{{ route('formatos.evaluacion_motivacional.index') }}" class="@if (Request::is('formatos/evaluacion_motivacional*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Evaluación Motivacional</span></a>
+                </li>
+
                 <li class="menu-label mt-0">PARAMETROS</li>
                 {{-- <li class="@if (Request::is('consultas/comprobantespago*')) mm-active @endif">
                     <a href="{{ route('consultas.comprobantespago') }}" class="@if (Request::is('consultas/comprobantespago*')) active @endif"> <i data-feather="search" class="align-self-center menu-icon"></i><span>Comprobantes de Pago</span></a>
@@ -89,6 +95,8 @@
                     <li>
                         <a href="javascript: void(0);"><i data-feather="box" class="align-self-center menu-icon"></i><span>Personal</span></a>
                     </li> --}}
+
+                    
 
                     <hr class="hr-dashed hr-menu">
                     <!--Nombre de la Categoria-->
