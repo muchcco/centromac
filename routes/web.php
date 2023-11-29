@@ -26,6 +26,12 @@ Route::get('list_serv/{idcentro_mac}/{identidad}' , [PagesController::class, 'li
 Route::post('md_edit_servicios_ext' , [PagesController::class, 'md_edit_servicios_ext'])->name('md_edit_servicios_ext');
 Route::post('update_obsev' , [PagesController::class, 'update_obsev'])->name('update_obsev');
 
+/****************** CONSUMO NOVOSGA ***************/
+
+Route::get('vista.html5' , [PagesController::class, 'vista'])->name('vista');
+Route::post('validar_entidad' , [PagesController::class, 'validar_entidad'])->name('validar_entidad');
+Route::get('entidad_cola.html5/{identidad}' , [PagesController::class, 'entidad_cola'])->name('entidad_cola');
+
 
 /******************  RECURSOS  ********************/
 
@@ -121,6 +127,8 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/tablas/tb_index' , [EvalMotivacionalController::class, 'tb_index'])->name('tablas.tb_index');
             Route::post('/store_datos' , [EvalMotivacionalController::class, 'store_datos'])->name('store_datos');
             Route::post('/delete_datos' , [EvalMotivacionalController::class, 'delete_datos'])->name('delete_datos');
+
+            Route::get('/reporte' , [EvalMotivacionalController::class, 'reporte'])->name('reporte');
 
         });
 

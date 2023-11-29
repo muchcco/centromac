@@ -89,7 +89,7 @@
 
                     <div class="col-md-6">
                         <h5>Reporte </h5>
-                        <button class="btn btn-success">Reportes</button>
+                        <button class="btn btn-success" onclick="CambioReport()">Reportes</button>
                     </div>
                     
                 </div>
@@ -98,63 +98,71 @@
     </div> <!-- end col -->
 </div> <!-- end row -->
 
-<div class="row">
-    <div class="col-lg-12">
-        <div class="card">
-            <div class="card-header" style="background-color:#132842">
-                <h4 class="card-title text-white">EVALUACION MOTIVACIONAL CENTRO MAC -  
-                    @php
-                        $us_id = auth()->user()->idcentro_mac;
-                        $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
 
-                        echo $user->NOMBRE_MAC;
-                    @endphp
-                </h4>
-            </div><!--end card-header-->
-            <div class="card-body">
+<section id="eval_cambio">
+    <div class="row" id="table_evalua">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header" style="background-color:#132842">
+                    <h4 class="card-title text-white">EVALUACION MOTIVACIONAL CENTRO MAC -  
+                        @php
+                            $us_id = auth()->user()->idcentro_mac;
+                            $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+    
+                            echo $user->NOMBRE_MAC;
+                        @endphp
+                    </h4>
+                </div><!--end card-header-->
+                <div class="card-body">
+                    
+                    <div class="row">
+                        <div class="col-md-7">
+                            <div class="form-group">
+                                <label class="mb-3">Mes:</label>
+                                <select name="mes" id="mes" class="form-control" onchange="SearchMes()">
+                                    <option value="" disabled selected>-- Seleccione una opción --</option>
+                                    <option value="01">Enero</option>
+                                    <option value="02">Febrero</option>
+                                    <option value="03">Marzo</option>
+                                    <option value="04">Abril</option>
+                                    <option value="05">Mayo</option>
+                                    <option value="06">Junio</option>
+                                    <option value="07">Julio</option>
+                                    <option value="08">Agosto</option>
+                                    <option value="09">Setiembre</option>
+                                    <option value="10">Octubre</option>
+                                    <option value="11">Noviembre</option>
+                                    <option value="12">Diciembre</option>
+                                </select>
+                            </div>
+                        </div><!-- end col -->
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label class="mb-3">Año:</label>
+                                <select name="año" id="año" class="form-control año" onchange="SearchAño()"></select>
+                            </div>
+                        </div><!-- end col -->
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="table-responsive">
+                                <div class="table-responsive" id="table_data">
                 
-                <div class="row">
-                    <div class="col-md-7">
-                        <div class="form-group">
-                            <label class="mb-3">Mes:</label>
-                            <select name="mes" id="mes" class="form-control" onchange="SearchMes()">
-                                <option value="" disabled selected>-- Seleccione una opción --</option>
-                                <option value="01">Enero</option>
-                                <option value="02">Febrero</option>
-                                <option value="03">Marzo</option>
-                                <option value="04">Abril</option>
-                                <option value="05">Mayo</option>
-                                <option value="06">Junio</option>
-                                <option value="07">Julio</option>
-                                <option value="08">Agosto</option>
-                                <option value="09">Setiembre</option>
-                                <option value="10">Octubre</option>
-                                <option value="11">Noviembre</option>
-                                <option value="12">Diciembre</option>
-                            </select>
-                        </div>
-                    </div><!-- end col -->
-                    <div class="col-md-5">
-                        <div class="form-group">
-                            <label class="mb-3">Año:</label>
-                            <select name="año" id="año" class="form-control año" onchange="SearchAño()"></select>
-                        </div>
-                    </div><!-- end col -->
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <div class="table-responsive">
-                            <div class="table-responsive" id="table_data">
-            
+                                </div>
                             </div>
                         </div>
+                        
                     </div>
-                    
                 </div>
             </div>
         </div>
     </div>
-</div>
+    <div class="row" style="display: none" id="reporte_eval">
+        @include('formatos.evaluacion_motivacional.reporte')
+    </div>
+</section>
+
+
 
 
 
@@ -212,6 +220,9 @@ function tabla_seccion(mes = '', año = '') {
         },
         success: function(data) {
             $('#table_data').html(data); // Inserta la vista en un contenedor en tu página
+        },
+        error: function(error){
+            // tabla_seccion();
         }
     });
 }
@@ -248,6 +259,13 @@ console.log(mesActual);
 mesSelect.selectedIndex = mesActual
 
 /****************************************************************************** FIN ************************************************************************/
+
+function CambioReport(){
+
+    
+
+}
+
 
 </script>
 

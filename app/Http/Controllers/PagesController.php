@@ -433,4 +433,125 @@ class PagesController extends Controller
         // dd($select_roles)
         return Response()->json($select_roles);
     }
+
+    /******************************************************** CONSUMO NOVOSGA***********************************************************************************/
+
+    public function vista(Request $request)
+    {
+        $macs = Mac::get();
+
+        $tip_doc = DB::table('D_PERSONAL_TIPODOC')->get();
+
+        return view('vista', compact('tip_doc', 'macs'));
+    }
+
+    public function validar_entidad(Request $request)
+    {
+        $servicios = DB::table('D_ENT_SERV as DES')
+                        ->join('D_ENTIDAD_SERVICIOS as SERV', 'SERV.IDSERVICIOS', '=', 'DES.IDSERVICIOS')
+                        ->join('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'DES.IDENTIDAD')
+                        ->join('M_CENTRO_MAC as MAC', 'MAC.IDCENTRO_MAC', '=', 'DES.IDMAC')
+                        ->select('DES.*', 'SERV.*', 'ME.*', 'MAC.*')
+                        ->where('MAC.IDCENTRO_MAC', $request->idmac)
+                        ->where('ME.IDENTIDAD', $request->identidad)
+                        ->first();
+
+        return $servicios;
+    }
+
+    public function entidad_cola(Request $request, $identidad)
+    {
+        // dd($identidad);
+        $query = DB::connection('mysql2')->select('SELECT 
+                                                        DATE(dt_cheg) Fecha,
+                                                        CONCAT(sigla_senha, num_senha) Ticket,
+                                                        ss.nome Entidad,
+                                                        ss.`id`,
+                                                        IFNULL(ss2.nome, "No atendido") "tipo_servicio",
+                                                        TIME_FORMAT(
+                                                        IFNULL(dt_cheg, "00:00:00"),
+                                                        "%H:%i:%s"
+                                                        ) "hora_llegada",
+                                                        TIME_FORMAT(
+                                                        IFNULL(dt_cha, "00:00:00"),
+                                                        "%H:%i:%s"
+                                                        ) "hora_llamado",
+                                                        IFNULL(
+                                                        SEC_TO_TIME(
+                                                            TIMESTAMPDIFF(SECOND, dt_cheg, dt_cha)
+                                                        ),
+                                                        "00:00:00"
+                                                        ) "Tiempo de espera",
+                                                        TIME_FORMAT(
+                                                        IFNULL(dt_ini, "00:00:00"),
+                                                        "%H:%i:%s"
+                                                        ) "Hora Inicio de atencion",
+                                                        IFNULL(
+                                                        SEC_TO_TIME(
+                                                            TIMESTAMPDIFF(SECOND, dt_ini, dt_fim)
+                                                        ),
+                                                        "00:00:00"
+                                                        ) "Tiempo de atención",
+                                                        TIME_FORMAT(
+                                                        IFNULL(dt_fim, "00:00:00"),
+                                                        "%H:%i:%s"
+                                                        ) "Fin de Atención",
+                                                        IFNULL(
+                                                        SEC_TO_TIME(
+                                                            (
+                                                            (
+                                                                TIMESTAMPDIFF(SECOND, dt_ini, dt_fim)
+                                                            ) + (
+                                                                TIMESTAMPDIFF(SECOND, dt_cheg, dt_cha)
+                                                            )
+                                                            )
+                                                        ),
+                                                        "00:00:00"
+                                                        ) "Tiempo total",
+                                                        IFNULL(
+                                                        CONCAT(uu.nome, " ", uu.sobrenome),
+                                                        "No Atendido"
+                                                        ) Asesor,
+                                                        (
+                                                        CASE
+                                                            WHEN (att.status = 1) 
+                                                            THEN "En espera" 
+                                                            WHEN (att.status = 2) 
+                                                            THEN "Llamando" 
+                                                            WHEN (att.status = 3) 
+                                                            THEN "Atención Iniciada" 
+                                                            WHEN (att.status = 4) 
+                                                            THEN "Atención Cerrada" 
+                                                            WHEN (att.status = 5) 
+                                                            THEN "Abandono" 
+                                                            WHEN (att.status = 6) 
+                                                            THEN "Cancelado" 
+                                                            WHEN (att.status = 7) 
+                                                            THEN "Error de selección" 
+                                                            WHEN (att.status = 8) 
+                                                            THEN "Terminado" 
+                                                            ELSE att.status 
+                                                        END
+                                                        ) AS Estado,
+                                                        CONCAT(uu2.nome, " ", uu2.sobrenome) "Derivado de",
+                                                        att.nm_cli Ciudadano,
+                                                        att.ident_cli num_docu 
+                                                    FROM
+                                                        atendimentos att 
+                                                        LEFT JOIN atend_codif sss 
+                                                        ON sss.atendimento_id = att.id 
+                                                        LEFT JOIN servicos ss 
+                                                        ON ss.id = att.servico_id 
+                                                        LEFT JOIN servicos ss2 
+                                                        ON ss2.id = sss.servico_id 
+                                                        LEFT JOIN usuarios uu 
+                                                        ON uu.id = att.usuario_id 
+                                                        LEFT JOIN usuarios uu2 
+                                                        ON uu2.id = att.usuario_tri_id 
+                                                    WHERE ss.`id` IN ('.$identidad.')
+                                                    AND att.status = 1
+                                                    ORDER BY att.dt_cheg ASC ');
+
+        return view('entidad_cola', compact('query'));
+    }
 }

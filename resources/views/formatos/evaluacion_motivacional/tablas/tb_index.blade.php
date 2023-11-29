@@ -28,21 +28,21 @@
     </thead>
     <tbody>
         @forelse ($query as $i =>$que)
-            <tr id="del-text">
+            <tr >
                 <td>{{ $i + 1 }}</td>
                 <td>{{ $que->ABREV_ENTIDAD }}</td>
                 <td>{{ $que->NUM_DOC }}</td>
-                <td>{{ $que->NOMBREU }} {{ $que->PROACTIVIDAD  }} </td>
+                <td>{{ $que->NOMBREU }} </td>
                 <td class="text-center" >
                     {{-- <input type="button" value="{{ is_null($que->PROACTIVIDAD) ? 0 : $que->PROACTIVIDAD }}" data-fila="{{ $i }}" class="proactividad bandejTool {{ !is_null($que->PROACTIVIDAD) ? 'seleccionado' : '' }}" data-tippy-content="Malo"> --}}
                     <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
 
                     {{-- <input type="button" value="{{ is_null($que->PROACTIVIDAD) ? 0 : $que->PROACTIVIDAD }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="0_{{ $i }}" class="{{ !is_null($que->PROACTIVIDAD) ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Malo"> --}}
-                    <input type="button" value="{{ $que->PROACTIVIDAD == '1' ? '1' : '1' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="1_{{ $i }}" class="{{ $que->PROACTIVIDAD == '1' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Deficiente">
-                    <input type="button" value="{{ $que->PROACTIVIDAD == '2' ? '2' : '2' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="2_{{ $i }}" class="{{ $que->PROACTIVIDAD == '2' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Regular">
-                    <input type="button" value="{{ $que->PROACTIVIDAD == '3' ? '3' : '3' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="3_{{ $i }}" class="{{ $que->PROACTIVIDAD == '3' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Bueno">
-                    <input type="button" value="{{ $que->PROACTIVIDAD == '4' ? '4' : '4' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="4_{{ $i }}" class="{{ $que->PROACTIVIDAD == '4' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Muy Bueno">
-                    <input type="button" value="{{ $que->PROACTIVIDAD == '5' ? '5' : '5' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="5_{{ $i }}" class="{{ $que->PROACTIVIDAD == '5' ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Excelente">
+                    <input type="button" value="{{ $que->PROACTIVIDAD == '1' ? '1' : '1' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="1_{{ $i }}" class="{{ $que->PROACTIVIDAD == '1' ? 'seleccionado' : '' }} bandejTool" data-delete="del-text" data-tippy-content="Deficiente">
+                    <input type="button" value="{{ $que->PROACTIVIDAD == '2' ? '2' : '2' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="2_{{ $i }}" class="{{ $que->PROACTIVIDAD == '2' ? 'seleccionado' : '' }} bandejTool" data-delete="del-text" data-tippy-content="Regular">
+                    <input type="button" value="{{ $que->PROACTIVIDAD == '3' ? '3' : '3' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="3_{{ $i }}" class="{{ $que->PROACTIVIDAD == '3' ? 'seleccionado' : '' }} bandejTool" data-delete="del-text" data-tippy-content="Bueno">
+                    <input type="button" value="{{ $que->PROACTIVIDAD == '4' ? '4' : '4' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="4_{{ $i }}" class="{{ $que->PROACTIVIDAD == '4' ? 'seleccionado' : '' }} bandejTool" data-delete="del-text" data-tippy-content="Muy Bueno">
+                    <input type="button" value="{{ $que->PROACTIVIDAD == '5' ? '5' : '5' }}" id="proactividad" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="5_{{ $i }}" class="{{ $que->PROACTIVIDAD == '5' ? 'seleccionado' : '' }} bandejTool" data-delete="del-text" data-tippy-content="Excelente">
                 </td>
                 <td class="text-center" >
                     {{-- <input type="button" value="{{ is_null($que->CALIDAD_SERVICIO) ? 0 : $que->CALIDAD_SERVICIO }}" id="calidad_servicio" name="{{ $que->IDPERSONAL }}" data-entidad="{{ $que->IDENTIDAD }}" data-fila="0_{{ $i }}" class="{{ !is_null($que->CALIDAD_SERVICIO) ? 'seleccionado' : '' }} bandejTool" data-tippy-content="Malo"> --}}
@@ -72,8 +72,9 @@
                 <td style="max-width: 40px; aling-text:center" class="text-center">
                     <input type="text" class="text-cente nobtn total_puntos" id="total_puntos" name="total_puntos" disabled style="max-width: 40px; aling-text:center" value="{{ $que->TOTAL_P }}">
                 </td>                
-                <td>
-                    <button class="btn-danger bandejTool" data-tippy-content="Elminar calificación para {{ $que->NOMBREU }}"  onclick="btnEliminarRegistro('{{ $que->IDEEVAL_MOTIVACIONAL }}')">Borrar</button>   
+                <td >
+                    {{-- <button type="button" class="btn-danger bandejTool" data-tippy-content="Elminar calificación para {{ $que->NOMBREU }}"  onclick="btnEliminarRegistro('{{ $que->IDEEVAL_MOTIVACIONAL }}')" id="delete-btn">Borrar</button>  --}}
+                    <input type="button" class="btn-danger bandejTool" data-tippy-content="Elminar calificación para {{ $que->NOMBREU }}"  onclick="btnEliminarRegistro('{{ $que->IDEEVAL_MOTIVACIONAL }}')" id="delete-btn" value="Borrar">  
                 </td>
             </tr>
         @empty
@@ -183,6 +184,8 @@ function GuardarBTN(fila, nombreInput, nombre, identidad) {
         success: function(data){
             // Manejar la respuesta del servidor si es necesario
             $( "#total_puntos" ).load(window.location.href + " #total_puntos" ); 
+            // $( "#delete-btn" ).load(window.location.href + " #delete-btn" );
+            
         },
         error: function(xhr, textStatus, errorThrown) {
             console.log(xhr.responseText);
@@ -199,7 +202,7 @@ function btnEliminarRegistro (id) {
             confirmButtonText: "Aceptar"
         });
     } else {
-        
+     
         swal.fire({
             title: "Seguro que desea eliminar su calificación?",
             text: "La calificación será eliminado totalmente",
@@ -215,9 +218,9 @@ function btnEliminarRegistro (id) {
                     data: {"_token": "{{ csrf_token() }}", id: id},
                     success: function(response){
                         console.log(response);
-
-                        // tabla_seccion(); 
-                        $( "#del-text" ).load(window.location.href + " #del-text" ); 
+                        tabla_seccion(); 
+                        
+                        // colocar el atributo data-delete para poder actualizar la
 
                         Toastify({
                             text: "Se eliminó calificación",
@@ -226,19 +229,16 @@ function btnEliminarRegistro (id) {
                                 background: "#DF1818",
                             }
                         }).showToast();
-
                     },
                     error: function(error){
                         console.log('Error '+error);
                     }
                 });
             }
-
         })
-
-    }
-
- 
+    } 
 }
+
+
 
 </script>

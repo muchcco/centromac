@@ -171,4 +171,11 @@ class EvalMotivacionalController extends Controller
         return $del;
     }
 
+    /****************************************************** REPORTE PARA VISUALIZAR *************************************************************/
+
+    public function reporte(Request $request)
+    {
+        return view('formatos.evaluacion_motivacional.reporte');
+    }
+
 }
