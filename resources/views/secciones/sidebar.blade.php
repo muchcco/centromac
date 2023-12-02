@@ -45,9 +45,9 @@
                
                 {{-- @hasanyrole('Administrador') --}}
                 <!--if(Auth::user()->hasPermissionTo('Documentos SGD'))-->
-                    <li class="@if (Request::is('asistencia/asistencia*')) mm-active @endif">
-                        <a href="{{ route('asistencia.asistencia') }}" class="@if (Request::is('asistencia/asistencia*')) active @endif"> <i data-feather="server" class="align-self-center menu-icon"></i><span>Asistencia</span></a>
-                    </li>
+                <li class="@if (Request::is('asistencia/asistencia*')) mm-active @endif">
+                    <a href="{{ route('asistencia.asistencia') }}" class="@if (Request::is('asistencia/asistencia*')) active @endif"> <i data-feather="server" class="align-self-center menu-icon"></i><span>Asistencia</span></a>
+                </li>
                 <!--endif-->
                 {{-- @endhasanyrole --}}
 
@@ -63,6 +63,9 @@
                     </li>
                 <!--    </ul>
                 </li>-->
+                <li class="@if (Request::is('asignacion*')) mm-active @endif">
+                    <a href="{{ route('asignacion.index') }}" class="@if (Request::is('asignacion*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Asignación de bienes</span></a>
+                </li>
 
                 <li class="@if (Request::is('servicios*')) mm-active @endif">
                     <a href="{{ route('servicios.index') }}" class="@if (Request::is('servicios/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por Entidad</span></a>
@@ -75,6 +78,9 @@
                 </li>
 
                 <li class="menu-label mt-0">PARAMETROS</li>
+                <li class="@if (Request::is('almacen*')) mm-active @endif">
+                    <a href="{{ route('almacen.index') }}" class="@if (Request::is('almacen*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Almacen</span></a>
+                </li>
                 {{-- <li class="@if (Request::is('consultas/comprobantespago*')) mm-active @endif">
                     <a href="{{ route('consultas.comprobantespago') }}" class="@if (Request::is('consultas/comprobantespago*')) active @endif"> <i data-feather="search" class="align-self-center menu-icon"></i><span>Comprobantes de Pago</span></a>
                 </li>

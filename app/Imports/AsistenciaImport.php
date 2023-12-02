@@ -25,7 +25,9 @@ class AsistenciaImport implements ToModel, WithBatchInserts, WithChunkReading
 
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->first();
+
+        $us_id = auth()->user()->idcentro_mac;
+        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
 
         $IDCENTRO_MAC = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;

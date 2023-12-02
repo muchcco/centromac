@@ -9,6 +9,8 @@ use App\Http\Controllers\Modulo\ServiciosController;
 use App\Http\Controllers\Modulo\UsuarioController;
 use App\Http\Controllers\Modulo\PcmController;
 use App\Http\Controllers\Formatos\EvalMotivacionalController;
+use App\Http\Controllers\Modulo\AlmacenController;
+use App\Http\Controllers\Modulo\AsignacionController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -132,6 +134,34 @@ Route::group(['middleware' => ['auth']], function () {
 
         });
 
+    });
+
+    /******************************************************   ASIGNACION ***************************************************************************/
+
+    Route::group(['prefix'=>'asignacion','as'=>'asignacion.' ],function () {
+        Route::get('/index' , [AsignacionController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index' , [AsignacionController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::get('/asignacion_inventario/{idpersonal}' , [AsignacionController::class, 'asignacion_inventario'])->name('asignacion_inventario');
+        Route::get('/tablas/tb_asignacion' , [AsignacionController::class, 'tb_asignacion'])->name('tablas.tb_asignacion');
+        Route::post('/store_item' , [AsignacionController::class, 'store_item'])->name('store_item');
+        Route::post('/eliminar_item' , [AsignacionController::class, 'eliminar_item'])->name('eliminar_item');
+        Route::post('/modals/md_add_estado' , [AlmacenController::class, 'md_add_estado'])->name('modals.md_add_estado');
+        Route::post('/modals/md_add_observacion' , [AlmacenController::class, 'md_add_observacion'])->name('modals.md_add_observacion');
+        Route::post('/store_estado' , [AsignacionController::class, 'store_estado'])->name('store_estado');
+        
+        /* RECURSOS DE ESTE GRUPO */
+        Route::post('/almacen_select' , [AsignacionController::class, 'almacen_select'])->name('almacen_select');
+    });
+
+
+    /******************************************************   ALMACEN  *****************************************************************************/
+
+    Route::group(['prefix'=>'almacen','as'=>'almacen.' ],function () {
+        Route::get('/index' , [AlmacenController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index' , [AlmacenController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_datos' , [AlmacenController::class, 'md_add_datos'])->name('modals.md_add_datos');
+        Route::post('/store_datos' , [AlmacenController::class, 'store_datos'])->name('store_datos');
+        
     });
 
     /******************************************************   ADMINISTRADOR ************************************************************************/
