@@ -151,6 +151,10 @@ class AsignacionController extends Controller
 
     public function store_estado(Request $request)
     {
-        $save = 
+        $save = Asignacion::findOrFail($request->idasignacion);
+        $save->ESTADO = $request->estado;
+        $save->save();
+
+        return $save;
     }
 }

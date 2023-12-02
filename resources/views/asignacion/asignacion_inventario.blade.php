@@ -356,9 +356,9 @@ function ModalEstado(idasignacion){
 
     $.ajax({
         type:'post',
-        url: "{{ route('usuarios.modals.md_add_estado') }}",
+        url: "{{ route('asignacion.modals.md_add_estado') }}",
         dataType: "json",
-        data:{"_token": "{{ csrf_token() }}", id : id},
+        data:{"_token": "{{ csrf_token() }}", idasignacion : idasignacion},
         success:function(data){
             $("#modal_show_modal").html(data.html);
             $("#modal_show_modal").modal('show');
