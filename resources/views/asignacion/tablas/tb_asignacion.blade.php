@@ -29,7 +29,8 @@
                         @if ($que->ESTADO_BIEN == '1')
                             BUEN ESTADO
                         @endif
-                    @endif                    
+                    @endif 
+                                       
                 </td>
                 <td>{{ $que->UBICACION_EQUIPOS }}</td>
                 <td>
@@ -37,7 +38,8 @@
                         <button class="btn btn-info btn-small" onclick="ModalObservacion('{{ $que->IDASIGNACION }}')">Agregar Observación</button>
                     @else
                         <button class="nobtn" onclick="ModalObservacion('{{ $que->IDASIGNACION }}')">{{ $que->OBSERVACION }}</button>                        
-                    @endif  
+                    @endif 
+                    
                 </td>
                 <td class="text-center">
                     {{-- <a href="{{ route('asignacion.asignacion_inventario', $que->IDPERSONAL) }}" class="btn btn-info">Asignar bienes</a> --}}

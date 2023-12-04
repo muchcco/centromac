@@ -79,12 +79,53 @@
                         </div><!--end col-->
                         <div class="col-lg-6 align-self-center border-start"> 
                             <div id="documento_actualizar_estado">
-                                @if ($asignacion_estado->IDESTADO_ASIG == '1')
-                                    <p>Descargar borrador para la aprobación del Asesor(a): <a href="{{ url('asignacion/pdf/borrador_pdf',['idpersonal' => $personal->IDPERSONAL]) }}" class="text-primary" target="_blank">Descargar (clic)</a></p>
-                                    <button class="btn btn-info" onclick="btnModalAprobar($asignacion_estado->)">Aprobar documento</button>
+                                @if ($asignacion_estado )
+                                    @if ($asignacion_estado->IDESTADO_ASIG == '1')
+                                        <p>Descargar borrador para la aprobación del Asesor(a): <a href="{{ url('asignacion/pdf/borrador_pdf',['idpersonal' => $personal->IDPERSONAL]) }}" class="text-primary" target="_blank">Descargar (clic)</a></p>
+                                        <button class="btn btn-info" onclick="btnEstadoAprobar('{{ $asignacion_estado->IDASIG_PERSONAL }}')">Aprobar documento</button>
+                                    @elseif($asignacion_estado->IDESTADO_ASIG == '2')
+                                        <div class="alert alert-danger border-0" role="alert">
+                                            <strong>Aviso!</strong> El documento se tendrá que adjuntar el mismo día que se realizarón las firmas.<br/> <button class="nobtn">regresar estado</button>
+                                        </div>
+                                        <p>Descargar documento original para la firma del Asesor(a): <a href="{{ url('asignacion/pdf/orginal_pdf',['idpersonal' => $personal->IDPERSONAL]) }}" class="text-primary" target="_blank">Descargar (clic)</a></p>                                        
+                                        <div class="input-group">
+                                            <input type="file" class="form-control" id="file_aprobado" name="file_aprobado">
+                                            <button class="btn btn-primary" onclick="btnCargarDocumentoAprobacion('{{ $asignacion_estado->IDASIG_PERSONAL }}')">Agregar Documento</button>
+                                        </div>
+                                    @elseif($asignacion_estado->IDESTADO_ASIG == '3')
+
+                                        <p>Descargar documento de devolucion de equipos del Asesor(a): <a href="{{ url('asignacion/pdf/orginal_pdf',['idpersonal' => $personal->IDPERSONAL]) }}" class="text-primary" target="_blank">Descargar (clic)</a></p>                                        
+                                        <div class="input-group mb-3">
+                                            <input type="file" class="form-control" id="file_aprobado" name="file_aprobado">
+                                            <button class="btn btn-primary" onclick="btnCargarDocumentoAprobacion('{{ $asignacion_estado->IDASIG_PERSONAL }}')">Agregar Documento</button>
+                                        </div>
+
+                                        <table class="table table-bordered" >
+                                            <tr class="bg-dark">
+                                                <th>Nombre del Equipo</th>
+                                                <th>Estado del documento</th>
+                                                <th>Descargar Documento</th>
+                                                <th>Regresar</th>                                            
+                                            </tr>
+                                            @forelse ($datos_acepta as $datos)
+                                                <tr>
+                                                    <td>{{ $datos->NOMBRE_DOCUMENTO }}</td>
+                                                    <td>{{ $datos->NOMBRE_ESTADO_ASIG }}</td>
+                                                    <td class="text-center"> <a href="{{ url($datos->NOMBRE_RUTA) }}" target="_blank"> <i class="fas fa-cloud-download-alt text-primary"></i> </a> </td>
+                                                    <td class="text-center">
+                                                        <button class="nobtn"><i class="fas fa-reply-all"></i></button>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                
+                                            @endforelse
+                                        </table>
+
+                                    @endif
                                 @else
-                                    
+                                    <p>Tiene que ingresar almenos un bien</p>
                                 @endif
+                                
                                 
                             </div>
                         </div><!--end col-->
@@ -103,15 +144,13 @@
             </div><!--end card-header-->
 
             <div class="card-body bootstrap-select-1">
+
                 <div class="row mb-3">
                     <div class="col-12">
                         <div class="input-group">                               
                             <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
                             <select name="idalmacen" id="idalmacen" class="form-control select2 " style="width: 92%">
                                 <option value="0">-- Seleccionar un bien --</option>
-                                {{-- @foreach ($almacen as $a)
-                                    <option value="{{ $a->IDALMACEN }}">{{ $a->COD_SBN }} - {{ $a->COD_INTERNO_PCM }} - {{ $a->DESCRIPCION }}</option>
-                                @endforeach --}}
                             </select>
                             <button type="button" class="btn btn-primary" id="btn-guardar" onclick="BtnGuardar('{{ $personal->IDPERSONAL }}')"> Agregar</button>
                         </div>
@@ -264,6 +303,7 @@ function BtnGuardar(idpersonal) {
                 document.getElementById("btn-guardar").innerHTML = 'Agregar';
                 document.getElementById("btn-guardar").disabled = false;
                 $( "#idalmacen" ).load(window.location.href + " #idalmacen" ); 
+                $( "#documento_actualizar_estado" ).load(window.location.href + " #documento_actualizar_estado" ); 
                 tabla_seccion();
                 Toastify({
                     text: "Se inresó el registro",
@@ -364,16 +404,16 @@ function btnStoreEstado(idasignacion){
 
 function ModalObservacion(idasignacion){
 
-$.ajax({
-    type:'post',
-    url: "{{ route('asignacion.modals.md_add_observacion') }}",
-    dataType: "json",
-    data:{"_token": "{{ csrf_token() }}", idasignacion : idasignacion},
-    success:function(data){
-        $("#modal_show_modal").html(data.html);
-        $("#modal_show_modal").modal('show');
-    }
-});
+    $.ajax({
+        type:'post',
+        url: "{{ route('asignacion.modals.md_add_observacion') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}", idasignacion : idasignacion},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
 }
 
 function btnStoreObservacion(idasignacion){
@@ -407,6 +447,103 @@ var formData = new FormData();
             }).showToast();
         }
     });
+}
+
+function btnEstadoAprobar(asignacion_estado){
+
+    swal.fire({
+            title: "Seguro que el Asesor dio validez del borrador?",
+            text: "No habrá modificaciones al momento de aceptar los cambios",
+            icon: "error",
+            showCancelButton: !0,
+            confirmButtonText: "Aceptar",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.value) {
+                $.ajax({
+                    url: "{{ route('asignacion.estado_borrador') }}",
+                    type: 'post',
+                    data: {"_token": "{{ csrf_token() }}", asignacion_estado: asignacion_estado},
+                    success: function(response){
+                        console.log(response);
+                        tabla_seccion(); 
+                        
+                        // colocar el atributo data-delete para poder actualizar la
+                        $( "#documento_actualizar_estado" ).load(window.location.href + " #documento_actualizar_estado" ); 
+                        Toastify({
+                            text: "Se actualizo el estado",
+                            className: "info",
+                            style: {
+                                background: "#206AC8",
+                            }
+                        }).showToast();
+                    },
+                    error: function(error){
+                        console.log('Error '+error);
+                    }
+                });
+            }
+        })
+}
+
+function btnCargarDocumentoAprobacion(asignacion_estado){
+
+    var file_vacio = $("#file_aprobado").val();
+
+    if (file_vacio == '' ) {
+        Swal.fire({
+            icon: "warning",
+            text: "No ha cargado ningun documento!",
+            confirmButtonText: "Aceptar"
+        });
+    } else {
+        swal.fire({
+            title: "Seguro que desea cargar el documento?",
+            text: "Al cargar el documento se cambiara el estado del documento",
+            icon: "info",
+            showCancelButton: !0,
+            confirmButtonText: "Aceptar",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.value) {
+
+                var file_data = $("#file_aprobado").prop("files")[0];
+                var formData = new FormData();
+
+                formData.append("file_aprobado", file_data);
+                formData.append("asignacion_estado", asignacion_estado);
+                formData.append("_token", "{{ csrf_token() }}");
+
+                $.ajax({
+                    url: "{{ route('asignacion.cargar_documento_acept') }}",
+                    type: 'post',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response){
+                        console.log(response);
+                        tabla_seccion(); 
+                        
+                        // colocar el atributo data-delete para poder actualizar la
+                        $( "#documento_actualizar_estado" ).load(window.location.href + " #documento_actualizar_estado" ); 
+                        Toastify({
+                            text: "Se actualizo el estado",
+                            className: "info",
+                            style: {
+                                background: "#206AC8",
+                            }
+                        }).showToast();
+                    },
+                    error: function(error){
+                        console.log('Error '+error);
+                    }
+                });
+            }
+        })
+    }
+
+
+    
 
 }
 

@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Models\Asignacion;
 use App\Models\Almacen;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\AsigPersonal;
+use Carbon\Carbon;
 
 class AsignacionController extends Controller
 {
@@ -57,19 +59,31 @@ class AsignacionController extends Controller
 
     public function asignacion_inventario(Request $request, $idpersonal)
     {
-        $asignacion_estado = Asignacion::where('IDPERSONAL', $idpersonal)->first();
+        $asignacion_estado = AsigPersonal::where('IDPERSONAL', $idpersonal)->first();
+
+        if($asignacion_estado){
+            $datos_acepta = AsigPersonal::join('A_ASIGNACION_BIEN', 'A_ASIGNACION_BIEN.IDASIG_PERSONAL', '=', 'M_ASIG_PERSONAL.IDASIG_PERSONAL')
+                    ->join('D_ESTADO_ASIGNACION', 'D_ESTADO_ASIGNACION.IDESTADO_ASIG', '=', 'M_ASIG_PERSONAL.IDESTADO_ASIG')
+                    ->where('A_ASIGNACION_BIEN.IDASIG_PERSONAL', $asignacion_estado->IDASIG_PERSONAL)
+                    ->get();  
+        }else{
+            $datos_acepta = NULL;
+        }
+        
+              
 
         $personal = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
                                 ->join('D_PERSONAL_TIPODOC', 'D_PERSONAL_TIPODOC.IDTIPO_DOC', '=', 'M_PERSONAL.IDTIPO_DOC')
                                 ->where('IDPERSONAL', $idpersonal)->first();
 
-        return view('asignacion.asignacion_inventario', compact('personal', 'asignacion_estado'));
+        return view('asignacion.asignacion_inventario', compact('personal', 'asignacion_estado', 'datos_acepta'));
     }
 
     public function tb_asignacion(Request $request)
     {
         $query = Asignacion::join('M_ALMACEN', 'M_ALMACEN.IDALMACEN', '=', 'M_ASIGNACION_BIEN.IDALMACEN')
                             ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASIGNACION_BIEN.IDCENTRO_MAC')
+                            ->join('M_ASIG_PERSONAL', 'M_ASIG_PERSONAL.IDASIG_PERSONAL', '=', 'M_ASIGNACION_BIEN.IDASIG_PERSONAL')
                             ->get();
 
         return view('asignacion.tablas.tb_asignacion', compact('query'));
@@ -218,14 +232,95 @@ class AsignacionController extends Controller
         return $pdf->stream();
     }
 
-    public function md_acep_asesor(Request $request)
+    public function estado_borrador(Request $request)
     {
-        $idasginacion = $request->idasignacion;
+        try{
 
-        $asignacion = Asignacion::where('IDASIGNACION', $idasginacion)->first();
+            $save = AsigPersonal::findOrFail($request->asignacion_estado);
+            $save->IDESTADO_ASIG = 2;
+            $save->save();
+
+            return $save;
+
+
+        }catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
+    }
+
+    public function orginal_pdf(Request $request, $idpersonal)
+    {
+        $datos_persona = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD' ,'=','M_PERSONAL.IDENTIDAD')->where('M_PERSONAL.IDPERSONAL', $idpersonal)->first();
+
+        $centro_mac = $this->centro_mac()->name_mac;
+
+        $query = Asignacion::select('*')
+                    ->join('m_almacen as ma', 'ma.IDALMACEN', '=', 'm_asignacion_bien.IDALMACEN')
+                    ->where('m_asignacion_bien.IDPERSONAL', $idpersonal)
+                    ->get();
         
-        $view = view('asignacion.modals.md_acep_asesor', compact('idasginacion', 'asignacion'))->render();
+        $count = DB::select("SELECT COUNT(*) AS NUM_C FROM M_ASIGNACION_BIEN WHERE IDPERSONAL = $idpersonal ");
 
-        return response()->json(['html' => $view]);
+        // dd($query);
+
+        $pdf = Pdf::loadView('asignacion.pdf.orginal_pdf', compact('query', 'datos_persona', 'count', 'centro_mac'))->setPaper('a4', 'landscape');
+        return $pdf->stream();
+    }
+
+    public function cargar_documento_acept(Request $request)
+    {
+        try{
+
+            $personal = AsigPersonal::join('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'M_ASIG_PERSONAL.IDPERSONAL')
+                                        ->where('M_ASIG_PERSONAL.IDASIG_PERSONAL', $request->asignacion_estado)
+                                        ->first();
+
+            $estructura_carp = 'archivos\\'.$personal->NUM_DOC.'\\';            
+
+            if (!file_exists($estructura_carp)) {
+                mkdir($estructura_carp, 0777, true);
+            }
+
+            if($request->hasFile('file_aprobado'))
+            {
+                $archivoPDF = $request->file('file_aprobado');
+                $nombrePDF = 'SUBIDA_'.$archivoPDF->getClientOriginalName();
+                //$nameruta = '/archivo/'; // RUTA DONDE SE VA ALMACENAR EL DOCUMENTO PDF
+                $nameruta = $estructura_carp;  // GUARDAR EN UN SERVIDOR
+                $archivoPDF->move($nameruta, $nombrePDF);
+            }
+
+            $save = DB::table('A_ASIGNACION_BIEN')->insert([
+                'IDASIG_PERSONAL'       =>  $request->asignacion_estado,
+                'NOMBRE_RUTA'           =>  $estructura_carp.$nombrePDF,
+                'NOMBRE_DOCUMENTO'      =>  $nombrePDF,
+                'CREATED_AT'            =>  Carbon::now(),
+                'UPDATED_AT'            =>  Carbon::now(),
+            ]);
+
+            $update = AsigPersonal::findOrFail($request->asignacion_estado);
+            $update->IDESTADO_ASIG = 3;
+            $update->save();
+
+            return $save;
+
+
+        }catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
     }
 }

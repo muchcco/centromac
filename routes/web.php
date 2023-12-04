@@ -150,10 +150,13 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/modals/md_acep_asesor' , [AsignacionController::class, 'md_acep_asesor'])->name('modals.md_acep_asesor');
         Route::post('/store_estado' , [AsignacionController::class, 'store_estado'])->name('store_estado');
         Route::post('/store_observacion' , [AsignacionController::class, 'store_observacion'])->name('store_observacion');
+        Route::post('/estado_borrador' , [AsignacionController::class, 'estado_borrador'])->name('estado_borrador');
+        Route::post('/cargar_documento_acept' , [AsignacionController::class, 'cargar_documento_acept'])->name('cargar_documento_acept');
         
         /* RECURSOS DE ESTE GRUPO */
         Route::post('/almacen_select' , [AsignacionController::class, 'almacen_select'])->name('almacen_select');
         Route::get('/pdf/borrador_pdf/{idpersonal}' , [AsignacionController::class, 'borrador_pdf'])->name('pdf.borrador_pdf');
+        Route::get('/pdf/orginal_pdf/{idpersonal}' , [AsignacionController::class, 'orginal_pdf'])->name('pdf.orginal_pdf');
     });
 
 

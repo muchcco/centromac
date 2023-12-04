@@ -21,7 +21,6 @@ class Asignacion extends Model
                             'ESTADO_BIEN',
                             'OBSERVACION',
                             'FECHA_ENTREGA',
-                            'IDESTADO_ASIG',
                             'FLAG',                 
                         ];
 
