@@ -26,7 +26,9 @@
                     @if ($que->ESTADO_BIEN == NULL)
                         <button class="btn btn-info btn-small" onclick="ModalEstado('{{ $que->IDASIGNACION }}')">Agregar Estado</button>
                     @else
-                        {{ $que->ESTADO_BIEN }}
+                        @if ($que->ESTADO_BIEN == '1')
+                            BUEN ESTADO
+                        @endif
                     @endif                    
                 </td>
                 <td>{{ $que->UBICACION_EQUIPOS }}</td>
@@ -34,7 +36,7 @@
                     @if ($que->OBSERVACION == NULL)
                         <button class="btn btn-info btn-small" onclick="ModalObservacion('{{ $que->IDASIGNACION }}')">Agregar Observación</button>
                     @else
-                        {{ $que->OBSERVACION }}
+                        <button class="nobtn" onclick="ModalObservacion('{{ $que->IDASIGNACION }}')">{{ $que->OBSERVACION }}</button>                        
                     @endif  
                 </td>
                 <td class="text-center">

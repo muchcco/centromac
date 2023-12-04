@@ -79,51 +79,14 @@
                         </div><!--end col-->
                         <div class="col-lg-6 align-self-center border-start"> 
                             <div id="documento_actualizar_estado">
-                                <p>Descargar borrador para la aprobación del Asesor(a): <a href="" class="text-primary">Descargar (clic)</a></p>
-                                <button class="btn btn-info">Aprobar documento</button>
+                                @if ($asignacion_estado->IDESTADO_ASIG == '1')
+                                    <p>Descargar borrador para la aprobación del Asesor(a): <a href="{{ url('asignacion/pdf/borrador_pdf',['idpersonal' => $personal->IDPERSONAL]) }}" class="text-primary" target="_blank">Descargar (clic)</a></p>
+                                    <button class="btn btn-info" onclick="btnModalAprobar($asignacion_estado->)">Aprobar documento</button>
+                                @else
+                                    
+                                @endif
+                                
                             </div>
-                            {{-- <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Descripción</th>
-                                        <th>Descargar</th>
-                                        <th>Subir</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Borrador</td>
-                                        <td>Descargar borrador para la aprobación del asesor</td>
-                                        <td class="text-center" > <button class="nobtn" ><i class="fas fa-download" ></i></button> </td>
-                                        <td></td>
-                                        <td></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Cargo</td>
-                                        <td>Descargar cargo para la firma de los involucrados</td>
-                                        <td class="text-center"><button class="nobtn"><i class="fas fa-download"></i></button></td>
-                                        <td class="text-center"></td>
-                                        <td class="text-center"></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td>Carga</td>
-                                        <td>Subir documento firmado por todos los involucrados</td>
-                                        <td class="text-center"></td>
-                                        <td class="text-center"><button class="nobtn"><i class="fas fa-upload"></i></button></td>
-                                        <td class="text-center"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Baja</td>
-                                        <td>Documento donde el asesor hace entrega de los equipos</td>
-                                        <td class="text-center"><button class="nobtn"><i class="fas fa-download"></i></button></td>
-                                        <td class="text-center"><button class="nobtn"><i class="fas fa-upload"></i></button></td>
-                                        <td class="text-center"></td>
-                                    </tr>
-                                </tbody>
-                            </table> --}}
                         </div><!--end col-->
                     </div><!--end row-->
                 </div><!--end f_profile-->                                                                                
@@ -366,16 +329,16 @@ function ModalEstado(idasignacion){
     });
 }
 
-function btnStoreEstado(idasginacion){
+function btnStoreEstado(idasignacion){
 
     var formData = new FormData();
-        formData.append("estados", $("#estados").val());
-        formData.append('idasginacion', idasginacion);
+        formData.append("estado", $("#estado").val());
+        formData.append('idasignacion', idasignacion);
         formData.append("_token", $("input[name=_token]").val());
 
         $.ajax({
             type:'post',
-            url: "{{ route('usuarios.update_user') }}",
+            url: "{{ route('asignacion.store_estado') }}",
             dataType: "json",
             data:formData,
             processData: false,
@@ -387,7 +350,7 @@ function btnStoreEstado(idasginacion){
             success:function(data){                
                 $("#modal_show_modal").modal('hide');
                 tabla_seccion();
-                $( "#act_role_sidebar" ).load(window.location.href + " #act_role_sidebar" ); 
+                //$( "#estado_cambio" ).load(window.location.href + " #estado_cambio" ); 
                 Toastify({
                     text: "Se actualizaron los cambios",
                     className: "info",
@@ -397,6 +360,53 @@ function btnStoreEstado(idasginacion){
                 }).showToast();
             }
         });
+}
+
+function ModalObservacion(idasignacion){
+
+$.ajax({
+    type:'post',
+    url: "{{ route('asignacion.modals.md_add_observacion') }}",
+    dataType: "json",
+    data:{"_token": "{{ csrf_token() }}", idasignacion : idasignacion},
+    success:function(data){
+        $("#modal_show_modal").html(data.html);
+        $("#modal_show_modal").modal('show');
+    }
+});
+}
+
+function btnStoreObservacion(idasignacion){
+
+var formData = new FormData();
+    formData.append("observacion", $("#observacion").val());
+    formData.append('idasignacion', idasignacion);
+    formData.append("_token", $("input[name=_token]").val());
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('asignacion.store_observacion') }}",
+        dataType: "json",
+        data:formData,
+        processData: false,
+        contentType: false,
+        beforeSend: function () {
+            document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+            document.getElementById("btnEnviarForm").disabled = true;
+        },
+        success:function(data){                
+            $("#modal_show_modal").modal('hide');
+            tabla_seccion();
+            //$( "#estado_cambio" ).load(window.location.href + " #estado_cambio" ); 
+            Toastify({
+                text: "Se actualizaron los cambios",
+                className: "info",
+                style: {
+                    background: "#206AC8",
+                }
+            }).showToast();
+        }
+    });
 
 }
 

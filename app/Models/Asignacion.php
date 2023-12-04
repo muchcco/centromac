@@ -11,7 +11,7 @@ class Asignacion extends Model
 
     protected $table = 'M_ASIGNACION_BIEN';
 
-    protected $primaryKey = 'M_ASIGNACION_BIEN';
+    protected $primaryKey = 'IDASIGNACION';
 
     protected $fillable = [  
                             'IDASIGNACION', 

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Asignacion;
 use App\Models\Almacen;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AsignacionController extends Controller
 {
@@ -56,11 +57,13 @@ class AsignacionController extends Controller
 
     public function asignacion_inventario(Request $request, $idpersonal)
     {
+        $asignacion_estado = Asignacion::where('IDPERSONAL', $idpersonal)->first();
+
         $personal = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
                                 ->join('D_PERSONAL_TIPODOC', 'D_PERSONAL_TIPODOC.IDTIPO_DOC', '=', 'M_PERSONAL.IDTIPO_DOC')
                                 ->where('IDPERSONAL', $idpersonal)->first();
 
-        return view('asignacion.asignacion_inventario', compact('personal'));
+        return view('asignacion.asignacion_inventario', compact('personal', 'asignacion_estado'));
     }
 
     public function tb_asignacion(Request $request)
@@ -76,8 +79,22 @@ class AsignacionController extends Controller
     {
         try{
             // dd($request->all());
+            $verificar = AsigPersonal::where('IDPERSONAL', $request->idpersonal)->first();
+
+            if($verificar){
+                $idasi_per = $verificar->IDASIG_PERSONAL;
+            }else{
+                $dat = new AsigPersonal;
+                $dat->IDPERSONAL = $request->idpersonal;
+                $dat->IDESTADO_ASIG = 1;
+                $dat->save();
+
+                $idasi_per = $dat->IDASIG_PERSONAL;
+            }
+
             $save = new Asignacion;
             $save->IDCENTRO_MAC = $this->centro_mac()->idmac;
+            $save->IDASIG_PERSONAL = $idasi_per;
             $save->IDPERSONAL = $request->idpersonal;
             $save->IDALMACEN = $request->idalmacen;
             $save->IDESTADO_ASIG = 1;
@@ -151,10 +168,64 @@ class AsignacionController extends Controller
 
     public function store_estado(Request $request)
     {
+        // dd($request->all());
+
         $save = Asignacion::findOrFail($request->idasignacion);
-        $save->ESTADO = $request->estado;
+        $save->ESTADO_BIEN = $request->estado;
         $save->save();
 
         return $save;
+    }
+
+    public function md_add_observacion(Request $request)
+    {
+        $idasginacion = $request->idasignacion;
+
+        $asignacion = Asignacion::where('IDASIGNACION', $idasginacion)->first();
+        
+        $view = view('asignacion.modals.md_add_observacion', compact('idasginacion', 'asignacion'))->render();
+
+        return response()->json(['html' => $view]);
+    }
+
+    public function store_observacion(Request $request)
+    {
+        // dd($request->all());
+
+        $save = Asignacion::findOrFail($request->idasignacion);
+        $save->OBSERVACION = $request->observacion;
+        $save->save();
+
+        return $save;
+    }
+
+    public function borrador_pdf(Request $request, $idpersonal)
+    {
+        $datos_persona = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD' ,'=','M_PERSONAL.IDENTIDAD')->where('M_PERSONAL.IDPERSONAL', $idpersonal)->first();
+
+        $centro_mac = $this->centro_mac()->name_mac;
+
+        $query = Asignacion::select('*')
+                    ->join('m_almacen as ma', 'ma.IDALMACEN', '=', 'm_asignacion_bien.IDALMACEN')
+                    ->where('m_asignacion_bien.IDPERSONAL', $idpersonal)
+                    ->get();
+        
+        $count = DB::select("SELECT COUNT(*) AS NUM_C FROM M_ASIGNACION_BIEN WHERE IDPERSONAL = $idpersonal ");
+
+        // dd($query);
+
+        $pdf = Pdf::loadView('asignacion.pdf.borrador_pdf', compact('query', 'datos_persona', 'count', 'centro_mac'))->setPaper('a4', 'landscape');
+        return $pdf->stream();
+    }
+
+    public function md_acep_asesor(Request $request)
+    {
+        $idasginacion = $request->idasignacion;
+
+        $asignacion = Asignacion::where('IDASIGNACION', $idasginacion)->first();
+        
+        $view = view('asignacion.modals.md_acep_asesor', compact('idasginacion', 'asignacion'))->render();
+
+        return response()->json(['html' => $view]);
     }
 }

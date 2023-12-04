@@ -145,12 +145,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/tablas/tb_asignacion' , [AsignacionController::class, 'tb_asignacion'])->name('tablas.tb_asignacion');
         Route::post('/store_item' , [AsignacionController::class, 'store_item'])->name('store_item');
         Route::post('/eliminar_item' , [AsignacionController::class, 'eliminar_item'])->name('eliminar_item');
-        Route::post('/modals/md_add_estado' , [AlmacenController::class, 'md_add_estado'])->name('modals.md_add_estado');
-        Route::post('/modals/md_add_observacion' , [AlmacenController::class, 'md_add_observacion'])->name('modals.md_add_observacion');
+        Route::post('/modals/md_add_estado' , [AsignacionController::class, 'md_add_estado'])->name('modals.md_add_estado');
+        Route::post('/modals/md_add_observacion' , [AsignacionController::class, 'md_add_observacion'])->name('modals.md_add_observacion');
+        Route::post('/modals/md_acep_asesor' , [AsignacionController::class, 'md_acep_asesor'])->name('modals.md_acep_asesor');
         Route::post('/store_estado' , [AsignacionController::class, 'store_estado'])->name('store_estado');
+        Route::post('/store_observacion' , [AsignacionController::class, 'store_observacion'])->name('store_observacion');
         
         /* RECURSOS DE ESTE GRUPO */
         Route::post('/almacen_select' , [AsignacionController::class, 'almacen_select'])->name('almacen_select');
+        Route::get('/pdf/borrador_pdf/{idpersonal}' , [AsignacionController::class, 'borrador_pdf'])->name('pdf.borrador_pdf');
     });
 
 
