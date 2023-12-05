@@ -139,6 +139,18 @@ class AsesoresController extends Controller
                 'sexo' => 'required',
             ]);
 
+            $persona_existe = Personal::where('NUM_DOC', $request->dni)->first();
+            // dd($persona_existe);
+            if($persona_existe){
+                $response_ = response()->json([
+                    'data' => null,
+                    'message' => "El personal ya fue registrado",
+                    'status' => 201,
+                ], 200);
+
+                return $response_;
+            }
+
             /*================================================================================================================*/
             $us_id = auth()->user()->idcentro_mac;
             $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();

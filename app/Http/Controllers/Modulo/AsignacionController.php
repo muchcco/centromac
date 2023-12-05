@@ -111,7 +111,6 @@ class AsignacionController extends Controller
             $save->IDASIG_PERSONAL = $idasi_per;
             $save->IDPERSONAL = $request->idpersonal;
             $save->IDALMACEN = $request->idalmacen;
-            $save->IDESTADO_ASIG = 1;
             $save->save();
 
             return $save;
@@ -134,10 +133,11 @@ class AsignacionController extends Controller
     {
         // dd($request->all());
         $ids_encontrados = DB::select("SELECT GROUP_CONCAT(IDALMACEN SEPARATOR ', ') as NOMBRES FROM M_ASIGNACION_BIEN WHERE IDCENTRO_MAC = " . $this->centro_mac()->idmac . "");
-        
-        if (!empty($ids_encontrados)) {
+        // dd($ids_encontrados);
+        if (isset($ids_encontrados[0]->NOMBRES) ) {
             $nombres = $ids_encontrados[0]->NOMBRES;
             // dd($nombres);
+
             if($request->term){
                 
                 // Asegúrate de que $nombres sea un array
@@ -158,7 +158,18 @@ class AsignacionController extends Controller
             }            
         } else {
             // Manejar el caso cuando $ids_encontrados es un array vacío
-            $almacen = Almacen::get();
+            if($request->term){
+                $almacen = Almacen::where(function ($query) use ($request) {
+                        $term = '%' . $request->term . '%';
+                        $query->where('COD_INTERNO_PCM', 'LIKE', $term)
+                            ->orWhere('DESCRIPCION', 'LIKE', $term)
+                            ->orWhere('SERIE_MEDIDA', 'LIKE', $term)
+                            ->orWhere('UBICACION_EQUIPOS', 'LIKE', $term);
+                    })
+                    ->get();
+            }else{
+                $almacen = Almacen::get();
+            }            
         }
 
         return response()->json($almacen);

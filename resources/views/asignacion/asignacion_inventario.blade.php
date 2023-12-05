@@ -339,7 +339,7 @@ function BtnElimnar(idasignacion){
                         // colocar el atributo data-delete para poder actualizar la
 
                         Toastify({
-                            text: "Se eliminó calificación",
+                            text: "Se eliminó el registro",
                             className: "danger",
                             style: {
                                 background: "#DF1818",

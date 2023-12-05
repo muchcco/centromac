@@ -205,17 +205,32 @@ $.ajax({
         document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE';
         document.getElementById("btnEnviarForm").disabled = true;
     },
-    success:function(data){        
-        $("#modal_show_modal").modal('hide');
-        tabla_seccion();
-        Toastify({
-            text: "Se guardo exitosamente el registro",
-            className: "info",
-            gravity: "bottom",
-            style: {
-                background: "#47B257",
-            }
-        }).showToast();
+    success:function(data){ 
+        console.log(data);
+        if(data.status == '201'){
+            document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
+                document.getElementById("btnEnviarForm").disabled = false;
+                document.getElementById('alerta').innerHTML = `<div class="alert custom-alert custom-alert-warning icon-custom-alert shadow-sm fade show d-flex justify-content-between" role="alert"><div class="media">
+                                                                    <i class="la la-exclamation-triangle alert-icon text-warning align-self-center font-30 me-3"></i>
+                                                                    <div class="media-body align-self-center">
+                                                                        <h5 class="mb-1 fw-bold mt-0">Importante</h5>
+                                                                        <span>`+ data.message.replace(/\n/g, "<br>") +`.</span>
+                                                                    </div>
+                                                                </div></div>`;
+        }else{
+            $("#modal_show_modal").modal('hide');
+            tabla_seccion();
+            Toastify({
+                text: "Se guardo exitosamente el registro",
+                className: "info",
+                gravity: "bottom",
+                style: {
+                    background: "#47B257",
+                }
+            }).showToast();
+        }
+
+        
     },
     error: function(){
         document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE';
