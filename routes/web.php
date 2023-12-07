@@ -11,6 +11,7 @@ use App\Http\Controllers\Modulo\PcmController;
 use App\Http\Controllers\Formatos\EvalMotivacionalController;
 use App\Http\Controllers\Modulo\AlmacenController;
 use App\Http\Controllers\Modulo\AsignacionController;
+use App\Http\Controllers\Formatos\F02InicioPerController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -139,6 +140,12 @@ Route::group(['middleware' => ['auth']], function () {
 
             Route::get('/reporte' , [EvalMotivacionalController::class, 'reporte'])->name('reporte');
 
+        });
+
+        Route::group(['prefix' => 'f_02_inicio_oper', 'as' => 'f_02_inicio_oper.'], function(){
+            Route::get('/index' , [F02InicioPerController::class, 'index'])->name('index');
+            Route::get('/formulario' , [F02InicioPerController::class, 'formulario'])->name('formulario');
+            Route::post('/store_form' , [F02InicioPerController::class, 'store_form'])->name('store_form');
         });
 
     });

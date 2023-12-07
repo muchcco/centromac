@@ -82,6 +82,9 @@
                 <li class="@if (Request::is('formatos/evaluacion_motivacional*')) mm-active @endif">
                     <a href="{{ route('formatos.evaluacion_motivacional.index') }}" class="@if (Request::is('formatos/evaluacion_motivacional*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Evaluación Motivacional</span></a>
                 </li>
+                <li class="@if (Request::is('formatos/f_02_inicio_oper*')) mm-active @endif">
+                    <a href="{{ route('formatos.f_02_inicio_oper.index') }}" class="@if (Request::is('formatos/f_02_inicio_oper*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Formato de Inicio de Operaciones</span></a>
+                </li>
                 @role('Administrador|Especialista_TIC')
 
                 <li class="menu-label mt-0">PARAMETROS</li>
