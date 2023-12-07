@@ -127,6 +127,39 @@ class AsesoresController extends Controller
         return response()->json(['html' => $view]); 
     }
 
+    public function md_baja_asesores(Request $request)
+    {
+        $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
+
+        // dd($personal);
+
+        $view = view('personal.modals.md_baja_asesores', compact('personal'))->render();
+
+        return response()->json(['html' => $view]); 
+    }
+
+    public function baja_asesores(Request $request)
+    {
+        try{
+
+            $personal = Personal::findOrFail($request->idpersonal);
+            $personal->FLAG = $request->baja;
+            $personal->save();
+
+            return $personal;
+
+        } catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
+    }
+
     public function store_asesores(Request $request)
     {
         try{

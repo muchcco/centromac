@@ -79,13 +79,16 @@
         <div class="carp">
           <div class="card col-sm-8">
             <div class="card-header">
-              <h2>Datos de la Entidad:</h2>
+              <h2>Datos de la Entidad:</h2>              
             </div>
             <form action="" enctype="multipart/form-data">
               <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
             <div class="card-body">
+
               <div class="carp">
+                
                 <div class="form-p">
+                  <a href="{{ url()->previous() }}" class="btn btn-danger mb-3">Regresar</a>
                   <div class="row col-sm-12 buut">
                     <div class="mb-3">
                       <label for="IdTipoPersona" class="control-label">Nombre de la Entidad <span class="text-danger fw-bolder">(*)</span> </label>

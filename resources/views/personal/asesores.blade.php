@@ -254,6 +254,62 @@ var isMayus = (e) => {
     e.value = e.value.toUpperCase();
 }
 
+function btnElimnarServicio (idpersonal){
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('personal.modals.md_baja_asesores') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}", idpersonal : idpersonal},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
+
+}
+
+function btnBajaAsesor(idpersonal){
+
+    var tipo = $("#baja").val();
+    console.log(tipo)
+    
+    if (tipo === "" || tipo == NULL){ //tell you if the array is empty
+        $('#baja').addClass("hasError");
+    }
+    else {
+        var formData = new FormData();
+        formData.append("baja", $("#baja").val());
+        formData.append('idpersonal', idpersonal);
+        formData.append("_token", $("input[name=_token]").val());
+
+        $.ajax({
+            type:'post',
+            url: "{{ route('personal.baja_asesores') }}",
+            dataType: "json",
+            data:formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function () {
+                document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+                document.getElementById("btnEnviarForm").disabled = true;
+            },
+            success:function(data){                
+                $("#modal_show_modal").modal('hide');
+                tabla_seccion();
+                Toastify({
+                    text: "Se dio de baja al asesor",
+                    className: "info",
+                    style: {
+                        background: "#206AC8",
+                    }
+                }).showToast();
+            }
+        });
+    }
+
+}
+
 
 </script>
 

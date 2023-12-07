@@ -467,6 +467,7 @@ class PagesController extends Controller
                                                         CONCAT(sigla_senha, num_senha) Ticket,
                                                         ss.nome Entidad,
                                                         ss.`id`,
+                                                        att.`prioridade_id`,
                                                         IFNULL(ss2.nome, "No atendido") "tipo_servicio",
                                                         TIME_FORMAT(
                                                         IFNULL(dt_cheg, "00:00:00"),
@@ -512,6 +513,7 @@ class PagesController extends Controller
                                                         CONCAT(uu.nome, " ", uu.sobrenome),
                                                         "No Atendido"
                                                         ) Asesor,
+                                                        IFNULL(SEC_TO_TIME(TIMESTAMPDIFF(SECOND, dt_cheg, NOW())), "00:00:00") "Tiempo_espera",
                                                         (
                                                         CASE
                                                             WHEN (att.status = 1) 
@@ -553,5 +555,10 @@ class PagesController extends Controller
                                                     ORDER BY att.dt_cheg ASC ');
 
         return view('entidad_cola', compact('query'));
+    }
+
+    public function externo()
+    {
+        return view('externo');
     }
 }

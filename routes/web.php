@@ -57,6 +57,12 @@ Route::group(['middleware' => ['auth']], function () {
         return redirect('/');
     });
 
+    /******************************************************   EXTERNO *****************************************************************************/
+
+    Route::get('/externo' , [PagesController::class, 'externo'])->name('externo');
+
+    /**********************************************************************************************************************************************/
+
     Route::group(['prefix'=>'asistencia','as'=>'asistencia.' ],function () {
 
         Route::get('/asistencia' , [AsistenciaController::class, 'asistencia'])->name('asistencia');
@@ -94,7 +100,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/store_asesores' , [AsesoresController::class, 'store_asesores'])->name('store_asesores');
         Route::post('/modals/md_edit_asesores' , [AsesoresController::class, 'md_edit_asesores'])->name('modals.md_edit_asesores');
         Route::post('/update_asesores' , [AsesoresController::class, 'update_asesores'])->name('update_asesores');
-        Route::post('/delete_asesores' , [AsesoresController::class, 'delete_asesores'])->name('delete_asesores');
+        Route::post('/modals/md_baja_asesores' , [AsesoresController::class, 'md_baja_asesores'])->name('modals.md_baja_asesores');
+        Route::post('/baja_asesores' , [AsesoresController::class, 'baja_asesores'])->name('baja_asesores');
 
         //////  PCM
 

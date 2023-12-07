@@ -87,9 +87,11 @@ class UsuarioController extends Controller
                 return !empty($value);
             });
 
+            // $actv_correo = Configua
+
             // create roles if they don't exist
             foreach ($roles as $role) {
-                $role = Role::firstOrCreate(['name' => $role]);
+                $role = Role::firstOrCreate(['name' => $role]); 
             }
 
             // sync roles

@@ -49,7 +49,7 @@
         <div class="carp">
           <div class="card col-sm-8">
             <div class="card-header">
-              <center><h2>Revisión de cuidadanos por entidad</h2></center>
+              <center><h2>Revisión de ciudadanos por entidad</h2></center>
             </div>
             {{-- <div class="card-body">
               <p >Para un registro correcto revisar la guia de usuario, click en Descargar Guia de Usuario</p>
@@ -57,48 +57,58 @@
           </div>          
         </div>
       </div>
+      <div>
+        <div class="" style="margin-left: 24.7em;">
+          <a href="{{ url()->previous() }}" class="btn btn-danger mb-3">Regresar</a>
+        </div>        
+      </div>      
       <div class="container">
         <div class="carp">
           <div class="card col-sm-8">
             <div class="card-header">
-              <h2>Cuidadanos en Espera :</h2>
+              <h2>Ciudadanos en Espera :</h2>
             </div>
             <form action="" enctype="multipart/form-data">
               <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
             <div class="card-body">
               <div class="carp">
+                
                 <div class="form-p">
                   <div class="row col-sm-12 buut">
                     
                     
                     <div class="mb-3">
                         <div class="row col-12">
-                            <table class="table" id="seleccion">
-                                <thead>
+                            <table class="table table-bordered" id="seleccion">
+                                <thead class="bg-dark">
                                     <tr>
-                                        <th>PERFIL</th>
-                                        <th>HORA DE LLEGADA</th>
-                                        <th>ESTADO</th>
-                                        <th>CUIDADANO</th>
-                                        <th>N° DE DOCUMENTO</th>
+                                        <th class="text-white">PERFIL</th>
+                                        <th class="text-white">HORA DE LLEGADA</th>
+                                        <th class="text-white">TIEMPO DE ESPERA</th>
+                                        <th class="text-white">ESTADO</th>
+                                        <th class="text-white">CUIDADANO</th>
+                                        <th class="text-white">N° DE DOCUMENTO</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse ($query as $q)
-                                        <tr>
+                                        <tr style="color: {{ $q->prioridade_id == '1' ? 'blue' : 'red' }}">                                          
                                             <td>{{ $q->Entidad }}</td>
                                             <td>{{ $q->hora_llegada }}</td>
+                                            <td>{{ $q->Tiempo_espera }}</td>
                                             <td>{{ $q->Estado }}</td>
                                             <td>{{ $q->Ciudadano }}</td>
                                             <td>{{ $q->num_docu }}</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="text-danger text-center">No tiene cuidadanos en espera</td>
+                                            <td colspan="6" class="text-danger text-center">No tiene cuidadanos en espera</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
+
+
                         </div>
                     </div>
                   </div>

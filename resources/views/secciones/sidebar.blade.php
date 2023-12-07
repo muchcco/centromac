@@ -63,12 +63,18 @@
                     </li>
                 <!--    </ul>
                 </li>-->
+                @role('Administrador|Especialista_TIC|Supervisor|Coordinador')
                 <li class="@if (Request::is('asignacion*')) mm-active @endif">
                     <a href="{{ route('asignacion.index') }}" class="@if (Request::is('asignacion*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Asignación de bienes</span></a>
                 </li>
+                @endrole
 
                 <li class="@if (Request::is('servicios*')) mm-active @endif">
                     <a href="{{ route('servicios.index') }}" class="@if (Request::is('servicios/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por Entidad</span></a>
+                </li>
+
+                <li class="@if (Request::is('externo*')) mm-active @endif">
+                    <a href="{{ route('externo') }}" class="@if (Request::is('externo*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Paginas externas</span></a>
                 </li>
 
                 <li class="menu-label mt-0">FORMATOS</li>
@@ -76,6 +82,7 @@
                 <li class="@if (Request::is('formatos/evaluacion_motivacional*')) mm-active @endif">
                     <a href="{{ route('formatos.evaluacion_motivacional.index') }}" class="@if (Request::is('formatos/evaluacion_motivacional*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Evaluación Motivacional</span></a>
                 </li>
+                @role('Administrador|Especialista_TIC')
 
                 <li class="menu-label mt-0">PARAMETROS</li>
                 <li class="@if (Request::is('almacen*')) mm-active @endif">
@@ -88,7 +95,7 @@
                     <a href="{{ route('inicio') }}" class="@if (Request::is('/')) active @endif"> <i data-feather="bar-chart" class="align-self-center menu-icon"></i><span>Resúmenes</span></a>
                 </li> --}}
 
-                {{-- @role('Administrador') --}}
+                {{-- @role('Administrador|Especialista TIC') --}}
                     {{-- <hr class="hr-dashed hr-menu">
                     <!--Nombre de la Categoria-->
                     <li class="menu-label my-2">Parametros</li>
@@ -116,7 +123,7 @@
                     <li>
                         <a href="javascript: void(0);"><i data-feather="box" class="align-self-center menu-icon"></i><span>Mi Cuenta</span></a>
                     </li> --}}
-                {{-- @endrole           --}}
+                @endrole          
             </ul>
         </div>
     </div>
