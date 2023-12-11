@@ -105,7 +105,13 @@
                 <div class="card-body">
                     
                     <div class="row">
-                        <div class="col-md-7">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="mb-3">Día</label>
+                                <select id="dia" name="dia" class="form-control" onchange="actualizarDias()"></select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label class="mb-3">Mes:</label>
                                 <select name="mes" id="mes" class="form-control" onchange="SearchMes()">
@@ -125,7 +131,7 @@
                                 </select>
                             </div>
                         </div><!-- end col -->
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label class="mb-3">Año:</label>
                                 <select name="año" id="año" class="form-control año" onchange="SearchAño()"></select>
@@ -150,11 +156,6 @@
         @include('formatos.evaluacion_motivacional.reporte')
     </div>
 </section>
-
-
-
-
-
 
 {{-- Ver Modales --}}
 <div class="modal fade" id="modal_show_modal" tabindex="-1" role="dialog" ></div>
@@ -223,6 +224,7 @@ function SearchMes(){
 }
 
 function SearchAño(){
+    console.log("año")
     var año = $('#año').val();
 
     tabla_seccion(año);
@@ -234,7 +236,11 @@ function ComboAno(){
    var select = document.querySelector(".año");
    for(var i = n; i>=2023; i--)select.options.add(new Option(i,i)); 
 };
-window.onload = ComboAno;
+window.onload = function () {
+    ComboAno();
+    // ComboMes();
+    ComboDia(); // Agrega esta línea para cargar los días del mes actual
+};
 
 // Obtén el elemento select por su ID
 var mesSelect = document.getElementById('mes');
@@ -247,13 +253,49 @@ console.log(mesActual);
 // Selecciona el mes actual en el select
 mesSelect.selectedIndex = mesActual
 
+function ComboDia() {
+    var diaSelect = document.getElementById('dia');
+
+    // Obtén el año y mes seleccionados
+    var añoSeleccionado = document.getElementById('año').value;
+    var mesSeleccionado = document.getElementById('mes').value;
+
+    // Obtén el número de días en el mes y año seleccionados
+    var diasEnMes = new Date(añoSeleccionado, mesSeleccionado, 0).getDate();
+
+    // Llenar el select de días con las opciones correspondientes
+    for (var i = 1; i <= diasEnMes; i++) {
+        var opcion = document.createElement('option');
+        opcion.value = i < 10 ? '0' + i : '' + i;  // Agregar un cero delante si el día es menor a 10
+        opcion.text = i < 10 ? '0' + i : '' + i;
+        diaSelect.add(opcion);
+    }
+}
+
+function actualizarDias() {
+    console.log("asda");
+    var mesSeleccionado = document.getElementById('mes').value;
+    var añoSeleccionado = document.getElementById('año').value;
+    var diasSelect = document.getElementById('dia');
+
+    // Limpiar opciones anteriores
+    diasSelect.innerHTML = '<option value="" disabled>Seleccione</option>';
+
+    // Obtener el número de días en el mes y año seleccionados
+    var diasEnMes = new Date(añoSeleccionado, mesSeleccionado, 0).getDate();
+
+    // Llenar el select de días con las opciones correspondientes
+    for (var i = 1; i <= diasEnMes; i++) {
+        var opcion = document.createElement('option');
+        opcion.value = i < 10 ? '0' + i : '' + i;  // Agregar un cero delante si el día es menor a 10
+        opcion.text = i < 10 ? '0' + i : '' + i;
+        diasSelect.add(opcion);
+    }
+}
+
 /****************************************************************************** FIN ************************************************************************/
 
-function CambioReport(){
 
-    
-
-}
 
 
 </script>

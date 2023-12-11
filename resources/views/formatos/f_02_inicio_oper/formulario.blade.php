@@ -180,13 +180,15 @@
 
 <script>
 
-
 function GuardarForm() {
+    // Create an array to store input values
+    var formData = new FormData();
+
     // Obtener todas las filas de la tabla
     var filas = $('table tbody tr');
 
-    // Recorrer cada fila y enviar los datos al servidor
-    filas.each(function(index) {
+    // Recorrer cada fila y agregar los datos al array
+    filas.each(function() {
         var fila = $(this);
 
         // Obtener valores de la fila
@@ -196,60 +198,53 @@ function GuardarForm() {
         var iddescFormElement = fila.find("input[name^='iddesc_form']");
 
         // Verificar si los elementos existen
-        if (aperturaElement.length > 0 && cierreElement.length > 0 &&  observacionElement.length > 0 && iddescFormElement.length > 0) {
-            var aperturaValue = aperturaElement.val();
-            var cierreValue = cierreElement.val();
-            var observacionValue = observacionElement.val();
-            var iddescFormValue = iddescFormElement.val();
-
-            // Verificar si los valores son diferentes de undefined
-            if (aperturaValue !== undefined && cierreValue !== undefined && iddescFormValue !== undefined) {
-                var formData = new FormData();
-                formData.append("apertura[]", aperturaValue);
-                formData.append("cierre[]", cierreValue);
-                formData.append("observacion[]", observacionValue);
-                formData.append("iddesc_form[]", iddescFormValue);
-
-                $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                });
-
-                $.ajax({
-                    type: 'post',
-                    url: "{{ route('formatos.f_02_inicio_oper.store_form') }}",
-                    dataType: "json",
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    beforeSend: function () {
-                        console.log('Enviando datos de la fila ' + (index + 1));
-                    },
-                    success: function (data) {
-                        console.log('Datos de la fila ' + (index + 1) + ' guardados correctamente');
-                        
-                        $( "#table_reporte" ).load(window.location.href + " #table_reporte" ); 
-                        Toastify({
-                            text: "Se guardaron los registros",
-                            className: "info",
-                            style: {
-                                background: "#206AC8",
-                            }
-                        }).showToast();
-                    },
-                    error: function (error) {
-                        console.error('Error al enviar datos de la fila ' + (index + 1), error);
-                    },
-                    complete: function () {
-                        console.log('Completado el envío de datos de la fila ' + (index + 1));
-                    }
-                });
-            }
+        if (aperturaElement.length > 0 && cierreElement.length > 0 && observacionElement.length > 0 && iddescFormElement.length > 0) {
+            formData.append("apertura[]", aperturaElement.val());
+            formData.append("cierre[]", cierreElement.val());
+            formData.append("observacion[]", observacionElement.val());
+            formData.append("iddesc_form[]", iddescFormElement.val());
         }
     });
-}
 
+        // Enviar los datos al servidor
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
+        $.ajax({
+            type: 'post',
+            url: "{{ route('formatos.f_02_inicio_oper.store_form') }}",
+            dataType: "json",
+            data: formData,  // Use the FormData object
+            processData: false,
+            contentType: false,
+            beforeSend: function () {
+                console.log('Enviando datos al servidor');
+            },
+            success: function (data) {
+                console.log('Datos guardados correctamente', data);
+
+                // Actualizar la tabla después de guardar
+                $("#table_reporte").load(window.location.href + " #table_reporte");
+
+                Toastify({
+                    text: "Se guardaron los registros",
+                    className: "info",
+                    style: {
+                        background: "#206AC8",
+                    }
+                }).showToast();
+            },
+            error: function (error) {
+                console.error('Error al enviar datos al servidor', error);
+            },
+            complete: function () {
+                console.log('Completado el envío de datos al servidor');
+            }
+        });
+}
 
 
 </script>

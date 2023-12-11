@@ -63,32 +63,54 @@ class F02InicioPerController extends Controller
     {
         try {
             // Recorre cada fila y guarda los datos
-            foreach ($request->iddesc_form as $key => $iddesc_form) {
-                // Verifica si los valores no son null antes de acceder a ellos
-                $conformidad_i = $request->apertura[$key] ?? null;
-                $conformidad_f = $request->cierre[$key] ?? null;
-                $observacion_f02 = $request->observacion[$key] ?? null;
-    
-                // Crear una nueva instancia del modelo y llenarla con los datos de la fila
-                $nuevoRegistro = new FInicioOperacion([
-                    'IDDESC_FORM' => $iddesc_form,
-                    'CONFORMIDAD_I' => $conformidad_i,
-                    'CONFORMIDAD_F' => $conformidad_f,
-                    'OBSERVACION_F02' => $observacion_f02,
-                    'DIA' => Carbon::now()->format('d'),
-                    'MES' => Carbon::now()->format('m'),
-                    'AÑO' => Carbon::now()->format('Y'),
-                    'FECHA' => Carbon::now()->format('Y-m-d'),
-                    'HORA' => Carbon::now()->format('H:i:s'),
-                    'IDCENTRO_MAC' => $this->centro_mac()->idmac,
-                ]);
-    
-                // Guardar el registro en la base de datos
-                $nuevoRegistro->save();
+
+            // dd($request->all());
+            // Log the entire request data
+            logger()->info('Request Data:', $request->all());
+
+            // Access the data using the input method
+            $iddesc_form = $request->input('iddesc_form');
+
+            // Log the specific data
+            logger()->info('iddesc_form Data:', $iddesc_form);
+
+            $hoy = Carbon::now()->format('Y-m-d');
+
+            // Check if $request->iddesc_form is not null and is an array
+            if (!is_null($request->iddesc_form) && is_array($request->iddesc_form)) {
+                foreach ($request->iddesc_form as $key => $iddesc_form) {
+                    // Verifica si los valores no son null antes de acceder a ellos
+                    $conformidad_i = $request->apertura[$key] ?? null;
+                    $conformidad_f = $request->cierre[$key] ?? null;
+                    $observacion_f02 = $request->observacion[$key] ?? null;
+
+                    // Utiliza el método updateOrCreate para insertar o actualizar el registro
+                    FInicioOperacion::updateOrCreate(
+                        [
+                            'FECHA' => $hoy,
+                            'IDCENTRO_MAC' => $this->centro_mac()->idmac,
+                            'IDDESC_FORM' => $iddesc_form,
+                        ],
+                        [
+                            'CONFORMIDAD_I' => $conformidad_i,
+                            'CONFORMIDAD_F' => $conformidad_f,
+                            'OBSERVACION_F02' => $observacion_f02,
+                            'DIA' => Carbon::now()->format('d'),
+                            'MES' => Carbon::now()->format('m'),
+                            'AÑO' => Carbon::now()->format('Y'),
+                            'HORA' => Carbon::now()->format('H:i:s'),
+                        ]
+                    );
+                }
+            } else {
+                // Handle the case when $request->iddesc_form is null or not an array
+                return response()->json(['error' => 'iddesc_form is null or not an array'], 400);
             }
-    
+
             // Puedes retornar una respuesta o redireccionar según tus necesidades
             return response()->json(['message' => 'Registros guardados correctamente']);
+
+
         } catch (\Exception $e) {
             // Manejar la excepción y retornar una respuesta de error
             return response()->json([
