@@ -146,6 +146,7 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/index' , [F02InicioPerController::class, 'index'])->name('index');
             Route::get('/formulario' , [F02InicioPerController::class, 'formulario'])->name('formulario');
             Route::post('/store_form' , [F02InicioPerController::class, 'store_form'])->name('store_form');
+            Route::get('/tablas/tb_index' , [F02InicioPerController::class, 'tb_index'])->name('tablas.tb_index');
         });
 
     });

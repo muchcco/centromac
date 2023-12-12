@@ -25,6 +25,7 @@ class FInicioOperacion extends Model
                             'FECHA',
                             'HORA',
                             'IDCENTRO_MAC',
+                            'LOG_REGISTRO',
                         ];
 
     public $timestamps = true;

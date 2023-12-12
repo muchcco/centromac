@@ -127,14 +127,14 @@
                                             <input type="hidden" name="iddesc_form[]" value="{{ $result->IDDESC_FORM }}">
                                             <meta name="csrf-token" content="{{ csrf_token() }}">
                                             <select name="apertura[]" id="apertura_{{ $result->IDDESC_FORM }}" class="form-control font-ss">
-                                                <option value="" disabled selected> -- </option>
+                                                
                                                 <option value="SI" {{ $result->CONFORMIDAD_I == 'SI' ? 'selected' : '' }}>SI</option>
                                                 <option value="NO" {{ $result->CONFORMIDAD_I == 'NO' ? 'selected' : '' }}>NO</option>
                                             </select>
                                         </td>
                                         <td class="fs-6" style="width: 80px">
                                             <select name="cierre[]" id="cierre_{{ $result->IDDESC_FORM }}" class="form-control font-ss">
-                                                <option value="" disabled selected> -- </option>
+                                                
                                                 <option value="SI" {{ $result->CONFORMIDAD_F == 'SI' ? 'selected' : '' }}>SI</option>
                                                 <option value="NO" {{ $result->CONFORMIDAD_F == 'NO' ? 'selected' : '' }}>NO</option>
                                             </select>

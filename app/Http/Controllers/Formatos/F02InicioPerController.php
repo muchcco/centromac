@@ -99,6 +99,7 @@ class F02InicioPerController extends Controller
                             'MES' => Carbon::now()->format('m'),
                             'AÑO' => Carbon::now()->format('Y'),
                             'HORA' => Carbon::now()->format('H:i:s'),
+                            'LOG_REGISTRO' => auth()->user()->id,
                         ]
                     );
                 }
@@ -119,6 +120,11 @@ class F02InicioPerController extends Controller
                 'message' => 'BAD'
             ], 400);
         }
+    }
+
+    public function tb_index(Request $request)
+    {
+        return view('formatos.f_02_inicio_oper.tablas.tb_index');
     }
     
 

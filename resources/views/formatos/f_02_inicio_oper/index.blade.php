@@ -107,34 +107,19 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label class="mb-3">Día</label>
-                                <select id="dia" name="dia" class="form-control" onchange="actualizarDias()"></select>
+                                <label class="mb-3">Inicio</label>
+                                <input type="date" class="form-control">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label class="mb-3">Mes:</label>
-                                <select name="mes" id="mes" class="form-control" onchange="SearchMes()">
-                                    <option value="" disabled selected>-- Seleccione una opción --</option>
-                                    <option value="01">Enero</option>
-                                    <option value="02">Febrero</option>
-                                    <option value="03">Marzo</option>
-                                    <option value="04">Abril</option>
-                                    <option value="05">Mayo</option>
-                                    <option value="06">Junio</option>
-                                    <option value="07">Julio</option>
-                                    <option value="08">Agosto</option>
-                                    <option value="09">Setiembre</option>
-                                    <option value="10">Octubre</option>
-                                    <option value="11">Noviembre</option>
-                                    <option value="12">Diciembre</option>
-                                </select>
+                                <label class="mb-3">Fin</label>
+                                <input type="date" class="form-control">
                             </div>
-                        </div><!-- end col -->
+                        </div>
                         <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="mb-3">Año:</label>
-                                <select name="año" id="año" class="form-control año" onchange="SearchAño()"></select>
+                            <div class="form-group" style="margin-top:2.6em;">
+                                <input type="button" class="btn btn-primary" value="Buscar">
                             </div>
                         </div><!-- end col -->
                     </div>
@@ -200,11 +185,11 @@ $(document).ready(function() {
     $('.select2').select2();
 });
 
-function tabla_seccion(mes = '', año = '') {
+function tabla_seccion(inicio = '',  fin = '') {
     $.ajax({
         type: 'GET',
-        url: "{{ route('formatos.evaluacion_motivacional.tablas.tb_index') }}", // Ruta que devuelve la vista en HTML
-        data: {mes: mes, año : año},
+        url: "{{ route('formatos.f_02_inicio_oper.tablas.tb_index') }}", // Ruta que devuelve la vista en HTML
+        data: {inicio : inicio, fin: fin},
         beforeSend: function () {
             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
         },
@@ -217,81 +202,10 @@ function tabla_seccion(mes = '', año = '') {
     });
 }
 
-function SearchMes(){
-    var mes = $('#mes').val();
-
-    tabla_seccion(mes);
-}
-
-function SearchAño(){
-    console.log("año")
-    var año = $('#año').val();
-
-    tabla_seccion(año);
-}
 
 /**************************************************************** CARGAR COMBOS POR FECHA ACTUAL *************************************************************/
-function ComboAno(){
-   var n = (new Date()).getFullYear()
-   var select = document.querySelector(".año");
-   for(var i = n; i>=2023; i--)select.options.add(new Option(i,i)); 
-};
-window.onload = function () {
-    ComboAno();
-    // ComboMes();
-    ComboDia(); // Agrega esta línea para cargar los días del mes actual
-};
 
-// Obtén el elemento select por su ID
-var mesSelect = document.getElementById('mes');
 
-// Obtén el mes actual (0 = enero, 1 = febrero, ..., 11 = diciembre)
-var mesActual = new Date().getMonth() + 1;
-
-console.log(mesActual);
-
-// Selecciona el mes actual en el select
-mesSelect.selectedIndex = mesActual
-
-function ComboDia() {
-    var diaSelect = document.getElementById('dia');
-
-    // Obtén el año y mes seleccionados
-    var añoSeleccionado = document.getElementById('año').value;
-    var mesSeleccionado = document.getElementById('mes').value;
-
-    // Obtén el número de días en el mes y año seleccionados
-    var diasEnMes = new Date(añoSeleccionado, mesSeleccionado, 0).getDate();
-
-    // Llenar el select de días con las opciones correspondientes
-    for (var i = 1; i <= diasEnMes; i++) {
-        var opcion = document.createElement('option');
-        opcion.value = i < 10 ? '0' + i : '' + i;  // Agregar un cero delante si el día es menor a 10
-        opcion.text = i < 10 ? '0' + i : '' + i;
-        diaSelect.add(opcion);
-    }
-}
-
-function actualizarDias() {
-    console.log("asda");
-    var mesSeleccionado = document.getElementById('mes').value;
-    var añoSeleccionado = document.getElementById('año').value;
-    var diasSelect = document.getElementById('dia');
-
-    // Limpiar opciones anteriores
-    diasSelect.innerHTML = '<option value="" disabled>Seleccione</option>';
-
-    // Obtener el número de días en el mes y año seleccionados
-    var diasEnMes = new Date(añoSeleccionado, mesSeleccionado, 0).getDate();
-
-    // Llenar el select de días con las opciones correspondientes
-    for (var i = 1; i <= diasEnMes; i++) {
-        var opcion = document.createElement('option');
-        opcion.value = i < 10 ? '0' + i : '' + i;  // Agregar un cero delante si el día es menor a 10
-        opcion.text = i < 10 ? '0' + i : '' + i;
-        diasSelect.add(opcion);
-    }
-}
 
 /****************************************************************************** FIN ************************************************************************/
 
