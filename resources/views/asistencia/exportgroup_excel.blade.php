@@ -76,8 +76,22 @@
                     <th style="border: 1px solid black">
                         {{ $q->hora4 }}
                     </th>
-                    <th style="border: 1px solid black">{{ $hora_1->VALOR }}</th>
-                    <th style="border: 1px solid black">{{ $hora_2->VALOR }}</th>
+                    <th style="border: 1px solid black">
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_3->VALOR }}
+                        @else
+                            {{ $hora_1->VALOR }}
+                        @endif
+                    </th>
+                    <th style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_4->VALOR }}
+                        @else
+                            {{ $hora_2->VALOR }}
+                        @endif
+                    </th>
                     <th style="border: 1px solid black">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
@@ -104,8 +118,25 @@
                     <th style="border: 1px solid black">
                         {{ $q->hora2 }}
                     </th>
-                    <th style="border: 1px solid black">{{ $hora_1->VALOR }}</th>
-                    <th style="border: 1px solid black">{{ $hora_2->VALOR }}</th>
+                    <th style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_3->VALOR }}
+                        @else
+                            {{ $hora_1->VALOR }}
+                        @endif
+                        
+                    </th>
+                    <th style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_4->VALOR }}
+                        @else
+                            {{ $hora_2->VALOR }}
+                        @endif
+                    </th>
                     <th style="border: 1px solid black">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
@@ -132,8 +163,22 @@
                     <th style="border: 1px solid black">
                         --
                     </th>
-                    <th style="border: 1px solid black">{{ $hora_1->VALOR }}</th>
-                    <th style="border: 1px solid black">{{ $hora_2->VALOR }}</th>
+                    <th style="border: 1px solid black">
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_3->VALOR }}
+                        @else
+                            {{ $hora_1->VALOR }}
+                        @endif
+                    </th>
+                    <th style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_4->VALOR }}
+                        @else
+                            {{ $hora_2->VALOR }}
+                        @endif
+                    </th>
                     <th style="border: 1px solid black">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
