@@ -33,10 +33,19 @@ class AsistenciaExport implements FromView, WithDefaultStyles, ShouldAutoSize,  
 
     protected $nombreMES;
 
-    function __construct($query, $datos_persona, $nombreMES) {
+    protected $hora_1;
+    protected $hora_2;
+    protected $hora_3;
+    protected $hora_4;
+
+    function __construct($query, $datos_persona, $nombreMES, $hora_1, $hora_2, $hora_3, $hora_4) {
         $this->query = $query;
         $this->datos_persona = $datos_persona;
         $this->nombreMES = $nombreMES;
+        $this->hora_1 = $hora_1;
+        $this->hora_2 = $hora_2;
+        $this->hora_3 = $hora_3;
+        $this->hora_4 = $hora_4;
     }
     
     public function view(): View
@@ -44,7 +53,11 @@ class AsistenciaExport implements FromView, WithDefaultStyles, ShouldAutoSize,  
         return view('asistencia.asistencia_excel', [
             'query' => $this->query,
             'datos_persona' => $this->datos_persona,
-            'nombreMES' => $this->nombreMES
+            'nombreMES' => $this->nombreMES,
+            'hora_1' => $this->hora_1,
+            'hora_2' => $this->hora_2,
+            'hora_3' => $this->hora_3,
+            'hora_4' => $this->hora_4,
         ]);
     }
 

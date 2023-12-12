@@ -30,14 +30,22 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
     protected $tipo_desc;
     protected $fecha_inicial;
     protected $fecha_fin;
+    protected $hora_1;
+    protected $hora_2;
+    protected $hora_3;
+    protected $hora_4;
 
-    function __construct($query, $name_mac,  $nombreMES, $tipo_desc, $fecha_inicial, $fecha_fin) {
+    function __construct($query, $name_mac,  $nombreMES, $tipo_desc, $fecha_inicial, $fecha_fin, $hora_1, $hora_2, $hora_3, $hora_4) {
         $this->query = $query;
         $this->nombreMES = $nombreMES;
         $this->name_mac = $name_mac;
         $this->tipo_desc = $tipo_desc;
         $this->fecha_inicial = $fecha_inicial;
         $this->fecha_fin = $fecha_fin; 
+        $this->hora_1 = $hora_1;
+        $this->hora_2 = $hora_2;
+        $this->hora_3 = $hora_3;
+        $this->hora_4 = $hora_4;
     }
     
     public function view(): View
@@ -49,6 +57,10 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
             'tipo_desc' => $this->tipo_desc,
             'fecha_inicial' => $this->fecha_inicial,
             'fecha_fin' => $this->fecha_fin,
+            'hora_1' => $this->hora_1,
+            'hora_2' => $this->hora_2,
+            'hora_3' => $this->hora_3,
+            'hora_4' => $this->hora_4,
         ]);
     }
 

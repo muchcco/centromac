@@ -85,7 +85,7 @@
                         <th>
                             @php
                                 $us_id = auth()->user()->idcentro_mac;
-                                $user = Ap\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+                                $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
 
                                 echo $user->NOMBRE_MAC;
                             @endphp 
@@ -150,8 +150,8 @@
                         <th>
                             {{ $q->hora4 }}
                         </th>
-                        <th>08:15 am</th>
-                        <th>06.30 pm</th>
+                        <th>{{ $hora_1->VALOR }}</th>
+                        <th>{{ $hora_2->VALOR }}</th>
                         <th>
                             <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
             
@@ -178,8 +178,8 @@
                         <th>
                             {{ $q->hora2 }}
                         </th>
-                        <th>08:15 am</th>
-                        <th>06.30 pm</th>
+                        <th>{{ $hora_1->VALOR }}</th>
+                        <th>{{ $hora_2->VALOR }}</th>
                         <th>
                             <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
             
@@ -192,7 +192,7 @@
                         </th>
                         @elseif($q->N_NUM_DOC == '1' )
                         <th>
-                            {{-- @if ($hora1 >= $horaInicial1 && $hora1 <= $horaFinal1)
+                            {{-- @if (_ >= $horaInicial1 && _ <= $horaFinal1)
                                 {{ $q->hora1 }}
                             @endif --}}
                             {{$q->hora1}}
@@ -206,8 +206,8 @@
                         <th>
                             --
                         </th>
-                        <th>08:15 am</th>
-                        <th>06.30 pm</th>
+                        <th>{{ $hora_1->VALOR }}</th>
+                        <th>{{ $hora_2->VALOR }}</th>
                         <th>
                             <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
             

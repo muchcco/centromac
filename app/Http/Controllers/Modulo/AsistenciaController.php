@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use App\Exports\AsistenciaExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\AsistenciaGroupExport;
+use App\Models\Configuracion;
 
 class AsistenciaController extends Controller
 {
@@ -205,6 +206,11 @@ class AsistenciaController extends Controller
         // Obtiene el nombre completo del mes en español
         $nombreMES = $fecha->formatLocalized('%B');
 
+        $hora_1 = Configuracion::where('PARAMETRO', 'HORA_1')->first();
+        $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
+        $hora_3 = Configuracion::where('PARAMETRO', 'HORA_3')->first();
+        $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
+
         // dd($nombreMES);
 
         $datos_persona = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
@@ -256,7 +262,7 @@ class AsistenciaController extends Controller
 
         // dd($datos_persona);
 
-        $export = Excel::download(new AsistenciaExport($query, $datos_persona, $nombreMES), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$MAC.' '.$datos_persona->ABREV_ENTIDAD.'_'.$nombreMES.'.xlsx');
+        $export = Excel::download(new AsistenciaExport($query, $datos_persona, $nombreMES, $hora_1, $hora_2, $hora_3, $hora_4), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$MAC.' '.$datos_persona->ABREV_ENTIDAD.'_'.$nombreMES.'.xlsx');
 
         return $export;
     }
@@ -271,6 +277,12 @@ class AsistenciaController extends Controller
 
         // Obtiene el nombre completo del mes en español
         $nombreMES = $fecha->formatLocalized('%B');
+
+        $hora_1 = Configuracion::where('PARAMETRO', 'HORA_1')->first();
+        $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
+        $hora_3 = Configuracion::where('PARAMETRO', 'HORA_3')->first();
+        $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
+        // dd($hora_1->VALOR);
 
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
@@ -316,7 +328,7 @@ class AsistenciaController extends Controller
                         ->get();
 
 
-        $pdf = Pdf::loadView('asistencia.asistencia_pdf', compact('nombreMES', 'query', 'datos_persona'))->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('asistencia.asistencia_pdf', compact('nombreMES', 'query', 'datos_persona', 'hora_1', 'hora_2', 'hora_3', 'hora_4'))->setPaper('a4', 'landscape');
         return $pdf->stream();
 
         // return view('asistencia.asistencia_pdf', compact('nombreMES', 'query', 'datos_persona'));
@@ -363,6 +375,11 @@ class AsistenciaController extends Controller
         // Obtiene el nombre completo del mes en español
         $nombreMES = $fecha->formatLocalized('%B');
 
+        $hora_1 = Configuracion::where('PARAMETRO', 'HORA_1')->first();
+        $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
+        $hora_3 = Configuracion::where('PARAMETRO', 'HORA_3')->first();
+        $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
+
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
@@ -399,7 +416,7 @@ class AsistenciaController extends Controller
                             ->get();
 
 
-        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin ), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
+        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
 
         return $export;
     
@@ -440,6 +457,11 @@ class AsistenciaController extends Controller
         $fecha_ini_desc = strftime('%d de %B del %Y',strtotime($request->fecha_inicio));
         $fecha_fin_desc = strftime('%d de %B del %Y',strtotime($request->fecha_fin));
 
+        $hora_1 = Configuracion::where('PARAMETRO', 'HORA_1')->first();
+        $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
+        $hora_3 = Configuracion::where('PARAMETRO', 'HORA_3')->first();
+        $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
+
 
         $tipo_desc = '2';
         $fecha_inicial = $fecha_ini_desc;
@@ -473,7 +495,7 @@ class AsistenciaController extends Controller
                         ->get();
 
         // dd($fecha_inicial);
-        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin ), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
+        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
 
         return $export;
     }
