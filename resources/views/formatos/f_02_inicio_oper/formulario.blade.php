@@ -183,6 +183,7 @@
 function GuardarForm() {
     // Create an array to store input values
     var formData = new FormData();
+    formData.append("fecha", "{{ $fecha }}");
 
     // Obtener todas las filas de la tabla
     var filas = $('table tbody tr');

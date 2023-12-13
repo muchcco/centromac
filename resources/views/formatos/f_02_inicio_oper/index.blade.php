@@ -30,6 +30,18 @@
         background-color: #4caf50; /* Color de fondo cuando está seleccionado */
         color: white; /* Color del texto cuando está seleccionado */
     }
+
+    .border-cell {
+        border-right: 2px solid black !important;
+        border-left: 2px solid black !important;
+    }
+
+    .border-cell-r {
+        border-right: 2px solid black !important;
+    }
+    .border-cell-l {
+        border-left: 2px solid black !important;
+    }
 </style>
 
 @endsection
@@ -78,7 +90,16 @@
 
                     <div class="col-md-8">
                         <h5>Ir al formulario </h5>
-                        <a href="{{ route('formatos.f_02_inicio_oper.formulario') }}" class="btn btn-success" target="_blank">Dar clic aqui</a>
+                        <div class="form-group col-3">
+                            @php
+                                $fecha6dias = date("d-m-Y",strtotime(now()));
+                                $fecha6diasconvert = date("Y-m-d",strtotime($fecha6dias));
+                            @endphp
+                            <input type="date" class="form-control" name="fecha" id="fecha" value="{{$fecha6diasconvert}}"> <p>Seleccionar la fecha que desee registrar</p>
+                        </div>                        
+                        {{-- <a href="{{ route('formatos.f_02_inicio_oper.formulario', ingresar fecha del id fecha) }}" class="btn btn-success" target="_blank">Dar clic aqui</a> --}}
+                        <a href="#" class="btn btn-success" id="btnIrAlFormulario" target="_blank">Dar clic aquí</a>
+
                     </div>
                     
                 </div>
@@ -103,23 +124,33 @@
                     </h4>
                 </div><!--end card-header-->
                 <div class="card-body">
+                    <div class="alert custom-alert custom-alert-warning icon-custom-alert shadow-sm fade show d-flex justify-content-between" role="alert">  
+                        <div class="media">
+                            <i class="la la-exclamation-triangle alert-icon text-warning align-self-center font-30 me-3"></i>
+                            <div class="media-body align-self-center">
+                                <h5 class="mb-1 fw-bold mt-0">Importante</h5>
+                                <span>Para una mejor visualización, seleccionar un rango de fechas no mayor a 6 días</span>
+                            </div>
+                        </div>                                  
+                        {{-- <button type="button" class="btn-close align-self-center" data-bs-dismiss="alert" aria-label="Close"></button> --}}
+                    </div>
                     
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label class="mb-3">Inicio</label>
-                                <input type="date" class="form-control">
+                                <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label class="mb-3">Fin</label>
-                                <input type="date" class="form-control">
+                                <input type="date" class="form-control" name="fecha_fin" id="fecha_fin">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group" style="margin-top:2.6em;">
-                                <input type="button" class="btn btn-primary" value="Buscar">
+                                <input type="button" class="btn btn-primary" value="Buscar" id="filtro" onclick="execute_filter()">
                             </div>
                         </div><!-- end col -->
                     </div>
@@ -183,13 +214,34 @@
 $(document).ready(function() {
     tabla_seccion();
     $('.select2').select2();
+
+    /***/
+    $('#btnIrAlFormulario').on('click', function () {
+        // Obtener la fecha seleccionada del input
+        var fechaSeleccionada = $('#fecha').val();
+
+        // Validar si se ha seleccionado una fecha
+        if (fechaSeleccionada) {
+            // Construir la URL con la fecha seleccionada
+            var url = "{{ route('formatos.f_02_inicio_oper.formulario', ':fecha') }}";
+            url = url.replace(':fecha', fechaSeleccionada);
+
+            // Redirigir a la URL
+            //window.location.href = url;
+            // Abrir la URL en una nueva ventana
+            window.open(url, '_blank');
+        } else {
+            // Manejar la situación donde no se ha seleccionado una fecha
+            alert('Por favor, selecciona una fecha antes de ir al formulario.');
+        }
+    });
 });
 
-function tabla_seccion(inicio = '',  fin = '') {
+function tabla_seccion(fecha_inicio = '',  fecha_fin = '') {
     $.ajax({
         type: 'GET',
         url: "{{ route('formatos.f_02_inicio_oper.tablas.tb_index') }}", // Ruta que devuelve la vista en HTML
-        data: {inicio : inicio, fin: fin},
+        data: {fecha_inicio : fecha_inicio, fecha_fin: fecha_fin},
         beforeSend: function () {
             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
         },
@@ -205,6 +257,30 @@ function tabla_seccion(inicio = '',  fin = '') {
 
 /**************************************************************** CARGAR COMBOS POR FECHA ACTUAL *************************************************************/
 
+// EJECUTA LOS FILTROS Y ENVIA AL CONTROLLADOR PARA  MOSTRAR EL RESULTADO EN LA TABLA
+var execute_filter = () =>{
+   var fecha_inicio = $('#fecha_inicio').val();
+    var fecha_fin = $('#fecha_fin').val();
+   $.ajax({
+        type:'get',
+        url: "{{ route('formatos.f_02_inicio_oper.tablas.tb_index') }}" ,
+        dataType: "",
+        data: {fecha_inicio : fecha_inicio, fecha_fin : fecha_fin},
+        beforeSend: function () {
+            document.getElementById("filtro").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Buscando';
+            document.getElementById("filtro").style.disabled = true;
+        },
+        success:function(data){
+            document.getElementById("filtro").innerHTML = '<i class="fa fa-search"></i> Buscar';
+            document.getElementById("filtro").style.disabled = false;
+            tabla_seccion(fecha_inicio, fecha_fin);
+        },
+        error: function(xhr, status, error){
+            console.log("error");
+            console.log('Error:', error);
+        }
+   });
+}
 
 
 /****************************************************************************** FIN ************************************************************************/

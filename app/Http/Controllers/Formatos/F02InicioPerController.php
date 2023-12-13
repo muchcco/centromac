@@ -33,7 +33,7 @@ class F02InicioPerController extends Controller
         return view('formatos.f_02_inicio_oper.index');
     }
 
-    public function formulario(Request $request)
+    public function formulario(Request $request, $fecha)
     {
 
         $centro_mac = $this->centro_mac()->name_mac;
@@ -41,7 +41,7 @@ class F02InicioPerController extends Controller
 
         $personal = Personal::where('IDPERSONAL', auth()->user()->idpersonal)->first();
 
-        $fecha = date("Y-m-d");
+        $fecha_sel = date("Y-m-d");
         
         $resultado = DescripcionFormato::from('D_DESCRIPCION_FORMATOS as DDF')->select(
                 'DDF.IDDESC_FORM',
@@ -53,10 +53,10 @@ class F02InicioPerController extends Controller
             )
             ->leftJoin(DB::raw("(SELECT IDDESC_FORM, CONFORMIDAD_I, CONFORMIDAD_F, OBSERVACION_F02
                                 FROM F_MAC_03_VER_OPERACION
-                                WHERE FECHA = '$fecha' AND IDCENTRO_MAC = $id_mac) as DFI"), 'DFI.IDDESC_FORM', '=', 'DDF.IDDESC_FORM')
+                                WHERE FECHA = '$fecha_sel' AND IDCENTRO_MAC = $id_mac) as DFI"), 'DFI.IDDESC_FORM', '=', 'DDF.IDDESC_FORM')
             ->get();
 
-        return view('formatos.f_02_inicio_oper.formulario', compact('centro_mac', 'personal', 'resultado'));   
+        return view('formatos.f_02_inicio_oper.formulario', compact('centro_mac', 'personal', 'resultado', 'fecha'));   
     }
 
     public function store_form(Request $request)
@@ -74,7 +74,13 @@ class F02InicioPerController extends Controller
             // Log the specific data
             logger()->info('iddesc_form Data:', $iddesc_form);
 
-            $hoy = Carbon::now()->format('Y-m-d');
+            $hoy = Carbon::parse($request->fecha)->format('Y-m-d');
+            $año = Carbon::parse($request->fecha)->format('Y');
+            $mes = Carbon::parse($request->fecha)->format('m');
+            $dia = Carbon::parse($request->fecha)->format('d');
+
+            // dd($año);
+            
 
             // Check if $request->iddesc_form is not null and is an array
             if (!is_null($request->iddesc_form) && is_array($request->iddesc_form)) {
@@ -95,9 +101,9 @@ class F02InicioPerController extends Controller
                             'CONFORMIDAD_I' => $conformidad_i,
                             'CONFORMIDAD_F' => $conformidad_f,
                             'OBSERVACION_F02' => $observacion_f02,
-                            'DIA' => Carbon::now()->format('d'),
-                            'MES' => Carbon::now()->format('m'),
-                            'AÑO' => Carbon::now()->format('Y'),
+                            'DIA' => $dia,
+                            'MES' => $mes,
+                            'AÑO' => $año,
                             'HORA' => Carbon::now()->format('H:i:s'),
                             'LOG_REGISTRO' => auth()->user()->id,
                         ]
@@ -125,15 +131,46 @@ class F02InicioPerController extends Controller
     public function tb_index(Request $request)
     {
         // Definir fecha de inicio y fecha de fin
-        $fechaInicio = '2023-12-07';
-        $fechaFin = '2023-12-12';
+        // $fechaInicio = '2023-12-07';
+        // $fechaFin = '2023-12-12';
+
+        // Calcular fecha de inicio como la fecha actual menos 4 días
+        // $fechaFin = now()->toDateString(); // Fecha actual
+        // $fechaInicio = now()->subDays(4)->toDateString(); // Fecha actual menos 4 días
+
+        // $fecha_i = date("Y-m-d");
+        if ($request->fecha_inicio != '') {
+            $fechaInicio = $request->fecha_inicio;
+        } else {
+            $fechaInicio = now()->subDays(4)->toDateString();
+        }
+
+        // $fecha_i = date("Y-m-d");
+        if ($request->fecha_fin != '') {
+            $fechaFin = $request->fecha_fin;
+        } else {
+            $fechaFin = now()->toDateString();
+        }
 
         // Inicializar una instancia del modelo Eloquent correspondiente
         $modelo = new FInicioOperacion();
 
         // Inicializar una instancia del constructor de consultas
         $queryBuilder = $modelo->from('D_DESCRIPCION_FORMATOS as DDF')
-            ->leftJoin('F_MAC_03_VER_OPERACION AS DFI', 'DFI.IDDESC_FORM', '=', 'DDF.IDDESC_FORM')
+            //->leftJoin('F_MAC_03_VER_OPERACION AS DFI', 'DFI.IDDESC_FORM', '=', 'DDF.IDDESC_FORM')
+            ->leftJoin(DB::raw("
+                                (SELECT
+                                    IDDESC_FORM,
+                                    CONFORMIDAD_I,
+                                    CONFORMIDAD_F,
+                                    OBSERVACION_F02,
+                                    FECHA
+                                FROM
+                                    F_MAC_03_VER_OPERACION
+                                WHERE
+                                    FECHA BETWEEN '$fechaInicio' AND '$fechaFin'
+                                    AND IDCENTRO_MAC = " . $this->centro_mac()->idmac . ") DFI
+                            "), 'DFI.IDDESC_FORM', '=', 'DDF.IDDESC_FORM')
             ->select([
                 'DDF.IDDESC_FORM',
                 'DDF.IDPADRE_F',
@@ -160,15 +197,16 @@ class F02InicioPerController extends Controller
         }
 
         // Agregar el resto de la consulta
-        $queryBuilder->whereBetween('DFI.FECHA', [$fechaInicio, $fechaFin])
-            ->where('DFI.IDCENTRO_MAC', $this->centro_mac()->idmac)
+        $queryBuilder
+            //->whereBetween('DFI.FECHA', [$fechaInicio, $fechaFin])
+            // ->where('DFI.IDCENTRO_MAC', $this->centro_mac()->idmac)
             ->groupBy('DDF.IDDESC_FORM', 'DDF.IDPADRE_F', 'DDF.DESCRIPCION_F');
 
         // Ejecutar la consulta
         $resultado = $queryBuilder->get();
 
         // Mostrar el resultado (o realizar otras operaciones según tus necesidades)
-        // dd($resultado);
+        //dd($resultado);
 
         // Pasar las fechas y el resultado a la vista
         return view('formatos.f_02_inicio_oper.tablas.tb_index', compact('resultado', 'fechas'));

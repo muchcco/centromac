@@ -164,6 +164,7 @@
                         --
                     </th>
                     <th style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
                         @if ($FECHA == 's?bado')
                             {{ $hora_3->VALOR }}
                         @else
