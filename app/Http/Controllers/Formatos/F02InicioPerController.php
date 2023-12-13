@@ -124,7 +124,54 @@ class F02InicioPerController extends Controller
 
     public function tb_index(Request $request)
     {
-        return view('formatos.f_02_inicio_oper.tablas.tb_index');
+        // Definir fecha de inicio y fecha de fin
+        $fechaInicio = '2023-12-07';
+        $fechaFin = '2023-12-12';
+
+        // Inicializar una instancia del modelo Eloquent correspondiente
+        $modelo = new FInicioOperacion();
+
+        // Inicializar una instancia del constructor de consultas
+        $queryBuilder = $modelo->from('D_DESCRIPCION_FORMATOS as DDF')
+            ->leftJoin('F_MAC_03_VER_OPERACION AS DFI', 'DFI.IDDESC_FORM', '=', 'DDF.IDDESC_FORM')
+            ->select([
+                'DDF.IDDESC_FORM',
+                'DDF.IDPADRE_F',
+                'DDF.DESCRIPCION_F',
+            ]);
+
+        // Construir dinámicamente las partes de la consulta
+        $currentDate = $fechaInicio;
+        $fechas = []; // Inicializar el arreglo de fechas
+        while (strtotime($currentDate) <= strtotime($fechaFin)) {
+            // Excluir los domingos (día de la semana = 0 en PHP)
+            if (date('w', strtotime($currentDate)) != 0) {
+                $formattedDate = str_replace('-', '', $currentDate);
+                $queryBuilder->addSelect([
+                    DB::raw("MAX(CASE WHEN DFI.FECHA = '$currentDate' THEN DFI.CONFORMIDAD_I END) AS '$currentDate'"),
+                    DB::raw("MAX(CASE WHEN DFI.FECHA = '$currentDate' THEN DFI.CONFORMIDAD_F END) AS '$currentDate'"),
+                ]);
+
+                $fechas[] = $currentDate; // Agregar la fecha al arreglo
+            }
+
+            // Avanzar a la siguiente fecha
+            $currentDate = date("Y-m-d", strtotime($currentDate . '+1 day'));
+        }
+
+        // Agregar el resto de la consulta
+        $queryBuilder->whereBetween('DFI.FECHA', [$fechaInicio, $fechaFin])
+            ->where('DFI.IDCENTRO_MAC', $this->centro_mac()->idmac)
+            ->groupBy('DDF.IDDESC_FORM', 'DDF.IDPADRE_F', 'DDF.DESCRIPCION_F');
+
+        // Ejecutar la consulta
+        $resultado = $queryBuilder->get();
+
+        // Mostrar el resultado (o realizar otras operaciones según tus necesidades)
+        // dd($resultado);
+
+        // Pasar las fechas y el resultado a la vista
+        return view('formatos.f_02_inicio_oper.tablas.tb_index', compact('resultado', 'fechas'));
     }
     
 

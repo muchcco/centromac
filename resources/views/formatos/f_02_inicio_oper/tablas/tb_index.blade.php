@@ -1,27 +1,43 @@
 <table class="table table-hover table-bordered table-striped" id="table_formato">
-    <thead>
+    <tbody>
         <tr>
-            <th >Supervisor(a)</th>
-            <th ></th> 
-            <th>Semana</th>
-            <th></th>
+            <td >Supervisor(a)</td>
+            <td ></td> 
+            <td>Semana</td>
+            <td></td>
         </tr>
-    </thead>
+    </tbody>
 </table>
 
-<div class="col-4">
-    <table>
-        <thead>
-            <tr>
-                <th colspan="2">N    Condición Operativa</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td colspan="2">Verificar si el recurso, equipo u otro, esta dañado, roto, desprolijo, inoperativo o funcionando inadecuadamente según aplique</td>
-            </tr>
-        </tbody>
-    </table>
+<div class="col-12">
+    @if (count($resultado) > 0)
+        <table class="table table-hover table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>DESCRIPCION_F</th>
+                    @foreach ($fechas as $fecha)
+                        <th>{{ $fecha }}</th>
+                        <th>{{ $fecha }}</th>
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($resultado as $i => $item)
+                    <tr>
+                        <td>{{ $i + 1}}</td>
+                        <td>{{ $item->DESCRIPCION_F }}</td>
+                        @foreach ($fechas as $fecha)
+                            <td>{{ $item["$fecha"] ?? '' }}</td>
+                            <td>{{ $item["$fecha"] ?? '' }}</td>
+                        @endforeach
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @else
+        <p>No se encontraron resultados.</p>
+    @endif
 </div>
 
 <script>
