@@ -82,7 +82,7 @@
                     <div class="dev">
                         <h5>Fecha de registro:</h5>
                         <p>@php
-                            setlocale(LC_TIME, 'es_PE', 'Spanish_Spain', 'Spanish'); echo strftime('%d de %B del %Y',strtotime("now"));
+                            setlocale(LC_TIME, 'es_PE', 'Spanish_Spain', 'Spanish'); echo strftime('%d de %B del %Y',strtotime($fecha));
                             @endphp
                         </p>
                     </div>                    
