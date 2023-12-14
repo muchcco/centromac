@@ -200,7 +200,7 @@ function BtnNumDoc() {
             contentType: false,
             success: function(response){
                 console.log(response)
-                document.getElementById("btn-ingresodoc").innerHTML = 'Buscar';
+                // document.getElementById("btn-ingresodoc").innerHTML = 'Buscar';
                 document.getElementById("btn-ingresodoc").disabled = false;
                 var identidad = response.NOMBRE_NOVO;
 

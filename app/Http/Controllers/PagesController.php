@@ -447,15 +447,12 @@ class PagesController extends Controller
 
     public function validar_entidad(Request $request)
     {
-        $servicios = DB::table('D_ENT_SERV as DES')
-                        ->join('D_ENTIDAD_SERVICIOS as SERV', 'SERV.IDSERVICIOS', '=', 'DES.IDSERVICIOS')
-                        ->join('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'DES.IDENTIDAD')
-                        ->join('M_CENTRO_MAC as MAC', 'MAC.IDCENTRO_MAC', '=', 'DES.IDMAC')
-                        ->select('DES.*', 'SERV.*', 'ME.*', 'MAC.*')
-                        ->where('MAC.IDCENTRO_MAC', $request->idmac)
+        $servicios = DB::table('M_ENTIDAD AS ME')
+                        ->join('M_MAC_ENTIDAD AS MME', 'MME.IDENTIDAD', '=', 'ME.IDENTIDAD')
+                        ->where('MME.IDCENTRO_MAC', $request->idmac)
                         ->where('ME.IDENTIDAD', $request->identidad)
                         ->first();
-
+        // dd($servicios);
         return $servicios;
     }
 
