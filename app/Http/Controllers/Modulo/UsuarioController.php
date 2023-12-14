@@ -40,7 +40,8 @@ class UsuarioController extends Controller
     public function tb_index(Request $request)
     {
         $usuarios = User::leftJoin('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
-                            ->leftJoin('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'users.idpersonal')                         
+                            ->leftJoin('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'users.idpersonal')
+                            ->where('users.idcentro_mac', $this->centro_mac()->IDCENTRO_MAC)                         
                             ->get();
 
         return view('usuarios.tablas.tb_index', compact('usuarios'));
