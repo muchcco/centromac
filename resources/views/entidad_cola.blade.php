@@ -142,7 +142,7 @@ $(document).ready(function() {
       var refreshId =  setInterval( function(){
             $( "#seleccion" ).load(window.location.href + " #seleccion" );
             console.log('asdas') ;
-        }, 5000 );
+        }, 1000 );
 
      console.log(refreshId)
 });
