@@ -19,6 +19,7 @@
                     </h3>
                     <p style="color:#fff; font-size:15px" >(CENTRO MAC - 
                         @php
+                        $us_id = auth()->user()->idcentro_mac;
                             $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->first();
 
                             echo $user->NOMBRE_MAC.')';
