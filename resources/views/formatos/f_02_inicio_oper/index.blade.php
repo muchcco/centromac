@@ -90,16 +90,21 @@
 
                     <div class="col-md-8">
                         <h5>Ir al formulario </h5>
-                        <div class="form-group col-3">
-                            @php
-                                $fecha6dias = date("d-m-Y",strtotime(now()));
-                                $fecha6diasconvert = date("Y-m-d",strtotime($fecha6dias));
-                            @endphp
-                            <input type="date" class="form-control" name="fecha" id="fecha" value="{{$fecha6diasconvert}}"> <p>Seleccionar la fecha que desee registrar</p>
-                        </div>                        
-                        {{-- <a href="{{ route('formatos.f_02_inicio_oper.formulario', ingresar fecha del id fecha) }}" class="btn btn-success" target="_blank">Dar clic aqui</a> --}}
-                        <a href="#" class="btn btn-success" id="btnIrAlFormulario" target="_blank">Dar clic aquí</a>
-
+                        @role('Supervisor')
+                            <div class="form-group col-3">
+                                @php
+                                    $fecha6dias = date("d-m-Y",strtotime(now()));
+                                    $fecha6diasconvert = date("Y-m-d",strtotime($fecha6dias));
+                                @endphp
+                                <input type="date" class="form-control" name="fecha" id="fecha" value="{{$fecha6diasconvert}}"> <p>Seleccionar la fecha que desee registrar</p>
+                            </div>                        
+                            {{-- <a href="{{ route('formatos.f_02_inicio_oper.formulario', ingresar fecha del id fecha) }}" class="btn btn-success" target="_blank">Dar clic aqui</a> --}}
+                            <a href="#" class="btn btn-success" id="btnIrAlFormulario" target="_blank">Dar clic aquí</a>
+                        @endrole
+                        @unless(auth()->user()->hasRole('Supervisor'))
+                            {{-- Código a ejecutar si el usuario no tiene ninguno de los roles especificados --}}
+                            <p>No tienes permiso para ver esto.</p>
+                        @endunless
                     </div>
                     
                 </div>
@@ -214,6 +219,7 @@
 $(document).ready(function() {
     tabla_seccion();
     $('.select2').select2();
+    calcularFechas();
 
     /***/
     $('#btnIrAlFormulario').on('click', function () {
@@ -282,6 +288,28 @@ var execute_filter = () =>{
    });
 }
 
+function calcularFechas() {
+    // Obtener la fecha actual
+    var fechaActual = new Date();
+
+    // Restar 3 días ya que el actual lo contamos como un día mas
+    fechaActual.setDate(fechaActual.getDate() - 3);
+
+    // Excluir los domingos
+    while (fechaActual.getDay() === 0) {
+        fechaActual.setDate(fechaActual.getDate() - 1);
+    }
+
+    // Formatear la fecha de inicio
+    var fechaInicio = fechaActual.toISOString().split('T')[0];
+
+    // Obtener la fecha actual
+    var fechaFin = new Date().toISOString().split('T')[0];
+
+    // Asignar valores a los campos de fecha
+    document.getElementById('fecha_inicio').value = fechaInicio;
+    document.getElementById('fecha_fin').value = fechaFin;
+}
 
 /****************************************************************************** FIN ************************************************************************/
 

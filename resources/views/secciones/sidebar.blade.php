@@ -18,12 +18,12 @@
         </div>
         <!--end logo-->
         <div class="update-msg text-center" style="margin: 16px 16px 16px;">
-            <div class="pad-btm mb-1">
+            {{-- <div class="pad-btm mb-1">
                 <!--<img class="img-circle img-md" src="{{ asset('Img\profile-photos\1.png')}}" alt="Profile Picture">-->
                     <div class="avatar-box thumb-xxl align-self-center me-2" style="margin-bottom: 10px;">
                         <span class="avatar-title bg-soft-primary rounded">{{auth()->user()->name[0]}}</span>
                     </div>
-            </div>
+            </div> --}}
             <p class="mb-2">{{ auth()->user()->name }}</p>
             <p class="mb-0">{{ auth()->user()->email }}</p>
             <p id="act_role_sidebar" class="mb-0">Rol: {{ auth()->user()->roles->pluck('name')->implode(', ') }} </p>

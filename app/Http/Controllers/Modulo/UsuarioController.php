@@ -32,8 +32,6 @@ class UsuarioController extends Controller
 
     public function index()
     {
-        // dd(Role::pluck('name', 'id'));
-
         return view('usuarios.index');
     }
 
@@ -41,7 +39,7 @@ class UsuarioController extends Controller
     {
         $usuarios = User::leftJoin('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
                             ->leftJoin('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'users.idpersonal')
-                            ->where('users.idcentro_mac', $this->centro_mac()->IDCENTRO_MAC)                         
+                            ->where('users.idcentro_mac', $this->centro_mac()->idmac)                         
                             ->get();
 
         return view('usuarios.tablas.tb_index', compact('usuarios'));
