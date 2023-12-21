@@ -13,6 +13,8 @@ use App\Http\Controllers\Modulo\AlmacenController;
 use App\Http\Controllers\Modulo\AsignacionController;
 use App\Http\Controllers\Formatos\F02InicioPerController;
 
+use App\Http\Controllers\Mobile\InternoController;
+
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
 Route::get('validar.html5' , [PagesController::class, 'validar'])->name('validar');
@@ -42,6 +44,13 @@ Route::get('provincias/{departamento_id}', [PagesController::class, 'provincias'
 Route::get('distritos/{provincia_id}', [PagesController::class, 'distritos'])->name('distritos');
 Route::get('subtipo_vehiculo/{idsubtipo_vehiculo}', [PagesController::class, 'subtipo_vehiculo'])->name('subtipo_vehiculo');
 
+/*********************************************************  MODO MOBILE  ***********************************************************************/
+
+Route::prefix('mobile/')->as('mobile.')->group( function () {
+
+    Route::get('index', [InternoController::class, 'index'])->name('index');
+    
+});
 
 /******************  DATOS DE LOGIN  ******************************/
 
