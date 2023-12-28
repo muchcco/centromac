@@ -88,10 +88,10 @@
       <div class=" col-12">
         <div class="form-group">
           
-          <select name="idcentro_mac" id="idcentro_mac" class="form-select col-12" >
-            <option value="0" selected onclick="PickMac('0')"> -- Seleccione un MAC -- </option>
+          <select name="idcentro_mac" id="idcentro_mac" class="form-select col-12" onchange="PickMac(this.value)">
+            <option value="0" selected > -- Seleccione un MAC -- </option>
             @forelse ($macs as $mac)
-                <option value="{{ $mac->IDCENTRO_MAC }}" onclick="PickMac('{{ $mac->IDCENTRO_MAC }}')">MAC - {{ $mac->NOMBRE_MAC }}</option>
+                <option value="{{ $mac->IDCENTRO_MAC }}" >MAC - {{ $mac->NOMBRE_MAC }}</option>
             @empty
                 
             @endforelse
@@ -119,33 +119,30 @@ $(document).ready(function() {
 });
 
 
-
 function PickMac(idcentro_mac) {
-  var selectedValue = $("#idcentro_mac").val();
+        if (idcentro_mac == "0") {
+            $("#centro_mac").addClass("mostrar");
+        } else {
+            $("#centro_mac").removeClass("mostrar");
 
-  if (selectedValue == "0") {
-    $("#centro_mac").addClass("mostrar");
-  } else {
-    $("#centro_mac").removeClass("mostrar");
-
-    $.ajax({
-      type: 'GET',
-      url: "{{ route('mobile.entidad_dat') }}",
-      data: {idcentro_mac: idcentro_mac},
-      beforeSend: function () {
-        $("#cargando_dat").html('<i class="fa fa-spinner fa-spin"></i> Un momento por favor, retornando datos... ');
-      },
-      success: function (data) {
-        $('#centro_mac').html(data);
-        $("#cargando_dat").html(""); // Clear the loading message after success
-      },
-      error: function (xhr, status, error) {
-        console.error(xhr.responseText);
-        $("#cargando_dat").html("Error al cargar los datos, vuelva a intentar mas rato");
-      }
-    });
-  }
-}
+            $.ajax({
+                type: 'GET',
+                url: "{{ route('mobile.entidad_dat') }}",
+                data: {idcentro_mac: idcentro_mac},
+                beforeSend: function () {
+                    $("#cargando_dat").html('<i class="fa fa-spinner fa-spin"></i> Un momento por favor, retornando datos... ');
+                },
+                success: function (data) {
+                    $('#centro_mac').html(data);
+                    $("#cargando_dat").html(""); // Clear the loading message after success
+                },
+                error: function (xhr, status, error) {
+                    console.error(xhr.responseText);
+                    $("#cargando_dat").html("Error al cargar los datos, vuelva a intentar más tarde");
+                }
+            });
+        }
+    }
 
 
 </script>
