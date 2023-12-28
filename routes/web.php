@@ -49,6 +49,7 @@ Route::get('subtipo_vehiculo/{idsubtipo_vehiculo}', [PagesController::class, 'su
 Route::prefix('mobile/')->as('mobile.')->group( function () {
 
     Route::get('index', [InternoController::class, 'index'])->name('index');
+    Route::get('entidad_dat', [InternoController::class, 'entidad_dat'])->name('entidad_dat');
     
 });
 
