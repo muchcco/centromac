@@ -19,7 +19,9 @@ class Entidad extends Model
                             'IDNOVO', 
                             'ABREV_ENTIDAD', 
                             'NOMBRE_NOVO',
-                            'FLAG'                          
+                            'FLAG',
+                            'REFRIGERIO_INT',
+                            'TIPO_REFRIGERIO'
                         ];
 
     public $timestamps = false;

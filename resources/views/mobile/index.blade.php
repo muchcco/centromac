@@ -9,6 +9,8 @@
       box-shadow: 1px 1px  #7e7e7e;
       background: #fff;
       padding: .5em;
+      padding-bottom: 2em !important;
+      margin-bottom: 2em !important;
     }
 
     .text-list-ent{
@@ -36,6 +38,8 @@
       display: flex;
       justify-content: start;
       align-items: center;
+      align-content: center;
+      align-self: center;
     }
 
     .mostrar{
@@ -120,29 +124,29 @@ $(document).ready(function() {
 
 
 function PickMac(idcentro_mac) {
-        if (idcentro_mac == "0") {
-            $("#centro_mac").addClass("mostrar");
-        } else {
-            $("#centro_mac").removeClass("mostrar");
+  if (idcentro_mac == "0") {
+      $("#centro_mac").addClass("mostrar");
+  } else {
+      $("#centro_mac").removeClass("mostrar");
 
-            $.ajax({
-                type: 'GET',
-                url: "{{ route('mobile.entidad_dat') }}",
-                data: {idcentro_mac: idcentro_mac},
-                beforeSend: function () {
-                    $("#cargando_dat").html('<i class="fa fa-spinner fa-spin"></i> Un momento por favor, retornando datos... ');
-                },
-                success: function (data) {
-                    $('#centro_mac').html(data);
-                    $("#cargando_dat").html(""); // Clear the loading message after success
-                },
-                error: function (xhr, status, error) {
-                    console.error(xhr.responseText);
-                    $("#cargando_dat").html("Error al cargar los datos, vuelva a intentar más tarde");
-                }
-            });
-        }
-    }
+      $.ajax({
+          type: 'GET',
+          url: "{{ route('mobile.entidad_dat') }}",
+          data: {idcentro_mac: idcentro_mac},
+          beforeSend: function () {
+              $("#cargando_dat").html('<i class="fa fa-spinner fa-spin"></i> Un momento por favor, retornando datos... ');
+          },
+          success: function (data) {
+              $('#centro_mac').html(data);
+              $("#cargando_dat").html(""); // Clear the loading message after success
+          },
+          error: function (xhr, status, error) {
+              console.error(xhr.responseText);
+              $("#cargando_dat").html("Error al cargar los datos, vuelva a intentar más tarde");
+          }
+      });
+  }
+}
 
 
 </script>

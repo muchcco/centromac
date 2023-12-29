@@ -50,6 +50,7 @@ Route::prefix('mobile/')->as('mobile.')->group( function () {
 
     Route::get('index', [InternoController::class, 'index'])->name('index');
     Route::get('entidad_dat', [InternoController::class, 'entidad_dat'])->name('entidad_dat');
+    Route::get('det_entidad/{idcentro_mac}/{identidad}', [InternoController::class, 'det_entidad'])->name('det_entidad');
     
 });
 
