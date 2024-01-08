@@ -4,16 +4,10 @@ namespace App\Http\Controllers\Modulo;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Models\User;
-use App\Models\Servicio;
+use Illuminate\Support\Facades\DB;
 
-use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Models\Entidad;
-use App\Exports\SeviciosEntidadExport;
-
-class ServiciosController extends Controller
+class ServMacController extends Controller
 {
     private function centro_mac(){
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
@@ -35,10 +29,10 @@ class ServiciosController extends Controller
         $entidad = DB::table('M_MAC_ENTIDAD')
                         ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
                         ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                        // ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
+                        ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
                         ->get();
 
-        return view('servicios.index', compact('entidad'));
+        return view('serv_mac.index', compact('entidad'));    
     }
 
     public function tb_index(Request $request)
@@ -69,7 +63,7 @@ class ServiciosController extends Controller
                                 $join->on('SERV.IDENTIDAD', '=', 'ME.IDENTIDAD');
                             })
                             ->where('SERV.FLAG', '=', '1')
-                            // ->where('SERV.IDCENTRO_MAC', '=', $this->centro_mac()->idmac)
+                            ->where('SERV.IDCENTRO_MAC', '=', $this->centro_mac()->idmac)
                             ->where(function($que) use ($request) {
                                 if($request->entidad != '' ){
                                     $que->where('ME.IDENTIDAD', $request->entidad);
@@ -77,18 +71,39 @@ class ServiciosController extends Controller
                             })
                             ->get();
 
-        return view('servicios.tablas.tb_index', compact('servicios'));
+        return view('serv_mac.tablas.tb_index', compact('servicios'));
     }
 
     public function md_add_servicios(Request $request)
     {                   
-        $entidad = DB::table('M_MAC_ENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                        // ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
-                        ->get();
+        $servicios = DB::table('M_ENTIDAD AS ME')
+                            ->select('ME.NOMBRE_ENTIDAD', 'SERV.NOMBRE_SERVICIO', 'SERV.REQUISITO_SERVICIO', 'SERV.REQ_CITA', 'SERV.TIPO_SER', 'SERV.COSTO_SERV','SERV.NOMBRE_MAC','ME.IDENTIDAD', 'SERV.TRAMITE', 'SERV.ORIENTACION', 'SERV.IDENT_SERV', 'SERV.IDSERVICIOS')
+                            ->join(DB::raw('(SELECT 
+                                                D_ENTIDAD_SERVICIOS.IDSERVICIOS,
+                                                D_ENTIDAD_SERVICIOS.NOMBRE_SERVICIO,
+                                                D_ENTIDAD_SERVICIOS.REQUISITO_SERVICIO,
+                                                D_ENTIDAD_SERVICIOS.REQ_CITA,
+                                                D_ENTIDAD_SERVICIOS.TIPO_SER,
+                                                D_ENTIDAD_SERVICIOS.TRAMITE,
+                                                D_ENTIDAD_SERVICIOS.ORIENTACION,
+                                                D_ENT_SERV.IDENTIDAD,
+                                                D_ENTIDAD_SERVICIOS.`COSTO_SERV`,
+                                                MCM.IDCENTRO_MAC,
+                                                MCM.NOMBRE_MAC,
+                                                D_ENT_SERV.IDENT_SERV,
+                                                D_ENTIDAD_SERVICIOS.FLAG 
+                                            FROM
+                                                D_ENT_SERV 
+                                                JOIN D_ENTIDAD_SERVICIOS 
+                                                ON D_ENTIDAD_SERVICIOS.IDSERVICIOS = D_ENT_SERV.IDSERVICIOS 
+                                                JOIN M_CENTRO_MAC MCM 
+                                                ON MCM.IDCENTRO_MAC = D_ENT_SERV.IDMAC) SERV'), function ($join) {
+                                $join->on('SERV.IDENTIDAD', '=', 'ME.IDENTIDAD');
+                            })
+                            ->where('SERV.FLAG', '=', '1')
+                            ->get();
 
-        $view = view('servicios.modals.md_add_servicios', compact('entidad'))->render();
+        $view = view('serv_mac.modals.md_add_servicios', compact('servicios'))->render();
 
         return response()->json(['html' => $view]); 
     }
@@ -142,6 +157,12 @@ class ServiciosController extends Controller
             $servicio->REQ_CITA = $request->req_cita;
             $servicio->save();
 
+            $enl_serv = DB::table('D_ENT_SERV')->insert([
+                'IDENTIDAD'     =>  $request->entidad,
+                'IDSERVICIOS'   =>  $servicio->IDSERVICIOS,
+                'IDMAC'         =>  $this->centro_mac()->idmac,
+            ]);
+
             return $servicio;
 
 
@@ -157,55 +178,9 @@ class ServiciosController extends Controller
         }
     }
 
-    public function md_edit_servicios(Request $request)
-    {
-        $entidad = DB::table('M_MAC_ENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                        ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
-                        ->get();
-
-        $servicio = DB::table('D_ENT_SERV AS DES')
-                                ->join('D_ENTIDAD_SERVICIOS AS DESV', 'DESV.IDSERVICIOS', '=', 'DES.IDSERVICIOS')
-                                ->select('DES.*', 'DESV.*')
-                                ->where('DES.IDSERVICIOS', $request->idservicios)
-                                ->first();
-        // dd($servicio);
-        $view = view('servicios.modals.md_edit_servicios', compact('entidad', 'servicio'))->render();
-
-        return response()->json(['html' => $view]);
-    }
-
-    public function update_servicio(Request $request)
-    {
-        try{
-
-            $update = Servicio::findOrFail($request->idservicios);
-            $update->NOMBRE_SERVICIO = $request->nombre_servicio;
-            $update->TRAMITE = $request->tramite;
-            $update->ORIENTACION = $request->orientacion;
-            $update->COSTO_SERV = $request->costo_serv;
-            $update->REQUISITO_SERVICIO = $request->requisito_servicio;
-            $update->REQ_CITA = $request->req_cita;
-            $update->save();
-
-            return $enl_serv;
-
-        } catch (\Exception $e) {
-            //Si existe algún error en la Transacción
-            $response_ = response()->json([
-                'data' => null,
-                'error' => $e->getMessage(),
-                'message' => 'BAD'
-            ], 400);
-
-            return $response_;
-        }
-    }
-
     public function delete_servicio(Request $request)
     {
-        $delete_ser = DB::table('D_ENTIDAD_SERVICIOS')->where('IDSERVICIOS', $request->idservicios)->delete();
+        $delete_ent_ser = DB::table('D_ENT_SERV')->where('IDENT_SERV', $request->ident_serv)->delete();
 
         return $delete_ent_ser;
     }

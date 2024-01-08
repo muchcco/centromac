@@ -69,12 +69,12 @@
                 </li>
                 @endrole
 
-                <li class="@if (Request::is('servicios*')) mm-active @endif">
-                    <a href="{{ route('servicios.index') }}" class="@if (Request::is('servicios/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por Entidad</span></a>
+                <li class="@if (Request::is('serv_mac*')) mm-active @endif">
+                    <a href="{{ route('serv_mac.index') }}" class="@if (Request::is('serv_mac/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por MAC</span></a>
                 </li>
 
                 <li class="@if (Request::is('externo*')) mm-active @endif">
-                    <a href="{{ route('externo') }}" class="@if (Request::is('externo*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Paginas externas</span></a>
+                    <a href="{{ route('externo') }}" class="@if (Request::is('externo*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Páginas externas</span></a>
                 </li>
 
                 <li class="menu-label mt-0">FORMATOS</li>
@@ -90,6 +90,10 @@
                 <li class="menu-label mt-0">PARAMETROS</li>
                 <li class="@if (Request::is('almacen*')) mm-active @endif">
                     <a href="{{ route('almacen.index') }}" class="@if (Request::is('almacen*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Almacen</span></a>
+                </li>
+
+                <li class="@if (Request::is('servicios*')) mm-active @endif">
+                    <a href="{{ route('servicios.index') }}" class="@if (Request::is('servicios/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por Entidad</span></a>
                 </li>
                 {{-- <li class="@if (Request::is('consultas/comprobantespago*')) mm-active @endif">
                     <a href="{{ route('consultas.comprobantespago') }}" class="@if (Request::is('consultas/comprobantespago*')) active @endif"> <i data-feather="search" class="align-self-center menu-icon"></i><span>Comprobantes de Pago</span></a>

@@ -31,7 +31,7 @@ class SeviciosEntidadExport implements FromView, WithDefaultStyles, ShouldAutoSi
     
     public function view(): View
     {
-        return view('servicios.exportgroup_excel_pr', [
+        return view('serv_mac.exportgroup_excel_pr', [
             'entidad' => $this->entidad,
             'servicios' => $this->servicios
         ]);

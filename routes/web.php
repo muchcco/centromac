@@ -14,6 +14,7 @@ use App\Http\Controllers\Modulo\AsignacionController;
 use App\Http\Controllers\Formatos\F02InicioPerController;
 
 use App\Http\Controllers\Mobile\InternoController;
+use App\Http\Controllers\Modulo\ServMacController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -40,6 +41,7 @@ Route::get('entidad_cola.html5/{identidad}' , [PagesController::class, 'entidad_
 
 /******************  RECURSOS  ********************/
 
+Route::get('dni', [PagesController::class, 'dni'])->name('dni');
 Route::get('provincias/{departamento_id}', [PagesController::class, 'provincias'])->name('provincias');
 Route::get('distritos/{provincia_id}', [PagesController::class, 'distritos'])->name('distritos');
 Route::get('subtipo_vehiculo/{idsubtipo_vehiculo}', [PagesController::class, 'subtipo_vehiculo'])->name('subtipo_vehiculo');
@@ -126,6 +128,19 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/delete_pcm' , [PcmController::class, 'delete_pcm'])->name('delete_pcm');
 
     });
+
+    /********************************************************** SERVICIOS *******************************************************************************/
+
+    Route::group(['prefix'=>'serv_mac','as'=>'serv_mac.' ],function () {
+       
+        Route::get('/index', [ServMacController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index' , [ServMacController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_servicios' , [ServMacController::class, 'md_add_servicios'])->name('modals.md_add_servicios');
+        Route::post('/store_servicio' , [ServMacController::class, 'store_servicio'])->name('store_servicio');
+        Route::post('/delete_servicio' , [ServMacController::class, 'delete_servicio'])->name('delete_servicio');
+        Route::get('/export_serv_entidad' , [ServMacController::class, 'export_serv_entidad'])->name('export_serv_entidad');
+
+    });  
 
     Route::group(['prefix'=>'servicios','as'=>'servicios.' ],function () {
         Route::get('/index' , [ServiciosController::class, 'index'])->name('index');

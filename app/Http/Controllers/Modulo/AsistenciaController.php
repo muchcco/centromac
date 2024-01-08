@@ -393,6 +393,7 @@ class AsistenciaController extends Controller
         $tipo_desc = '1';
         $fecha_inicial = '';
         $fecha_fin = '';
+        $identidad = $request->identidad;
 
         $query = DB::table('M_ASISTENCIA as MA')
                             ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'MA.FECHA', 'MA.NUM_DOC')
@@ -416,7 +417,7 @@ class AsistenciaController extends Controller
                             ->get();
 
 
-        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
+        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4, $identidad), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
 
         return $export;
     
@@ -466,6 +467,8 @@ class AsistenciaController extends Controller
         $tipo_desc = '2';
         $fecha_inicial = $fecha_ini_desc;
         $fecha_fin = $fecha_fin_desc;
+        $identidad = $request->identidad;
+        // dd($identidad);
 
         $query =  DB::table('M_ASISTENCIA as MA')
                         ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
@@ -495,7 +498,7 @@ class AsistenciaController extends Controller
                         ->get();
 
         // dd($fecha_inicial);
-        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
+        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4, $identidad), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
 
         return $export;
     }

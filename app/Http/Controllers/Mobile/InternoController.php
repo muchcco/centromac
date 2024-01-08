@@ -48,11 +48,11 @@ class InternoController extends Controller
                         ->join('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'DES.IDENTIDAD')
                         ->join('D_ENTIDAD_SERVICIOS as DEV', 'DEV.IDSERVICIOS', '=', 'DES.IDSERVICIOS')
                         ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'DES.IDMAC')
-                        ->where('DES.IDENTIDAD',  $idcentro_mac)
+                        ->where('DES.IDMAC',  $idcentro_mac)
                         ->where('DES.IDENTIDAD', $identidad)
                         ->get();
 
-        // dd($serv_m_e);
+        // dd($identidad);
         return view('mobile.det_entidad', compact('mac', 'entidad', 'ent_mac', 'serv_m_e'));
     }
 }

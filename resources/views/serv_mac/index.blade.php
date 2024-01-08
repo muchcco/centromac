@@ -73,7 +73,13 @@
     <div class="col-lg-12">
         <div class="card">
             <div class="card-header" style="background-color:#132842">
-                <h4 class="card-title text-white">SERVICOS POR ENTIDAD - MAESTROS GENERALES
+                <h4 class="card-title text-white">SERVICOS POR ENTIDAD DEL CENTRO MAC -  
+                    @php
+                        $us_id = auth()->user()->idcentro_mac;
+                        $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+
+                        echo $user->NOMBRE_MAC;
+                    @endphp
                 </h4>
             </div><!--end card-header-->
             <div class="card-body bootstrap-select-1">
@@ -81,7 +87,7 @@
                 <div class="row">
                     <div class="col-12 mb-3">
                         <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal" onclick="btnAddServicio()"><i class="fa fa-plus" aria-hidden="true"></i>
-                            Agregar Servicio</button>
+                            Añadir Servicio</button>
                     </div>
                 </div>
                 <div class="row">
@@ -144,7 +150,7 @@ $(document).ready(function() {
 function tabla_seccion(entidad = '') {
     $.ajax({
         type: 'GET',
-        url: "{{ route('servicios.tablas.tb_index') }}", // Ruta que devuelve la vista en HTML
+        url: "{{ route('serv_mac.tablas.tb_index') }}", // Ruta que devuelve la vista en HTML
         data: {entidad: entidad},
         beforeSend: function () {
             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
@@ -217,7 +223,7 @@ function ExcelServicios () {
     console.log(r);
     if(r.flag){
         var entidad = $('#entidad').val();
-        var link_up = "{{ route('servicios.export_serv_entidad') }}";
+        var link_up = "{{ route('serv_mac.export_serv_entidad') }}";
 
         // Crear la URL con las variables como parámetros de consulta
         var href = link_up + '?entidad=' + entidad;
@@ -244,7 +250,7 @@ function ExcelServicios () {
 function btnAddServicio() {
     $.ajax({
         type:'post',
-        url: "{{ route('servicios.modals.md_add_servicios') }}",
+        url: "{{ route('serv_mac.modals.md_add_servicios') }}",
         dataType: "json",
         data:{"_token": "{{ csrf_token() }}"},
         success:function(data){
@@ -260,57 +266,13 @@ var isMayus = (e) => {
 
 function btnStoreServicio(){
 
-    if ($('#entidad').val() == null || $('#entidad').val() == '') {
-        $('#entidad').addClass("hasError");
-    } else {
-        $('#entidad').removeClass("hasError");
-    }
-    if ($('#nombre_servicio').val() == null || $('#nombre_servicio').val() == '') {
-        $('#nombre_servicio').addClass("hasError");
-    } else {
-        $('#nombre_servicio').removeClass("hasError");
-    }
-    if ($('input[name="tramite"]').val() == null || $('input[name="tramite"]').val() == '' || $('input[name="tramite"]').val() == "undefined") {
-        $('input[name="tramite"]').addClass("hasError");
-    } else {
-        $('input[name="tramite"]').removeClass("hasError");
-    }
-    if ($('#orientacion').val() == null || $('#orientacion').val() == '') {
-        $('#orientacion').addClass("hasError");
-    } else {
-        $('#orientacion').removeClass("hasError");
-    }
-    if ($('#costo_serv').val() == null || $('#costo_serv').val() == '') {
-        $('#costo_serv').addClass("hasError");
-    } else {
-        $('#costo_serv').removeClass("hasError");
-    }
-    if ($('#req_cita').val() == null || $('#req_cita').val() == '') {
-        $('#req_cita').addClass("hasError");
-    } else {
-        $('#req_cita').removeClass("hasError");
-    }
-    if ($('#requisito_servicio').val() == null || $('#requisito_servicio').val() == '') {
-        $('#requisito_servicio').addClass("hasError");
-    } else {
-        $('#requisito_servicio').removeClass("hasError");
-    }
-
     var formData = new FormData();
     formData.append("entidad", $("#entidad").val());
-    formData.append("nombre_servicio", $("#nombre_servicio").val());
-    formData.append("req_cita", $("#req_cita").val());
-    formData.append("costo_serv", $("#costo_serv").val());
-    formData.append("requisito_servicio", $("#requisito_servicio").val());
-    var selectedValueTramite = $('input[name="tramite"]:checked').val();
-    formData.append("tramite", selectedValueTramite);
-    var selectedValueOrientacion = $('input[name="orientacion"]:checked').val();
-    formData.append("orientacion", selectedValueOrientacion);
     formData.append("_token", $("input[name=_token]").val());
 
     $.ajax({
         type:'post',
-        url: "{{ route('servicios.store_servicio') }}",
+        url: "{{ route('serv_mac.store_servicio') }}",
         dataType: "json",
         data:formData,
         processData: false,
@@ -352,65 +314,6 @@ function btnStoreServicio(){
     });
 }
 
-function btnEditarServicio(idservicios){
-
-    $.ajax({
-        type:'post',
-        url: "{{ route('servicios.modals.md_edit_servicios') }}",
-        dataType: "json",
-        data:{"_token": "{{ csrf_token() }}",  idservicios : idservicios},
-        success:function(data){
-            $("#modal_show_modal").html(data.html);
-            $("#modal_show_modal").modal('show');
-        }
-    });
-
-}
-
-function btnEditServicio(ident_serv, idservicios){
-
-    var formData = new FormData();
-    formData.append("ident_serv", ident_serv);
-    formData.append("idservicios", idservicios);
-    formData.append("entidad", $("#entidad").val());
-    formData.append("nombre_servicio", $("#nombre_servicio").val());
-    formData.append("req_cita", $("#req_cita").val());
-    formData.append("costo_serv", $("#costo_serv").val());
-    formData.append("requisito_servicio", $("#requisito_servicio").val());
-    var selectedValueTramite = $('input[name="tramite"]:checked').val();
-    formData.append("tramite", selectedValueTramite);
-    var selectedValueOrientacion = $('input[name="orientacion"]:checked').val();
-    formData.append("orientacion", selectedValueOrientacion);
-    formData.append("_token", $("input[name=_token]").val());
-
-    $.ajax({
-        type:'post',
-        url: "{{ route('servicios.update_servicio') }}",
-        dataType: "json",
-        data:formData,
-        processData: false,
-        contentType: false,
-        beforeSend: function () {
-            document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE';
-            document.getElementById("btnEnviarForm").disabled = true;
-        },
-        success:function(data){
-            $("#modal_show_modal").modal('hide');
-                tabla_seccion();
-                Swal.fire({
-                    icon: "info",
-                    text: "El servicio se actualizo con Exito!",
-                    confirmButtonText: "Aceptar"
-                })            
-        },
-        error: function(){
-            document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
-            document.getElementById("btnEnviarForm").disabled = false;
-        }
-    });
-
-}
-
 function btnElimnarServicio(ident_serv, idservicios){  
 
     swal.fire({
@@ -423,7 +326,7 @@ function btnElimnarServicio(ident_serv, idservicios){
     }).then((result) => {
         if (result.value) {
             $.ajax({
-                url: "{{ route('servicios.delete_servicio') }}",
+                url: "{{ route('serv_mac.delete_servicio') }}",
                 type: 'post',
                 data: {"_token": "{{ csrf_token() }}", ident_serv: ident_serv , idservicios : idservicios},
                 success: function(response){

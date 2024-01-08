@@ -23,6 +23,10 @@
         border: 1px solid black;
         margin-bottom: 1em;
       }
+
+      .color{
+        border: 1px solid black !important;
+      }
     </style>
 
 </head>
@@ -79,9 +83,10 @@
                     
                     <div class="mb-3">
                         <div class="row col-12">
-                            <table class="table table-bordered" id="seleccion">
+                            <table class="table table-bordered table-hover" id="seleccion">
                                 <thead class="bg-dark">
                                     <tr>
+                                        <th class="text-white">N°</th>
                                         <th class="text-white">PERFIL</th>
                                         <th class="text-white">HORA DE LLEGADA</th>
                                         <th class="text-white">TIEMPO DE ESPERA</th>
@@ -91,14 +96,15 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse ($query as $q)
-                                        <tr style="color: {{ $q->prioridade_id == '1' ? 'blue' : 'red' }}">                                          
-                                            <td>{{ $q->Entidad }}</td>
-                                            <td>{{ $q->hora_llegada }}</td>
-                                            <td>{{ $q->Tiempo_espera }}</td>
-                                            <td>{{ $q->Estado }}</td>
-                                            <td>{{ $q->Ciudadano }}</td>
-                                            <td>{{ $q->num_docu }}</td>
+                                    @forelse ($query as $i => $q)
+                                        <tr >                                          
+                                            <td style="color: {{ $q->prioridade_id == '1' ? 'blue' : 'red' }}">{{ $i + 1 }}</td>
+                                            <td style="color: {{ $q->prioridade_id == '1' ? 'blue' : 'red' }}">{{ $q->Entidad }}</td>
+                                            <td style="color: {{ $q->prioridade_id == '1' ? 'blue' : 'red' }}">{{ $q->hora_llegada }}</td>
+                                            <td style="color: {{ $q->prioridade_id == '1' ? 'blue' : 'red' }}">{{ $q->Tiempo_espera }}</td>
+                                            <td style="color: {{ $q->prioridade_id == '1' ? 'blue' : 'red' }}">{{ $q->Estado }}</td>
+                                            <td style="color: {{ $q->prioridade_id == '1' ? 'blue' : 'red' }}">{{ $q->Ciudadano }}</td>
+                                            <td style="color: {{ $q->prioridade_id == '1' ? 'blue' : 'red' }}">{{ $q->num_docu }}</td>
                                         </tr>
                                     @empty
                                         <tr>

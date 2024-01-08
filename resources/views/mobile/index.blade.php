@@ -66,6 +66,12 @@
       padding: 0 !important;
     }
 
+    
+
+    .tit-a{
+      width: 100%;
+      height: 100%;
+    }
   </style>
 
 
@@ -110,6 +116,13 @@
   <div class="m-3 dat_mac mostrar" id="centro_mac">
     <div id="cargando_dat"></div>
   </div>
+
+  <section class="m-3">
+    
+
+  </section>
+
+  
 @endsection
 
 

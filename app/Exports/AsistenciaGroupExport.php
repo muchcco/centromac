@@ -34,8 +34,9 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
     protected $hora_2;
     protected $hora_3;
     protected $hora_4;
+    protected $identidad;
 
-    function __construct($query, $name_mac,  $nombreMES, $tipo_desc, $fecha_inicial, $fecha_fin, $hora_1, $hora_2, $hora_3, $hora_4) {
+    function __construct($query, $name_mac,  $nombreMES, $tipo_desc, $fecha_inicial, $fecha_fin, $hora_1, $hora_2, $hora_3, $hora_4, $identidad) {
         $this->query = $query;
         $this->nombreMES = $nombreMES;
         $this->name_mac = $name_mac;
@@ -46,6 +47,7 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
         $this->hora_2 = $hora_2;
         $this->hora_3 = $hora_3;
         $this->hora_4 = $hora_4;
+        $this->identidad = $identidad;
     }
     
     public function view(): View
@@ -61,6 +63,7 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
             'hora_2' => $this->hora_2,
             'hora_3' => $this->hora_3,
             'hora_4' => $this->hora_4,
+            'identidad' => $this->identidad,
         ]);
     }
 
@@ -80,14 +83,21 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
 
     public function drawings()
     {
-        $drawing = new Drawing();
-        $drawing->setName('Logo');
-        $drawing->setDescription('This is my logo');
-        $drawing->setPath(public_path('imagen/mac_logo_export.jpg'));
-        $drawing->setHeight(50);
-        $drawing->setCoordinates('A1');
+        if ($this->identidad != '17') {
+            $drawing = new Drawing();
+            $drawing->setName('Logo');
+            $drawing->setDescription('This is my logo');
+            $drawing->setPath(public_path('imagen/mac_logo_export.jpg'));
+            $drawing->setHeight(50);
+            $drawing->setCoordinates('A1');
+    
+            return [$drawing];
+        }
+    
+        // Si $this->identidad es igual a '17', no devuelvas ningún dibujo
+        return [];
 
-        return [$drawing];
+        
     }
 
     public function styles(Worksheet $sheet)

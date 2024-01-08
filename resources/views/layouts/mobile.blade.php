@@ -45,6 +45,19 @@
         .nobtn:hover{
             text-decoration: underline; 
         }
+
+        .footer {
+            background-color: #f1f1f1; /* Color de fondo del footer, ajusta según tus necesidades */
+            padding: 10px; /* Espaciado interno del footer, ajusta según tus necesidades */
+            text-align: center;
+            /* position: sticky; */
+            bottom: 0;
+        }
+
+        .tit-a{
+            width: 100%;
+            height: 100%;
+        }
        
     </style>
     @yield('estilo')
@@ -52,7 +65,11 @@
 <body>
     @yield('main')
 
-    
+    <footer class="footer">
+        <div class="tit-a">
+          <p class="text-center">Centros MAC &copy; Todos los derechos reservados</p>
+        </div>
+    </footer>
 
     <script src="{{ asset('js/jquery.min.js') }}"></script>
     <script src="{{ asset('https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js')}}" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>

@@ -10,6 +10,7 @@ use App\Models\Entidad;
 use App\Models\Archivoper;
 use App\Models\Servicio;
 use App\Models\User;
+use GuzzleHttp\Client;
 
 class PagesController extends Controller
 {
@@ -388,6 +389,30 @@ class PagesController extends Controller
 
 
     /********************************************************** RECURSOS ***************************************************************************/
+
+    public function dni(Request $request)
+    {
+        $token = '';
+
+        $client = new Client(['base_uri' => 'https://api.apis.net.pe', 'verify' => false]);
+
+        $parameters = [
+            'http_errors' => false,
+            'connect_timeout' => 5,
+            'headers' => [
+                'Authorization' => 'Bearer '.$token,
+                'Referer' => 'https://apis.net.pe/api-consulta-ruc',
+                'User-Agent' => 'laravel/guzzle',
+                'Accept' => 'application/json',
+            ],
+            'query' => ['numero' => $request->dni]
+        ];
+        // Para usar la versión 1 de la api, cambiar a /v1/ruc
+        $res = $client->request('GET', '/v2/sunat/ruc', $parameters);
+        $response = json_decode($res->getBody()->getContents(), true);
+        // var_dump($response);
+        return $response;
+    }
 
     public function provincias($departamento_id)
     {
