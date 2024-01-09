@@ -396,7 +396,7 @@ class AsistenciaController extends Controller
         $identidad = $request->identidad;
 
         $query = DB::table('M_ASISTENCIA as MA')
-                            ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'MA.FECHA', 'MA.NUM_DOC')
+                            ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC')
                             ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1')
                             ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2')
                             ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "3" THEN MA.HORA ELSE NULL END) AS hora3')
@@ -404,11 +404,12 @@ class AsistenciaController extends Controller
                             ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "5" THEN MA.HORA ELSE NULL END) AS hora5')
                             ->selectRaw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
                             ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-                            ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD
+                            ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
                                 FROM M_PERSONAL
+                                LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
                                 JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
                                 JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
-                            ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD')
+                            ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO')
                             ->where('PERS.IDENTIDAD', $request->identidad)
                             ->where('PERS.IDCENTRO_MAC', $idmac)
                             ->whereMonth('MA.FECHA', $request->mes)
@@ -416,7 +417,7 @@ class AsistenciaController extends Controller
                             ->orderBy('FECHA', 'ASC')
                             ->get();
 
-
+        // dd($query);
         $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4, $identidad), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
 
         return $export;

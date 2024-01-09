@@ -2,33 +2,40 @@
     @forelse ($query as $i => $q)
         <table>
             <tr>
-                <th colspan="7">{{  $q->NUM_DOC }} {{ $q->NOMBREU }}</th>
+                <th style="border: 1px solid black; background: #D9E1F2;" colspan="7">
+                    {{  $q->NUM_DOC }} {{ $q->NOMBREU }} - {{ $q->NOMBRE_CARGO }} FECHA: 
+                    @if ( $tipo_desc == '1' )
+                        mes: {{ $nombreMES }}
+                    @elseif($tipo_desc == '2')
+                         De: {{ $fecha_inicial }} Hasta: {{ $fecha_fin }}
+                    @endif
+                </th>
             </tr>
             <tr>
-                <td>Día</td>
-                <td>Fecha</td>
-                <td>Ingreso</td>
-                <td>Salida</td>
-                <td>Ingreso programado</td>
-                <td>Salida Programada</td>
-                <td>Observación</td>
+                <th style="border: 1px solid black">Día</th>
+                <th style="border: 1px solid black">Fecha</th>
+                <th style="border: 1px solid black">Ingreso</th>
+                <th style="border: 1px solid black">Salida</th>
+                <th style="border: 1px solid black">Ingreso programado</th>
+                <th style="border: 1px solid black">Salida Programada</th>
+                <th style="border: 1px solid black">Observación</th>
             </tr>
             <tr>
                 @if($q->N_NUM_DOC == '2' )
-                    <td>
+                    <td style="border: 1px solid black">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
                         {{ $FECHA }}
                     </td>
-                    <td>
+                    <td style="border: 1px solid black">
                         {{ $q->FECHA }}
                     </td>
-                    <td>
+                    <td style="border: 1px solid black">
                         {{ $q->hora1 }}
                     </td>
-                    <td>
+                    <td style="border: 1px solid black">
                         {{ $q->hora2 }}
                     </td>
-                    <td>
+                    <td style="border: 1px solid black">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
                         @if ($FECHA == 's?bado')
@@ -37,7 +44,7 @@
                             {{ $hora_1->VALOR }}
                         @endif
                     </td>
-                    <td>
+                    <td style="border: 1px solid black">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
                         @if ($FECHA == 's?bado')
@@ -46,7 +53,7 @@
                             {{ $hora_2->VALOR }}
                         @endif
                     </td>
-                    <td>
+                    <td style="border: 1px solid black">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
                         @if ($FECHA == 's?bado')
