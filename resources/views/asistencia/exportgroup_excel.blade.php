@@ -1,4 +1,4 @@
-@if($identidad == '17')
+{{-- @if($identidad == '17')
     @forelse ($query as $i => $q)
         <table>
             <tr>
@@ -73,7 +73,7 @@
 
     
 
-@else
+@else --}}
     <table >
         <tr>                        
             <th style="border: 1px solid black" rowspan="3" colspan="2"></th>
@@ -279,4 +279,4 @@
 
     </table>
 
-@endif
+{{-- @endif --}}
