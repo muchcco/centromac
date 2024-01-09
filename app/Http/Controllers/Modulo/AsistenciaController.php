@@ -394,6 +394,7 @@ class AsistenciaController extends Controller
         $fecha_inicial = '';
         $fecha_fin = '';
         $identidad = $request->identidad;
+        
 
         $query = DB::table('M_ASISTENCIA as MA')
                             ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC')

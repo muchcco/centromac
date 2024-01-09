@@ -1,5 +1,5 @@
 @if($identidad == '17')
-    
+    @forelse ($query as $i => $q)
         <table>
             <tr>
                 <th style="border: 1px solid black; background: #D9E1F2;" colspan="7">
@@ -12,66 +12,64 @@
                 </th>
             </tr>
             <tr>
-                <th style="border: 1px solid black">Día</th>
-                <th style="border: 1px solid black">Fecha</th>
-                <th style="border: 1px solid black">Ingreso</th>
-                <th style="border: 1px solid black">Salida</th>
-                <th style="border: 1px solid black">Ingreso programado</th>
-                <th style="border: 1px solid black">Salida Programada</th>
-                <th style="border: 1px solid black">Observación</th>
+                <td style="border: 1px solid black">Día</td>
+                <td style="border: 1px solid black">Fecha</td>
+                <td style="border: 1px solid black">Ingreso</td>
+                <td style="border: 1px solid black">Salida</td>
+                <td style="border: 1px solid black">Ingreso programado</td>
+                <td style="border: 1px solid black">Salida Programada</td>
+                <td style="border: 1px solid black">Observación</td>
             </tr>
             <tr>
-                @forelse ($query as $i => $q)
-                    @if($q->N_NUM_DOC == '2' )
-                        <td style="border: 1px solid black">
-                            <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
-                            {{ $FECHA }}
-                        </td>
-                        <td style="border: 1px solid black">
-                            {{ $q->FECHA }}
-                        </td>
-                        <td style="border: 1px solid black">
-                            {{ $q->hora1 }}
-                        </td>
-                        <td style="border: 1px solid black">
-                            {{ $q->hora2 }}
-                        </td>
-                        <td style="border: 1px solid black">
-                            <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+                @if($q->N_NUM_DOC == '2' )
+                    <td style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+                        {{ $FECHA }}
+                    </td>
+                    <td style="border: 1px solid black">
+                        {{ $q->FECHA }}
+                    </td>
+                    <td style="border: 1px solid black">
+                        {{ $q->hora1 }}
+                    </td>
+                    <td style="border: 1px solid black">
+                        {{ $q->hora2 }}
+                    </td>
+                    <td style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
-                            @if ($FECHA == 's?bado')
-                                {{ $hora_3->VALOR }}
-                            @else
-                                {{ $hora_1->VALOR }}
-                            @endif
-                        </td>
-                        <td style="border: 1px solid black">
-                            <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_3->VALOR }}
+                        @else
+                            {{ $hora_1->VALOR }}
+                        @endif
+                    </td>
+                    <td style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
-                            @if ($FECHA == 's?bado')
-                                {{ $hora_4->VALOR }}
-                            @else
-                                {{ $hora_2->VALOR }}
-                            @endif
-                        </td>
-                        <td style="border: 1px solid black">
-                            <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_4->VALOR }}
+                        @else
+                            {{ $hora_2->VALOR }}
+                        @endif
+                    </td>
+                    <td style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
-                            @if ($FECHA == 's?bado')
-                                Sábado
-                            @else
+                        @if ($FECHA == 's?bado')
+                            Sábado
+                        @else
 
-                            @endif
-                        </td>
-                    @endif
-                @empty
-                    <th>No hay Datos Registrados</th>
-                @endforelse
+                        @endif
+                    </td>
+                @endif
             </tr>
         </table>
 
 
-    
+    @empty
+        <th>No hay Datos Registrados</th>
+    @endforelse
 
     
 
