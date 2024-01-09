@@ -390,7 +390,7 @@ class PagesController extends Controller
 
     /********************************************************** RECURSOS ***************************************************************************/
 
-    public function dni(Request $request)
+    public function buscar_dni(Request $request)
     {
         $token = '';
 
@@ -401,14 +401,14 @@ class PagesController extends Controller
             'connect_timeout' => 5,
             'headers' => [
                 'Authorization' => 'Bearer '.$token,
-                'Referer' => 'https://apis.net.pe/api-consulta-ruc',
+                'Referer' => 'https://apis.net.pe/api-consulta-dni',
                 'User-Agent' => 'laravel/guzzle',
                 'Accept' => 'application/json',
             ],
             'query' => ['numero' => $request->dni]
         ];
         // Para usar la versión 1 de la api, cambiar a /v1/ruc
-        $res = $client->request('GET', '/v2/sunat/ruc', $parameters);
+        $res = $client->request('GET', '/v1/dni', $parameters);
         $response = json_decode($res->getBody()->getContents(), true);
         // var_dump($response);
         return $response;

@@ -11,15 +11,16 @@
             <form class="form-horizontal">
                 <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
                 <div class="row mb-3">
-                    <label  class="col-3 col-form-label">DNI</label>
+                    <label  class="col-3 col-form-label">Número de Documento</label>
                     <div class="col-9">
-                        <input type="text" class="form-control" name="dni" id="dni" placeholder="DNI" onkeypress="return isNumber(event)">
+                        <input type="text" class="form-control" name="dni" id="dni" placeholder="Número de Documento" onkeypress="return isNumber(event)">
+                        <span class="text-center text-danger" id="mensaje_error_dni"></span>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <label  class="col-3 col-form-label">Nombres</label>
                     <div class="col-9">
-                        <input type="text" class="form-control" name="nombre" id="nombre" placeholder="Nombres" onkeyup="isMayus(this)">
+                        <input type="text" class="form-control" name="nombre" id="nombre" placeholder="Nombres" onkeyup="isMayus(this)">                        
                     </div>
                 </div>
                 <div class="row mb-3">
@@ -86,20 +87,24 @@
 <script>
 
 $(document).ready(function() {
-    $('#ruc').on('change', function(){
-        var ruc = $(this).val();
+    $('#dni').on('change', function(){
+        var dni = $(this).val();
 
         $.ajax({
             type: 'POST',
-            url: "{{ route('buscar_ruc') }}", 
-            data: {"_token": "{{ csrf_token() }}", ruc: ruc},
+            url: "{{ route('buscar_dni') }}", 
+            data: {"_token": "{{ csrf_token() }}", dni: dni},
             success: function(response) {
                 // $('#subtipo').html(response);
                 console.log(response);
                 if(!(response.error)){
-                    document.getElementById('r_social').value = response.nombre;
+                    document.getElementById('mensaje_error_dni').textContent = '';
+                    document.getElementById('nombre').value = response.nombres;
+                    document.getElementById('ap_pat').value = response.apellidoPaterno;
+                    document.getElementById('ap_mat').value = response.apellidoMaterno;
                 }else{
-                    document.getElementById('r_social').value = '';
+                    document.getElementById('nombre').value = '';
+                    document.getElementById('mensaje_error_dni').textContent = response.data.error;
                 }
                 
             }

@@ -41,7 +41,7 @@ Route::get('entidad_cola.html5/{identidad}' , [PagesController::class, 'entidad_
 
 /******************  RECURSOS  ********************/
 
-Route::get('dni', [PagesController::class, 'dni'])->name('dni');
+Route::post('buscar_dni', [PagesController::class, 'buscar_dni'])->name('buscar_dni');
 Route::get('provincias/{departamento_id}', [PagesController::class, 'provincias'])->name('provincias');
 Route::get('distritos/{provincia_id}', [PagesController::class, 'distritos'])->name('distritos');
 Route::get('subtipo_vehiculo/{idsubtipo_vehiculo}', [PagesController::class, 'subtipo_vehiculo'])->name('subtipo_vehiculo');
