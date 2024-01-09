@@ -1,5 +1,5 @@
 @if($identidad == '17')
-    @forelse ($query as $i => $q)
+    
         <table>
             <tr>
                 <th style="border: 1px solid black; background: #D9E1F2;" colspan="7">
@@ -21,55 +21,57 @@
                 <th style="border: 1px solid black">Observación</th>
             </tr>
             <tr>
-                @if($q->N_NUM_DOC == '2' )
-                    <td style="border: 1px solid black">
-                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
-                        {{ $FECHA }}
-                    </td>
-                    <td style="border: 1px solid black">
-                        {{ $q->FECHA }}
-                    </td>
-                    <td style="border: 1px solid black">
-                        {{ $q->hora1 }}
-                    </td>
-                    <td style="border: 1px solid black">
-                        {{ $q->hora2 }}
-                    </td>
-                    <td style="border: 1px solid black">
-                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+                @forelse ($query as $i => $q)
+                    @if($q->N_NUM_DOC == '2' )
+                        <td style="border: 1px solid black">
+                            <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+                            {{ $FECHA }}
+                        </td>
+                        <td style="border: 1px solid black">
+                            {{ $q->FECHA }}
+                        </td>
+                        <td style="border: 1px solid black">
+                            {{ $q->hora1 }}
+                        </td>
+                        <td style="border: 1px solid black">
+                            {{ $q->hora2 }}
+                        </td>
+                        <td style="border: 1px solid black">
+                            <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
-                        @if ($FECHA == 's?bado')
-                            {{ $hora_3->VALOR }}
-                        @else
-                            {{ $hora_1->VALOR }}
-                        @endif
-                    </td>
-                    <td style="border: 1px solid black">
-                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+                            @if ($FECHA == 's?bado')
+                                {{ $hora_3->VALOR }}
+                            @else
+                                {{ $hora_1->VALOR }}
+                            @endif
+                        </td>
+                        <td style="border: 1px solid black">
+                            <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
-                        @if ($FECHA == 's?bado')
-                            {{ $hora_4->VALOR }}
-                        @else
-                            {{ $hora_2->VALOR }}
-                        @endif
-                    </td>
-                    <td style="border: 1px solid black">
-                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+                            @if ($FECHA == 's?bado')
+                                {{ $hora_4->VALOR }}
+                            @else
+                                {{ $hora_2->VALOR }}
+                            @endif
+                        </td>
+                        <td style="border: 1px solid black">
+                            <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
 
-                        @if ($FECHA == 's?bado')
-                            Sábado
-                        @else
+                            @if ($FECHA == 's?bado')
+                                Sábado
+                            @else
 
-                        @endif
-                    </td>
-                @endif
+                            @endif
+                        </td>
+                    @endif
+                @empty
+                    <th>No hay Datos Registrados</th>
+                @endforelse
             </tr>
         </table>
 
 
-    @empty
-        <th>No hay Datos Registrados</th>
-    @endforelse
+    
 
     
 
