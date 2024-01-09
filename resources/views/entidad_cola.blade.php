@@ -51,7 +51,7 @@
     <section id="main">
       <div class="container">
         <div class="carp">
-          <div class="card col-sm-8">
+          <div class="card col-sm-8 col-12 col-lg-12 col-md-12">
             <div class="card-header">
               <center><h2>Revisión de ciudadanos por entidad</h2></center>
             </div>
@@ -68,7 +68,7 @@
       </div>      
       <div class="container">
         <div class="carp">
-          <div class="card col-sm-8">
+          <div class="card col-sm-8 col-12 col-lg-12 col-md-12">
             <div class="card-header">
               <h2>Ciudadanos en Espera :</h2>
             </div>
