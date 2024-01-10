@@ -187,6 +187,7 @@ formData.append("nombre", $("#nombre").val());
 formData.append("ap_pat", $("#ap_pat").val());
 formData.append("ap_mat", $("#ap_mat").val());
 formData.append("dni", $("#dni").val());
+formData.append("cargo", $("#cargo").val());
 formData.append("entidad", $("#entidad").val());
 formData.append("sexo", $("#sexo").val());
 formData.append("fech_nac", $("#fech_nac").val());
@@ -205,17 +206,29 @@ $.ajax({
         document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE';
         document.getElementById("btnEnviarForm").disabled = true;
     },
-    success:function(data){        
-        $("#modal_show_modal").modal('hide');
-        tabla_seccion();
-        Toastify({
-            text: "Se guardo exitosamente el registro",
-            className: "info",
-            gravity: "bottom",
-            style: {
-                background: "#47B257",
-            }
-        }).showToast();
+    success:function(data){
+        if(data.status == '201'){
+            document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
+                document.getElementById("btnEnviarForm").disabled = false;
+                document.getElementById('alerta').innerHTML = `<div class="alert custom-alert custom-alert-warning icon-custom-alert shadow-sm fade show d-flex justify-content-between" role="alert"><div class="media">
+                                                                    <i class="la la-exclamation-triangle alert-icon text-warning align-self-center font-30 me-3"></i>
+                                                                    <div class="media-body align-self-center">
+                                                                        <h5 class="mb-1 fw-bold mt-0">Importante</h5>
+                                                                        <span>`+ data.message.replace(/\n/g, "<br>") +`.</span>
+                                                                    </div>
+                                                                </div></div>`;
+        }else{
+            $("#modal_show_modal").modal('hide');
+            tabla_seccion();
+            Toastify({
+                text: "Se guardo exitosamente el registro",
+                className: "info",
+                gravity: "bottom",
+                style: {
+                    background: "#47B257",
+                }
+            }).showToast();
+        }
     },
     error: function(){
         document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE';
@@ -237,6 +250,62 @@ var isNumber = (evt) =>{
 
 var isMayus = (e) => {
     e.value = e.value.toUpperCase();
+}
+
+function btnElimnarServicio (idpersonal){
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('personal.modals.md_baja_pcm') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}", idpersonal : idpersonal},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
+
+}
+
+function btnBajaPCM(idpersonal){
+
+    var tipo = $("#baja").val();
+    console.log(tipo)
+
+    if (tipo === ""){ //tell you if the array is empty
+        $('#baja').addClass("hasError");
+    }
+    else {
+        var formData = new FormData();
+        formData.append("baja", $("#baja").val());
+        formData.append('idpersonal', idpersonal);
+        formData.append("_token", $("input[name=_token]").val());
+
+        $.ajax({
+            type:'post',
+            url: "{{ route('personal.baja_pcm') }}",
+            dataType: "json",
+            data:formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function () {
+                document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+                document.getElementById("btnEnviarForm").disabled = true;
+            },
+            success:function(data){                
+                $("#modal_show_modal").modal('hide');
+                tabla_seccion();
+                Toastify({
+                    text: "Se altero el estado del personal",
+                    className: "info",
+                    style: {
+                        background: "#206AC8",
+                    }
+                }).showToast();
+            }
+        });
+    }
+
 }
 
 

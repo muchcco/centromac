@@ -7,7 +7,7 @@
         <div class="modal-body">
             <div id="alerta">
             </div> 
-            <h5>Seleccionar que tipo de baja se realizará al asesor de servicio</h5>
+            <h5>Seleccionar que tipo de baja se realizará al personal PCM</h5>
             <form class="form-horizontal">
                 <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
                 <div class="row mb-3">
@@ -25,7 +25,7 @@
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
-            <button type="button" class="btn btn-outline-success" id="btnEnviarForm" onclick="btnBajaAsesor('{{ $personal->IDPERSONAL }}')">Guardar</button>
+            <button type="button" class="btn btn-outline-success" id="btnEnviarForm" onclick="btnBajaPCM('{{ $personal->IDPERSONAL }}')">Guardar</button>
         </div>
     </div>
 </div>

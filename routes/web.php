@@ -126,6 +126,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/modals/md_edit_pcm' , [PcmController::class, 'md_edit_pcm'])->name('modals.md_edit_pcm');
         Route::post('/update_pcm' , [PcmController::class, 'update_pcm'])->name('update_pcm');
         Route::post('/delete_pcm' , [PcmController::class, 'delete_pcm'])->name('delete_pcm');
+        Route::post('/modals/md_baja_pcm' , [PcmController::class, 'md_baja_pcm'])->name('modals.md_baja_pcm');
+        Route::post('/baja_pcm' , [PcmController::class, 'baja_pcm'])->name('baja_pcm');
 
     });
 

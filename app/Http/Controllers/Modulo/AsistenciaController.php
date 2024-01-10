@@ -359,6 +359,7 @@ class AsistenciaController extends Controller
                         ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
                         ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
                         ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                        ->where('M_PERSONAL.FLAG', 1)
                         ->get();
 
         return view('asistencia.tablas.tb_det_entidad', compact('data'));

@@ -74,7 +74,9 @@ class AsignacionController extends Controller
 
         $personal = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
                                 ->join('D_PERSONAL_TIPODOC', 'D_PERSONAL_TIPODOC.IDTIPO_DOC', '=', 'M_PERSONAL.IDTIPO_DOC')
-                                ->where('IDPERSONAL', $idpersonal)->first();
+                                ->where('IDPERSONAL', $idpersonal)
+                                ->where('M_PERSONAL.FLAG', 1)
+                                ->first();
 
         return view('asignacion.asignacion_inventario', compact('personal', 'asignacion_estado', 'datos_acepta'));
     }

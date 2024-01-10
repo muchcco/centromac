@@ -98,6 +98,7 @@ class PcmController extends Controller
                                         ) AS DIFERENCIA_CAMPOS")
                                     )
                                     ->where('MP.IDMAC', '=', $idmac)
+                                    ->whereIn('MP.FLAG', [1, 2])
                                     ->where('MP.IDENTIDAD', 17) //SOLO ACEPTAMOS DEL REGISTRO A PERSONAL DE PCM
                                     ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
                                     ->get();
@@ -117,13 +118,15 @@ class PcmController extends Controller
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
+        $cargos = DB::table('D_PERSONAL_CARGO')->get();
+
         $entidad = DB::table('M_MAC_ENTIDAD')
                             ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
                             ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
                             ->where('M_ENTIDAD.IDENTIDAD', 17)
                             ->get();
 
-        $view = view('personal.modals.md_add_pcm', compact('entidad'))->render();
+        $view = view('personal.modals.md_add_pcm', compact('entidad', 'cargos'))->render();
 
         return response()->json(['html' => $view]); 
     }
@@ -140,6 +143,18 @@ class PcmController extends Controller
                 'sexo' => 'required',
             ]);
 
+            $persona_existe = Personal::where('NUM_DOC', $request->dni)->first();
+            // dd($persona_existe);
+            if($persona_existe){
+                $response_ = response()->json([
+                    'data' => null,
+                    'message' => "El personal ya fue registrado... Si no esta en la lista, completar el formulario de registro dando clic en el siguiente enlace <a href='".route('validar')."' target='_blank'><strong>(Hacer clic aqui)</strong></a>",
+                    'status' => 201,
+                ], 200);
+
+                return $response_;
+            }
+
             /*================================================================================================================*/
             $us_id = auth()->user()->idcentro_mac;
             $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
@@ -155,6 +170,7 @@ class PcmController extends Controller
             $save->APE_PAT = $request->ap_pat;
             $save->APE_MAT = $request->ap_mat;
             $save->NUM_DOC = $request->dni;
+            $save->IDCARGO_PERSONAL = $request->cargo;
             $save->IDENTIDAD = $request->entidad;
             $save->SEXO = $request->sexo;
             $save->CORREO = $request->correo;
@@ -172,6 +188,39 @@ class PcmController extends Controller
 
             return $save;
             
+        } catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
+    }
+
+    public function md_baja_pcm(Request $request)
+    {
+        $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
+
+        // dd($personal);
+
+        $view = view('personal.modals.md_baja_pcm', compact('personal'))->render();
+
+        return response()->json(['html' => $view]); 
+    }
+
+    public function baja_pcm(Request $request)
+    {
+        try{
+
+            $personal = Personal::findOrFail($request->idpersonal);
+            $personal->FLAG = $request->baja;
+            $personal->save();
+
+            return $personal;
+
         } catch (\Exception $e) {
             //Si existe algún error en la Transacción
             $response_ = response()->json([

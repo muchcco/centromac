@@ -97,6 +97,7 @@ class AsesoresController extends Controller
                                         ) AS DIFERENCIA_CAMPOS")
                                     )
                                     ->where('MP.IDMAC', '=', $idmac)
+                                    ->whereIn('MP.FLAG', [1, 2])
                                     ->whereNot('MP.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
                                     ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
                                     ->get();
@@ -177,7 +178,7 @@ class AsesoresController extends Controller
             if($persona_existe){
                 $response_ = response()->json([
                     'data' => null,
-                    'message' => "El personal ya fue registrado",
+                    'message' => "El personal ya fue registrado... Si no esta en la lista, completar el formulario de registro dando clic en el siguiente enlace <a href='".route('validar')."' target='_blank'><strong>(Hacer clic aqui)</strong></a>",
                     'status' => 201,
                 ], 200);
 

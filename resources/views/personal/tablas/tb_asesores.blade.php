@@ -8,6 +8,7 @@
             <th class="text-white">Centro MAC</th>
             <th class="text-white">% de progreso</th>
             <th class="text-white">Correo</th>
+            <th class="text-white">Estado</th>
             <th class="text-white">Acciones</th>
         </tr>
     </thead>
@@ -32,6 +33,13 @@
                     </div>
                 </td>
                 <td>{{ $que->CORREO }}</td>
+                <td class="text-center">
+                    @if ($que->FLAG == '1')
+                        <span class="badge badge-soft-success px-2">Activo</span>
+                    @elseif($que->FLAG == '2')
+                        <span class="badge badge-soft-danger px-2">Inactivo</span>                        
+                    @endif
+                </td>
                 <td>
                     <a href="{{ route('formdata', $que->NUM_DOC) }}" class="nobtn bandejTool" data-tippy-content="Editar personal" target="_blank"><i class="las la-pen text-secondary font-16 text-success"></i></a>
                     <button class="nobtn bandejTool" data-tippy-content="Dar de baja" onclick="btnElimnarServicio('{{ $que->IDPERSONAL }}' )"><i class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
@@ -54,6 +62,7 @@ $(document).ready(function() {
         "ordering": false,
         language: {"url": "{{ asset('js/Spanish.json')}}"}, 
         "columns": [
+            { "width": "" },
             { "width": "" },
             { "width": "" },
             { "width": "" },

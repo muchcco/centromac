@@ -185,36 +185,24 @@ function BtnNumDoc() {
             processData: false,
             contentType: false,
             success: function(response){
-                console.log(response)
-                document.getElementById("btn-ingresodoc").innerHTML = 'Ingresar';
-                document.getElementById("btn-ingresodoc").disabled = false;
-                if(response.status == '201'){
-                    Swal.fire({
-                        icon: "info",
-                        text: response.message,
-                        confirmButtonText: "Aceptar"
-                    })
-                }if(response.status == '202'){
-                    Swal.fire({
-                        icon: "info",
-                        text: response.message,
-                        confirmButtonText: "Aceptar"
-                    })
-                }else{
-                    //toastr.error(response.message);
-                    
+              console.log("asd")
+              document.getElementById("btn-ingresodoc").innerHTML = 'Ingresar';
+              document.getElementById("btn-ingresodoc").disabled = false;
 
-                    console.log(response);
-
-                    var num_doc = response.NUM_DOC;
-
-                    var URLd = "{{ route('formdata', ':num_doc') }}".replace(':num_doc', num_doc);
-
-                    window.location.href = URLd;
-                }
+              if (response.status == '201' || response.status == '202') {
+                  Swal.fire({
+                      icon: "info",
+                      text: response.message,
+                      confirmButtonText: "Aceptar"
+                  });
+              } else {
+                  console.log(response);
+                  var num_doc = response.NUM_DOC;
+                  var URLd = "{{ route('formdata', ':num_doc') }}".replace(':num_doc', num_doc);
+                  window.location.href = URLd;
+              }
 
                 
-
             },
             error: function(error){
                 //location.reload();

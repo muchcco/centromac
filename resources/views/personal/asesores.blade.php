@@ -12,6 +12,7 @@
 <link href="{{ asset('nuevo/plugins/datatables/buttons.bootstrap5.min.css')}}" rel="stylesheet" type="text/css" />
 <!-- Responsive datatable examples -->
 <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" /> 
+<link href="{{ asset('css/toastr.min.css')}}" rel="stylesheet" type="text/css" /> 
 
 
 
@@ -105,6 +106,7 @@
 <script src="{{asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js')}}"></script>
 <script src="{{asset('nuevo/assets/pages/jquery.datatable.init.js')}}"></script>
     
+<script src="{{asset('js/toastr.min.js')}}"></script>
 <script>
 $(document).ready(function() {
     tabla_seccion();
@@ -274,7 +276,7 @@ function btnBajaAsesor(idpersonal){
     var tipo = $("#baja").val();
     console.log(tipo)
     
-    if (tipo === "" || tipo == NULL){ //tell you if the array is empty
+    if (tipo === ""){ //tell you if the array is empty
         $('#baja').addClass("hasError");
     }
     else {
@@ -298,7 +300,7 @@ function btnBajaAsesor(idpersonal){
                 $("#modal_show_modal").modal('hide');
                 tabla_seccion();
                 Toastify({
-                    text: "Se dio de baja al asesor",
+                    text: "Se altero el estado del personal",
                     className: "info",
                     style: {
                         background: "#206AC8",
