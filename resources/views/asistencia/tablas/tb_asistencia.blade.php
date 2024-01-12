@@ -16,20 +16,33 @@
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td>
-                    <a href="{{ route('asistencia.det_us', $dato->n_dni) }}">{{ $dato->nombreu }}</a>                    
+                    {{-- <a href="{{ route('asistencia.det_us', $dato->n_dni) }}">{{ $dato->nombreu }}</a> --}}
+                    {{ $dato->nombreu }}                    
                 </td>
                 <td>{{ $dato->n_dni }}</td>
                 <td>{{ $dato->ABREV_ENTIDAD }}</td>
                 <td>{{ $dato->NOMBRE_MAC }}</td>                
                 <td>
-                    @if ( date("H:i:s", strtotime($dato->fecha_biometrico)) > '08:16:00')
-                        <span class="badge badge-danger m-l-5">TARDE</span>
+                    @php
+                        $fechaBiometrico = $dato->fecha_biometrico;
+                        $timestamp = strtotime($fechaBiometrico);
+                        $nuevaFecha = date("H:i:s", $timestamp + 60); // 60 segundos representan un minuto
+                        $confTimestamp = strtotime($conf->NUM_SOLO);
+                        $confTimestamp += 60;
+                        $confNuevaFecha = date("H:i:s", $confTimestamp);
+                    @endphp
+                
+                    @if ($nuevaFecha > $confNuevaFecha)
+                        <span class="badge badge-soft-danger px-2">TARDE </span>
                     @else
-                        <span class="badge badge-success m-l-5">EN HORA</span>
+                        <span class="badge badge-soft-success px-2">EN HORA</span>
                     @endif
                 </td>
+                
                 <td>{{ $dato->fecha_biometrico }}</td>
-                <td></td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="btnModalView('{{ $dato->n_dni }}', '{{ $dato->fecha_asistencia }}')">Ver completo (Hoy)</button>
+                </td>
             </tr>
         @endforeach
     </tbody>

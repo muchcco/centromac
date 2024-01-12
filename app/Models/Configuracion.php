@@ -13,7 +13,7 @@ class Configuracion extends Model
 
     protected $primaryKey = 'IDCONFIGURACION';
 
-    protected $fillable = [ 'PARAMETRO', 'DESCRIPCION', 'FLAG', 'VALOR', 'MENSAJE'];
+    protected $fillable = [ 'PARAMETRO', 'DESCRIPCION', 'FLAG', 'VALOR', 'MENSAJE', 'NUM_SOLO'];
 
     public $timestamps = false;
 }

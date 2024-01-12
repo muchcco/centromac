@@ -9,10 +9,15 @@
                         <button class="nav-link button-menu-mobile">
                             <i data-feather="menu" class="align-self-center topbar-icon"></i>
                         </button>
-                    </li>                         
+                    </li>                    
                 </ul>
             </div>
-            <div class="col-10" id="divicnav2">
+            <div class="col-9" id="divicnav2" style="display: flex; flex-direction:row; justify-content:space-around; ">
+                {{-- <div style="text-align: left;">
+                    <h3 style="color:#fff;margin-bottom: 0px;">
+                        asd
+                    </h3>
+                </div> --}}
                 <div style="text-align: center;">
                     <h3 style="color:#fff;margin-bottom: 0px;">
                         SISTEMA INTRANET CENTROS MAC - PCM
@@ -25,7 +30,12 @@
                             echo $user->NOMBRE_MAC.')';
                         @endphp                    
                     </p>
-                </div>  
+                </div>
+                {{-- <div style="text-align: left;">
+                    <h3 style="color:#fff;margin-bottom: 0px;">
+                        asd
+                    </h3>
+                </div> --}}
             </div>
             <div class="col-1" id="">
                 <div class="row" style="text-align: center;">
@@ -39,7 +49,9 @@
                             <li class="dropdown">
                                 <a class="nav-link dropdown-toggle waves-effect waves-light nav-user" data-bs-toggle="dropdown" href="#" role="button"
                                     aria-haspopup="false" aria-expanded="false">
-                                    <!--<span class="ms-1 nav-user-name hidden-sm"></span>-->
+                                    <span class="ms-1 nav-user-name hidden-sm">
+                                        {{ auth()->user()->name }}                                        
+                                    </span>
                                     <!--<img src="{{ asset('Img\profile-photos\1.png')}}" alt="profile-user" class="rounded-circle thumb-xs" />-->
                                     <!--
                                     <div class="avatar-box thumb-sm align-self-center me-2">
@@ -51,8 +63,9 @@
                                     </div>                               
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end">
-                                    {{-- <a class="dropdown-item" href="javascript:abrirpdf('manual_usuario');"><i data-feather="file-text" class="align-self-center icon-xs icon-dual me-1"></i> Pasos para el Registro de Documentos</a> --}}
-                                    <!--<a class="dropdown-item" href="javascript:abrirpdf('manual_sistema');"><i data-feather="file-text" class="align-self-center icon-xs icon-dual me-1"></i> Manual del Sistema</a>-->
+                                    <a class="dropdown-item" href=""><i data-feather="file-text" class="align-self-center icon-xs icon-dual me-1"></i> Usuario: {{ auth()->user()->email }}</a>
+                                    <a class="dropdown-item" href=""><i data-feather="file-text" class="align-self-center icon-xs icon-dual me-1"></i> Rol: {{ auth()->user()->roles->pluck('name')->implode(', ') }}</a>
+                                    {{-- <a class="dropdown-item" href="javascript:abrirpdf('manual_sistema');"><i data-feather="file-text" class="align-self-center icon-xs icon-dual me-1"></i> Manual del Sistema</a> --}}
                                     <div class="dropdown-divider mb-0"></div>
                                     <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i data-feather="power" class="align-self-center icon-xs icon-dual me-1"></i> Cerrar Sesión</a>
                                     <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">

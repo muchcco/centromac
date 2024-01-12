@@ -250,6 +250,10 @@ function btnStoreTxt () {
         data:formData,
         processData: false,
         contentType: false,
+        beforeSend: function () {
+            document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+            document.getElementById("btnEnviarForm").disabled = true;
+        },
         success:function(data){        
             $("#modal_show_modal").modal('hide');
             tabla_seccion();
@@ -264,6 +268,20 @@ function btnStoreTxt () {
         }
     });
 
+}
+
+var btnModalView = (dni, fecha) => {
+    console.log(dni);
+    $.ajax({
+        type:'post',
+        url: "{{ route('asistencia.modals.md_detalle') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}", dni_ : dni, fecha_ :fecha},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
 }
 
 </script>

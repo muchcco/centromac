@@ -24,7 +24,7 @@
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
-            <button type="button" class="btn btn-outline-success" onclick="btnStoreTxt()">Importar</button>
+            <button type="button" class="btn btn-outline-success" id="btnEnviarForm" onclick="btnStoreTxt()">Importar</button>
         </div>
     </div>
 </div>

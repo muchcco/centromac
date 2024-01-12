@@ -11,13 +11,33 @@ use App\Models\Archivoper;
 use App\Models\Servicio;
 use App\Models\User;
 use GuzzleHttp\Client;
+use Carbon\Carbon;
 
 class PagesController extends Controller
 {
+    private function centro_mac_id(){
+        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
+        /*================================================================================================================*/
+        $us_id = auth()->user()->idcentro_mac;
+        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+
+        $idmac = $user->IDCENTRO_MAC;
+        $name_mac = $user->NOMBRE_MAC;
+        /*================================================================================================================*/
+
+        $resp = ['idmac'=>$idmac, 'name_mac'=>$name_mac ];
+
+        return (object) $resp;
+    }
+
     public function index()
     {
-        return view('inicio');
-    }  
+        $count_asesores = Personal::where('IDMAC', $this->centro_mac_id()->idmac)->where('FLAG', 1)->whereNot('IDENTIDAD', 17)->get()->count();
+
+        $count_entidad = DB::table('M_MAC_ENTIDAD')->where('IDCENTRO_MAC', $this->centro_mac_id()->idmac)->whereNot('IDENTIDAD', 17)->get()->count();
+
+        return view('inicio', compact('count_asesores', 'count_entidad'));
+    }
 
     public function validar(Request $request)
     {
@@ -582,5 +602,12 @@ class PagesController extends Controller
     public function externo()
     {
         return view('externo');
+    }
+
+    public function consultas_novo(Request $request)
+    {
+        $inicio_session_novo = DB::connection('mysql2')->select("CALL sp_InicioSesionAgrupadoEntidad");
+        return json_encode($inicio_session_novo);
+
     }
 }

@@ -11,30 +11,30 @@
         <div class="brand">
             <a href="{{route('inicio')}}" class="logo">
                 <span>
-                    <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-light" style="width: 80%;height: 5%;">
-                    <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-dark" style="width: 80%;height: 5%;">
+                    <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-light" style="max-width: 80%;height: 50px;">
+                    <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-dark" style="max-width: 80%;height: 50px;">
                 </span>
             </a>
         </div>
         <!--end logo-->
-        <div class="update-msg text-center" style="margin: 16px 16px 16px;">
-            {{-- <div class="pad-btm mb-1">
+        {{-- <div class="update-msg text-center" style="margin: 16px 16px 16px;">
+            <div class="pad-btm mb-1">
                 <!--<img class="img-circle img-md" src="{{ asset('Img\profile-photos\1.png')}}" alt="Profile Picture">-->
                     <div class="avatar-box thumb-xxl align-self-center me-2" style="margin-bottom: 10px;">
                         <span class="avatar-title bg-soft-primary rounded">{{auth()->user()->name[0]}}</span>
                     </div>
-            </div> --}}
+            </div>
             <p class="mb-2">{{ auth()->user()->name }}</p>
             <p class="mb-0">{{ auth()->user()->email }}</p>
             <p id="act_role_sidebar" class="mb-0">Rol: {{ auth()->user()->roles->pluck('name')->implode(', ') }} </p>
-        </div>
+        </div> --}}
         <div class="menu-content h-100" data-simplebar>
             <ul class="metismenu left-sidenav-menu">
 
                 <!--Nombre de la Categoria-->
 
 
-                <!--<li class="menu-label mt-0">PANEL DE CONTROL</li>-->
+                <li class="menu-label mt-0">PANEL DE CONTROL</li>
 
                 <li class="@if (Request::is('/')) mm-active @endif">
                     <a href="{{ route('inicio') }}" class="@if (Request::is('/')) active @endif"> <i data-feather="home" class="align-self-center menu-icon"></i><span>Inicio</span></a>

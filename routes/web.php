@@ -45,6 +45,7 @@ Route::post('buscar_dni', [PagesController::class, 'buscar_dni'])->name('buscar_
 Route::get('provincias/{departamento_id}', [PagesController::class, 'provincias'])->name('provincias');
 Route::get('distritos/{provincia_id}', [PagesController::class, 'distritos'])->name('distritos');
 Route::get('subtipo_vehiculo/{idsubtipo_vehiculo}', [PagesController::class, 'subtipo_vehiculo'])->name('subtipo_vehiculo');
+Route::get('consultas_novo', [PagesController::class, 'consultas_novo'])->name('consultas_novo');
 
 /*********************************************************  MODO MOBILE  ***********************************************************************/
 
@@ -73,6 +74,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     /******************************************************   EXTERNO *****************************************************************************/
 
+    // SE ALMACENA LOS ACCESOS A LAS PAGINAS EXTERNA QUE NO ES NECESARIO LOGGIN
     Route::get('/externo' , [PagesController::class, 'externo'])->name('externo');
 
     /**********************************************************************************************************************************************/

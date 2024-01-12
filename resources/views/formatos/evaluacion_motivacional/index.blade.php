@@ -229,14 +229,14 @@ function tabla_seccion(mes = '', año = '') {
 
 function SearchMes(){
     var mes = $('#mes').val();
-
-    tabla_seccion(mes);
+    var año = $('#año').val();
+    tabla_seccion(mes, año);
 }
 
 function SearchAño(){
+    var mes = $('#mes').val();
     var año = $('#año').val();
-
-    tabla_seccion(año);
+    tabla_seccion(mes, año);
 }
 
 /**************************************************************** CARGAR COMBOS POR FECHA ACTUAL *************************************************************/

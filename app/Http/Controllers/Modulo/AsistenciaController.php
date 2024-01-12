@@ -52,6 +52,9 @@ class AsistenciaController extends Controller
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
+        // VERIFICAMOS LA HORA DE INGRESO PARA INDICAR SI ESTAN EN HORA O TARDANZA TOMAMOS REF DE LUN A VIER YA QUE ES EL MISMO HORARIO DEL SABADO
+        $conf = Configuracion::where('IDCONFIGURACION', 2)->first();
+
         $entidad = Entidad::select( 'NOMBRE_ENTIDAD', 'ABREV_ENTIDAD', 'IDENTIDAD');
 
         $datos = Asistencia::from('M_ASISTENCIA as MA')
@@ -86,7 +89,7 @@ class AsistenciaController extends Controller
                             ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ABREV_ENTIDAD', 'MC.NOMBRE_MAC')
                             ->get();
         // // dd($datos);
-        return view('asistencia.tablas.tb_asistencia', compact('datos'));
+        return view('asistencia.tablas.tb_asistencia', compact('datos', 'conf'));
     }
 
     public function md_add_asistencia(Request $request)
@@ -134,6 +137,28 @@ class AsistenciaController extends Controller
 
 
         return response()->json($query);
+    }
+
+    public function md_detalle(Request $request)
+    {
+        $fecha_ = $request->fecha_;
+        $query = DB::select("SELECT FECHA,
+                                NUM_DOC,
+                                MAX(CASE WHEN CORRELATIVO = '1' THEN HORA ELSE NULL END) AS hora1,
+                                MAX(CASE WHEN CORRELATIVO = '2' THEN HORA ELSE NULL END) AS hora2,
+                                MAX(CASE WHEN CORRELATIVO = '3' THEN HORA ELSE NULL END) AS hora3,
+                                MAX(CASE WHEN CORRELATIVO = '4' THEN HORA ELSE NULL END) AS hora4,
+                                MAX(CASE WHEN CORRELATIVO = '5' THEN HORA ELSE NULL END) AS hora5
+                            FROM
+                            M_ASISTENCIA
+                            WHERE FECHA = '$fecha_'
+                            AND NUM_DOC = '$request->dni_'
+                            GROUP BY NUM_DOC;");
+
+        // dd($query);
+        $view = view('asistencia.modals.md_detalle', compact('query', 'fecha_'))->render();
+
+        return response()->json(['html' => $view]); 
     }
 
     public function det_us(Request $request, $id)
