@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Asistencia;
 
 class Personal extends Model
 {
@@ -59,4 +60,9 @@ class Personal extends Model
                         ];
 
     public $timestamps = true;
+
+    public function asistencias()
+    {
+        return $this->hasMany(Asistencia::class, 'NUM_DOC', 'NUM_DOC');
+    }
 }

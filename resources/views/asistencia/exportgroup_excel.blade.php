@@ -1,79 +1,125 @@
-{{-- @if($identidad == '17')
-    @forelse ($query as $i => $q)
-        <table>
-            <tr>
-                <th style="border: 1px solid black; background: #D9E1F2;" colspan="7">
-                    {{  $q->NUM_DOC }} {{ $q->NOMBREU }} - {{ $q->NOMBRE_CARGO }} FECHA: 
-                    @if ( $tipo_desc == '1' )
-                        mes: {{ $nombreMES }}
-                    @elseif($tipo_desc == '2')
-                         De: {{ $fecha_inicial }} Hasta: {{ $fecha_fin }}
-                    @endif
-                </th>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black">Día</td>
-                <td style="border: 1px solid black">Fecha</td>
-                <td style="border: 1px solid black">Ingreso</td>
-                <td style="border: 1px solid black">Salida</td>
-                <td style="border: 1px solid black">Ingreso programado</td>
-                <td style="border: 1px solid black">Salida Programada</td>
-                <td style="border: 1px solid black">Observación</td>
-            </tr>
-            <tr>
-                @if($q->N_NUM_DOC == '2' )
-                    <td style="border: 1px solid black">
-                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
-                        {{ $FECHA }}
-                    </td>
-                    <td style="border: 1px solid black">
-                        {{ $q->FECHA }}
-                    </td>
-                    <td style="border: 1px solid black">
-                        {{ $q->hora1 }}
-                    </td>
-                    <td style="border: 1px solid black">
-                        {{ $q->hora2 }}
-                    </td>
-                    <td style="border: 1px solid black">
-                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+@if($identidad == '17')
+    
 
+    @foreach ($datosAgrupados as $grupo)
+    <table>
+        <tr>
+            <th style="border: 1px solid black; background: #D9E1F2;" colspan="7">
+                {{ $grupo['encabezado']->NOMBREU }}
+            </th>
+        </tr>
+        <tr>
+            <td style="border: 1px solid black">Día</td>
+            <td style="border: 1px solid black">Fecha</td>
+            <td style="border: 1px solid black">Ingreso</td>
+            <td style="border: 1px solid black">Salida</td>
+            <td style="border: 1px solid black">Ingreso programado</td>
+            <td style="border: 1px solid black">Salida Programada</td>
+            <td style="border: 1px solid black">Observación</td>
+        </tr>
+        @foreach ($fechasArray as $fecha)
+            <tr>
+                <td style="border: 1px solid black; text-align: left !important;">
+                    <?php
+                        $nombreDia = utf8_encode(strftime('%A', strtotime($fecha)));
+                        echo $nombreDia;
+                    ?>
+                </td>
+                <td style="border: 1px solid black">
+                    {{ date("d/m/Y", strtotime($fecha)) }}
+                </td>
+                @php
+                    // Busca el detalle correspondiente a la fecha y al número de documento
+                    $detalle = collect($grupo['detalle'])->first(function ($item) use ($fecha) {
+                        return $item->FECHA == $fecha;
+                    });
+                @endphp
+                <td style="border: 1px solid black">
+                <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($fecha)));  ?>
+                    @if ($detalle)
+                        @php
+                            $horaEntrada = $detalle->hora1;
+                            $timestamp = strtotime($horaEntrada);
+                            $nuevaFecha = date("H:i:s", $timestamp + 60); // 60 segundos representan un minuto
+                            if($FECHA == 's?bado'){
+                                $confTimestamp = strtotime($hora_1->VALOR);
+                            }else{
+                                $confTimestamp = strtotime($hora_3->VALOR);
+                            }                            
+                            $confTimestamp += 60;
+                            $confNuevaFecha = date("H:i:s", $confTimestamp);
+                        @endphp
+                        @if ($nuevaFecha > $confNuevaFecha)
+                            <span style="background: #ca0606; color:#fff;">{{ $detalle->hora1 }} </span>    
+                        @else
+                            {{ $detalle->hora1 }}
+                        @endif
+                        
+                    @else
+                        --
+                    @endif
+                </td>
+                <td style="border: 1px solid black">
+                    @if ($detalle)
+                        @if ($FECHA == 's?bado')
+                            @if ($detalle->hora2 < $hora_5->VALOR)
+                                <span style="background: #ca0606; color:#fff;">{{ $detalle->hora2 }} </span>    
+                            @else
+                                {{ $detalle->hora2 }}
+                            @endif
+                        @else
+                            @if ($detalle->hora2 < $hora_2->VALOR)
+                                <span style="background: #ca0606; color:#fff;">{{ $detalle->hora2 }} </span>    
+                            @else
+                                {{ $detalle->hora2 }}
+                            @endif
+                        @endif
+                    @else
+                        --
+                    @endif
+                    
+                </td>
+                
+                @if($FECHA == 'domingo')
+                    <td colspan="2" style="background: #FFFF00; border: 1px solid black">
+                        Descanso Semanal
+                    </td>
+                @elseif($FECHA == 's?bado' && (!$detalle || (!isset($detalle->hora1) && !isset($detalle->hora2))))
+                    <td colspan="2" style="background: #FFFF00; border: 1px solid black">
+                        Descanso Semanal
+                    </td>
+                @else
+                    <td style="border: 1px solid black">
                         @if ($FECHA == 's?bado')
                             {{ $hora_3->VALOR }}
+                        @elseif($FECHA == 'domingo')
+                            --
                         @else
                             {{ $hora_1->VALOR }}
                         @endif
                     </td>
                     <td style="border: 1px solid black">
-                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
-
                         @if ($FECHA == 's?bado')
-                            {{ $hora_4->VALOR }}
+                            {{ $hora_5->VALOR }}
+                        @elseif($FECHA == 'domingo')
+                            --
                         @else
                             {{ $hora_2->VALOR }}
                         @endif
                     </td>
-                    <td style="border: 1px solid black">
-                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
-
-                        @if ($FECHA == 's?bado')
-                            Sábado
-                        @else
-
-                        @endif
-                    </td>
                 @endif
+                
+                <td style="border: 1px solid black">
+                    <!-- Agrega aquí la lógica para obtener la Observación -->
+                </td>
             </tr>
-        </table>
+        @endforeach
+    </table>
+    @endforeach
 
 
-    @empty
-        <th>No hay Datos Registrados</th>
-    @endforelse
 
-    
-
-@else --}}
+@else
     <table >
         <tr>                        
             <th style="border: 1px solid black" rowspan="3" colspan="2"></th>
@@ -279,4 +325,4 @@
 
     </table>
 
-{{-- @endif --}}
+@endif

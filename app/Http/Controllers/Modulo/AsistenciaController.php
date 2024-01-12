@@ -16,6 +16,7 @@ use App\Exports\AsistenciaExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\AsistenciaGroupExport;
 use App\Models\Configuracion;
+use Carbon\CarbonPeriod;
 
 class AsistenciaController extends Controller
 {
@@ -405,6 +406,7 @@ class AsistenciaController extends Controller
         $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
         $hora_3 = Configuracion::where('PARAMETRO', 'HORA_3')->first();
         $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
+        $hora_5 = Configuracion::where('PARAMETRO', 'HORA_5')->first();
 
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
@@ -422,7 +424,111 @@ class AsistenciaController extends Controller
         $identidad = $request->identidad;
         
 
-        $query = DB::table('M_ASISTENCIA as MA')
+        if($identidad == '17'){         
+
+            // Obtener datos del encabezado
+            $nom_ = Personal::from('M_PERSONAL as MP')
+                    ->leftJoin('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
+                    ->select('DPC.NOMBRE_CARGO', DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'), 'MP.NUM_DOC', 'MP.IDENTIDAD')
+                    ->where('MP.IDENTIDAD', 17)
+                    ->get();
+
+            $array_numdoc = $nom_->pluck('NUM_DOC')->unique()->toArray();
+
+            // Obtener datos del detalle
+
+            // Obtén el primer y último día del mes
+                $primerDia = Carbon::createFromDate($request->año, $request->mes, 1)->startOfDay();
+                $ultimoDia = $primerDia->copy()->endOfMonth();
+
+                // Obtén el rango de fechas entre el primer y último día del mes
+                $fechas = CarbonPeriod::create($primerDia, $ultimoDia);
+
+                // Convierte las fechas a un array
+                $fechasArray = [];
+                foreach ($fechas as $fecha) {
+                    $fechasArray[] = $fecha->toDateString();
+                }
+
+                // Realiza la consulta para obtener datos agrupados por fecha y número de documento
+                $querys = DB::table('M_ASISTENCIA as MA')
+                    ->rightJoin('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                    ->rightJoin(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
+                                    FROM M_PERSONAL
+                                    LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
+                                    JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
+                                    JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+                    ->select([
+                        'PERS.ABREV_ENTIDAD',
+                        'PERS.NOMBRE_CARGO',
+                        'PERS.NOMBREU',
+                        DB::raw('DATE(MA.FECHA) AS FECHA'), // Utilizamos DATE para obtener solo la fecha sin la hora
+                        'MA.NUM_DOC',
+                        DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1'),
+                        DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2'),
+                        DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "3" THEN MA.HORA ELSE NULL END) AS hora3'),
+                        DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "4" THEN MA.HORA ELSE NULL END) AS hora4'),
+                        DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "5" THEN MA.HORA ELSE NULL END) AS hora5'),
+                        DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
+                        'PERS.IDENTIDAD', // Agregado para cumplir con GROUP BY
+                        'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
+                    ])
+                    ->whereIn(DB::raw('DATE(MA.FECHA)'), $fechasArray) // Filtra por el rango de fechas
+                    ->where('PERS.IDENTIDAD', $request->identidad)
+                    ->where('PERS.IDCENTRO_MAC', $idmac)
+                    ->whereMonth('MA.FECHA', $request->mes)
+                    ->whereYear('MA.FECHA', $request->año)
+                    ->groupBy('MA.NUM_DOC', DB::raw('DATE(MA.FECHA)'), 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO')
+                    ->orderBy('FECHA', 'ASC')
+                    ->get();
+
+                // Creamos un array asociativo donde la clave es la fecha y el valor es un array con los datos correspondientes
+                $query = [];
+                foreach ($fechasArray as $fecha) {
+                    $query[$fecha] = $querys->filter(function ($row) use ($fecha) {
+                        return $row->FECHA == $fecha;
+                    })->toArray();
+                }
+
+                // Ahora, $query contiene todos los días del mes con datos o sin datos
+
+                // dd($fechasArray);
+
+            // Agrupar por NUM_DOC
+            $datosAgrupados = [];
+
+            foreach ($nom_ as $encabezado) {
+                // dd($encabezado);
+                $detalle = Asistencia::select([
+                                        'M_ASISTENCIA.FECHA',
+                                        'M_ASISTENCIA.NUM_DOC',
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "1" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora1'),
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "2" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora2'),
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "3" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora3'),
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "4" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora4'),
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "5" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora5'),
+                                        DB::raw('COUNT(M_ASISTENCIA.NUM_DOC) AS N_NUM_DOC'),
+                                    ])
+                                    ->where('NUM_DOC', $encabezado->NUM_DOC)
+                                    ->whereMonth('M_ASISTENCIA.FECHA', $request->mes) // Mes específico
+                                    ->whereYear('M_ASISTENCIA.FECHA', $request->año)   // Año específico
+                                    ->groupBy('M_ASISTENCIA.NUM_DOC', 'M_ASISTENCIA.FECHA')
+                                    ->orderBy('M_ASISTENCIA.FECHA', 'asc')
+                                    ->get();
+
+                // dd($detalle);
+
+                $datosAgrupados[] = ['encabezado' => $encabezado, 'detalle' => $detalle];
+            }
+
+            // dd($datosAgrupados);
+
+
+            // Ahora, $datosAgrupados es un array asociativo donde cada elemento tiene la información del encabezado junto con su detalle correspondiente
+
+
+        }else{
+            $query = DB::table('M_ASISTENCIA as MA')
                             ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC')
                             ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1')
                             ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2')
@@ -443,9 +549,13 @@ class AsistenciaController extends Controller
                             ->whereYear('MA.FECHA', $request->año)
                             ->orderBy('FECHA', 'ASC')
                             ->get();
+            
+            $datosAgrupados = '';
+            $fechasArray = '';        
+        }
 
         // dd($query);
-        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4, $identidad), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
+        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4, $hora_5, $identidad, $datosAgrupados, $fechasArray,), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
 
         return $export;
     
@@ -490,6 +600,7 @@ class AsistenciaController extends Controller
         $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
         $hora_3 = Configuracion::where('PARAMETRO', 'HORA_3')->first();
         $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
+        $hora_5 = Configuracion::where('PARAMETRO', 'HORA_5')->first();
 
 
         $tipo_desc = '2';
@@ -498,7 +609,96 @@ class AsistenciaController extends Controller
         $identidad = $request->identidad;
         // dd($identidad);
 
-        $query =  DB::table('M_ASISTENCIA as MA')
+        if($identidad == '17'){
+
+            // Obtener datos del encabezado
+            $nom_ = Personal::from('M_PERSONAL as MP')
+                            ->leftJoin('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
+                            ->select('DPC.NOMBRE_CARGO', DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'), 'MP.NUM_DOC', 'MP.IDENTIDAD')
+                            ->where('MP.IDENTIDAD', 17)
+                            ->get();
+
+            $primerDia = $request->fecha_inicio;
+            $ultimoDia = $request->fecha_fin;
+
+            // Obtén el rango de fechas entre el primer y último día del mes
+            $fechas = CarbonPeriod::create($primerDia, $ultimoDia);
+
+            // Convierte las fechas a un array
+            $fechasArray = [];
+            foreach ($fechas as $fecha) {
+                $fechasArray[] = $fecha->toDateString();
+            }
+
+            // Obtener datos del detalle
+            $querys = DB::table('M_ASISTENCIA as MA')
+                        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                        ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
+                                        FROM M_PERSONAL
+                                        LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
+                                        JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
+                                        JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+                        ->select([
+                            'PERS.ABREV_ENTIDAD',
+                            'PERS.NOMBRE_CARGO',
+                            'PERS.NOMBREU',
+                            'MA.FECHA',
+                            'MA.NUM_DOC',
+                            DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1'),
+                            DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2'),
+                            DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "3" THEN MA.HORA ELSE NULL END) AS hora3'),
+                            DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "4" THEN MA.HORA ELSE NULL END) AS hora4'),
+                            DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "5" THEN MA.HORA ELSE NULL END) AS hora5'),
+                            DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
+                            'PERS.IDENTIDAD', // Agregado para cumplir con GROUP BY
+                            'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
+                        ])
+                        ->where('PERS.IDENTIDAD', $request->identidad)
+                        ->where('PERS.IDCENTRO_MAC', $idmac)
+                        ->whereBetween(DB::raw('DATE(MA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
+                        ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
+                        ->orderBy('MA.FECHA', 'asc')
+                        ->get();
+                        
+
+            $query = [];
+            foreach ($fechasArray as $fecha) {
+                $query[$fecha] = $querys->filter(function ($row) use ($fecha) {
+                    return $row->FECHA == $fecha;
+                })->toArray();
+            }
+            // Agrupar por NUM_DOC
+            $datosAgrupados = [];
+
+            foreach ($nom_ as $encabezado) {
+                // Utilizando la relación definida en los modelos
+                $detalle = $encabezado->asistencias()
+                                    ->select([
+                                        'M_ASISTENCIA.FECHA',
+                                        'M_ASISTENCIA.NUM_DOC',
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "1" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora1'),
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "2" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora2'),
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "3" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora3'),
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "4" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora4'),
+                                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "5" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora5'),
+                                        DB::raw('COUNT(M_ASISTENCIA.NUM_DOC) AS N_NUM_DOC'),
+                                    ])
+                                    ->whereBetween(DB::raw('DATE(M_ASISTENCIA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
+                                    ->groupBy('M_ASISTENCIA.NUM_DOC', 'M_ASISTENCIA.FECHA')
+                                    ->orderBy('M_ASISTENCIA.FECHA', 'asc')
+                                    ->get();
+
+                // dd($detalle);
+
+                $datosAgrupados[] = ['encabezado' => $encabezado, 'detalle' => $detalle];
+            }
+
+            // dd($datosAgrupados);
+            // Ahora, $datosAgrupados es un array asociativo donde cada elemento tiene la información del encabezado junto con su detalle correspondiente
+
+
+        }else{
+            $query =  DB::table('M_ASISTENCIA as MA')
                         ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
                         ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
                                         FROM M_PERSONAL
@@ -527,8 +727,15 @@ class AsistenciaController extends Controller
                         ->orderBy('MA.FECHA', 'asc')
                         ->get();
 
+                $datosAgrupados = '';
+                $fechasArray = '';
+
+        }
+
+        
+
         // dd($fecha_inicial);
-        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4, $identidad), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
+        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4, $hora_5, $identidad, $datosAgrupados, $fechasArray), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
 
         return $export;
     }
