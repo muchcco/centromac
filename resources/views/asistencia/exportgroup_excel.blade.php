@@ -34,7 +34,7 @@
                         return $item->FECHA == $fecha;
                     });
                 @endphp
-                <td style="border: 1px solid black">
+                
                 <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($fecha)));  ?>
                     @if ($detalle)
                         @php
@@ -50,36 +50,48 @@
                             $confNuevaFecha = date("H:i:s", $confTimestamp);
                         @endphp
                         @if ($nuevaFecha > $confNuevaFecha)
-                            <span style="background: #ca0606; color:#fff;">{{ $detalle->hora1 }} </span>    
+                            <td style="border: 1px solid black;background: #ca0606; color:#fff;">
+                                {{ $detalle->hora1 }}
+                            </td>
                         @else
-                            {{ $detalle->hora1 }}
+                            <td style="border: 1px solid black">
+                                {{ $detalle->hora1 }}
+                            </td>
                         @endif
                         
-                    @else
+                @else
+                    <td style="border: 1px solid black">
                         --
-                    @endif
-                </td>
-                <td style="border: 1px solid black">
-                    @if ($detalle)
-                        @if ($FECHA == 's?bado')
-                            @if ($detalle->hora2 < $hora_5->VALOR)
-                                <span style="background: #ca0606; color:#fff;">{{ $detalle->hora2 }} </span>    
-                            @else
-                                {{ $detalle->hora2 }}
-                            @endif
+                    </td>
+                @endif
+                
+                @if ($detalle)
+                    @if ($FECHA == 's?bado')
+                        @if ($detalle->hora2 < $hora_5->VALOR)
+                            <td style="border: 1px solid black;background: #ca0606; color:#fff;">
+                                {{ $detalle->hora2 }} 
+                            </td>
                         @else
-                            @if ($detalle->hora2 < $hora_2->VALOR)
-                                <span style="background: #ca0606; color:#fff;">{{ $detalle->hora2 }} </span>    
-                            @else
+                            <td style="border: 1px solid black">
                                 {{ $detalle->hora2 }}
-                            @endif
+                            </td>
                         @endif
                     @else
-                        --
+                        @if ($detalle->hora2 < $hora_2->VALOR)
+                            <td style="border: 1px solid black;background: #ca0606; color:#fff;">
+                                {{ $detalle->hora2 }} 
+                            </td>
+                        @else
+                            <td style="border: 1px solid black">
+                                {{ $detalle->hora2 }}
+                            </td>
+                        @endif
                     @endif
-                    
-                </td>
-                
+                @else
+                    <td style="border: 1px solid black">
+                        --
+                    </td>
+                @endif
                 @if($FECHA == 'domingo')
                     <td colspan="2" style="background: #FFFF00; border: 1px solid black">
                         Descanso Semanal
