@@ -66,10 +66,12 @@
                 @endif
                 
                 @if ($detalle)
+                   
+                    
                     @if ($FECHA == 's?bado')
-                        @if ($detalle->hora2 < $hora_5->VALOR)
+                        @if ($detalle->hora2 < $hora_5->SUM_SOLO)
                             <td style="border: 1px solid black;background: #ca0606; color:#fff;">
-                                {{ $detalle->hora2 }} 
+                                {{ $detalle->hora2 }}
                             </td>
                         @else
                             <td style="border: 1px solid black">
@@ -77,9 +79,9 @@
                             </td>
                         @endif
                     @else
-                        @if ($detalle->hora2 < $hora_2->VALOR)
+                        @if ($detalle->hora2 < $hora_2->SUM_SOLO)
                             <td style="border: 1px solid black;background: #ca0606; color:#fff;">
-                                {{ $detalle->hora2 }} 
+                                {{ $detalle->hora2 }}
                             </td>
                         @else
                             <td style="border: 1px solid black">
