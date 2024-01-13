@@ -40,13 +40,13 @@
                         @php
                             $horaEntrada = $detalle->hora1;
                             $timestamp = strtotime($horaEntrada);
-                            $nuevaFecha = date("H:i:s", $timestamp + 60); // 60 segundos representan un minuto
+                            $nuevaFecha = date("H:i:s", $timestamp + (5 * 60)); //  5 minutos representan 300 segundos
                             if($FECHA == 's?bado'){
                                 $confTimestamp = strtotime($hora_1->VALOR);
                             }else{
                                 $confTimestamp = strtotime($hora_3->VALOR);
                             }                            
-                            $confTimestamp += 60;
+                            $confTimestamp += (5 * 60); // Aumentar 5 minutos
                             $confNuevaFecha = date("H:i:s", $confTimestamp);
                         @endphp
                         @if ($nuevaFecha > $confNuevaFecha)

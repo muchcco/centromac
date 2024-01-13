@@ -102,9 +102,10 @@
                 <div class="card-header">
                     <div class="row align-items-center">
                         <div class="col">                      
-                            <h4 class="card-title">Ocupabilidad del modulo</h4>                      
+                            <h4 class="card-title">Ocupabilidad del modulo</h4>  
+                            <p>Entidades presentes el día de hoy ({{ Carbon\Carbon::now()->format('d-m-Y') }})</p>                   
                         </div><!--end col-->
-                        <div class="col-auto"> 
+                        {{-- <div class="col-auto"> 
                             <div class="dropdown">
                                 <a href="#" class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                    Todos<i class="las la-angle-down ms-1"></i>
@@ -114,7 +115,7 @@
                                     <a class="dropdown-item" href="#">No Asistio</a>
                                 </div>
                             </div>         
-                        </div><!--end col-->
+                        </div><!--end col--> --}}
                     </div>  <!--end row-->                                  
                 </div><!--end card-header-->
                 <div class="card-body"> 
@@ -144,7 +145,14 @@
 @endsection
 
 @section('script')
-    
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="https://code.highcharts.com/modules/drilldown.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+
 <script>
 
 $(document).ready(function() {
@@ -176,7 +184,7 @@ function InicioSession() {
                 tablaHtml += '<td>' + data[i].Entidad + '</td>';
                 tablaHtml += '<td class="text-end">' + data[i].hora + '</td>';
                 // Puedes ajustar la lógica para determinar el estado según tus necesidades
-                tablaHtml += '<td class="text-end">' + (data[i].hora > '08:15:00' ? 'Tarde' : 'En hora') + '</td>';
+                tablaHtml += '<td class="text-end">' + (data[i].hora > '08:20:00' ? 'Tarde' : 'En hora') + '</td>';
                 tablaHtml += '</tr>';
             }
 
