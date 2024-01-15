@@ -96,6 +96,32 @@
                     </div><!--end card--> 
                 </div> <!--end col-->                               
             </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col">                      
+                            <h4 class="card-title">Ingreso de Asesores por Entidad</h4>                      
+                        </div><!--end col-->
+                        <div class="col-auto"> 
+                            <div class="dropdown">
+                                <a href="#" class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                   This Year<i class="las la-angle-down ms-1"></i>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <a class="dropdown-item" href="#">Today</a>
+                                    <a class="dropdown-item" href="#">Last Week</a>
+                                    <a class="dropdown-item" href="#">Last Month</a>
+                                    <a class="dropdown-item" href="#">This Year</a>
+                                </div>
+                            </div>               
+                        </div><!--end col-->
+                    </div>  <!--end row-->                                  
+                </div>
+                <div class="card-body">
+                    <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+                </div>
+            </div>
         </div>
         <div class="col-lg-3">
             <div class="card">
@@ -201,6 +227,112 @@ function InicioSession() {
     });
 
 }
+
+/*********************************************** PINTAR GRAFICOS *****************************************************************************/
+
+/* ============== GRAFICO 01 =========================*/
+
+
+Highcharts.chart('container', {
+    chart: {
+        type: 'column',
+        events: {
+            drilldown: function (e) {
+                if (!e.seriesOptions) {
+                    const chart = this,
+                        drilldowns = {
+                            Animals: {
+                                name: 'Animals',
+                                data: [
+                                    ['Cows', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0)],
+                                    ['Sheep', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 60 * 1000]  // Agregar 1 minuto
+                                ]
+                            },
+                            Fruits: {
+                                name: 'Fruits',
+                                data: [
+                                    ['Apples', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 2 * 60 * 1000],  // Agregar 2 minutos
+                                    ['Oranges', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 7 * 60 * 1000],  // Agregar 7 minutos
+                                    ['Bananas', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 9 * 60 * 1000]  // Agregar 9 minutos
+                                ]
+                            },
+                            Cars: {
+                                name: 'Cars',
+                                data: [
+                                    ['Toyota', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 1 * 60 * 60 * 1000],  // Agregar 1 hora
+                                    ['Volkswagen', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 2 * 60 * 60 * 1000],  // Agregar 2 horas
+                                    ['Opel', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 5 * 60 * 60 * 1000]  // Agregar 5 horas
+                                ]
+                            }
+                        },
+                        series = drilldowns[e.point.name];
+
+                    // Mostrar la etiqueta de carga
+                    chart.showLoading('Simulating Ajax ...');
+
+                    setTimeout(function () {
+                        chart.hideLoading();
+                        chart.addSeriesAsDrilldown(e.point, series);
+                    }, 1000);
+                }
+            }
+        }
+    },
+    title: {
+        text: 'Async drilldown'
+    },
+    xAxis: {
+        type: 'category'
+    },
+    yAxis: {
+        title: {
+            text: 'Hora'
+        },
+        type: 'datetime', // Configurar el tipo de eje como 'datetime'
+        labels: {
+            formatter: function () {
+                return Highcharts.dateFormat('%H:%M:%S', this.value);
+            }
+        }
+    },
+    legend: {
+        enabled: false
+    },
+    plotOptions: {
+        series: {
+            borderWidth: 0,
+            dataLabels: {
+                enabled: true
+            }
+        }
+    },
+    series: [{
+        name: 'Things',
+        colorByPoint: true,
+        data: [
+            {
+                name: 'Animals',
+                y: Date.parse('1970-01-01T08:08:06'),  // Ingresar en el formato hh:mm:ss
+                drilldown: 'Animals'
+            },
+            {
+                name: 'Fruits',
+                y: Date.parse('1970-01-01T08:08:06Z'),  // Ingresar en el formato hh:mm:ss
+                drilldown: 'Fruits'
+            },
+            {
+                name: 'Cars',
+                y: Date.parse('1970-01-01T08:08:06Z'),  // Ingresar en el formato hh:mm:ss
+                drilldown: 'Cars'
+            }
+        ]
+    }],
+    drilldown: {
+        series: []
+    }
+});
+
+
 
 </script>
 
