@@ -36,7 +36,7 @@
                 @endphp
                 
                 <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($fecha)));  ?>
-                    @if ($detalle)
+                @if ($detalle)
                         @php
                             $horaEntrada = $detalle->hora1;
                             $timestamp = strtotime($horaEntrada);

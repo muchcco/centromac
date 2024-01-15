@@ -100,25 +100,22 @@
                 <div class="card-header">
                     <div class="row align-items-center">
                         <div class="col">                      
-                            <h4 class="card-title">Ingreso de Asesores por Entidad</h4>                      
+                            <h4 class="card-title">Constrol de Asistencia</h4>                      
                         </div><!--end col-->
                         <div class="col-auto"> 
-                            <div class="dropdown">
-                                <a href="#" class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                   This Year<i class="las la-angle-down ms-1"></i>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-end">
-                                    <a class="dropdown-item" href="#">Today</a>
-                                    <a class="dropdown-item" href="#">Last Week</a>
-                                    <a class="dropdown-item" href="#">Last Month</a>
-                                    <a class="dropdown-item" href="#">This Year</a>
-                                </div>
+                            <div class="dropdown">Fecha:
+                                @php
+                                    $fecha6dias = date("d-m-Y",strtotime(now()));
+                                    $fecha6diasconvert = date("Y-m-d",strtotime($fecha6dias));
+                                @endphp
+                                <input type="date" class="form-control" id="fecha" name="fecha" value="{{$fecha6diasconvert}}" onchange="btnFechaGrafica1()">
                             </div>               
                         </div><!--end col-->
                     </div>  <!--end row-->                                  
                 </div>
                 <div class="card-body">
-                    <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                    <div id="container"></div>
+
 
                 </div>
             </div>
@@ -178,11 +175,24 @@
 <script src="https://code.highcharts.com/modules/export-data.js"></script>
 <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
-
 <script>
 
 $(document).ready(function() {
     InicioSession();
+
+    var timestamp = Date.UTC(2024, 0, 1, 8, 30, 0);
+    var date = new Date(timestamp);
+
+    var hours = ('0' + date.getUTCHours()).slice(-2);
+    var minutes = ('0' + date.getUTCMinutes()).slice(-2);
+    var seconds = ('0' + date.getUTCSeconds()).slice(-2);
+
+    var formattedTime = hours + ':' + minutes + ':' + seconds;
+
+    console.log(formattedTime);
+
+
+    AjaxDatGrf();
 });
 
 function InicioSession() {
@@ -228,112 +238,134 @@ function InicioSession() {
 
 }
 
+/*** BUSCADORES **/
+
+function btnFechaGrafica1() {
+
+    var fecha = document.getElementById("fecha").value;
+
+    AjaxDatGrf(fecha);
+
+}
+
 /*********************************************** PINTAR GRAFICOS *****************************************************************************/
 
 /* ============== GRAFICO 01 =========================*/
+function AjaxDatGrf(fecha = ''){
+    var fecha = document.getElementById("fecha").value;
+    $.ajax({
+        url: "{{ route('asist_xdia') }}",
+        method: 'GET',
+        dataType: 'json',
+        data: {fecha : fecha},
+        success: function (data) {
+            // Preparar los datos para Highcharts
+            var categories = data.map(function (item) {
+                return item.NOMBREU;
+            });
 
+            var seriesData = data.map(function (item) {
+                // Establecer el color en rojo si la hora es posterior a las 08:21:00
+                var color = (Date.parse('1970-01-01T' + item.hora1) > Date.parse('1970-01-01T08:20:00')) ? 'red' : getRandomColor();
 
-Highcharts.chart('container', {
-    chart: {
-        type: 'column',
-        events: {
-            drilldown: function (e) {
-                if (!e.seriesOptions) {
-                    const chart = this,
-                        drilldowns = {
-                            Animals: {
-                                name: 'Animals',
-                                data: [
-                                    ['Cows', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0)],
-                                    ['Sheep', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 60 * 1000]  // Agregar 1 minuto
-                                ]
-                            },
-                            Fruits: {
-                                name: 'Fruits',
-                                data: [
-                                    ['Apples', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 2 * 60 * 1000],  // Agregar 2 minutos
-                                    ['Oranges', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 7 * 60 * 1000],  // Agregar 7 minutos
-                                    ['Bananas', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 9 * 60 * 1000]  // Agregar 9 minutos
-                                ]
-                            },
-                            Cars: {
-                                name: 'Cars',
-                                data: [
-                                    ['Toyota', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 1 * 60 * 60 * 1000],  // Agregar 1 hora
-                                    ['Volkswagen', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 2 * 60 * 60 * 1000],  // Agregar 2 horas
-                                    ['Opel', Date.UTC(1970, 0, 1, 8, 2, 8) - Date.UTC(1970, 0, 1, 0, 0, 0) + 5 * 60 * 60 * 1000]  // Agregar 5 horas
-                                ]
-                            }
-                        },
-                        series = drilldowns[e.point.name];
+                return {
+                    name: item.NOMBREU,
+                    y: Date.parse('1970-01-01T' + item.hora1),
+                    drilldown: item.FECHA,
+                    color: color
+                };
+            });
 
-                    // Mostrar la etiqueta de carga
-                    chart.showLoading('Simulating Ajax ...');
-
-                    setTimeout(function () {
-                        chart.hideLoading();
-                        chart.addSeriesAsDrilldown(e.point, series);
-                    }, 1000);
-                }
-            }
-        }
-    },
-    title: {
-        text: 'Async drilldown'
-    },
-    xAxis: {
-        type: 'category'
-    },
-    yAxis: {
-        title: {
-            text: 'Hora'
+            // Configurar el gráfico con los datos obtenidos
+            setupChart(categories, seriesData);
         },
-        type: 'datetime', // Configurar el tipo de eje como 'datetime'
-        labels: {
-            formatter: function () {
-                return Highcharts.dateFormat('%H:%M:%S', this.value);
-            }
+        error: function (error) {
+            console.error('Error en la solicitud AJAX:', error);
         }
-    },
-    legend: {
-        enabled: false
-    },
-    plotOptions: {
-        series: {
-            borderWidth: 0,
-            dataLabels: {
+    });
+}
+    
+
+// Función para configurar el gráfico con los datos
+function setupChart(categories, seriesData) {
+    Highcharts.chart('container', {
+       
+        title: {
+            align: 'left',
+            text: 'Reporte de constrol de ingreso diario'
+        },
+        subtitle: {
+            align: 'left',
+            text: 'Si no hay datos disponibles, por favor ingrese asistencia del día de hoy <a href="{{ route("asistencia.asistencia") }}" target="_blank">aqui</a>'
+        },
+        accessibility: {
+            announceNewData: {
                 enabled: true
             }
-        }
-    },
-    series: [{
-        name: 'Things',
-        colorByPoint: true,
-        data: [
-            {
-                name: 'Animals',
-                y: Date.parse('1970-01-01T08:08:06'),  // Ingresar en el formato hh:mm:ss
-                drilldown: 'Animals'
+        },
+        xAxis: {
+            categories: categories,
+            title: {
+                text: 'Asesores que registrados para la fecha seleccioanada'
             },
-            {
-                name: 'Fruits',
-                y: Date.parse('1970-01-01T08:08:06Z'),  // Ingresar en el formato hh:mm:ss
-                drilldown: 'Fruits'
+        },
+        yAxis: {
+            title: {
+                text: 'Tiempor transcurrido'
             },
+            labels: {
+                formatter: function () {
+                    var date = new Date(this.value);
+                    var hours = ('0' + date.getHours()).slice(-2);
+                    var minutes = ('0' + date.getMinutes()).slice(-2);
+                    var seconds = ('0' + date.getSeconds()).slice(-2);
+
+                    return hours + ':' + minutes + ':' + seconds;
+                }
+            }
+        },
+        legend: {
+            enabled: false
+        },
+        plotOptions: {
+            series: {
+                borderWidth: 0,
+                dataLabels: {
+                    enabled: true,
+                    formatter: function () {
+                        var date = new Date(this.y);
+                        var hours = ('0' + date.getHours()).slice(-2);
+                        var minutes = ('0' + date.getMinutes()).slice(-2);
+                        var seconds = ('0' + date.getSeconds()).slice(-2);
+
+                        return hours + ':' + minutes + ':' + seconds;
+                    }
+                }
+            }
+        },
+        tooltip: {
+            headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+            pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:%H:%M:%S}</b> of total<br/>'
+        },
+        series: [
             {
-                name: 'Cars',
-                y: Date.parse('1970-01-01T08:08:06Z'),  // Ingresar en el formato hh:mm:ss
-                drilldown: 'Cars'
+                name: 'Browsers',
+                colorByPoint: true,
+                data: seriesData
             }
         ]
-    }],
-    drilldown: {
-        series: []
+    });
+}
+
+// Función para obtener un color aleatorio
+function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
     }
-});
-
-
-
+    return color;
+}
 </script>
 
 @endsection

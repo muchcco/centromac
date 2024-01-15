@@ -610,4 +610,40 @@ class PagesController extends Controller
         return json_encode($inicio_session_novo);
 
     }
+
+    /******************************************************** GRAFICOS ***********************************************************************************/
+
+    public function asist_xdia(Request $request)
+    {
+        if(!isset($request->fecha)){
+            $hora1 = Carbon::now()->format('Y-m-d');
+        }else{
+            $hora1 = $request->fecha;
+        }
+
+
+        $result = DB::table('M_ASISTENCIA as MA')
+                            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                            ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU,
+                                                M_ENTIDAD.ABREV_ENTIDAD,
+                                                M_CENTRO_MAC.IDCENTRO_MAC,
+                                                M_PERSONAL.NUM_DOC,
+                                                M_ENTIDAD.IDENTIDAD,
+                                                D_PERSONAL_CARGO.NOMBRE_CARGO
+                                            FROM M_PERSONAL
+                                            LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
+                                            JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
+                                            JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC
+                                        ) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+                            ->where('PERS.IDCENTRO_MAC',$this->centro_mac_id()->idmac)
+                            //->whereBetween(DB::raw('DATE(MA.FECHA)'), [$fecha ])
+                            ->where('MA.FECHA', $hora1)
+                            ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
+                            ->orderBy('MA.FECHA', 'ASC')
+                            ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO', 'PERS.NOMBREU', 'MA.FECHA', 'MA.NUM_DOC', DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1'), DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'), 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC')
+                            ->get();
+
+        return $result;
+    }
+
 }

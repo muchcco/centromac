@@ -47,6 +47,11 @@ Route::get('distritos/{provincia_id}', [PagesController::class, 'distritos'])->n
 Route::get('subtipo_vehiculo/{idsubtipo_vehiculo}', [PagesController::class, 'subtipo_vehiculo'])->name('subtipo_vehiculo');
 Route::get('consultas_novo', [PagesController::class, 'consultas_novo'])->name('consultas_novo');
 
+/******************  GRAFICOS  ********************/
+
+Route::get('asist_xdia', [PagesController::class, 'asist_xdia'])->name('asist_xdia');
+
+
 /*********************************************************  MODO MOBILE  ***********************************************************************/
 
 Route::prefix('mobile/')->as('mobile.')->group( function () {
