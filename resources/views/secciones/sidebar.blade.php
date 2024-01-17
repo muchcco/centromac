@@ -85,6 +85,9 @@
                 <li class="@if (Request::is('formatos/f_02_inicio_oper*')) mm-active @endif">
                     <a href="{{ route('formatos.f_02_inicio_oper.index') }}" class="@if (Request::is('formatos/f_02_inicio_oper*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Formato de Inicio de Operaciones</span></a>
                 </li>
+                <li class="@if (Request::is('formatos/f_felicitaciones*')) mm-active @endif">
+                    <a href="{{ route('formatos.f_felicitaciones.index') }}" class="@if (Request::is('formatos/f_felicitaciones*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Formato de Felicitaciones</span></a>
+                </li>
                 @role('Administrador|Especialista_TIC')
 
                 <li class="menu-label mt-0">PARAMETROS</li>

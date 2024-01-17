@@ -292,11 +292,11 @@ function setupChart(categories, seriesData) {
        
         title: {
             align: 'left',
-            text: 'Reporte de constrol de ingreso diario'
+            text: 'Reporte de control de ingreso diario'
         },
         subtitle: {
             align: 'left',
-            text: 'Si no hay datos disponibles, por favor ingrese asistencia del día de hoy <a href="{{ route("asistencia.asistencia") }}" target="_blank">aqui</a>'
+            text: 'Si no hay datos disponibles, por favor ingrese asistencia del día de hoy <a href="{{ route("asistencia.asistencia") }}" >aqui</a>'
         },
         accessibility: {
             announceNewData: {
@@ -306,7 +306,7 @@ function setupChart(categories, seriesData) {
         xAxis: {
             categories: categories,
             title: {
-                text: 'Asesores que registrados para la fecha seleccioanada'
+                text: 'Asesores que registrados para la fecha seleccionada'
             },
         },
         yAxis: {

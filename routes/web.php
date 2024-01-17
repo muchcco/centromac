@@ -15,6 +15,7 @@ use App\Http\Controllers\Formatos\F02InicioPerController;
 
 use App\Http\Controllers\Mobile\InternoController;
 use App\Http\Controllers\Modulo\ServMacController;
+use App\Http\Controllers\Formatos\FormFelicitacionesController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -182,6 +183,13 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/formulario/{fecha}' , [F02InicioPerController::class, 'formulario'])->name('formulario');
             Route::post('/store_form' , [F02InicioPerController::class, 'store_form'])->name('store_form');
             Route::get('/tablas/tb_index' , [F02InicioPerController::class, 'tb_index'])->name('tablas.tb_index');
+        });
+
+        Route::group(['prefix' => 'f_felicitaciones', 'as' => 'f_felicitaciones.'], function(){
+            Route::get('/index' , [FormFelicitacionesController::class, 'index'])->name('index');
+            Route::get('/tablas/tb_index' , [FormFelicitacionesController::class, 'tb_index'])->name('tablas.tb_index');
+            Route::post('/modals/md_add_felicitacion' , [FormFelicitacionesController::class, 'md_add_felicitacion'])->name('modals.md_add_felicitacion');
+            Route::post('/store' , [FormFelicitacionesController::class, 'store'])->name('store');
         });
 
     });
