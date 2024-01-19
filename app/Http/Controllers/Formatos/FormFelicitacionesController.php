@@ -45,7 +45,10 @@ class FormFelicitacionesController extends Controller
                                             \DB::raw('CONCAT(DPT.TIPODOC_ABREV, \' - \', FLF.R_NUM_DOC) AS DOCUMENTO'),
                                             'FLF.R_DESCRIPCION',
                                             'ME.ABREV_ENTIDAD',
-                                            \DB::raw('CONCAT(MP.NOMBRE, \', \', MP.APE_PAT, \' \', MP.APE_MAT) AS ASESOR')
+                                            \DB::raw('CONCAT(MP.NOMBRE, \', \', MP.APE_PAT, \' \', MP.APE_MAT) AS ASESOR'),
+                                            'FLF.R_ARCHIVO_RUT',
+                                            'FLF.R_ARCHIVO_NOM',
+                                            'FLF.AÑO',
                                         )
                                             ->leftJoin('M_PERSONAL AS MP', 'MP.IDPERSONAL', '=', 'FLF.IDPERSONAL')
                                             ->leftJoin('M_PERSONAL AS MPR', 'MPR.IDPERSONAL', '=', 'FLF.IDPER_REGISTRA')
@@ -107,7 +110,7 @@ class FormFelicitacionesController extends Controller
             $save->AÑO = Carbon::now()->format('Y');
             $save->MES = Carbon::now()->format('m');
             $save->R_FECHA = $request->fecha;
-            $save->R_NOMBRE = $request->idtipo_dato;
+            $save->R_NOMBRE = $request->nombre;
             $save->R_APE_PAT = $request->ape_pat;
             $save->R_APE_MAT = $request->ape_mat;
             $save->IDTIPO_DOC = $request->tipo_doc;
@@ -141,5 +144,97 @@ class FormFelicitacionesController extends Controller
 
             return $response_;
         }
+    }
+
+    public function md_edit_felicitacion(Request $request)
+    {
+        $tip_doc = DB::table('D_PERSONAL_TIPODOC')->get();
+
+        $entidad = DB::table('M_MAC_ENTIDAD')
+                            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
+                            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
+                            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
+                            ->get();
+
+        $asesor = Personal::where('FLAG' , 1)->where('IDMAC', $this->centro_mac()->idmac)->get();
+
+        $felicitacion = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->first();
+
+        $view = view('formatos.f_felicitaciones.modals.md_edit_felicitacion', compact('tip_doc', 'entidad', 'asesor', 'felicitacion'))->render();
+
+        return response()->json(['html' => $view]);
+    }
+
+    public function update(Request $request)
+    {
+        try {
+            $num_doc = $request->num_doc;
+
+            $estructura_carp = 'formato_archivo\\felicitaciones\\'.$num_doc;
+
+            if (!file_exists($estructura_carp)) {
+                mkdir($estructura_carp, 0777, true);
+            }
+
+            $save = FLibroFelicitacion::findOrFail($request->idfelicitacion);
+            $save->R_FECHA = $request->fecha;
+            $save->R_CORREO = $request->correo;
+            $save->R_DESCRIPCION = $request->descripcion;
+            $save->IDENTIDAD = $request->entidad;
+            $save->IDPERSONAL = $request->asesor;
+            if($request->hasFile('file_doc'))
+            {
+                $archivoPDF = $request->file('file_doc');
+                $nombrePDF = $archivoPDF->getClientOriginalName();
+                //$nameruta = '/img/fotoempresa/'; // RUTA DONDE SE VA ALMACENAR EL DOCUMENTO PDF
+                $nameruta = $estructura_carp;  // GUARDAR EN UN SERVIDOR
+                $archivoPDF->move($nameruta, $nombrePDF);
+
+                $save->R_ARCHIVO_NOM = $nombrePDF;
+                $save->R_ARCHIVO_RUT = $estructura_carp;
+            }
+            $save->save();
+
+            return $save;
+
+        }catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
+    }
+
+    public function eliminar_archivo(Request $request)
+    {
+        $archivo = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->first();
+
+        $del = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->update([
+                                                                                                        'R_ARCHIVO_NOM' => null,
+                                                                                                        'R_ARCHIVO_RUT' => null,
+                                                                                                    ]);
+
+        if(file_exists( $archivo->R_ARCHIVO_RUT.'/'.$archivo->R_ARCHIVO_NOM)){
+            unlink($archivo->R_ARCHIVO_RUT.'/'.$archivo->R_ARCHIVO_NOM);
+        }
+
+        return $del;
+    }
+
+    public function delete(Request $request)
+    {
+        $archivo = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->first();
+        if(file_exists( $archivo->R_ARCHIVO_RUT.'/'.$archivo->R_ARCHIVO_NOM)){
+            unlink($archivo->R_ARCHIVO_RUT.'/'.$archivo->R_ARCHIVO_NOM);
+        }
+
+        $del = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->delete();
+
+        return response()->json(['data'=>$del],200);
+        
     }
 }

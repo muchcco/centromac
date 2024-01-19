@@ -189,7 +189,11 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/index' , [FormFelicitacionesController::class, 'index'])->name('index');
             Route::get('/tablas/tb_index' , [FormFelicitacionesController::class, 'tb_index'])->name('tablas.tb_index');
             Route::post('/modals/md_add_felicitacion' , [FormFelicitacionesController::class, 'md_add_felicitacion'])->name('modals.md_add_felicitacion');
+            Route::post('/modals/md_edit_felicitacion' , [FormFelicitacionesController::class, 'md_edit_felicitacion'])->name('modals.md_edit_felicitacion');
             Route::post('/store' , [FormFelicitacionesController::class, 'store'])->name('store');
+            Route::post('/update' , [FormFelicitacionesController::class, 'update'])->name('update');
+            Route::post('/eliminar_archivo' , [FormFelicitacionesController::class, 'eliminar_archivo'])->name('eliminar_archivo');
+            Route::post('/delete' , [FormFelicitacionesController::class, 'delete'])->name('delete');
         });
 
     });

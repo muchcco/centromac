@@ -62,8 +62,8 @@
                         </div>                                   --}}
                         {{-- <button type="button" class="btn-close align-self-center" data-bs-dismiss="alert" aria-label="Close"></button> --}}
                     {{-- </div> --}}
-                    <div class="row">
-                        <div class="col-12">
+                    <div class="row mb-2">
+                        <div class="col-12 ">
                             <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal" onclick="btnAddFelicitacion()"><i class="fa fa-plus" aria-hidden="true"></i>
                                 Agregar Felicitación</button> 
                         </div>
@@ -247,6 +247,90 @@ function btSave(){
     });
 
 
+}
+
+function btnEditarFelicitacion(idfelicitacion) {
+    $.ajax({
+        type:'post',
+        url: "{{ route('formatos.f_felicitaciones.modals.md_edit_felicitacion') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}", idfelicitacion : idfelicitacion},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
+}
+
+function btnEdit(idfelicitacion){
+
+    var file_data = $("#file_doc").prop("files")[0];
+    var formData = new FormData();
+    
+    formData.append("file_doc", file_data);
+    formData.append("idfelicitacion", idfelicitacion);
+    formData.append("fecha", $("#fecha").val());
+    formData.append("correo", $("#correo").val());
+    formData.append("entidad", $("#entidad").val());
+    formData.append("asesor", $("#asesor").val());
+    formData.append("descripcion", $("#descripcion").val());
+    formData.append("_token", $("input[name=_token]").val());
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('formatos.f_felicitaciones.update') }}",
+        dataType: "json",
+        data:formData,
+        processData: false,
+        contentType: false,
+        beforeSend: function () {
+            document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+            document.getElementById("btnEnviarForm").disabled = true;
+        },
+        success:function(data){        
+            $("#modal_show_modal").modal('hide');
+            tabla_seccion();
+            Toastify({
+                text: "Se agregó exitosamente el registro!",
+                className: "info",
+                gravity: "bottom",
+                style: {
+                    background: "#47B257",
+                }
+            }).showToast();
+        }
+    });
+
+}
+
+function btnElimnarFelicitacion(idfelicitacion){
+
+    swal.fire({
+        title: "Seguro que desea eliminar el registro??",
+        text: "El registro será eliminado",
+        icon: "info",
+        showCancelButton: !0,
+        confirmButtonText: "Aceptar",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.value) {
+            $.ajax({
+                url: "{{ route('formatos.f_felicitaciones.delete') }}",
+                type: 'post',
+                data: {"_token": "{{ csrf_token() }}", idfelicitacion: idfelicitacion},
+                success: function(response){
+                    tabla_seccion();
+                    Swal.fire({ 
+                        title: "Eliminado!",
+                        icon: "success",
+                        text: "El registro fue eliminado del sistema",
+                        confirmButtonText: "Aceptar"
+                    });
+                }
+            });
+        }
+
+    })
 }
 
 </script>
