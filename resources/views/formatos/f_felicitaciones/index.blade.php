@@ -306,7 +306,7 @@ function btnEdit(idfelicitacion){
 function btnElimnarFelicitacion(idfelicitacion){
 
     swal.fire({
-        title: "Seguro que desea eliminar el registro??",
+        title: "Seguro que desea eliminar el registro?",
         text: "El registro será eliminado",
         icon: "info",
         showCancelButton: !0,
