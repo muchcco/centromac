@@ -624,7 +624,7 @@ class PagesController extends Controller
 
         $result = DB::table('M_ASISTENCIA as MA')
                             ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-                            ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU,
+                            ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE, " - (", M_ENTIDAD.ABREV_ENTIDAD, ")" ) AS NOMBREU,
                                                 M_ENTIDAD.ABREV_ENTIDAD,
                                                 M_CENTRO_MAC.IDCENTRO_MAC,
                                                 M_PERSONAL.NUM_DOC,

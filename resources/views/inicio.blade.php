@@ -189,7 +189,11 @@ $(document).ready(function() {
 
     var formattedTime = hours + ':' + minutes + ':' + seconds;
 
-    console.log(formattedTime);
+    // console.log(formattedTime);
+    var timestamp2 = 47733000;
+    var fecha2 = new Date(timestamp2);
+
+    console.log(fecha2);
 
 
     AjaxDatGrf();
@@ -289,7 +293,7 @@ function AjaxDatGrf(fecha = ''){
 // Función para configurar el gráfico con los datos
 function setupChart(categories, seriesData) {
     Highcharts.chart('container', {
-       
+        timezone: 'America/Lima',
         title: {
             align: 'left',
             text: 'Reporte de control de ingreso diario'
@@ -316,6 +320,7 @@ function setupChart(categories, seriesData) {
             labels: {
                 formatter: function () {
                     var date = new Date(this.value);
+                    // console.log(date);
                     var hours = ('0' + date.getHours()).slice(-2);
                     var minutes = ('0' + date.getMinutes()).slice(-2);
                     var seconds = ('0' + date.getSeconds()).slice(-2);
@@ -326,7 +331,7 @@ function setupChart(categories, seriesData) {
         },
         legend: {
             enabled: false
-        },
+        },        
         plotOptions: {
             series: {
                 borderWidth: 0,
@@ -334,6 +339,7 @@ function setupChart(categories, seriesData) {
                     enabled: true,
                     formatter: function () {
                         var date = new Date(this.y);
+                        // console.log(date);
                         var hours = ('0' + date.getHours()).slice(-2);
                         var minutes = ('0' + date.getMinutes()).slice(-2);
                         var seconds = ('0' + date.getSeconds()).slice(-2);
@@ -345,7 +351,14 @@ function setupChart(categories, seriesData) {
         },
         tooltip: {
             headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
-            pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:%H:%M:%S}</b> of total<br/>'
+            formatter: function () {
+                var fecha = new Date(this.point.y);
+                var horas = ('0' + fecha.getHours()).slice(-2);
+                var minutos = ('0' + fecha.getMinutes()).slice(-2);
+                var segundos = ('0' + fecha.getSeconds()).slice(-2);
+
+                return '<span style="color:' + this.color + '">' + this.point.name + '</span>: <b>' + horas + ':' + minutos + ':' + segundos + '</b> hora ingresada<br/>';
+            },
         },
         series: [
             {
@@ -366,6 +379,8 @@ function getRandomColor() {
     }
     return color;
 }
+
+
 </script>
 
 @endsection
