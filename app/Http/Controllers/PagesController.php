@@ -596,7 +596,51 @@ class PagesController extends Controller
                                                     AND att.status = 1
                                                     ORDER BY att.dt_cheg ASC ');
 
-        return view('entidad_cola', compact('query'));
+
+        // Supongamos que estás obteniendo los resultados así
+        $resultados = $query;
+
+        // Define las duraciones de tiempo para cada ID específico
+        $duraciones = [
+            65 => 7,
+            157 => 3,
+            336 => 4,
+            // Agrega más IDs y duraciones según sea necesario
+        ];
+
+        // Inicializa las variables para contar y sumar la duración
+        $cantidadTotal = 0;
+        $sumaTotalTiempo = 0;
+
+        // Define las horas límite
+        $horaInicio = Carbon::parse('13:30:00');
+        $horaFin = Carbon::parse('16:30:00');
+
+        // Itera sobre los resultados
+        foreach ($resultados as $registro) {
+            // Accede a las propiedades del objeto
+            $id = $registro->id;
+
+            // Verifica si el ID está definido en las duraciones
+            if (isset($duraciones[$id])) {
+                $cantidadTotal++;
+                $sumaTotalTiempo += $duraciones[$id];
+            }
+        }
+
+        // Convierte la suma total de tiempo en minutos
+        $sumaTotalEnMinutos = $sumaTotalTiempo * 60;
+
+        // Calcula la hora final sumando la hora de inicio y la suma total de tiempo
+        $horaFinal = $horaInicio->copy()->addMinutes($sumaTotalEnMinutos);
+
+        // Determina si la hora final es después de la hora límite
+        $estaEnTarde = $horaFinal->greaterThan($horaFin);
+
+        // Puedes usar dd() para imprimir y detener la ejecución si es necesario
+        // dd("Cantidad total de registros: $cantidadTotal", "Suma total del tiempo: $sumaTotalTiempo minutos", "¿Está en hora?: " . ($estaEnTarde ? 'Sí' : 'No'));
+
+        return view('entidad_cola', compact('query', 'cantidadTotal', 'sumaTotalTiempo', 'estaEnTarde'));
     }
 
     public function externo()

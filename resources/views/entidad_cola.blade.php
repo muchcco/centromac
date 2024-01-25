@@ -61,10 +61,22 @@
           </div>          
         </div>
       </div>
-      <div>
-        <div class="" style="margin-left: 24.7em;">
-          <a href="{{ url()->previous() }}" class="btn btn-danger mb-3">Regresar</a>
-        </div>        
+      <div class="container">
+        <div class="carp">
+          <div class="card col-sm-8 col-12 col-lg-12 col-md-12">
+            <div class="card-header">
+              <div class="r-t">
+                <a href="{{ url()->previous() }}" class="btn btn-danger">Regresar</a>
+              </div>
+              <div class="r-t">
+                Tiempo estimado: {{ $sumaTotalTiempo }}
+              </div>
+              <div class="r-t">
+                Esta en hora? {{ $estaEnTarde ? 'Sí' : 'No' }}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>      
       <div class="container">
         <div class="carp">
@@ -80,7 +92,7 @@
                 <div class="form-p">
                   <div class="row col-sm-12 buut">
                     
-                    
+                    <p>Total de cuidadanos: <span id="seleccion">{{ $cantidadTotal }} </span> </p>
                     <div class="mb-3">
                         <div class="row col-12">
                             <table class="table table-bordered table-hover" id="seleccion">
