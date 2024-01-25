@@ -69,10 +69,10 @@
                 <a href="{{ url()->previous() }}" class="btn btn-danger">Regresar</a>
               </div>
               <div class="r-t">
-                Tiempo estimado: {{ $sumaTotalTiempo }} minutos
+                Tiempo estimado: <span id="minutos"> {{ $sumaTotalTiempo }} </span>minutos
               </div>
               <div class="r-t">
-                Esta en hora? {{ $estaEnTarde ? 'Sí' : 'No' }}
+                Esta en hora? <span id="tarde">{{ $estaEnTarde ? 'Sí' : 'No' }}</span> 
               </div>
             </div>
           </div>
@@ -92,7 +92,7 @@
                 <div class="form-p">
                   <div class="row col-sm-12 buut">
                     
-                    <p>Total de cuidadanos: <span id="seleccion">{{ $cantidadTotal }} </span> </p>
+                    <p>Total de cuidadanos: <span id="cantidad">{{ $cantidadTotal }} </span> </p>
                     <div class="mb-3">
                         <div class="row col-12">
                             <table class="table table-bordered table-hover" id="seleccion">
@@ -160,9 +160,21 @@ $(document).ready(function() {
       var refreshId =  setInterval( function(){
             $( "#seleccion" ).load(window.location.href + " #seleccion" );
             console.log('asdas') ;
-        }, 1000 );
+      }, 1000 );
+      var refreshId =  setInterval( function(){
+          $( "#minutos" ).load(window.location.href + " #minutos" );
+          console.log('asdas') ;
+      }, 1000 );
+      var refreshId =  setInterval( function(){
+          $( "#tarde" ).load(window.location.href + " #tarde" );
+          console.log('asdas') ;
+      }, 1000 );
+      var refreshId =  setInterval( function(){
+          $( "#cantidad" ).load(window.location.href + " #cantidad" );
+          console.log('asdas') ;
+      }, 1000 );
 
-     console.log(refreshId)
+     console.log(refreshId);
 });
 
 
