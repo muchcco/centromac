@@ -69,7 +69,7 @@
                 <a href="{{ url()->previous() }}" class="btn btn-danger">Regresar</a>
               </div>
               <div class="r-t">
-                Tiempo estimado: {{ $sumaTotalTiempo }}
+                Tiempo estimado: {{ $sumaTotalTiempo }} minutos
               </div>
               <div class="r-t">
                 Esta en hora? {{ $estaEnTarde ? 'Sí' : 'No' }}
