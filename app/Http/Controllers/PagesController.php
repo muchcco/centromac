@@ -503,6 +503,9 @@ class PagesController extends Controller
 
     public function entidad_cola(Request $request, $identidad)
     {
+        // $horaActual = Carbon::now();
+        // dd($horaActual);
+
         // dd($identidad);
         $query = DB::connection('mysql2')->select('SELECT 
                                                         DATE(dt_cheg) Fecha,
@@ -630,6 +633,18 @@ class PagesController extends Controller
 
         // Convierte la suma total de tiempo en minutos
         $sumaTotalEnMinutos = $sumaTotalTiempo * 60;
+        // dd($sumaTotalTiempo);
+        // Obtiene la hora actua    l
+        $horaActual = Carbon::now();
+        $horaActualFormato = $horaActual->format('H:i:s');
+
+        // Suma los minutos
+        // $sumaTotalEnMinutos = $sumaTotalTiempo; // Aquí tu valor real de suma de minutos
+        $horaProgramada = $horaActual->copy()->addMinutes($sumaTotalTiempo);
+        $horaProgramadaFormato = $horaProgramada->format('H:i:s');
+
+        // dd("Hora actual: $horaActualFormato", "Suma de tiempo: $sumaTotalEnMinutos minutos", "Hora programada en minutos: $horaProgramadaFormato");
+
 
         // Calcula la hora final sumando la hora de inicio y la suma total de tiempo
         $horaFinal = $horaInicio->copy()->addMinutes($sumaTotalEnMinutos);
@@ -640,7 +655,7 @@ class PagesController extends Controller
         // Puedes usar dd() para imprimir y detener la ejecución si es necesario
         // dd("Cantidad total de registros: $cantidadTotal", "Suma total del tiempo: $sumaTotalTiempo minutos", "¿Está en hora?: " . ($estaEnTarde ? 'Sí' : 'No'));
 
-        return view('entidad_cola', compact('query', 'cantidadTotal', 'sumaTotalTiempo', 'estaEnTarde'));
+        return view('entidad_cola', compact('query', 'cantidadTotal', 'sumaTotalTiempo', 'estaEnTarde', 'horaProgramadaFormato'));
     }
 
     public function externo()

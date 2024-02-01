@@ -197,12 +197,10 @@
                     <th style="border: 1px solid black">{{ $q->NUM_DOC }}</th>
                     <th style="border: 1px solid black">{{ date("d/m/Y", strtotime($q->FECHA)) }}  </th>
                     @if($q->N_NUM_DOC > '2' )
-                        <th style="border: 1px solid black">
-                            {{-- @if ($hora1 >= $horaInicial1 && $hora1 <= $horaFinal1)
-                                {{ $q->hora1 }}
-                            @endif --}}
-                            {{$q->hora1}}
+                        <th style="border: 1px solid black; color: {{ strtotime($q->hora1) > strtotime('08:15:00') ? 'red' : 'black' }}">
+                            {{ $q->hora1 }}
                         </th>
+                
                         <th style="border: 1px solid black">
                             {{ $q->hora2 }}
                         </th>
@@ -240,11 +238,8 @@
 
                         </th>
                     @elseif($q->N_NUM_DOC == '2' )
-                        <th style="border: 1px solid black">
-                            {{-- @if ($hora1 >= $horaInicial1 && $hora1 <= $horaFinal1)
-                                {{ $q->hora1 }}
-                            @endif --}}
-                            {{$q->hora1}}
+                        <th style="border: 1px solid black; color: {{ strtotime($q->hora1) > strtotime('08:15:00') ? 'red' : 'black' }}">
+                            {{ $q->hora1 }}
                         </th>
                         <th style="border: 1px solid black">
                             --
@@ -284,12 +279,9 @@
                             @endif
 
                         </th>
-                        @elseif($q->N_NUM_DOC == '1' )
-                        <th style="border: 1px solid black">
-                            {{-- @if ($hora1 >= $horaInicial1 && $hora1 <= $horaFinal1)
-                                {{ $q->hora1 }}
-                            @endif --}}
-                            {{$q->hora1}}
+                    @elseif($q->N_NUM_DOC == '1' )
+                        <th style="border: 1px solid black; color: {{ strtotime($q->hora1) > strtotime('08:15:00') ? 'red' : 'black' }}">
+                            {{ $q->hora1 }}
                         </th>
                         <th style="border: 1px solid black">
                             --

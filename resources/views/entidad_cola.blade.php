@@ -69,7 +69,7 @@
                 <a href="{{ url()->previous() }}" class="btn btn-danger">Regresar</a>
               </div>
               <div class="r-t">
-                Tiempo estimado: <span id="minutos"> {{ $sumaTotalTiempo }} </span>minutos
+                Tiempo estimado: <span id="minutos"> {{ $sumaTotalTiempo }} </span> minutos.<br /> Hora fin programada: <span id="hora-programda">{{ $horaProgramadaFormato }}</span> <strong>!Tener en cuenta la hora de almuerzo y salida del asesor</strong>
               </div>
               <div class="r-t">
                 Esta en hora? <span id="tarde">{{ $estaEnTarde ? 'Sí' : 'No' }}</span> 
@@ -159,23 +159,23 @@
 $(document).ready(function() {
       var refreshId =  setInterval( function(){
             $( "#seleccion" ).load(window.location.href + " #seleccion" );
-            console.log('asdas') ;
       }, 1000 );
       var refreshId =  setInterval( function(){
           $( "#minutos" ).load(window.location.href + " #minutos" );
-          console.log('asdas') ;
       }, 1000 );
       var refreshId =  setInterval( function(){
           $( "#tarde" ).load(window.location.href + " #tarde" );
-          console.log('asdas') ;
       }, 1000 );
       var refreshId =  setInterval( function(){
           $( "#cantidad" ).load(window.location.href + " #cantidad" );
-          console.log('asdas') ;
+      }, 1000 );
+      var refreshId =  setInterval( function(){
+          $( "#hora-programda" ).load(window.location.href + " #hora-programda" );
       }, 1000 );
 
      console.log(refreshId);
 });
+
 
 
 </script>
