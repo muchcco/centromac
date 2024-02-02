@@ -1,5 +1,18 @@
 <?php
+/*************************************************************************************************************************************************/
+/*
+DESARROLLADO POR:   JHON KEVIN MUCHCCO ROJAS - TIC MAC CUSCO
 
+MODIFICACIONES:
+======================================================
+==  NOMBRE      ==============    FECHA DE MODIFICACION     =============
+==              ==============                              =============
+==              ==============                              =============
+
+==  JHON KEVIN  ==   VERSION 1.0.0                      24/03/2019               
+===========================================================================*/
+
+/*************************************************************************************************************************************************/
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\Modulo\AsistenciaController;
@@ -109,6 +122,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/asistencia_excel' , [AsistenciaController::class, 'asistencia_excel'])->name('asistencia_excel');
         Route::get('/exportgroup_excel' , [AsistenciaController::class, 'exportgroup_excel'])->name('exportgroup_excel');
         Route::get('/exportgroup_excel_pr' , [AsistenciaController::class, 'exportgroup_excel_pr'])->name('exportgroup_excel_pr');
+        Route::get('/exportgroup_excel_general' , [AsistenciaController::class, 'exportgroup_excel_general'])->name('exportgroup_excel_general');
 
 
     });

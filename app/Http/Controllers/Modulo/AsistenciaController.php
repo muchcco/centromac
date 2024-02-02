@@ -388,7 +388,17 @@ class AsistenciaController extends Controller
                         ->where('M_PERSONAL.FLAG', 1)
                         ->get();
 
-        return view('asistencia.tablas.tb_det_entidad', compact('data'));
+        $data_spcm = DB::table('M_PERSONAL')
+                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
+                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+                        ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
+                        ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
+                        ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                        ->where('M_PERSONAL.FLAG', 1)
+                        ->whereNot('M_ENTIDAD.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
+                        ->get();
+
+        return view('asistencia.tablas.tb_det_entidad', compact('data', 'data_spcm'));
     }
 
     public function exportgroup_excel(Request $request)
@@ -736,6 +746,85 @@ class AsistenciaController extends Controller
 
         // dd($fecha_inicial);
         $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4, $hora_5, $identidad, $datosAgrupados, $fechasArray), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
+
+        return $export;
+    }
+
+    public function exportgroup_excel_general(Request $request)
+    {
+        
+        // Establece la configuración regional a español
+        setlocale(LC_TIME, 'es_ES', 'es_PE', 'es');
+        // dd($request->all());
+        // Crea una instancia de Carbon con el mes específico
+        $fecha = Carbon::create(null, $request->mes, 1);
+
+        // Obtiene el nombre completo del mes en español
+        $nombreMES = $fecha->formatLocalized('%B');
+
+        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
+        /*================================================================================================================*/
+        $us_id = auth()->user()->idcentro_mac;
+        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+
+        $idmac = $user->IDCENTRO_MAC;
+        $name_mac = $user->NOMBRE_MAC;
+        /*================================================================================================================*/
+
+        // DEFINIMOS EL TIPO DE DESCA
+
+        $fecha_ini_desc = strftime('%d de %B del %Y',strtotime($request->fecha_inicio));
+        $fecha_fin_desc = strftime('%d de %B del %Y',strtotime($request->fecha_fin));
+
+        $hora_1 = Configuracion::where('PARAMETRO', 'HORA_1')->first();
+        $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
+        $hora_3 = Configuracion::where('PARAMETRO', 'HORA_3')->first();
+        $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
+        $hora_5 = Configuracion::where('PARAMETRO', 'HORA_5')->first();
+
+
+        $tipo_desc = '2';
+        $fecha_inicial = $fecha_ini_desc;
+        $fecha_fin = $fecha_fin_desc;
+        // $identidad = $request->identidad;
+        // dd($identidad);
+        $identidadArray = DB::table('M_MAC_ENTIDAD')->select('IDENTIDAD')->where('IDCENTRO_MAC', $idmac)->whereNot('IDENTIDAD', 17)->pluck('IDENTIDAD')->toArray();
+
+        $identidadString = '(' . implode(', ', $identidadArray) . ')';
+
+        // dd($identidadString);
+        $identidad = $identidadString;
+
+        $query =  DB::table('M_ASISTENCIA as MA')
+                            ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC')
+                            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1')
+                            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2')
+                            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "3" THEN MA.HORA ELSE NULL END) AS hora3')
+                            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "4" THEN MA.HORA ELSE NULL END) AS hora4')
+                            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "5" THEN MA.HORA ELSE NULL END) AS hora5')
+                            ->selectRaw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
+                            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                            ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
+                                FROM M_PERSONAL
+                                LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
+                                JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
+                                JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+                            ->whereIn('PERS.IDENTIDAD', $identidadArray) // Filtra por las entidades del centro mac
+                            ->where('PERS.IDCENTRO_MAC', $idmac)
+                            ->whereMonth('MA.FECHA', $request->mes)
+                            ->whereYear('MA.FECHA', $request->año)
+                            ->groupBy('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC') // Incluye todas las columnas no agregadas en GROUP BY
+                            ->orderBy('PERS.ABREV_ENTIDAD', 'ASC') // Ordenar por ABREV_ENTIDAD en orden ascendente
+                            ->orderBy('MA.FECHA', 'ASC') // Luego, ordenar por FECHA en orden ascendente
+                            ->get();
+    
+
+        $datosAgrupados = '';
+        $fechasArray = '';        
+
+
+        // dd($query);
+        $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial,$fecha_fin , $hora_1, $hora_2, $hora_3, $hora_4, $hora_5, $identidad, $datosAgrupados, $fechasArray,), 'REPORTE DE ASISTENCIA CENTRO MAC - '.$name_mac.' _'.$nombreMES.'.xlsx');
 
         return $export;
     }

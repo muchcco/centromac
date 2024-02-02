@@ -168,8 +168,6 @@ $(document).ready(function() {
 });
 
 function tabla_seccion() {
-
-
     $.ajax({
         type: 'GET',
         url: "{{ route('asistencia.tablas.tb_det_entidad') }}", // Ruta que devuelve la vista en HTML
@@ -251,10 +249,6 @@ function BtnDowloadExcel(identidad) {
         }
 
     })
-
-
-    
-
 }
 
 function BtnDowloadExcelPers(identidad){
@@ -291,6 +285,39 @@ function BtnDowloadExcelPers(identidad){
 
 }
 
+/******************************************************  EXPORTAR DE FORMA GENERAL ******************************************************/
+
+function BtnDowloadExcelGeneral(){
+    swal.fire({
+                title: "Seguro que desea descargar el archivo?",
+                text: "El archivo será descargará con fecha seleccionada en la sección de filtro de búsqueda",
+                icon: "info",
+                showCancelButton: !0,
+                confirmButtonText: "Descargar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.value) {
+                    var año = document.getElementById('año').value;
+                    var mes = document.getElementById('mes').value;
+
+                    // Definimos la vista dende se enviara
+                    var link_up = "{{ route('asistencia.exportgroup_excel_general') }}";
+
+                    // Crear la URL con las variables como parámetros de consulta
+                    var href = link_up +'?año=' + año + '&mes=' + mes;
+
+                    window.open(href);
+
+                    Swal.fire({
+                        icon: "success",
+                        text: "El archivo se descargo con Exito!",
+                        confirmButtonText: "Aceptar"
+                    })
+                }
+
+            })
+}
+        
 </script>
 
 @endsection
