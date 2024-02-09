@@ -68,58 +68,52 @@
                 <div class="row">
                     <div class="col align-self-left">
                         <div class="form-group row">
-                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">First Name</label>
+                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">Conexión:</label>
                             <div class="col-lg-9 col-xl-8">
-                                <input class="form-control" type="text" value="Rosa">
+                                <input class="form-control" type="text" value="MySql" disabled>
                             </div>
                         </div>
                     </div>                
                 <div> 
-                    <div class="d-flex justify-content-between">
-                        <div class="img-group">
-                            <a class="user-avatar user-avatar-group" href="#">
-                                <img src="assets/images/users/user-6.jpg" alt="user" class="rounded-circle thumb-xxs">
-                            </a>
-                            <a class="user-avatar user-avatar-group" href="#">
-                                <img src="assets/images/users/user-2.jpg" alt="user" class="rounded-circle thumb-xxs">
-                            </a>
-                            <a class="user-avatar user-avatar-group" href="#">
-                                <img src="assets/images/users/user-3.jpg" alt="user" class="rounded-circle thumb-xxs">
-                            </a>
-                            <a class="user-avatar user-avatar-group" href="#">
-                                <img src="assets/images/users/user-4.jpg" alt="user" class="rounded-circle thumb-xxs">
-                            </a>
-                            <a href="" class="avatar-box thumb-xxs align-self-center">
-                                <span class="avatar-title bg-soft-info rounded-circle font-13 fw-normal">+6</span>
-                            </a>                    
-                        </div><!--end img-group--> 
-                        <ul class="list-inline mb-0 align-self-center">                                                                    
-                            <li class="list-item d-inline-block me-2">
-                                <a class="" href="#">
-                                    <i class="mdi mdi-format-list-bulleted text-success font-15"></i>
-                                    <span class="text-muted fw-bold">15/100</span>
-                                </a>
-                            </li>
-                            <li class="list-item d-inline-block">
-                                <a class="" href="#">
-                                    <i class="mdi mdi-comment-outline text-primary font-15"></i>
-                                    <span class="text-muted fw-bold">3</span>
-                                </a>                                                                               
-                            </li>
-                            <li class="list-item d-inline-block">
-                                <a class="ms-2" href="#">
-                                    <i class="mdi mdi-pencil-outline text-muted font-18"></i>
-                                </a>                                                                               
-                            </li>
-                            <li class="list-item d-inline-block">
-                                <a class="" href="#">
-                                    <i class="mdi mdi-trash-can-outline text-muted font-18"></i>
-                                </a>                                                                               
-                            </li>
-                        </ul>
-                    </div>                                        
-                </div><!--end task-box-->                                                                  
-            </div><!--end card-body-->
+                <div class="row">
+                    <div class="col align-self-left">
+                        <div class="form-group row">
+                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">IP </label>
+                            <div class="col-lg-9 col-xl-8">
+                                <input class="form-control" type="text" value="192.168.xxx.xxx">
+                            </div>
+                        </div>
+                    </div>                
+                <div> 
+                <div class="row">
+                    <div class="col align-self-left">
+                        <div class="form-group row">
+                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">Usuario</label>
+                            <div class="col-lg-9 col-xl-8">
+                                <input class="form-control" type="text" value="novosga2019" >
+                            </div>
+                        </div>
+                    </div>                
+                <div>
+                <div class="row">
+                    <div class="col align-self-left">
+                        <div class="form-group row">
+                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">Pasword  </label>
+                            <div class="col-lg-9 col-xl-8">
+                                <input class="form-control" type="password" >
+                            </div>
+                        </div>
+                    </div>                
+                <div>
+                <div class="row">
+                    <div class="col align-self-left">
+                        <div class="form-group row">
+                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">Base de Datos </label>
+                            <div class="col-lg-9 col-xl-8">
+                                <input class="form-control" type="text" value="novosga2019" >
+                            </div>
+                        </div>
+                    </div>              
         </div><!--end card-->
     </div><!--end col-->
 </div>
