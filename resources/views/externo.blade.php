@@ -50,7 +50,7 @@
                                         <td><a href="{{ route('validar') }}" target="_blank">Ir al link</a></td>
                                     </tr>
                                     <tr>
-                                        <th class="text-dark"><li>Revisión de cuidadanos por entidad</li></th>
+                                        <th class="text-dark"><li>Revisión de ciudadanos por entidad</li></th>
                                         <td><a href="{{ route('vista') }}" target="_blank">Ir al link</a></td>
                                     </tr>
                                     <tr>

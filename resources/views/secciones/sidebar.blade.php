@@ -123,7 +123,7 @@
 
                     <hr class="hr-dashed hr-menu">
                     <!--Nombre de la Categoria-->
-                    <li class="menu-label my-2">Configuración</li>
+                    <li class="menu-label my-2">Accesos</li>
                     <li class="@if (Request::is('usuarios*')) active  @endif">
                         <a href="{{ route('usuarios.index') }}"><i data-feather="box" class="align-self-center menu-icon"></i><span>Usuarios</span></a>
                     </li>
@@ -133,6 +133,14 @@
                     <li>
                         <a href="javascript: void(0);"><i data-feather="box" class="align-self-center menu-icon"></i><span>Mi Cuenta</span></a>
                     </li> --}}
+
+                    <hr class="hr-dashed hr-menu">
+                    <!--Nombre de la Categoria-->
+                    <li class="menu-label my-2">Configuración</li>
+
+                    <li class="@if (Request::is('configuracion*')) active  @endif">
+                        <a href="{{ route('configuracion.nuevo_mac') }}"><i data-feather="box" class="align-self-center menu-icon"></i><span>Centro MAC</span></a>
+                    </li>
                 @endrole          
             </ul>
         </div>

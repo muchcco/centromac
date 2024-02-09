@@ -5,11 +5,11 @@ DESARROLLADO POR:   JHON KEVIN MUCHCCO ROJAS - TIC MAC CUSCO
 
 MODIFICACIONES:
 ======================================================
-==  NOMBRE      ==============    FECHA DE MODIFICACION     =============
-==              ==============                              =============
-==              ==============                              =============
+==  NOMBRE      ==============    FECHA DE MODIFICACION     =============           MODULO             =============
+==              ==============                              =============                              =============
+==              ==============                              =============                              =============
 
-==  JHON KEVIN  ==   VERSION 1.0.0                      24/03/2019               
+==  JHON KEVIN  ==   VERSION 1.2.0                                   
 ===========================================================================*/
 
 /*************************************************************************************************************************************************/
@@ -29,6 +29,7 @@ use App\Http\Controllers\Formatos\F02InicioPerController;
 use App\Http\Controllers\Mobile\InternoController;
 use App\Http\Controllers\Modulo\ServMacController;
 use App\Http\Controllers\Formatos\FormFelicitacionesController;
+use App\Http\Controllers\Administrador\ConfiguracionController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -97,7 +98,7 @@ Route::group(['middleware' => ['auth']], function () {
     // SE ALMACENA LOS ACCESOS A LAS PAGINAS EXTERNA QUE NO ES NECESARIO LOGGIN
     Route::get('/externo' , [PagesController::class, 'externo'])->name('externo');
 
-    /**********************************************************************************************************************************************/
+    /********************************************************* ASISTENCIA  ***************************************************************/
 
     Route::group(['prefix'=>'asistencia','as'=>'asistencia.' ],function () {
 
@@ -126,6 +127,8 @@ Route::group(['middleware' => ['auth']], function () {
 
 
     });
+
+    /********************************************************** REGISTRO DE PERSONAL *******************************************************************/
 
     Route::group(['prefix'=>'personal','as'=>'personal.' ],function () {
 
@@ -262,4 +265,23 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/delete_user' , [UsuarioController::class, 'delete_user'])->name('delete_user');
         
     });
+
+    /******************************************************   CONFIGURACION ************************************************************************/
+
+    Route::group(['prefix'=>'configuracion','as'=>'configuracion.' ],function () {
+        
+        Route::get('/nuevo_mac' , [ConfiguracionController::class, 'nuevo_mac'])->name('nuevo_mac');
+        Route::get('/tablas/tb_nuevo_mac' , [ConfiguracionController::class, 'tb_nuevo_mac'])->name('tablas.tb_nuevo_mac');
+        Route::post('/modals/md_add_mac' , [ConfiguracionController::class, 'md_add_mac'])->name('modals.md_add_mac');
+        Route::post('/modals/md_edit_mac' , [ConfiguracionController::class, 'md_edit_mac'])->name('modals.md_edit_mac');
+        Route::post('/store_mac' , [ConfiguracionController::class, 'store_mac'])->name('store_mac');
+        Route::post('/update_mac' , [ConfiguracionController::class, 'update_mac'])->name('update_mac');
+        Route::post('/delete_mac' , [ConfiguracionController::class, 'delete_mac'])->name('delete_mac');
+        
+        // CONFIGURACION DE TABLAS ASOCIADAS
+
+        Route::get('/reg_tablas/{idcentro_mac}' , [ConfiguracionController::class, 'reg_tablas'])->name('reg_tablas');
+        
+    });
+
 });

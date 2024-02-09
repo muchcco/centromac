@@ -16,15 +16,17 @@ class Mac extends Model
 
     protected $fillable = [  
                             'UBICACION', 
+                            'DIRECCION_MAC',
                             'UBICACION_ANT',                            
                             'NOMBRE_MAC', 
                             'FECHA_APERTURA', 
                             'FECHA_INAGURACION',
                             'FOTO_RUTA',
-                            'FLAG'                            
+                            'FLAG',
+                            'FECHA_CREACION'                        
                         ];
 
-    public $timestamps = true;
+    public $timestamps = false;
 
     public function usuario()
     {
