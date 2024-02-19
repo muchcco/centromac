@@ -110,15 +110,16 @@
                             <tr>
                                 <th class="font-ss text-white">Descripción</th>
                                 <th class="font-ss text-white">Apertura</th>
+                                <th class="font-ss text-white">Observación de Inicio</th>
                                 <th class="font-ss text-white">Cierre</th>
-                                <th class="font-ss text-white">Observación</th>
+                                <th class="font-ss text-white">Observación Fin</th>
                             </tr>                            
                         </thead>
                         <tbody>
                            @forelse ($resultado as $result)
                                 @if ($result->IDPADRE_F == NULL)
                                     <tr>
-                                        <td colspan="4" class="font-ss" style="background: #b3b3b3">{{ $result->DESCRIPCION_F }}</td>
+                                        <td colspan="5" class="font-ss" style="background: #b3b3b3">{{ $result->DESCRIPCION_F }}</td>
                                     </tr>
                                 @elseif($result->IDPADRE_F !== NULL)
                                     <tr>
@@ -132,6 +133,9 @@
                                                 <option value="NO" {{ $result->CONFORMIDAD_I == 'NO' ? 'selected' : '' }}>NO</option>
                                             </select>
                                         </td>
+                                        <td>
+                                          <textarea name="observacion[]" id="observacion_{{ $result->IDDESC_FORM }}" cols="40" rows="1">{{ $result->OBSERVACION_F02 }}</textarea>
+                                        </td>
                                         <td class="fs-6" style="width: 80px">
                                             <select name="cierre[]" id="cierre_{{ $result->IDDESC_FORM }}" class="form-control font-ss">
                                                 
@@ -140,7 +144,7 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <textarea name="observacion[]" id="observacion_{{ $result->IDDESC_FORM }}" cols="40" rows="1">{{ $result->OBSERVACION_F02 }}</textarea>
+                                            <textarea name="observacion2[]" id="observacion_{{ $result->IDDESC_FORM }}_2" cols="40" rows="1">{{ $result->OBSERVACION2_F02 }}</textarea>
                                         </td>
                                     </tr>
                                 @endif
@@ -153,7 +157,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="4"><button type="button" class="btn btn-danger btn-block" id="btnEnviarForm" style="width: 100%" onclick="GuardarForm()">GUARDAR</button></td>
+                                <td colspan="5"><button type="button" class="btn btn-danger btn-block" id="btnEnviarForm" style="width: 100%" onclick="GuardarForm()">GUARDAR</button></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -196,13 +200,15 @@ function GuardarForm() {
         var aperturaElement = fila.find("select[id^='apertura_']");
         var cierreElement = fila.find("select[id^='cierre_']");
         var observacionElement = fila.find("textarea[name^='observacion']");
+        var observacion2Element = fila.find("textarea[name^='observacion2']");
         var iddescFormElement = fila.find("input[name^='iddesc_form']");
 
         // Verificar si los elementos existen
-        if (aperturaElement.length > 0 && cierreElement.length > 0 && observacionElement.length > 0 && iddescFormElement.length > 0) {
+        if (aperturaElement.length > 0 && cierreElement.length > 0 && observacionElement.length > 0 && observacion2Element.length > 0 && iddescFormElement.length > 0) {
             formData.append("apertura[]", aperturaElement.val());
             formData.append("cierre[]", cierreElement.val());
             formData.append("observacion[]", observacionElement.val());
+            formData.append("observacion2[]", observacion2Element.val());
             formData.append("iddesc_form[]", iddescFormElement.val());
         }
     });

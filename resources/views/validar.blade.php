@@ -70,8 +70,8 @@
                 <div class="form-p">
                   <div class="row col-sm-12 buut">
                     
-                    <div class="mb-3 col-11">
-                      <label for="IdTipoPersona" class="control-label">Seleccione el Centro Mac donde se encuentre <span class="text-danger fw-bolder">(*)</span> </label>
+                    <div class="mb-3 col-5">
+                      <label for="IdTipoPersona" class="control-label">Centro Mac o Sede donde se encuentre <span class="text-danger fw-bolder">(*)</span> </label>
                       {{-- <input type="text" class="form-control">
                       <input type="button" class="form-control"> --}}
                       <div class="input-group col-6">
@@ -80,6 +80,16 @@
                             @foreach ($macs as $mac)
                                 <option value="{{ $mac->IDCENTRO_MAC }}">{{ $mac->NOMBRE_MAC }}</option>
                             @endforeach
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mb-3 col-6">
+                      <label for="IdTipoPersona" class="control-label">Seleccione su Entidad <span class="text-danger fw-bolder">(*)</span> </label>
+                      {{-- <input type="text" class="form-control">
+                      <input type="button" class="form-control"> --}}
+                      <div class="input-group col-6">
+                        <select name="entidad" id="entidad" class="form-select col-6">
+                            <option value="0" disabled selected>-- Seleccione un Centro MAC --</option>
                         </select>
                       </div>
                     </div>
@@ -147,6 +157,33 @@
 
 
 <script>
+$(document).ready(function() {
+
+  Entidad();
+
+});
+function Entidad(){
+
+  $('#idmac').on('change', function() {
+          var idcentro_mac = $(this).val();
+          if (idcentro_mac) {
+              var url = "{{ route('entidad', ['idcentro_mac' => ':idcentro_mac']) }}"; // Cambia 'tipo' a 'tipoid'
+              url = url.replace(':idcentro_mac', idcentro_mac);
+
+              $.ajax({
+                  type: 'GET',
+                  url: url, // Utiliza la URL generada con tipo
+                  success: function(data) {
+                      $('#entidad').html(data);
+                  }
+              });
+          } else {
+              $('#entidad').empty();
+          }
+      });
+
+
+}
 
 function Validar_Archivos_NUMDOC(){
 
@@ -173,6 +210,7 @@ function BtnNumDoc() {
         var formData = new FormData();
         formData.append("num_doc", $("#num_doc").val());
         formData.append("idtipo_doc", $("#idtipo_doc").val());
+        formData.append("entidad", $("#entidad").val());
         formData.append("idmac", $("#idmac").val());
         formData.append("_token", $("input[name=_token]").val());
         console.log(formData);
@@ -197,9 +235,16 @@ function BtnNumDoc() {
                   });
               } else {
                   console.log(response);
-                  var num_doc = response.NUM_DOC;
-                  var URLd = "{{ route('formdata', ':num_doc') }}".replace(':num_doc', num_doc);
-                  window.location.href = URLd;
+                 if($('#entidad').val() == 17){
+                    var num_doc = response.NUM_DOC;
+                    var URLd = "{{ route('formdata_pcm', ':num_doc') }}".replace(':num_doc', num_doc);
+                    window.location.href = URLd;
+                 }else{
+                    var num_doc = response.NUM_DOC;
+                    var URLd = "{{ route('formdata', ':num_doc') }}".replace(':num_doc', num_doc);
+                    window.location.href = URLd;
+                 }
+                 
               }
 
                 

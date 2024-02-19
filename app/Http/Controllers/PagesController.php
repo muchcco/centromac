@@ -93,14 +93,20 @@ class PagesController extends Controller
                 }                
 
             }elseif($per_mac->FLAG == '3'){
+                // dd($per_mac->NUM_DOC);
+                $update = Personal::FindOrFail($per_mac->IDPERSONAL);
+                $update->IDENTIDAD = $request->entidad;
+                $update->FLAG = 1;
+                $update->save();
 
-                return $per_mac;
+                return $update;
                 
             }            
 
         }else{
             
             $personal = new Personal;
+            $personal->IDENTIDAD = $request->entidad;
             $personal->IDTIPO_DOC = $request->idtipo_doc;
             $personal->NUM_DOC = $request->num_doc;
             $personal->IDMAC = $request->idmac;
@@ -139,6 +145,8 @@ class PagesController extends Controller
                         ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
                         ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
                         ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $personal->IDMAC)
+                        ->whereNot('M_ENTIDAD.IDENTIDAD', 17)
+                        ->orderBy('M_ENTIDAD.NOMBRE_ENTIDAD', 'ASC')
                         ->get();
 
         $detall_fam = DB::table('D_PERSONAL_FAM')->join('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'D_PERSONAL_FAM.IDPERSONAL')->where('M_PERSONAL.NUM_DOC', $num_doc)->get();
@@ -168,145 +176,274 @@ class PagesController extends Controller
 
     public function store_data(Request $request)
     {
-        // dd($request->all());
+        if($request->identidad == '17' ){
 
-        $data = $request->except(['tvl_otro', 'gi_otro', 'dni', 'cv']);
-        $missingValues = [];
+            // dd($request->all());
+            $data = $request->except(['gi_otro', 'dni'/*, 'cv'*/]);
 
-        foreach ($data as $key => $value) {
-            if ($value === NULL || $value === "undefined") {
-                $missingValues[] = $key;
+            foreach ($data as $key => $value) {
+                if ($value === NULL || $value === "undefined") {
+                    $missingValues[] = $key;
+                }
             }
-        }
-        // dd($missingValues);
-        if (!empty($missingValues)) {
-            // Enviar un mensaje con los valores faltantes.
-            // return response()->json(['message' => 'Falta llenar los siguientes valos :  ' ."\n". implode(', ', $missingValues)], 400);
 
-            $errorMessage = 'Falta llenar los siguientes campos : ' . "\n";
+            if (!empty($missingValues)) {
 
-            foreach ($missingValues as $value) {
-                $errorMessage .= "* " . str_replace(
-                    [
-                        'nombre', 'ape_pat', 'ape_mat', 'idtipo_doc', 'num_doc', 'identidad', 'direccion', 'sexo', 'fech_nacimiento', 'distrito',  'distrito2', 'telefono', 'celular', 'correo', 'grupo_sanguineo', 'e_nomape', 'e_telefono', 'e_celular', 'ecivil', 'df_n_hijos', 'dp_fecha_ingreso', 'dp_puesto_trabajo', 'dp_tiempo_ptrabajo', 'dp_centro_atencion', 'dp_codigo_identificacion', 'dlp_fecha_ingreso', 'dlp_puesto_trabajo', 'dlp_tiempo_puesto', 'dlp_area_trabajo', 'dlp_jefe_inmediato', 'dlp_cargo', 'dlp_telefono', 'tlv_id', 'gi_id',  'gi_carrera', 'gi_desde', 'gi_hasta', 
-                    ],
-                    [
-                        'Ingrese su nombre', 'Ingrese su Apellido Paterno', 'Ingrese su Apellido Materno', 'Ingrese su Tipo de Documento', 'Ingrese su Número de Documento', 'Ingrese su Entidad', 'Ingrese su Dirección', 'Ingrese su sexo', 'Ingrese su Fecha de Nacimiento', 'Ingrese su Distrito Actual', 'Ingrese el lugar de nacimiento', 'Ingrese su númerp de teléfono', 'Ingrese su número de celular', 'Ingrese su Correo', 'Ingrese su grupo sanguineo', 'Ingrese Nombre y apellido de su contacto de emergencia', 'Ingrese el número de teléfono de su contacto de emergencia', 'Ingrese el número celular de su contacto de emergencia', 'Ingrese su estado civil', 'Ingrese el número de hijos si da el caso que no tiene colocar "0"', 'Ingrese fecha de Ingreso al centro MAC', 'Ingrese su puesto de trabajo', 'Ingrese el tiempo en el puesto de trabajo', 'Seleccione tipo de atención en el centro MAC', 'Ingrese su código de identificación que le remiten de su entidad si no lo tiene colocar (-)', 'Ingrese la fecha de ingreso a su entidad','Ingrese el puesto que tiene a su entidad', 'Ingrese el tiempo que tiene en su entidad ejem: x años y meses d dias ', 'Ingrese al área que pertenece en su entidad', 'Ingrese el nombre y apellido de su jefe inmediato', 'Ingrese el cargo al que corresponde su jefe inmediato', 'ingrese el número de telefono de su jefe inmediato', 'Seleccione el tipo de vinculación laboral que tiene con su entidad', 'Seleccione su grado de instruccón', 'Ingrese su carrera o profesión', 'Ingrese la fecha cuando inicio su carrera o profesión', 'Ingrese la fecha cuando culmino su carrera o profesión'
-                    ], 
-                    $value) . "\n";
+                $errorMessage = 'Falta llenar los siguientes campos : ' . "\n";
+
+                foreach ($missingValues as $value) {
+                    $errorMessage .= "* " . str_replace(
+                        [
+                            'nombre', 'ape_pat', 'ape_mat', 'idtipo_doc', 'num_doc', 'identidad', 'direccion', 'sexo', 'fech_nacimiento', 'distrito',  'distrito2', 'telefono', 'celular', 'correo', 'grupo_sanguineo', 'pcm_talla', 'cargo_pcm', 'finicio' , 
+                        ],
+                        [
+                            'Ingrese su nombre', 'Ingrese su Apellido Paterno', 'Ingrese su Apellido Materno', 'Ingrese su Tipo de Documento', 'Ingrese su Número de Documento', 'Ingrese su Entidad', 'Ingrese su Dirección', 'Ingrese su sexo', 'Ingrese su Fecha de Nacimiento', 'Ingrese su Distrito Actual', 'Ingrese el lugar de nacimiento', 'Ingrese su númerp de teléfono', 'Ingrese su número de celular', 'Ingrese su Correo', 'Ingrese su grupo sanguineo','Ingrese su talla' , 'Ingrese su Cargo en la PCM', 'Ingrese su fecha de Inicio de labores',
+                        ], 
+                        $value) . "\n";
+                }
+                // dd($errorMessage);
+
+                $response_ = response()->json([
+                    'data' => null,
+                    'message' => $errorMessage,
+                    'status' => 201,
+                ], 200);
+
+                return $response_;                
+
             }
-            // dd($errorMessage);
 
-            $response_ = response()->json([
-                'data' => null,
-                'message' => $errorMessage,
-                'status' => 201,
-            ], 200);
+            $IDPERSONAL = $request->idpersonal;
 
-            return $response_;
+            $update = Personal::findOrFail($IDPERSONAL);
+            $update->NOMBRE = $request->nombre;
+            $update->APE_PAT = $request->ape_pat;
+            $update->APE_MAT = $request->ape_mat;
+            $update->IDTIPO_DOC = $request->idtipo_doc;
+            $update->NUM_DOC = $request->num_doc;        
+            $update->IDENTIDAD = $request->identidad;
+            $update->DIRECCION = $request->direccion;
+            $update->SEXO = $request->sexo;
+            $update->FECH_NACIMIENTO = $request->fech_nacimiento;
+            $update->IDDISTRITO = $request->distrito;
+            $update->IDDISTRITO_NAC = $request->distrito2;
+            $update->TELEFONO = $request->telefono;
+            $update->CELULAR = $request->celular;
+            $update->CORREO = $request->correo;
+            $update->GRUPO_SANGUINEO = $request->grupo_sanguineo;
+            $update->PCM_TALLA = $request->pcm_talla;
+
+            $update->IDCARGO_PERSONAL = $request->cargo_pcm;
+            $update->PCM_OS_FINICIO = $request->finicio;
+            $update->GI_ID = $request->gi_id;
+            $update->GI_OTRO = $request->gi_otro;
+            $update->GI_CARRERA = $request->gi_carrera;
+            $update->GI_DESDE = $request->gi_desde;
+            $update->GI_HASTA = $request->gi_hasta;
+            $update->save();
+
+            $estructura_carp = 'personal\\num_doc\\'.$request->num_doc;
+            if (!file_exists($estructura_carp)) {
+                mkdir($estructura_carp, 0777, true);
+            }
+
+            $dni = new Archivoper;
+            $dni->IDPERSONAL = $IDPERSONAL;
+            if($request->hasFile('dni'))
+            {
+                $archivoDNI = $request->file('dni');
+                $nombreDNI = $archivoDNI->getClientOriginalName();
+                $formatoDNI = $archivoDNI->getClientOriginalExtension(); // Obtener el formato (extensión) del archivo
+                $tamañoEnKBDNI = $archivoDNI->getSize() / 1024; // Tamaño en kilobytes
+                //$nameruta = '/DNI/fotoempresa/'; // RUTA DONDE SE VA ALMACENAR EL DOCUMENTO PDF
+                $namerutaDNI = $estructura_carp;  // GUARDAR EN UN SERVIDOR
+                $archivoDNI->move($namerutaDNI, $nombreDNI);
+
+                $dni->NOMBRE_ARCHIVO = $nombreDNI;
+                $dni->NOMBRE_RUTA = $estructura_carp.'\\'.$nombreDNI;
+                $dni->FORMATO_DOC = $formatoDNI;
+                $dni->PESO_DOC = $tamañoEnKBDNI;
+            }
+            $dni->save();
+
+            return $update;
+
+        }else{
+            $data = $request->except(['tvl_otro', 'gi_otro', 'dni', 'cv']);
+            $missingValues = [];
+
+            foreach ($data as $key => $value) {
+                if ($value === NULL || $value === "undefined") {
+                    $missingValues[] = $key;
+                }
+            }
+            if (!empty($missingValues)) {
+
+                $errorMessage = 'Falta llenar los siguientes campos : ' . "\n";
+
+                foreach ($missingValues as $value) {
+                    $errorMessage .= "* " . str_replace(
+                        [
+                            'nombre', 'ape_pat', 'ape_mat', 'idtipo_doc', 'num_doc', 'identidad', 'direccion', 'sexo', 'fech_nacimiento', 'distrito',  'distrito2', 'telefono', 'celular', 'correo', 'grupo_sanguineo', 'pcm_talla', 'e_nomape', 'e_telefono', 'e_celular', 'ecivil', 'df_n_hijos', 'dp_fecha_ingreso', 'dp_puesto_trabajo', 'dp_tiempo_ptrabajo', 'dp_centro_atencion', 'dp_codigo_identificacion', 'dlp_fecha_ingreso', 'dlp_puesto_trabajo', 'dlp_tiempo_puesto', 'dlp_area_trabajo', 'dlp_jefe_inmediato', 'dlp_cargo', 'dlp_telefono', 'tlv_id', 'gi_id',  'gi_carrera', 'gi_desde', 'gi_hasta', 'num_modulo', 
+                        ],
+                        [
+                            'Ingrese su nombre', 'Ingrese su Apellido Paterno', 'Ingrese su Apellido Materno', 'Ingrese su Tipo de Documento', 'Ingrese su Número de Documento', 'Ingrese su Entidad', 'Ingrese su Dirección', 'Ingrese su sexo', 'Ingrese su Fecha de Nacimiento', 'Ingrese su Distrito Actual', 'Ingrese el lugar de nacimiento', 'Ingrese su númerp de teléfono', 'Ingrese su número de celular', 'Ingrese su Correo', 'Ingrese su grupo sanguineo','Ingrese su talla' ,'Ingrese Nombre y apellido de su contacto de emergencia', 'Ingrese el número de teléfono de su contacto de emergencia', 'Ingrese el número celular de su contacto de emergencia', 'Ingrese su estado civil', 'Ingrese el número de hijos si da el caso que no tiene colocar "0"', 'Ingrese fecha de Ingreso al centro MAC', 'Ingrese su puesto de trabajo', 'Ingrese el tiempo en el puesto de trabajo', 'Seleccione tipo de atención en el centro MAC', 'Ingrese su código de identificación que le remiten de su entidad si no lo tiene colocar (-)', 'Ingrese la fecha de ingreso a su entidad','Ingrese el puesto que tiene a su entidad', 'Ingrese el tiempo que tiene en su entidad ejem: x años y meses d dias ', 'Ingrese al área que pertenece en su entidad', 'Ingrese el nombre y apellido de su jefe inmediato', 'Ingrese el cargo al que corresponde su jefe inmediato', 'ingrese el número de telefono de su jefe inmediato', 'Seleccione el tipo de vinculación laboral que tiene con su entidad', 'Seleccione su grado de instruccón', 'Ingrese su carrera o profesión', 'Ingrese la fecha cuando inicio su carrera o profesión', 'Ingrese la fecha cuando culmino su carrera o profesión', 'Ingrese el número de módulo asignado'
+                        ], 
+                        $value) . "\n";
+                }
+                // dd($errorMessage);
+
+                $response_ = response()->json([
+                    'data' => null,
+                    'message' => $errorMessage,
+                    'status' => 201,
+                ], 200);
+
+                return $response_;
+                
+
+            }
+
+            $IDPERSONAL = $request->idpersonal;
+
+            $update = Personal::findOrFail($IDPERSONAL);
+            $update->NOMBRE = $request->nombre;
+            $update->APE_PAT = $request->ape_pat;
+            $update->APE_MAT = $request->ape_mat;
+            $update->IDTIPO_DOC = $request->idtipo_doc;
+            $update->NUM_DOC = $request->num_doc;        
+            $update->IDENTIDAD = $request->identidad;
+            $update->DIRECCION = $request->direccion;
+            $update->SEXO = $request->sexo;
+            $update->FECH_NACIMIENTO = $request->fech_nacimiento;
+            $update->IDDISTRITO = $request->distrito;
+            $update->IDDISTRITO_NAC = $request->distrito2;
+            $update->TELEFONO = $request->telefono;
+            $update->CELULAR = $request->celular;
+            $update->CORREO = $request->correo;
+            $update->GRUPO_SANGUINEO = $request->grupo_sanguineo;
+            $update->PCM_TALLA = $request->pcm_talla;
+            $update->NUMERO_MODULO = $request->num_modulo;
+
+            // $update->FOTO_RUTA = $request->
+
+            $update->E_NOMAPE = $request->e_nomape;
+            $update->E_TELEFONO = $request->e_telefono;
+            $update->E_CELULAR = $request->e_celular;
+            $update->ESTADO_CIVIL = $request->ecivil;
+            $update->DF_N_HIJOS = $request->df_n_hijos;
+            $update->PD_FECHA_INGRESO = $request->dp_fecha_ingreso;
+            $update->PD_PUESTO_TRABAJO = $request->dp_puesto_trabajo;
+            $update->PD_TIEMPO_PTRABAJO = $request->dp_tiempo_ptrabajo;
+            $update->PD_CENTRO_ATENCION = $request->dp_centro_atencion;
+            $update->PD_CODIGO_IDENTIFICACION = $request->dp_codigo_identificacion;
+            $update->DLP_FECHA_INGRESO = $request->dlp_fecha_ingreso;
+            $update->DLP_PUESTO_TRABAJO = $request->dlp_puesto_trabajo;
+            $update->DLP_TIEMPO_PTRABAJO = $request->dlp_tiempo_puesto;
+            $update->DLP_AREA_TRABAJO = $request->dlp_area_trabajo;
+            $update->DLP_JEFE_INMEDIATO = $request->dlp_jefe_inmediato;
+            $update->DLP_CARGO = $request->dlp_cargo;
+            $update->DLP_TELEFONO = $request->dlp_telefono;
+            $update->TVL_ID = $request->tlv_id;
+            $update->TVL_OTRO = $request->tvl_otro;
+            $update->GI_ID = $request->gi_id;
+            $update->GI_OTRO = $request->gi_otro;
+            $update->GI_CARRERA = $request->gi_carrera;
+            $update->GI_DESDE = $request->gi_desde;
+            $update->GI_HASTA = $request->gi_hasta;
+            $update->save();
+
+            // GUARDAMOS EL ARCHIVO DNI
+
             
 
+            $estructura_carp = 'personal\\num_doc\\'.$request->num_doc;
+            if (!file_exists($estructura_carp)) {
+                mkdir($estructura_carp, 0777, true);
+            }
+
+            $dni = new Archivoper;
+            $dni->IDPERSONAL = $IDPERSONAL;
+            if($request->hasFile('dni'))
+            {
+                $archivoDNI = $request->file('dni');
+                $nombreDNI = $archivoDNI->getClientOriginalName();
+                $formatoDNI = $archivoDNI->getClientOriginalExtension(); // Obtener el formato (extensión) del archivo
+                $tamañoEnKBDNI = $archivoDNI->getSize() / 1024; // Tamaño en kilobytes
+                //$nameruta = '/DNI/fotoempresa/'; // RUTA DONDE SE VA ALMACENAR EL DOCUMENTO PDF
+                $namerutaDNI = $estructura_carp;  // GUARDAR EN UN SERVIDOR
+                $archivoDNI->move($namerutaDNI, $nombreDNI);
+
+                $dni->NOMBRE_ARCHIVO = $nombreDNI;
+                $dni->NOMBRE_RUTA = $estructura_carp.'\\'.$nombreDNI;
+                $dni->FORMATO_DOC = $formatoDNI;
+                $dni->PESO_DOC = $tamañoEnKBDNI;
+            }
+            $dni->save();
+
+            $cv = new Archivoper;
+            $cv->IDPERSONAL = $IDPERSONAL;
+            if($request->hasFile('cv'))
+            {
+                $archivoCV = $request->file('cv');
+                $nombreCV = $archivoCV->getClientOriginalName();
+                $formatoCV = $nombreCV->getClientOriginalExtension(); // Obtener el formato (extensión) del archivo
+                $tamañoEnKBCV = $archivo->getSize() / 1024; // Tamaño en kilobytes
+                //$nameruta = '/CV/fotoempresa/'; // RUTA DONDE SE VA ALMACENAR EL DOCUMENTO PDF
+                $namerutaCV = $estructura_carp;  // GUARDAR EN UN SERVIDOR
+                $archivoCV->move($namerutaCV, $nombreCV);
+
+                $cv->NOMBRE_ARCHIVO = $nombreCV;
+                $cv->NOMBRE_RUTA = $estructura_carp.'\\'.$nombreCV;
+                $cv->FORMATO_DOC = $formatoCV;
+                $cv->PESO_DOC = $tamañoEnKBCV;
+            }
+            $cv->save();
+
+
+            
+
+            return $update;
         }
 
-        $IDPERSONAL = $request->idpersonal;
+    }
 
-        $update = Personal::findOrFail($IDPERSONAL);
-        $update->NOMBRE = $request->nombre;
-        $update->APE_PAT = $request->ape_pat;
-        $update->APE_MAT = $request->ape_mat;
-        $update->IDTIPO_DOC = $request->idtipo_doc;
-        $update->NUM_DOC = $request->num_doc;        
-        $update->IDENTIDAD = $request->identidad;
-        $update->DIRECCION = $request->direccion;
-        $update->SEXO = $request->sexo;
-        $update->FECH_NACIMIENTO = $request->fech_nacimiento;
-        $update->IDDISTRITO = $request->distrito;
-        $update->IDDISTRITO_NAC = $request->distrito2;
-        $update->TELEFONO = $request->telefono;
-        $update->CELULAR = $request->celular;
-        $update->CORREO = $request->correo;
-        $update->GRUPO_SANGUINEO = $request->grupo_sanguineo;
+    public function formdata_pcm(Request $request, $num_doc)
+    {
+        $departamentos = DB::table('DEPARTAMENTO')->get();
 
-        // $update->FOTO_RUTA = $request->
+        $personal = Personal::leftJoin('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
+                                ->where('M_PERSONAL.NUM_DOC', $num_doc)
+                                ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+                                ->first();
+        // dd($personal);
 
-        $update->E_NOMAPE = $request->e_nomape;
-        $update->E_TELEFONO = $request->e_telefono;
-        $update->E_CELULAR = $request->e_celular;
-        $update->ESTADO_CIVIL = $request->ecivil;
-        $update->DF_N_HIJOS = $request->df_n_hijos;
-        $update->PD_FECHA_INGRESO = $request->dp_fecha_ingreso;
-        $update->PD_PUESTO_TRABAJO = $request->dp_puesto_trabajo;
-        $update->PD_TIEMPO_PTRABAJO = $request->dp_tiempo_ptrabajo;
-        $update->PD_CENTRO_ATENCION = $request->dp_centro_atencion;
-        $update->PD_CODIGO_IDENTIFICACION = $request->dp_codigo_identificacion;
-        $update->DLP_FECHA_INGRESO = $request->dlp_fecha_ingreso;
-        $update->DLP_PUESTO_TRABAJO = $request->dlp_puesto_trabajo;
-        $update->DLP_TIEMPO_PTRABAJO = $request->dlp_tiempo_puesto;
-        $update->DLP_AREA_TRABAJO = $request->dlp_area_trabajo;
-        $update->DLP_JEFE_INMEDIATO = $request->dlp_jefe_inmediato;
-        $update->DLP_CARGO = $request->dlp_cargo;
-        $update->DLP_TELEFONO = $request->dlp_telefono;
-        $update->TVL_ID = $request->tlv_id;
-        $update->TVL_OTRO = $request->tvl_otro;
-        $update->GI_ID = $request->gi_id;
-        $update->GI_OTRO = $request->gi_otro;
-        $update->GI_CARRERA = $request->gi_carrera;
-        $update->GI_DESDE = $request->gi_desde;
-        $update->GI_HASTA = $request->gi_hasta;
-        $update->save();
+        $dis_act = DB::table('DISTRITO AS D')
+                        ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
+                        ->join('DEPARTAMENTO  AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
+                        ->join('M_PERSONAL AS M', 'M.IDDISTRITO', '=', 'D.IDDISTRITO')
+                        ->where('M.IDPERSONAL', $personal->IDPERSONAL)
+                        ->first();
+        // dd($dis_act);
 
-        // GUARDAMOS EL ARCHIVO DNI
+        $dis_nac = DB::table('DISTRITO AS D')
+                        ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
+                        ->join('DEPARTAMENTO AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
+                        ->join('M_PERSONAL AS M', 'M.IDDISTRITO_NAC', '=', 'D.IDDISTRITO')
+                        ->where('M.IDPERSONAL', $personal->IDPERSONAL)
+                        ->first();
+                                
+        $entidad = DB::table('M_MAC_ENTIDAD')
+                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
+                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
+                        ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $personal->IDMAC)
+                        ->get();
 
-        
+        $detall_fam = DB::table('D_PERSONAL_FAM')->join('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'D_PERSONAL_FAM.IDPERSONAL')->where('M_PERSONAL.NUM_DOC', $num_doc)->get();
 
-        $estructura_carp = 'personal\\num_doc\\'.$request->num_doc;
-        if (!file_exists($estructura_carp)) {
-            mkdir($estructura_carp, 0777, true);
-        }
+        $cargo = DB::table('D_PERSONAL_CARGO')->get();
 
-        $dni = new Archivoper;
-        $dni->IDPERSONAL = $IDPERSONAL;
-        if($request->hasFile('dni'))
-        {
-            $archivoDNI = $request->file('dni');
-            $nombreDNI = $archivoDNI->getClientOriginalName();
-            $formatoDNI = $archivoDNI->getClientOriginalExtension(); // Obtener el formato (extensión) del archivo
-            $tamañoEnKBDNI = $archivoDNI->getSize() / 1024; // Tamaño en kilobytes
-            //$nameruta = '/DNI/fotoempresa/'; // RUTA DONDE SE VA ALMACENAR EL DOCUMENTO PDF
-            $namerutaDNI = $estructura_carp;  // GUARDAR EN UN SERVIDOR
-            $archivoDNI->move($namerutaDNI, $nombreDNI);
-
-            $dni->NOMBRE_ARCHIVO = $nombreDNI;
-            $dni->NOMBRE_RUTA = $estructura_carp.'\\'.$nombreDNI;
-            $dni->FORMATO_DOC = $formatoDNI;
-            $dni->PESO_DOC = $tamañoEnKBDNI;
-        }
-        $dni->save();
-
-        $cv = new Archivoper;
-        $cv->IDPERSONAL = $IDPERSONAL;
-        if($request->hasFile('cv'))
-        {
-            $archivoCV = $request->file('cv');
-            $nombreCV = $archivoCV->getClientOriginalName();
-            $formatoCV = $nombreCV->getClientOriginalExtension(); // Obtener el formato (extensión) del archivo
-            $tamañoEnKBCV = $archivo->getSize() / 1024; // Tamaño en kilobytes
-            //$nameruta = '/CV/fotoempresa/'; // RUTA DONDE SE VA ALMACENAR EL DOCUMENTO PDF
-            $namerutaCV = $estructura_carp;  // GUARDAR EN UN SERVIDOR
-            $archivoCV->move($namerutaCV, $nombreCV);
-
-            $cv->NOMBRE_ARCHIVO = $nombreCV;
-            $cv->NOMBRE_RUTA = $estructura_carp.'\\'.$nombreCV;
-            $cv->FORMATO_DOC = $formatoCV;
-            $cv->PESO_DOC = $tamañoEnKBCV;
-        }
-        $cv->save();
-
-
-        
-
-        return $update;
-
+        return view('formdata_pcm', compact('personal', 'entidad', 'departamentos', 'detall_fam', 'dis_act', 'dis_nac', 'cargo'));
     }
 
     /********************************************************** SERVICIOS ************************************************************************/
@@ -453,6 +590,24 @@ class PagesController extends Controller
         $options = '<option value="">Selecciona una opción</option>';
         foreach ($distritos as $dist) {
             $options .= '<option value="' . $dist->IDDISTRITO . '">' . $dist->NAME_DISTRITO . '</option>';
+        }
+
+        return $options;
+    }
+
+    public function entidad($idcentro_mac)
+    {
+        $idcentro_mac = DB::table('M_MAC_ENTIDAD')
+                            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
+                            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
+                            ->leftJoin('CONFIGURACION_SIST', 'CONFIGURACION_SIST.IDCONFIGURACION', '=', 'M_MAC_ENTIDAD.TIPO_REFRIGERIO')
+                            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idcentro_mac)
+                            ->orderBy('M_ENTIDAD.NOMBRE_ENTIDAD', 'ASC')
+                            ->get();
+        
+        $options = '<option value="">Selecciona una opción</option>';
+        foreach ($idcentro_mac as $sede) {
+            $options .= '<option value="' . $sede->IDENTIDAD . '">' . $sede->NOMBRE_ENTIDAD . '</option>';
         }
 
         return $options;

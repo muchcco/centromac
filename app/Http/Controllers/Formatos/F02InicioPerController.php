@@ -89,6 +89,7 @@ class F02InicioPerController extends Controller
                     $conformidad_i = $request->apertura[$key] ?? null;
                     $conformidad_f = $request->cierre[$key] ?? null;
                     $observacion_f02 = $request->observacion[$key] ?? null;
+                    $observacion2_f02 = $request->observacion2[$key] ?? null;
 
                     // Utiliza el método updateOrCreate para insertar o actualizar el registro
                     FInicioOperacion::updateOrCreate(
@@ -101,6 +102,7 @@ class F02InicioPerController extends Controller
                             'CONFORMIDAD_I' => $conformidad_i,
                             'CONFORMIDAD_F' => $conformidad_f,
                             'OBSERVACION_F02' => $observacion_f02,
+                            'OBSERVACION2_F02' => $observacion2_f02,
                             'DIA' => $dia,
                             'MES' => $mes,
                             'AÑO' => $año,

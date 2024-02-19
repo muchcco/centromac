@@ -56,7 +56,12 @@ class Personal extends Model
                             'GI_CARRERA',
                             'GI_DESDE',
                             'GI_HASTA',
-                            'FLAG'
+                            'FLAG',
+                            'PCM_TALLA',
+                            'PCM_OS_FINICIO',
+                            'PCM_IS_FFIN',
+                            'PCM_SITUACION',
+                            'NUMERO_MODULO'
                         ];
 
     public $timestamps = true;

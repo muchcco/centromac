@@ -65,7 +65,7 @@
                             <div class="row d-flex justify-content-center">                                                
                                 <div class="col">
                                     <p class="text-dark mb-0 fw-semibold">Servicios brindados</p>
-                                    <h3 class="m-0">$2400</h3>
+                                    <h3 class="m-0">2400</h3>
                                     
                                 </div>
                                 <div class="col-auto align-self-center">

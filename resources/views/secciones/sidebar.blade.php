@@ -58,7 +58,7 @@
                         <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('personal*')) mm-active @endif"></i><span>Personal</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
                         <ul class="nav-second-level" aria-expanded="false">
                             <li class="nav-item @if (Request::is('personal/asesores*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.asesores') }}"><i class="ti-control-record"></i>Asesores</a></li>
-                            <li class="nav-item @if (Request::is('personal/pcm*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.pcm') }}"><i class="ti-control-record"></i>Pcm</a></li>
+                            <li class="nav-item @if (Request::is('personal/pcm*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.pcm') }}"><i class="ti-control-record"></i>Pcm (MAC)</a></li>
                         </ul>
                     </li>
                 <!--    </ul>
@@ -118,8 +118,15 @@
                     <li>
                         <a href="javascript: void(0);"><i data-feather="box" class="align-self-center menu-icon"></i><span>Personal</span></a>
                     </li> --}}
+                    <hr class="hr-dashed hr-menu">
+                    <li class="menu-label mt-0">DASHBOARD</li>
 
-                    
+                    <li>
+                        <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i><span>Dashboard</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
+                        <ul class="nav-second-level" aria-expanded="false">
+                            <li class="nav-item @if (Request::is('dashboard/index*')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.index') }}"><i class="ti-control-record"></i>Reporte General</a></li>
+                        </ul>
+                    </li>
 
                     <hr class="hr-dashed hr-menu">
                     <!--Nombre de la Categoria-->

@@ -20,16 +20,28 @@
                 </div> --}}
                 <div style="text-align: center;">
                     <h3 style="color:#fff;margin-bottom: 0px;">
-                        SISTEMA INTRANET CENTROS MAC - PCM
+                        SISTEMA INTRANET - PLATAFORMA MAC
                     </h3>
-                    <p style="color:#fff; font-size:15px" >(CENTRO MAC - 
-                        @php
-                            $us_id = auth()->user()->idcentro_mac;
-                            $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+                    @php
+                        $us_id = auth()->user()->idcentro_mac;
+                        $user = App\Models\User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
 
-                            echo $user->NOMBRE_MAC.')';
-                        @endphp                    
-                    </p>
+                        
+                    @endphp  
+                    @if ($user->IDCENTRO_MAC == '5')
+                        <p style="color:#fff; font-size:15px" >(SEDE 
+                            @php
+                                echo $user->NOMBRE_MAC.')';
+                            @endphp              
+                        </p>
+                    @else
+                        <p style="color:#fff; font-size:15px" >(SEDE MAC - 
+                            @php
+                                echo $user->NOMBRE_MAC.')';
+                            @endphp              
+                        </p>
+                    @endif
+                    
                 </div>
                 {{-- <div style="text-align: left;">
                     <h3 style="color:#fff;margin-bottom: 0px;">

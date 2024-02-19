@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Registro de Asesores</title>
-    <link href="{{ asset('https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css')}}" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">    
     {{-- <!-- jquery file upload Frame work -->
     <link href="{{ asset('assets/pages/jquery.filer/css/jquery.filer.css')}}" type="text/css" rel="stylesheet">
     <link href="{{ asset('assets/pages/jquery.filer/css/themes/jquery.filer-dragdropbox-theme.css')}}" type="text/css" rel="stylesheet"> --}}
-    <link rel="stylesheet" href="{{ asset('https://use.fontawesome.com/releases/v5.15.3/css/all.css')}}"  integrity="sha384-SZXxX4whJ79/gErwcOYf+zWLeJdY/qpuqC4cAa9rOGUstPomtqpuNWT9wdPEn2fk" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.3/css/all.css"  integrity="sha384-SZXxX4whJ79/gErwcOYf+zWLeJdY/qpuqC4cAa9rOGUstPomtqpuNWT9wdPEn2fk" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ asset('css/app2.css')}}">
 
     {{-- preoad button --}}
@@ -53,7 +53,7 @@
                 <img src="{{ asset('img/200x75.png') }}" alt="">
               </div>
               <div class="col  title">
-                <h2 style="text-align: center">FORMULARIO DE REGISTRO - CENTRO MAC {{ $personal->NOMBRE_MAC }}</h2>
+                <h2 style="text-align: center">FORMULARIO DE REGISTRO - SEDE {{ $personal->NOMBRE_MAC }} - PCM</h2>
               </div>
               <div class="col">
                 <img src="{{ asset('img/200x75.png') }}" alt="">
@@ -89,15 +89,21 @@
                 
                 <div class="form-p">
                   <a href="{{ url()->previous() }}" class="btn btn-danger mb-3 mt-4 ">Regresar</a>
-                  <div class="row col-sm-10 buut">
+                  <div class="row col-sm-6 buut">
                     <div class="mb-3">
                       <label for="IdTipoPersona" class="control-label">Nombre de la Entidad <span class="text-danger fw-bolder">(*)</span> </label>
-                      <select name="identidad" id="identidad" class="form-select">
+                      <select name="identidad" id="identidad" class="form-select" disabled>
                         <option value="0" disabled selected>Seleccione el tipo de entidad</option>
                         @foreach ($entidad as $ent)
-                            <option value="{{ $ent->IDENTIDAD }}" {{ $personal->IDENTIDAD == $ent->IDENTIDAD ? 'selected' : '' }} >{{ $ent->NOMBRE_ENTIDAD }}</option>                                                      
+                            <option value="{{ $ent->IDENTIDAD }}" {{ $personal->IDENTIDAD == $ent->IDENTIDAD ? 'selected' : '' }} >{{ $ent->NOMBRE_ENTIDAD }}</option>
                         @endforeach
                       </select>
+                    </div>
+                  </div>
+                  <div class="row col-sm-5 buut">
+                    <div class="mb-3">
+                      <label for="IdTipoPersona" class="control-label">Sede <span class="text-danger fw-bolder">(*)</span> </label>
+                      <input type="text" value="{{ $personal->NOMBRE_MAC }}" class="form-select" disabled>
                     </div>
                   </div>
                 </div>
@@ -274,16 +280,16 @@
                       <label for="IdTipoPersona" class="control-label">Departamento (nacimiento) <span class="text-danger fw-bolder">(*)</span></label>
                       <select name="departamento2" id="departamento2" class="form-select">
                         <option value="0" disabled selected>-- SELECCIONE UNA OPCION --</option>
-                                @foreach ($departamentos as $departamento)
-                                    <option 
-                                      value="{{ $departamento->IDDEPARTAMENTO }}" 
-                                      @if (isset($dis_nac))
-                                        {{ $departamento->IDDEPARTAMENTO == $dis_nac->IDDEPARTAMENTO ? 'selected' : '' }}    
-                                      @endif                                      
-                                      >
-                                      {{ $departamento->NAME_DEPARTAMENTO }}
-                                    </option>
-                                @endforeach
+                            @foreach ($departamentos as $departamento)
+                                <option 
+                                    value="{{ $departamento->IDDEPARTAMENTO }}" 
+                                    @if (isset($dis_nac))
+                                    {{ $departamento->IDDEPARTAMENTO == $dis_nac->IDDEPARTAMENTO ? 'selected' : '' }}    
+                                    @endif                                      
+                                    >
+                                    {{ $departamento->NAME_DEPARTAMENTO }}
+                                </option>
+                            @endforeach
                       </select>
                     </div>
                   </div>
@@ -324,365 +330,40 @@
         <div class="carp">
           <div class="card col-sm-8">
             <div class="card-header">
-              <h2>En caso de Emergencia llamar a:</h2>
+              <h2>Datos de Trabajador:</h2>
             </div>
             <div class="card-body">
               <div class="carp">
                 <div class="form-p">
                   <div class="row col-sm-4 buut">
                     <div class="mb-3">
-                      <label for="TDoc" class="control-label">Nombres y Apellidos <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="e_nomape" id="e_nomape" value="{{ $personal->E_NOMAPE }}">
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="RSocial" class="control-label">Teléfono Fijo:</label>
-                      <input type="text" class="form-control" name="e_telefono" id="e_telefono" value="{{ $personal->E_TELEFONO }}">
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="RSocial" class="control-label">Celular: <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="e_celular" id="e_celular" value="{{ $personal->E_CELULAR }}">
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>            
-          </div>
-        </div>
-      </div>
-
-      <div class="container">
-        <div class="carp">
-          <div class="card col-sm-8">
-            <div class="card-header">
-              <h2>Estado Civil :</h2>
-            </div>
-            <div class="card-body">
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-3 buut">
-                    <div class="mb-3">
-                      <input class="form-check-input" type="radio" name="ecivil" id="ecivil_1"  value="1" {{ $personal->ESTADO_CIVIL == '1' ? 'checked' : '' }}>
-                      <label for="ecivil_1" class="control-label">Soltero(a) <span class="text-danger fw-bolder">(*)</span></label>                      
-                    </div>
-                  </div>
-                  <div class="row col-sm-3 buut">
-                    <div class="mb-3">
-                      <input class="form-check-input" type="radio" name="ecivil" id="ecivil_2"  value="2" {{ $personal->ESTADO_CIVIL == '2' ? 'checked' : '' }}>
-                      <label for="ecivil_2" class="control-label">Casado(a): <span class="text-danger fw-bolder">(*)</span></label>                      
-                    </div>
-                  </div>
-                  <div class="row col-sm-3 buut">
-                    <div class="mb-3">
-                      <input class="form-check-input" type="radio" name="ecivil" id="ecivil_3"  value="3" {{ $personal->ESTADO_CIVIL == '3' ? 'checked' : '' }}>
-                      <label for="ecivil_3" class="control-label">Divorciado(a): <span class="text-danger fw-bolder">(*)</span></label>
-                    </div>
-                  </div>
-                  <div class="row col-sm-3 buut">
-                    <div class="mb-3">
-                      <input class="form-check-input" type="radio" name="ecivil" id="ecivil_4"  value="4" {{ $personal->ESTADO_CIVIL == '4' ? 'checked' : '' }}>
-                      <label for="ecivil_4" class="control-label">Viudo(a): <span class="text-danger fw-bolder">(*)</span></label>                      
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>            
-          </div>
-        </div>
-      </div>
-
-      <div class="container">
-        <div class="carp">
-          <div class="card col-sm-8">
-            <div class="card-header">
-              <h2>Datos Familiares(Dependientes directos) :</h2>
-            </div>
-            <div class="card-body">
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-8 buut">
-                    <div class="mb-3">
-                      <label for="TDoc" class="control-label">N° de hijos<span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="df_n_hijos" id="df_n_hijos" onkeypress="return isNumber(event)" value="{{ $personal->DF_N_HIJOS }}">            
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="raya"></div>
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="TDoc" class="control-label">Nombres y apellidos<span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="datos_nombre" id="datos_nombre" >            
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="TDoc" class="control-label">Parentesco<span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="datos_parentesco" id="datos_parentesco" >            
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="TDoc" class="control-label">Actividad / Profesión<span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="datos_actividad" id="datos_actividad" >            
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="TDoc" class="control-label">Edad<span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="datos_edad" id="datos_edad" >            
-                    </div>
-                  </div>
-                  <div class="row col-sm-8 buut">
-                    <div class="mb-3">
-                      <button type="button" class="btn btn-primary mt-4" style="width: 100%" id="btn-add-filas" onclick="btnAgregarDetall('{{ $personal->IDPERSONAL }}')">Agregar</button>           
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-12 buut">
-                    <div class="mb-3">
-                        <table class="table table-bordered" id="tabla_datos_fam">
-                            <thead>
-                              <tr>
-                                <th>Apellidos y Nombres</th>
-                                <th>Parentescos</th>
-                                <th>Actividades / Profesión </th>
-                                <th>Edad</th>
-                                <th>Eliminar</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              @forelse ($detall_fam as $detall)
-                                  <tr>
-                                    <td>{{  $detall->DATOS_NOMBRES }}</td>
-                                    <td>{{  $detall->DATOS_PARENTESCO }}</td>
-                                    <td>{{  $detall->DATOS_ACTIVIDAD }}</td>
-                                    <td>{{  $detall->DATOS_EDAD }}</td>
-                                    <td class="text-center">
-                                      <button type="button" onclick="btnEliminarDetall({{ $detall->IDDATOS_PERSONAL }})" class="nobtn" title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"/></svg></button>
-                                    </td>
-                                  </tr>
-                              @empty
-                                  <tr>
-                                    <td colspan="5" class="text-center text-danger">No hay datos registrados</td>
-                                  </tr>
-                              @endforelse
-                            </tbody>
-                          </table>       
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>            
-          </div>
-        </div>
-      </div>
-
-      <div class="container">
-        <div class="carp">
-          <div class="card col-sm-8">
-            <div class="card-header">
-              <h2>Puesto a desempeñar en el Centro de Atención MAC:</h2>
-            </div>
-            <div class="card-body">
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="TDoc" class="control-label">Fecha de Ingreso <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="date" class="form-control" name="dp_fecha_ingreso" id="dp_fecha_ingreso" value="{{ $personal->PD_FECHA_INGRESO }}" >
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="RSocial" class="control-label">Puesto de Trabajo:</label>
-                      <input type="text" class="form-control" name="dp_puesto_trabajo" id="dp_puesto_trabajo" value="{{ $personal->PD_PUESTO_TRABAJO }}">
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="RSocial" class="control-label">Tiempo en el puesto de trabajo: <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="dp_tiempo_ptrabajo" id="dp_tiempo_ptrabajo" value="{{ $personal->PD_TIEMPO_PTRABAJO }}">
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="TDoc" class="control-label">Centro de atención <span class="text-danger fw-bolder">(*)</span></label>
-                      <select name="dp_centro_atencion" id="dp_centro_atencion" class="form-select">
-                        <option value="1" {{ $personal->PD_CENTRO_ATENCION == '1' ? 'selecetd' : '' }} >Fijo</option>
-                        <option value="2" {{ $personal->PD_CENTRO_ATENCION == '2' ? 'selecetd' : '' }} >Itinerante</option>
+                      <label for="TDoc" class="control-label">Cargo<span class="text-danger fw-bolder">(*)</span></label>                      
+                      <select name="cargo_pcm" id="cargo_pcm" class="form-select" aria-label="Tipo de Persona" >
+                        <option value="" disabled> -- Seleccione una opción --</option>
+                        @foreach ($cargo as $c)
+                            <option value="{{ $c->IDCARGO_PERSONAL }}" {{ $c->IDCARGO_PERSONAL == $personal->IDCARGO_PERSONAL ? 'selected' : '' }} >{{ $c->NOMBRE_CARGO }}</option>
+                        @endforeach
                       </select>
                     </div>
                   </div>
                   <div class="row col-sm-4 buut">
                     <div class="mb-3">
-                      <label for="RSocial" class="control-label">Código de identificación:  <i class="fa fa-info" data-bs-toggle="tooltip" data-bs-placement="top" title="(A ser por llenado por el área de Gestión de Talento Humano)"></i> </label>
-                      <input type="text" class="form-control" name="dp_codigo_identificacion" id="dp_codigo_identificacion" value="{{ $personal->PD_CODIGO_IDENTIFICACION }}">
+                      <label for="NDoc" class="control-label">Fecha de Ingreso <span class="text-danger fw-bolder">(*)</span></label>
+                      <input type="date" class="form-control" name="finicio" id="finicio" value="{{ $personal->PCM_FINICIO }}">
                     </div>
                   </div>
-                  <div class="row col-sm-4 buut">
+                  {{-- <div class="row col-sm-4 buut">
                     <div class="mb-3">
-                      <label for="RSocial" class="control-label">Número de Módulo de atención: <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="num_modulo" id="num_modulo" value="{{ $personal->NUMERO_MODULO }}">
+                      <label for="NDoc" class="control-label">Cargo <span class="text-danger fw-bolder">(*)</span></label>
+                      <select name="" id=""  class="form-select" aria-label="Cargo">
+
+                      </select>
                     </div>
-                  </div>
+                  </div> --}}
                 </div>
               </div>
-
-            </div>            
-          </div>
-        </div>
-      </div>
-
-      <div class="container">
-        <div class="carp">
-          <div class="card col-sm-8">
-            <div class="card-header">
-              <h2>Datos laborales y profesionales :</h2>
-            </div>
-            <div class="card-body">
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="IdTipoPersona" class="control-label">Fecha de ingreso a la entidad <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="date" class="form-control" name="dlp_fecha_ingreso" id="dlp_fecha_ingreso" value="{{ $personal->DLP_FECHA_INGRESO }}">
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="IdTipoPersona" class="control-label">Puesto de trabajo <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="dlp_puesto_trabajo" id="dlp_puesto_trabajo" value="{{ $personal->DLP_PUESTO_TRABAJO }}">
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="IdTipoPersona" class="control-label">Tiempo en el puesto de trabajo <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="dlp_tiempo_puesto" id="dlp_tiempo_puesto" value="{{ $personal->DLP_TIEMPO_PTRABAJO }}">
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="IdTipoPersona" class="control-label">Area de trabajo <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="dlp_area_trabajo" id="dlp_area_trabajo" value="{{ $personal->DLP_AREA_TRABAJO }}">
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="IdTipoPersona" class="control-label">Jefe inmediato superior <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="dlp_jefe_inmediato" id="dlp_jefe_inmediato" value="{{ $personal->DLP_JEFE_INMEDIATO }}">
-                    </div>
-                  </div>
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="IdTipoPersona" class="control-label">Cargo <span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="dlp_cargo" id="dlp_cargo" value="{{ $personal->DLP_CARGO }}">
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-4 buut">
-                    <div class="mb-3">
-                      <label for="IdTipoPersona" class="control-label">Teléfono<span class="text-danger fw-bolder">(*)</span></label>
-                      <input type="text" class="form-control" name="dlp_telefono" id="dlp_telefono" value="{{ $personal->DLP_TELEFONO }}">
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>            
-          </div>
-        </div>
-      </div>
-
-      <div class="container">
-        <div class="carp">
-          <div class="card col-sm-8">
-            <div class="card-header">
-              <h2>Tipo de vinculación laboral :</h2>
-            </div>
-            <div class="card-body">
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-6 buut">
-                    <div class="mb-3">
-                      <input class="form-check-input" type="radio" name="tlv_id" id="tlv_id_1" onclick="otros_tvp()" {{ $personal->TVL_ID == '1' ? 'checked' : '' }} value="1">
-                      <label for="" class="control-label">CAS (Contrato administrativo de servicios) <span class="text-danger fw-bolder">(*)</span></label>                      
-                    </div>
-                  </div>
-                  <div class="row col-sm-6 buut">
-                    <div class="mb-3">
-                      <input class="form-check-input" type="radio" name="tlv_id" id="tlv_id_2" onclick="otros_tvp()" {{ $personal->TVL_ID == '2' ? 'checked' : '' }} value="2">
-                      <label for="" class="control-label">Régimen laboral de actividad privada: <span class="text-danger fw-bolder">(*)</label>                      
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="carp">
-                <div class="form-p">
-                  <div class="row col-sm-6 buut">
-                    <div class="mb-3">
-                      <input class="form-check-input" type="radio" name="tlv_id" id="tlv_id_3" onclick="otros_tvp()" {{ $personal->TVL_ID == '3' ? 'checked' : '' }} value="3">
-                      <label for="" class="control-label">Empleado público: <span class="text-danger fw-bolder">(*)</span></label>                      
-                    </div>
-                  </div>
-                  <div class="row col-sm-6 buut">
-                    <div class="mb-3">
-                      <input class="dato_otros form-check-input" type="radio" name="tlv_id" id="tlv_id_4" onclick="otros_tvp()" {{ $personal->TVL_ID == '4' ? 'checked' : '' }} value="4">
-                      <label for="" class="control-label">Otros: <span class="text-danger fw-bolder">(*)</label>                      
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="carp" id="tvl_otros_esp">
-                <div class="form-p">
-                  <div class="row col-sm-12 buut">
-                    <div class="mb-3">
-                      <label for="IdTipoPersona" class="control-label">Especifique: <span class="text-danger fw-bolder">(*)</span></label>
-                      <textarea name="tvl_otro" id="tvl_otro" cols="30" rows="5" class="form-control">{{ $personal->TVL_OTRO }}</textarea>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>            
-          </div>
-        </div>
-      </div>
-
-      <div class="container">
-        <div class="carp">
-          <div class="card col-sm-8">
-            <div class="card-header">
-              <h2>Grado de instrucción :</h2>
-            </div>
-            <div class="card-body">
+              <div class="raya"></div>
+              <h5>Datos profesionales</h5>
               <div class="carp">
                 <div class="form-p">
                   <div class="row col-sm-4 buut">
@@ -771,6 +452,7 @@
         </div>
       </div>
 
+
       <div class="container">
         <div class="carp">
           <div class="card col-sm-8">
@@ -783,7 +465,7 @@
                 <div class="form-p">
                     <div class="row col-sm-6 buut">
                         <div class="mb-3">
-                        <label for="TipoDoc" class="control-label">Copia de DNI <span class="text-danger fw-bolder">(*)</span></label>
+                        <label for="TipoDoc" class="control-label mb-1">Copia de DNI </label>
                             <div class="col-sm-12">
                                 {{-- <div class="sub-title">Example 2</div> --}}
                                 <input type="file" class="form-control" name="dni" id="dni">
@@ -795,7 +477,6 @@
                         <div class="mb-3">
                         <label for="TipoDoc" class="control-label">Curriculum no documentado <span class="text-danger fw-bolder">(*)</span></label>
                             <div class="col-sm-12">
-                                <div class="sub-title">Example 2</div>
                                 <input type="file" class="form-control" name="cv" id="cv">
                                 <span class="messages text-danger" id="msm-file-error">Tiene que cargar un Archivo</span>
                             </div>
@@ -880,7 +561,6 @@ $(document).ready(function() {
   TipoDocumento();
   // $('#n_documento').attr("maxlength", "8");
 
-  document.getElementById('tvl_otros_esp').style.display = 'none';
   document.getElementById('gi_otro_compl').style.display = 'none';
 
   /* ===================== DIRTECCION ACTUAL ==========================================*/
@@ -1069,209 +749,6 @@ function btnEliminarDetall (iddatos_personal) {
 
 var btnEnviar = ( idpersonal ) =>{
     console.log("success")
-    if ($('#identidad').val() == null  || $('#identidad').val() == '0' ) {
-        $('#identidad').addClass("hasError");
-    }else {
-        $('#identidad').removeClass("hasError");
-    }
-    if ($('#pcm_talla').val() == null  || $('#pcm_talla').val() == '0' ) {
-        $('#pcm_talla').addClass("hasError");
-    }else {
-        $('#pcm_talla').removeClass("hasError");
-    }
-    if ($('#num_modulo').val() == null  || $('#num_modulo').val() == '0' ) {
-        $('#num_modulo').addClass("hasError");
-    }else {
-        $('#num_modulo').removeClass("hasError");
-    }
-    if ($('#idtipo_doc').val() == null || $('#idtipo_doc').val() == '') {
-        $('#idtipo_doc').addClass("hasError");
-    } else {
-        $('#idtipo_doc').removeClass("hasError");
-    }
-    if ($('#num_doc').val() == null || $('#num_doc').val() == '') {
-        $('#num_doc').addClass("hasError");
-    } else {
-        $('#num_doc').removeClass("hasError");
-    }
-    if ($('#sexo').val() == null || $('#sexo').val() == '') {
-        $('#sexo').addClass("hasError");
-    } else {
-        $('#sexo').removeClass("hasError");
-    }
-    if ($('#ape_pat').val() == null || $('#ape_pat').val() == '') {
-        $('#ape_pat').addClass("hasError");
-    } else {
-        $('#ape_pat').removeClass("hasError");
-    }
-    if ($('#ape_mat').val() == null || $('#ape_mat').val() == '') {
-        $('#ape_mat').addClass("hasError");
-    } else {
-        $('#ape_mat').removeClass("hasError");
-    }
-    if ($('#nombre').val() == null || $('#nombre').val() == '') {
-        $('#nombre').addClass("hasError");
-    } else {
-        $('#nombre').removeClass("hasError");
-    }
-    if ($('#telefono').val() == null || $('#telefono').val() == '') {
-        $('#telefono').addClass("hasError");
-    } else {
-        $('#telefono').removeClass("hasError");
-    }
-    if ($('#celular').val() == null || $('#celular').val() == '') {
-        $('#celular').addClass("hasError");
-    } else {
-        $('#celular').removeClass("hasError");
-    }
-    if ($('#correo').val() == null || $('#correo').val() == '') {
-        $('#correo').addClass("hasError");
-    } else {
-        $('#correo').removeClass("hasError");
-    }
-    if ($('#direccion').val() == null || $('#direccion').val() == '') {
-        $('#direccion').addClass("hasError");
-    } else {
-        $('#direccion').removeClass("hasError");
-    }
-    if ($('#distrito').val() == null || $('#distrito').val() == '') {
-        $('#distrito').addClass("hasError");
-    } else {
-        $('#distrito').removeClass("hasError");
-    }
-    if ($('#fech_nacimiento').val() == null || $('#fech_nacimiento').val() == '') {
-        $('#fech_nacimiento').addClass("hasError");
-    } else {
-        $('#fech_nacimiento').removeClass("hasError");
-    }
-    if ($('#grupo_sanguineo').val() == null || $('#grupo_sanguineo').val() == '') {
-        $('#grupo_sanguineo').addClass("hasError");
-    } else {
-        $('#grupo_sanguineo').removeClass("hasError");
-    }
-    if ($('#distrito2').val() == null || $('#distrito2').val() == '') {
-        $('#distrito2').addClass("hasError");
-    } else {
-        $('#distrito2').removeClass("hasError");
-    }
-    if ($('#e_nomape').val() == null || $('#e_nomape').val() == '') {
-        $('#e_nomape').addClass("hasError");
-    } else {
-        $('#e_nomape').removeClass("hasError");
-    }
-    if ($('#e_telefono').val() == null || $('#e_telefono').val() == '') {
-        $('#e_telefono').addClass("hasError");
-    } else {
-        $('#e_telefono').removeClass("hasError");
-    }
-    if ($('#e_celular').val() == null || $('#e_celular').val() == '') {
-        $('#e_celular').addClass("hasError");
-    } else {
-        $('#e_celular').removeClass("hasError");
-    }
-    if ($('#ecivil').val() == null || $('#ecivil').val() == '' || $('#ecivil').val() == "undefined") {
-        $('#ecivil').addClass("hasError");
-    } else {
-        $('#ecivil').removeClass("hasError");
-    }
-    if ($('#df_n_hijos').val() == null || $('#df_n_hijos').val() == '') {
-        $('#df_n_hijos').addClass("hasError");
-    } else {
-        $('#df_n_hijos').removeClass("hasError");
-    }
-    if ($('#dp_fecha_ingreso').val() == null || $('#dp_fecha_ingreso').val() == '') {
-        $('#dp_fecha_ingreso').addClass("hasError");
-    } else {
-        $('#dp_fecha_ingreso').removeClass("hasError");
-    }
-    if ($('#dp_puesto_trabajo').val() == null || $('#dp_puesto_trabajo').val() == '') {
-        $('#dp_puesto_trabajo').addClass("hasError");
-    } else {
-        $('#dp_puesto_trabajo').removeClass("hasError");
-    }
-    if ($('#dp_tiempo_ptrabajo').val() == null || $('#dp_tiempo_ptrabajo').val() == '') {
-        $('#dp_tiempo_ptrabajo').addClass("hasError");
-    } else {
-        $('#dp_tiempo_ptrabajo').removeClass("hasError");
-    }
-    if ($('#dp_centro_atencion').val() == null || $('#dp_centro_atencion').val() == '') {
-        $('#dp_centro_atencion').addClass("hasError");
-    } else {
-        $('#dp_centro_atencion').removeClass("hasError");
-    }
-    if ($('#dp_codigo_identificacion').val() == null || $('#dp_codigo_identificacion').val() == '') {
-        $('#dp_codigo_identificacion').addClass("hasError");
-    } else {
-        $('#dp_codigo_identificacion').removeClass("hasError");
-    }
-    if ($('#dlp_fecha_ingreso').val() == null || $('#dlp_fecha_ingreso').val() == '') {
-        $('#dlp_fecha_ingreso').addClass("hasError");
-    } else {
-        $('#dlp_fecha_ingreso').removeClass("hasError");
-    }
-    if ($('#dlp_puesto_trabajo').val() == null || $('#dlp_puesto_trabajo').val() == '') {
-        $('#dlp_puesto_trabajo').addClass("hasError");
-    } else {
-        $('#dlp_puesto_trabajo').removeClass("hasError");
-    }
-    if ($('#dlp_area_trabajo').val() == null || $('#dlp_area_trabajo').val() == '') {
-        $('#dlp_area_trabajo').addClass("hasError");
-    } else {
-        $('#dlp_area_trabajo').removeClass("hasError");
-    }
-    if ($('#dlp_jefe_inmediato').val() == null || $('#dlp_jefe_inmediato').val() == '') {
-        $('#dlp_jefe_inmediato').addClass("hasError");
-    } else {
-        $('#dlp_jefe_inmediato').removeClass("hasError");
-    }
-    if ($('#dlp_tiempo_puesto').val() == null || $('#dlp_tiempo_puesto').val() == '') {
-        $('#dlp_tiempo_puesto').addClass("hasError");
-    } else {
-        $('#dlp_tiempo_puesto').removeClass("hasError");
-    }
-    if ($('#dlp_telefono').val() == null || $('#dlp_telefono').val() == '') {
-        $('#dlp_telefono').addClass("hasError");
-    } else {
-        $('#dlp_telefono').removeClass("hasError");
-    }
-    if ($('#tlv_id').val() == null || $('#tlv_id').val() == '') {
-        $('#tlv_id').addClass("hasError");
-    } else {
-        $('#tlv_id').removeClass("hasError");
-    }
-    if ($('#tvl_otro').val() == null || $('#tvl_otro').val() == '') {
-        $('#tvl_otro').addClass("hasError");
-    } else {
-        $('#tvl_otro').removeClass("hasError");
-    }
-    if ($('#gi_id').val() == null || $('#gi_id').val() == '') {
-        $('#gi_id').addClass("hasError");
-    } else {
-        $('#gi_id').removeClass("hasError");
-    }
-    if ($('#gi_otro').val() == null || $('#gi_otro').val() == '') {
-        $('#gi_otro').addClass("hasError");
-    } else {
-        $('#gi_otro').removeClass("hasError");
-    }
-    if ($('#gi_carrera').val() == null || $('#gi_carrera').val() == '') {
-        $('#gi_carrera').addClass("hasError");
-    } else {
-        $('#gi_carrera').removeClass("hasError");
-    }
-    if ($('#gi_desde').val() == null || $('#gi_desde').val() == '') {
-        $('#gi_desde').addClass("hasError");
-    } else {
-        $('#gi_desde').removeClass("hasError");
-    }
-    if ($('#gi_hasta').val() == null || $('#gi_hasta').val() == '') {
-        $('#gi_hasta').addClass("hasError");
-    } else {
-        $('#gi_hasta').removeClass("hasError");
-    }
-
-
-    
 
     var file_dni = $("#dni").prop("files")[0];
     // var file_cv = $("#cv").prop("files")[0];
@@ -1279,10 +756,11 @@ var btnEnviar = ( idpersonal ) =>{
 
     formData.append("idpersonal" ,idpersonal);
     formData.append("identidad", $("#identidad").val());
-    formData.append("pcm_talla", $("#pcm_talla").val());
-    formData.append("num_modulo", $("#num_modulo").val());
     formData.append("idtipo_doc", $("#idtipo_doc").val());
-    formData.append("num_doc", $("#num_doc").val());
+    formData.append("num_doc", $("#num_doc").val());pcm_talla
+    formData.append("pcm_talla", $("#pcm_talla").val());
+    formData.append("cargo_pcm", $("#cargo_pcm").val());
+    formData.append("finicio", $("#finicio").val());
     formData.append("sexo", $("#sexo").val());
     formData.append("ape_pat", $("#ape_pat").val());
     formData.append("ape_mat", $("#ape_mat").val());
@@ -1296,34 +774,6 @@ var btnEnviar = ( idpersonal ) =>{
     formData.append("grupo_sanguineo", $("#grupo_sanguineo").val());
     formData.append("distrito2", $("#distrito2").val());
 
-    formData.append("e_nomape", $("#e_nomape").val());
-    formData.append("e_telefono", $("#e_telefono").val());
-    formData.append("e_celular", $("#e_celular").val());
-
-    var selectedValue = $('input[name="ecivil"]:checked').val();
-    formData.append("ecivil", selectedValue);
-    //formData.append("ecivil", $("#ecivil").val());
-
-    formData.append("df_n_hijos", $("#df_n_hijos").val());
-
-    formData.append("dp_fecha_ingreso", $("#dp_fecha_ingreso").val());
-    formData.append("dp_puesto_trabajo", $("#dp_puesto_trabajo").val());
-    formData.append("dp_tiempo_ptrabajo", $("#dp_tiempo_ptrabajo").val());
-    formData.append("dp_centro_atencion", $("#dp_centro_atencion").val());
-    formData.append("dp_codigo_identificacion", $("#dp_codigo_identificacion").val());
-
-    formData.append("dlp_fecha_ingreso", $("#dlp_fecha_ingreso").val());
-    formData.append("dlp_puesto_trabajo", $("#dlp_puesto_trabajo").val());
-    formData.append("dlp_tiempo_puesto", $("#dlp_tiempo_puesto").val());
-    formData.append("dlp_area_trabajo", $("#dlp_area_trabajo").val());
-    formData.append("dlp_jefe_inmediato", $("#dlp_jefe_inmediato").val());
-    formData.append("dlp_cargo", $("#dlp_cargo").val());
-    formData.append("dlp_telefono", $("#dlp_telefono").val());
-
-    var selectedValueTLV = $('input[name="tlv_id"]:checked').val();
-    formData.append("tlv_id", selectedValueTLV);
-    // formData.append("tlv_id", $("#tlv_id").val());
-    formData.append("tvl_otro", $("#tvl_otro").val());
 
     var selectedValueGI = $('input[name="gi_id"]:checked').val();
     formData.append("gi_id", selectedValueGI);

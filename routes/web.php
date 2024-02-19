@@ -30,6 +30,7 @@ use App\Http\Controllers\Mobile\InternoController;
 use App\Http\Controllers\Modulo\ServMacController;
 use App\Http\Controllers\Formatos\FormFelicitacionesController;
 use App\Http\Controllers\Administrador\ConfiguracionController;
+use App\Http\Controllers\Dashboard\PanelInicioController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -38,6 +39,7 @@ Route::post('validar_dato' , [PagesController::class, 'validar_dato'])->name('va
 Route::post('add_datosfamiliares' , [PagesController::class, 'add_datosfamiliares'])->name('add_datosfamiliares');
 Route::post('delete_datosfamiliares' , [PagesController::class, 'delete_datosfamiliares'])->name('delete_datosfamiliares');
 Route::get('formdata.html5/{num_doc}' , [PagesController::class, 'formdata'])->name('formdata');
+Route::get('formdata_pcm.html5/{num_doc}' , [PagesController::class, 'formdata_pcm'])->name('formdata_pcm');
 Route::post('store_data' , [PagesController::class, 'store_data'])->name('store_data');
 
 Route::get('servicios.html5' , [PagesController::class, 'servicios'])->name('servicios');
@@ -61,6 +63,7 @@ Route::get('provincias/{departamento_id}', [PagesController::class, 'provincias'
 Route::get('distritos/{provincia_id}', [PagesController::class, 'distritos'])->name('distritos');
 Route::get('subtipo_vehiculo/{idsubtipo_vehiculo}', [PagesController::class, 'subtipo_vehiculo'])->name('subtipo_vehiculo');
 Route::get('consultas_novo', [PagesController::class, 'consultas_novo'])->name('consultas_novo');
+Route::get('entidad/{idcentro_mac}', [PagesController::class, 'entidad'])->name('entidad');
 
 
 /******************  GRAFICOS  ********************/
@@ -215,6 +218,14 @@ Route::group(['middleware' => ['auth']], function () {
         });
 
     });
+
+    /******************************************************   DASHBORAD ***************************************************************************/
+
+    Route::group(['prefix'=>'dashboard','as'=>'dashboard.' ],function () {
+        Route::get('/index' , [PanelInicioController::class, 'index'])->name('index');
+        
+    });
+
 
     /******************************************************   ASIGNACION ***************************************************************************/
 

@@ -113,7 +113,8 @@
                                 <input class="form-control" type="text" value="novosga2019" >
                             </div>
                         </div>
-                    </div>              
+                    </div>  
+                </div>            
         </div><!--end card-->
     </div><!--end col-->
 </div>

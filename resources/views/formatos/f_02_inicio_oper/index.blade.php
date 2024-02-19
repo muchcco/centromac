@@ -88,10 +88,10 @@
                         </table>
                     </div>
 
-                    <div class="col-md-8">
+                    <div class="col-md-3 border-end">
                         <h5>Ir al formulario </h5>
                         @role('Supervisor')
-                            <div class="form-group col-3">
+                            <div class="form-group col-12">
                                 @php
                                     $fecha6dias = date("d-m-Y",strtotime(now()));
                                     $fecha6diasconvert = date("Y-m-d",strtotime($fecha6dias));
@@ -105,6 +105,33 @@
                             {{-- Código a ejecutar si el usuario no tiene ninguno de los roles especificados --}}
                             <p>No tienes permiso para ver esto.</p>
                         @endunless
+                    </div>
+
+                    <div class="col-md-5">
+                        <h5>Reporte</h5>
+                        <div class="form-group col-12">
+                            @php
+                                $fecha6dias = date("d-m-Y",strtotime(now()));
+                                $fecha6diasconvert = date("Y-m-d",strtotime($fecha6dias));
+                            @endphp
+                            <form action="" class="form">                
+                                <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
+                
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="">Fecha de Inicio</label>
+                                        <input type="date" class="form-control" name="fecha" id="fecha" value="{{$fecha6diasconvert}}">
+                                    </div>
+                                    <div class="col">
+                                        <label for="">Fecha Fin</label>
+                                        <input type="date" class="form-control" name="fecha" id="fecha" value="{{$fecha6diasconvert}}">
+                                    </div>
+                                  </div>               
+                            </form>
+                            <p>Seleccionar la fecha que desee registrar</p>
+                        </div>                        
+                        {{-- <a href="{{ route('formatos.f_02_inicio_oper.formulario', ingresar fecha del id fecha) }}" class="btn btn-success" target="_blank">Dar clic aqui</a> --}}
+                        <a href="#" class="btn btn-success" id="" target="_blank">Importar</a>
                     </div>
                     
                 </div>
