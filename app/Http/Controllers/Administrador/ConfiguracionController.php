@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Mac;
 use Carbon\Carbon;
+use App\Models\Entidad;
 
 class ConfiguracionController extends Controller
 {
@@ -123,7 +124,53 @@ class ConfiguracionController extends Controller
     {
         $mac = Mac::where('IDCENTRO_MAC', $idcentro_mac)->first();
 
+        $entidad = DB::table('M_MAC_ENTIDAD as MME')
+                            ->join('M_CENTRO_MAC as MCM', 'MME.IDCENTRO_MAC', '=', 'MCM.IDCENTRO_MAC')
+                            ->join('M_ENTIDAD as ME', 'MME.IDENTIDAD', '=', 'ME.IDENTIDAD')
+                            ->where('MCM.IDCENTRO_MAC', $idcentro_mac)
+                            ->get();
+        
+        $us_exist = DB::select("SELECT GROUP_CONCAT(identidad) AS list_us FROM m_mac_entidad WHERE idcentro_mac = ".$idcentro_mac." ;");
 
-        return view('configuracion.reg_tablas', compact('mac'));
+        // Convertir el resultado de la consulta a un array
+        $us_exist_array = array_map('intval', explode(',', $us_exist[0]->list_us));
+
+        // dd($us_exist_array);
+
+        $entidad_completo = Entidad::whereNotIn('IDENTIDAD', $us_exist_array)->get();
+
+
+        return view('configuracion.reg_tablas', compact('mac', 'entidad', 'entidad_completo'));
+    }
+
+    public function addEntidad(Request $request)
+    {
+        try{
+
+            $save = DB::table('M_MAC_ENTIDAD')->insert([
+                'IDCENTRO_MAC'      =>      $request->idmac,
+                'IDENTIDAD'         =>      $request->addEntidad,
+                'LOG_US'            =>      auth()->user()->id,
+            ]);
+
+            return $save;
+
+        }catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
+    }
+
+    public function deleteEntidad(Request $request)
+    {
+        $delete = DB::table('M_MAC_ENTIDAD')->where('IDMAC_ENTIDAD', $request->id)->delete();
+
+        return $delete;
     }
 }

@@ -760,9 +760,9 @@ class PagesController extends Controller
 
         // Define las duraciones de tiempo para cada ID específico
         $duraciones = [
-            65 => 7,
-            157 => 3,
-            336 => 4,
+            65 => 7,   // TRAMITES => 65
+            157 => 5,  // ENTREGAS => 157 
+            336 => 4,  // CERTIFICACIONES => 336
             // Agrega más IDs y duraciones según sea necesario
         ];
 

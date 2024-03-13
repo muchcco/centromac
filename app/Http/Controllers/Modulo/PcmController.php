@@ -11,14 +11,7 @@ use App\Models\User;
 
 class PcmController extends Controller
 {
-
-    public function pcm()
-    {
-        return view('personal.pcm');
-    }
-
-    public function tb_pcm(Request $request)
-    {
+    private function centro_mac(){
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
@@ -27,6 +20,19 @@ class PcmController extends Controller
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
+
+        $resp = ['idmac'=>$idmac, 'name_mac'=>$name_mac ];
+
+        return (object) $resp;
+    }
+
+    public function pcm()
+    {
+        return view('personal.pcm');
+    }
+
+    public function tb_pcm(Request $request)
+    {
         
         $query = DB::table('M_PERSONAL as MP')
                                     ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
@@ -97,7 +103,11 @@ class PcmController extends Controller
                                             ) - CONT.CAMPOS_NULL
                                         ) AS DIFERENCIA_CAMPOS")
                                     )
-                                    ->where('MP.IDMAC', '=', $idmac)
+                                    ->where(function($query) {
+                                        if(auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')){
+                                            $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
+                                        }
+                                    }) 
                                     ->whereIn('MP.FLAG', [1, 2])
                                     ->where('MP.IDENTIDAD', 17) //SOLO ACEPTAMOS DEL REGISTRO A PERSONAL DE PCM
                                     ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')

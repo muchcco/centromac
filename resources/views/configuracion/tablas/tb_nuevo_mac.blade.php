@@ -32,7 +32,11 @@
 
 <script>
 $(document).ready(function() {
-
+    tippy(".bandejTool", {
+        allowHTML: true,
+        followCursor: true,
+    });
+    
     $('#table_asistencia').DataTable({
         "responsive": true,
         "bLengthChange": true,
@@ -51,10 +55,7 @@ $(document).ready(function() {
             { "width": "" }
         ]
     });
-    tippy(".bandejTool", {
-        allowHTML: true,
-        followCursor: true,
-    });
+    
 });
 
     

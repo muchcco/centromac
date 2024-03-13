@@ -34,7 +34,7 @@
     <!--  Font Awesome 4.7.0 by https://fontawesome.com/v4/icons/ -->
     <link href="{{ asset('Vendor\plugins\font-awesome\css\font-awesome.min.css')}}" rel="stylesheet">
     <!--Bootstrap Datepicker [ OPTIONAL ]-->
-    <script src="{{ asset('Vendor\bootstrap-datepicker\bootstrap-datepicker.min.css')}}"></script>
+    {{-- <script src="{{ asset('Vendor\bootstrap-datepicker\bootstrap-datepicker.min.css')}}"></script> --}}
     <!--Pace - Page Load Progress Par [OPTIONAL]-->
     {{-- <link href="{{ asset('Vendor\plugins\pace\pace.min.css')}}" rel="stylesheet"> --}}
     {{-- <script src="{{ asset('Vendor\plugins\pace\pace.min.js')}}"></script> --}}
@@ -245,8 +245,12 @@
         <!--Bootstrap Datepicker [ OPTIONAL ]-->
         <script src="{{ asset('Vendor\bootstrap-datepicker\bootstrap-datepicker.min.js')}}"></script>
         <!-- Development -->
-        <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
-        <script src="https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.js"></script>
+        {{-- <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
+        <script src="https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.js"></script> --}}
+        {{-- <script src="https://unpkg.com/popper.js@1"></script>
+        <script src="https://unpkg.com/tippy.js@5"></script> --}}
+        <script src="{{ asset('js\tipify5\popper.js')}}"></script>
+        <script src="{{ asset('js\tipify5\tippy.js')}}"></script>
 
         <!-- CODIGO -->
         @yield('script')

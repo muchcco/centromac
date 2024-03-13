@@ -292,6 +292,8 @@ Route::group(['middleware' => ['auth']], function () {
         // CONFIGURACION DE TABLAS ASOCIADAS
 
         Route::get('/reg_tablas/{idcentro_mac}' , [ConfiguracionController::class, 'reg_tablas'])->name('reg_tablas');
+        Route::post('/addEntidad' , [ConfiguracionController::class, 'addEntidad'])->name('addEntidad');
+        Route::post('/deleteEntidad' , [ConfiguracionController::class, 'deleteEntidad'])->name('deleteEntidad');
         
     });
 

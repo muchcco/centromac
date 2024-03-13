@@ -64,57 +64,59 @@
                 <hr class="hr-dashed">
                 <div class="d-flex justify-content-between mb-3">  
                     <h6 class="fw-semibold m-0">Accesos:</h6>                      
+                </div>  
+            </div>           
+        </div><!--end card-->
+    </div><!--end col-->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">                                        
+                <div class="media mb-3">
+                    <img src="{{ asset('imagen/logo-novosga.png') }}" alt="" class="thumb-md rounded-circle">                                      
+                    <div class="media-body align-self-center text-truncate ms-3">                                            
+                        <h4 class="m-0 fw-semibold text-dark font-15">Agregar Entidades</h4>   
+                        <p class="text-muted  mb-0 font-13"><span class="text-dark">Acceso : </span>Por el personal TIC</p>                                         
+                    </div><!--end media-body-->
+                </div>   
+                <hr class="hr-dashed">
+                <div class="d-flex justify-content-between mb-3">  
+                    <h6 class="fw-semibold m-0">Agregar:</h6>
+                    <div class="chat-search col-10" >
+                        <div class="form-group"> 
+                            <div class="input-group" >                                                
+                                <select name="addEntidad" id="addEntidad" class="select2 form-select ">
+                                    <option value="">-- Seleccionar Entidad --</option>                                    
+                                    @foreach ($entidad_completo as $ent)
+                                        <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }}</option>
+                                    @endforeach
+                                </select>
+                                <span class="shadow-none col-3" >
+                                    <button type="button" id="btn-guardar" class="btn btn-primary btn-sm " onclick="btnAddEntidad()">Agregar</button>
+                                </span>                                
+                            </div>                                                    
+                        </div>
+                    </div>
+                    
                 </div> 
-                <div class="row">
-                    <div class="col align-self-left">
-                        <div class="form-group row">
-                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">Conexión:</label>
-                            <div class="col-lg-9 col-xl-8">
-                                <input class="form-control" type="text" value="MySql" disabled>
-                            </div>
-                        </div>
-                    </div>                
-                <div> 
-                <div class="row">
-                    <div class="col align-self-left">
-                        <div class="form-group row">
-                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">IP </label>
-                            <div class="col-lg-9 col-xl-8">
-                                <input class="form-control" type="text" value="192.168.xxx.xxx">
-                            </div>
-                        </div>
-                    </div>                
-                <div> 
-                <div class="row">
-                    <div class="col align-self-left">
-                        <div class="form-group row">
-                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">Usuario</label>
-                            <div class="col-lg-9 col-xl-8">
-                                <input class="form-control" type="text" value="novosga2019" >
-                            </div>
-                        </div>
-                    </div>                
-                <div>
-                <div class="row">
-                    <div class="col align-self-left">
-                        <div class="form-group row">
-                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">Pasword  </label>
-                            <div class="col-lg-9 col-xl-8">
-                                <input class="form-control" type="password" >
-                            </div>
-                        </div>
-                    </div>                
-                <div>
-                <div class="row">
-                    <div class="col align-self-left">
-                        <div class="form-group row">
-                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center">Base de Datos </label>
-                            <div class="col-lg-9 col-xl-8">
-                                <input class="form-control" type="text" value="novosga2019" >
-                            </div>
-                        </div>
-                    </div>  
-                </div>            
+                <hr class="hr-dashed">
+                <div class="d-flex justify-content-between mb-3">  
+                    <div class="col-lg-12" id="datos">
+                        <ul class="list-group list-group-flush">
+                            
+                            @forelse ($entidad as $e)
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="la la-check text-muted font-16 me-2"></i>{{ $e->NOMBRE_ENTIDAD }}
+                                    </div>
+                                    <button class="nobtn badge badge-primary badge-pill bandejTool" data-tippy-content="Eliminar" onclick="btnEliminarEntidad('{{ $e->IDMAC_ENTIDAD }}')"><i class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
+                                </li>
+                            @empty
+                                <p>No  hay entidades registradas.</p>
+                            @endforelse
+                        </ul>
+                    </div>
+                </div>  
+            </div>           
         </div><!--end card-->
     </div><!--end col-->
 </div>
@@ -154,23 +156,93 @@
 <script src="{{asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js')}}"></script>
 <script src="{{asset('nuevo/assets/pages/jquery.datatable.init.js')}}"></script>
     
+<script src="{{asset('js/toastr.min.js')}}"></script>
+
 <script>
 $(document).ready(function() {
-    tabla_seccion();
+    // tabla_seccion();
+    tippy(".bandejTool", {
+        allowHTML: true,
+        followCursor: true,
+    });
+    $('.select2').select2();
 });
 
-function tabla_seccion() {
+// function tabla_seccion() {
+//     $.ajax({
+//         type: 'GET',
+//         url: "{{ route('configuracion.tablas.tb_nuevo_mac') }}", // Ruta que devuelve la vista en HTML
+//         data: {},
+//         beforeSend: function () {
+//             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
+//         },
+//         success: function(data) {
+//             $('#table_data').html(data); // Inserta la vista en un contenedor en tu página
+//         }
+//     });
+// }
+
+function btnAddEntidad() {
+
+    var mac = "{{ $mac->IDCENTRO_MAC }}";
+
+    var formData = new FormData();
+    formData.append("addEntidad", $("#addEntidad").val());
+    formData.append("idmac", mac);
+    formData.append("_token", $("input[name=_token]").val());
+
     $.ajax({
-        type: 'GET',
-        url: "{{ route('configuracion.tablas.tb_nuevo_mac') }}", // Ruta que devuelve la vista en HTML
-        data: {},
+        type:'post',
+        url: "{{ route('configuracion.addEntidad') }}",
+        dataType: "json",
+        data:formData,
+        processData: false,
+        contentType: false,
         beforeSend: function () {
-            document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
+            document.getElementById("btn-guardar").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+            document.getElementById("btn-guardar").disabled = true;
         },
-        success: function(data) {
-            $('#table_data').html(data); // Inserta la vista en un contenedor en tu página
+        success:function(data){        
+            document.getElementById("btn-guardar").innerHTML = 'Agregar';
+            document.getElementById("btn-guardar").disabled = false;
+            $( "#datos" ).load(window.location.href + " #datos" ); 
+            // tabla_seccion();
         }
     });
+
+
+}
+
+
+function btnEliminarEntidad(id) {
+
+    swal.fire({
+        title: "Seguro que desea eliminar la entidad?",
+        text: "La entidad será eliminado totalmente ",
+        icon: "error",
+        showCancelButton: !0,
+        confirmButtonText: "Aceptar",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.value) {
+            $.ajax({
+                url: "{{ route('configuracion.deleteEntidad') }}",
+                type: 'post',
+                data: {"_token": "{{ csrf_token() }}", id: id},
+                success: function(response){
+                    console.log(response);
+                    $( "#datos" ).load(window.location.href + " #datos" );
+
+                },
+                error: function(error){
+                    console.log('Error '+error);
+                }
+            });
+        }
+
+    })
+
+
 }
 
 </script>

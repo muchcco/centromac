@@ -125,5 +125,17 @@
         }
         }
 
+        // Función para recargar la página
+        function reloadPage() {
+            location.reload();
+        }
+
+        // Intervalo de tiempo en milisegundos (20 minutos = 20 * 60 * 1000)
+        var intervalo = 20 * 60 * 1000;
+
+        // Configurar el intervalo para recargar la página cada 20 minutos
+        setInterval(reloadPage, intervalo);
+
+
     </script>
 @endsection
