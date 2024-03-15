@@ -87,6 +87,10 @@ Route::get('/login_verificacion/get/' , [PagesController::class, 'login_verifica
 
 Auth::routes();
 
+Route::get('/login2', function(){
+    return view('auth/login2');
+});
+
 Route::group(['middleware' => ['auth']], function () {
 
     //PAGINA DE INICIO
