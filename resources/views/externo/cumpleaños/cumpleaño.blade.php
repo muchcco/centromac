@@ -37,6 +37,23 @@
     .nobtn:hover{
         text-decoration: underline; 
     }
+
+    /******************************* CUMPLEAÑOS ***********************************************/
+
+    canvas{display:block}
+    h1 {
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #000;
+      font-family: "Source Sans Pro";
+      font-size: 5em;
+      font-weight: 900;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
 </style>
     
 @endsection
@@ -184,6 +201,7 @@ function Regresar(){
     $( ".container" ).load(window.location.href + " .container" ); 
 
 }
+
 
 </script>
 @endsection

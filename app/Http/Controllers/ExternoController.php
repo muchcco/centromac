@@ -27,7 +27,7 @@ class ExternoController extends Controller
         $mac = Mac::where('IDCENTRO_MAC', $request->idmac)->first();
 
         // Configura la configuración regional en español
-        setlocale(LC_TIME, 'es_ES');
+        setlocale(LC_TIME, 'es_PE', 'Spanish_Spain', 'Spanish');
         Carbon::setLocale('es');
 
         $personal = Personal::select(DB::raw("CONCAT(APE_PAT, ' ', APE_MAT, ' - ', NOMBRE) AS NOMBRES"), 'FECH_NACIMIENTO', 'NOMBRE_ENTIDAD', 'FOTO_RUTA', 'SEXO')
@@ -38,18 +38,18 @@ class ExternoController extends Controller
                                         ->get();
 
         $fecha_actual = Carbon::now();
+        
         $proximos_cumpleaños = [];
 
-        // Calcular la fecha límite para el próximo año
         $fecha_limite_proximo_anio = $fecha_actual->copy()->addYear()->addMonths(6);
 
         foreach ($personal as $persona) {
             $fecha_nacimiento = Carbon::parse($persona->FECH_NACIMIENTO);
             $proximo_cumpleaños = $fecha_actual->copy()->year($fecha_actual->year)->month($fecha_nacimiento->month)->day($fecha_nacimiento->day);
 
-            // Compara si el próximo cumpleaños está dentro del rango actual y el próximo año
+            
             if ($proximo_cumpleaños->gte($fecha_actual) && $proximo_cumpleaños->lte($fecha_limite_proximo_anio)) {
-                // Calcula la diferencia de años, teniendo en cuenta si el cumpleaños ya ocurrió o no
+                
                 $edad = $proximo_cumpleaños->year - $fecha_nacimiento->year;
 
                 if ($proximo_cumpleaños->lt($fecha_actual)) {
@@ -67,12 +67,55 @@ class ExternoController extends Controller
             return $a->prox_cumpleanos->gte($b->prox_cumpleanos) ? 1 : -1;
         });
 
-        // Ahora $proximos_cumpleaños contiene la lista de personas con próximos cumpleaños en los próximos 6 meses del año actual y del próximo año
-        // foreach ($proximos_cumpleaños as $persona) {
-        //     echo $persona->nombre . ' cumple ' . $persona->edad_proximo_cumpleanos . ' años en ' . $persona->nombre_mes_proximo_cumpleanos . ' el día ' . $persona->prox_cumpleanos . '<br>';
+        $cumpleanos_por_mes = [];
+
+        // Agrupar los cumpleaños por mes
+        foreach ($proximos_cumpleaños as $persona) {
+            $nombre_mes = $persona->prox_cumpleanos->format('F'); // Obtener el nombre del mes
+            
+            // Verificar si ya existe una entrada para este mes en el array, si no, se crea
+            if (!isset($cumpleanos_por_mes[$nombre_mes])) {
+                $cumpleanos_por_mes[$nombre_mes] = [];
+            }
+            
+            // Agregar la persona al array correspondiente al mes
+            $cumpleanos_por_mes[$nombre_mes][] = $persona;
+        }
+
+        $meses_latino = [
+            'January' => 'Enero',
+            'February' => 'Febrero',
+            'March' => 'Marzo',
+            'April' => 'Abril',
+            'May' => 'Mayo',
+            'June' => 'Junio',
+            'July' => 'Julio',
+            'August' => 'Agosto',
+            'September' => 'Septiembre',
+            'October' => 'Octubre',
+            'November' => 'Noviembre',
+            'December' => 'Diciembre',
+        ];
+
+        uksort($cumpleanos_por_mes, function($a, $b) use ($meses_latino) {
+            $meses_en_orden = array_flip(array_keys($meses_latino));
+            return $meses_en_orden[$a] <=> $meses_en_orden[$b];
+        });
+
+        // foreach ($cumpleanos_por_mes as $mes => $personas) {
+        //     $mes_latino = isset($meses_latino[$mes]) ? $meses_latino[$mes] : $mes;
+        //     echo "<h2>$mes_latino</h2>"; 
+
+        //     usort($personas, function ($a, $b) {
+        //         return $a->prox_cumpleanos->timestamp - $b->prox_cumpleanos->timestamp;
+        //     });
+
+        //     foreach ($personas as $persona) {
+        //         echo $persona->nombre . ' cumple ' . $persona->edad_proximo_cumpleanos . ' años el ' . $persona->prox_cumpleanos->format('d/m/Y') . '<br>';
+        //     }
+        //     echo "<br>";
         // }
 
-
-        return view('externo.cumpleaños.cumpleaño_validar',  compact('dat', 'mac', 'proximos_cumpleaños'));
+        return view('externo.cumpleaños.cumpleaño_validar',  compact('dat', 'mac', 'proximos_cumpleaños', 'cumpleanos_por_mes', 'meses_latino'));
     }
 }
