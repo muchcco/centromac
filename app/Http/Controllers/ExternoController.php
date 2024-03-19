@@ -43,7 +43,7 @@ class ExternoController extends Controller
         $fecha_limite_proximo_anio = $fecha_actual->copy()->addYear()->addMonths(6);
 
         foreach ($personal as $persona) {
-            $fecha_nacimiento = Carbon::parse($persona->fech_nac);
+            $fecha_nacimiento = Carbon::parse($persona->FECH_NACIMIENTO);
             $proximo_cumpleaños = $fecha_actual->copy()->year($fecha_actual->year)->month($fecha_nacimiento->month)->day($fecha_nacimiento->day);
 
             // Compara si el próximo cumpleaños está dentro del rango actual y el próximo año
