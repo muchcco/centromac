@@ -1,7 +1,7 @@
 <?php
 /*************************************************************************************************************************************************/
 /*
-DESARROLLADO POR:   JHON KEVIN MUCHCCO ROJAS - TIC MAC CUSCO
+DESARROLLADO POR:   JHON KEVIN MUCHCCO ROJAS
 
 MODIFICACIONES:
 ======================================================
@@ -9,7 +9,7 @@ MODIFICACIONES:
 ==              ==============                              =============                              =============
 ==              ==============                              =============                              =============
 
-==  JHON KEVIN  ==   VERSION 1.2.0                                   
+==  JHON KEVIN  ==   VERSION 1.3.0                                   
 ===========================================================================*/
 
 /*************************************************************************************************************************************************/
@@ -31,6 +31,7 @@ use App\Http\Controllers\Modulo\ServMacController;
 use App\Http\Controllers\Formatos\FormFelicitacionesController;
 use App\Http\Controllers\Administrador\ConfiguracionController;
 use App\Http\Controllers\Dashboard\PanelInicioController;
+use App\Http\Controllers\ExternoController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -87,10 +88,19 @@ Route::get('/login_verificacion/get/' , [PagesController::class, 'login_verifica
 
 Auth::routes();
 
-Route::get('/login2', function(){
-    return view('auth/login2');
-});
+/**************************************************************** CUMPLEAÑOS *******************************************************************/
 
+Route::group(['prefix'=>'externo/cumpleaños/','as'=>'externo.cumpleaños.' ],function () {
+
+    Route::get('cumpleaño', [ExternoController::class, 'cumpleaño'])->name('cumpleaño');
+    Route::post('cumpleaño_validar', [ExternoController::class, 'cumpleaño_validar'])->name('cumpleaño_validar');
+    Route::get('cumpleaños_dat', [ExternoController::class, 'cumpleaños_dat'])->name('cumpleaños_dat');
+
+}); 
+
+/***********************************************************************************************************************************************/
+// CONFIGURACION DENTRO DE LA AUTH
+/***********************************************************************************************************************************************/
 Route::group(['middleware' => ['auth']], function () {
 
     //PAGINA DE INICIO
