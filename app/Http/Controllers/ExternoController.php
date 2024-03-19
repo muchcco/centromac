@@ -34,6 +34,7 @@ class ExternoController extends Controller
                                         ->join('M_ENTIDAD', 'M_PERSONAL.IDENTIDAD', '=', 'M_ENTIDAD.IDENTIDAD')
                                         ->where('M_PERSONAL.FLAG', 1)
                                         ->whereNotNull('M_PERSONAL.FECH_NACIMIENTO')
+                                        ->where('M_PERSONAL.IDMAC', $request->idmac)
                                         ->get();
 
         $fecha_actual = Carbon::now();
