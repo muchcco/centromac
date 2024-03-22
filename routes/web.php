@@ -32,6 +32,7 @@ use App\Http\Controllers\Formatos\FormFelicitacionesController;
 use App\Http\Controllers\Administrador\ConfiguracionController;
 use App\Http\Controllers\Dashboard\PanelInicioController;
 use App\Http\Controllers\ExternoController;
+use App\Http\Controllers\Indicador\OcupabilidadController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -233,6 +234,21 @@ Route::group(['middleware' => ['auth']], function () {
 
     });
 
+    /******************************************************   INDICADORES *****************************************************************************/
+
+    Route::group(['prefix'=>'indicador','as'=>'indicador.' ],function () {
+        
+        Route::group(['prefix' => 'ocupabilidad', 'as' => 'ocupabilidad.'], function(){
+
+            Route::get('/index' , [OcupabilidadController::class, 'index'])->name('index');
+            Route::get('/tablas/tb_index' , [OcupabilidadController::class, 'tb_index'])->name('tablas.tb_index');
+
+
+            Route::get('/export_excel' , [OcupabilidadController::class, 'export_excel'])->name('export_excel');
+        });
+
+    });
+
     /******************************************************   DASHBORAD ***************************************************************************/
 
     Route::group(['prefix'=>'dashboard','as'=>'dashboard.' ],function () {
@@ -308,6 +324,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/reg_tablas/{idcentro_mac}' , [ConfiguracionController::class, 'reg_tablas'])->name('reg_tablas');
         Route::post('/addEntidad' , [ConfiguracionController::class, 'addEntidad'])->name('addEntidad');
         Route::post('/deleteEntidad' , [ConfiguracionController::class, 'deleteEntidad'])->name('deleteEntidad');
+        Route::post('/addModulo' , [ConfiguracionController::class, 'addModulo'])->name('addModulo');
+        Route::post('/deleteModulo' , [ConfiguracionController::class, 'deleteModulo'])->name('deleteModulo');
         
     });
 

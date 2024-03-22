@@ -11,8 +11,8 @@
         <div class="brand">
             <a href="{{route('inicio')}}" class="logo">
                 <span>
-                    <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-light" style="max-width: 80%;height: 50px;">
-                    <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-dark" style="max-width: 80%;height: 50px;">
+                    <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-light" style="max-width: 80%;height: 40px;">
+                    <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-dark" style="max-width: 80%;height: 40px;">
                 </span>
             </a>
         </div>
@@ -88,6 +88,13 @@
                 <li class="@if (Request::is('formatos/f_felicitaciones*')) mm-active @endif">
                     <a href="{{ route('formatos.f_felicitaciones.index') }}" class="@if (Request::is('formatos/f_felicitaciones*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Formato de Felicitaciones</span></a>
                 </li>
+
+                <li class="menu-label mt-0">INDICADORES</li>
+
+                <li class="@if (Request::is('indicador/ocupabilidad*')) mm-active @endif">
+                    <a href="{{ route('indicador.ocupabilidad.index') }}" class="@if (Request::is('indicador/ocupabilidad/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Ocupabilidad</span></a>
+                </li>
+
                 @role('Administrador|Especialista_TIC')
 
                 <li class="menu-label mt-0">PARAMETROS</li>

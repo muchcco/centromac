@@ -1271,8 +1271,6 @@ var btnEnviar = ( idpersonal ) =>{
     }
 
 
-    
-
     var file_dni = $("#dni").prop("files")[0];
     // var file_cv = $("#cv").prop("files")[0];
     var formData = new FormData();

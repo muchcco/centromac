@@ -139,8 +139,10 @@ class ConfiguracionController extends Controller
 
         $entidad_completo = Entidad::whereNotIn('IDENTIDAD', $us_exist_array)->get();
 
+        $modulos = DB::table('M_MODULO')->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD')->where('M_MODULO.IDCENTRO_MAC',  $idcentro_mac)->get();
+        // dd($modulos);
 
-        return view('configuracion.reg_tablas', compact('mac', 'entidad', 'entidad_completo'));
+        return view('configuracion.reg_tablas', compact('mac', 'entidad', 'entidad_completo', 'modulos'));
     }
 
     public function addEntidad(Request $request)
@@ -173,4 +175,38 @@ class ConfiguracionController extends Controller
 
         return $delete;
     }
+
+    public function addModulo (Request $request){
+
+        try{
+
+            $save = DB::table('M_MODULO')->insert([
+                'IDCENTRO_MAC'      =>      $request->idmac,
+                'IDENTIDAD'         =>      $request->addModEnt,
+                'N_MODULO'            =>      $request->n_modulo,
+                'CREATED_AT'            =>      Carbon::now(),                
+            ]);
+
+            return $save;
+
+        }catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
+
+    }
+
+    public function deleteModulo(Request $request)
+    {
+        $delete = DB::table('M_MODULO')->where('IDMODULO', $request->id)->delete();
+
+        return $delete;
+    }
+    
 }

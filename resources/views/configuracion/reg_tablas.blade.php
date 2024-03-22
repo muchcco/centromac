@@ -13,7 +13,27 @@
 <!-- Responsive datatable examples -->
 <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" /> 
 
+<style>
+    /* Estilo del scrollbar */
+    #tabla_acceso_entidad {
+        height: 500px; /* Altura fija */
+        overflow-y: auto; /* Activar scrollbar vertical cuando sea necesario */
+        scrollbar-width: thin; /* Ancho del scrollbar */
+    }
 
+    #tabla_acceso_entidad::-webkit-scrollbar {
+        width: 5px; /* Ancho del scrollbar en navegadores webkit */
+    }
+
+    #tabla_acceso_entidad::-webkit-scrollbar-thumb {
+        background-color: #888; /* Color del thumb (la barra del scrollbar) */
+        border-radius: 4px; /* Bordes redondeados */
+    }
+
+    #tabla_acceso_entidad::-webkit-scrollbar-thumb:hover {
+        background-color: #555; /* Cambia de color al pasar el mouse sobre el thumb */
+    }
+</style>
 
 @endsection
 
@@ -69,40 +89,40 @@
         </div><!--end card-->
     </div><!--end col-->
     <div class="col-lg-4">
-        <div class="card">
-            <div class="card-body">                                        
+        <div class="card" id="tabla_acceso_entidad" >
+            <div class="card-body">
                 <div class="media mb-3">
-                    <img src="{{ asset('imagen/logo-novosga.png') }}" alt="" class="thumb-md rounded-circle">                                      
-                    <div class="media-body align-self-center text-truncate ms-3">                                            
-                        <h4 class="m-0 fw-semibold text-dark font-15">Agregar Entidades</h4>   
-                        <p class="text-muted  mb-0 font-13"><span class="text-dark">Acceso : </span>Por el personal TIC</p>                                         
+                    <img src="{{ asset('imagen/logo-novosga.png') }}" alt="" class="thumb-md rounded-circle">
+                    <div class="media-body align-self-center text-truncate ms-3">
+                        <h4 class="m-0 fw-semibold text-dark font-15">Agregar Entidades</h4>
+                        <p class="text-muted  mb-0 font-13"><span class="text-dark">Acceso : </span>Por el personal TIC</p>
                     </div><!--end media-body-->
-                </div>   
+                </div>
                 <hr class="hr-dashed">
-                <div class="d-flex justify-content-between mb-3">  
+                <div class="d-flex justify-content-between mb-3">
                     <h6 class="fw-semibold m-0">Agregar:</h6>
-                    <div class="chat-search col-10" >
-                        <div class="form-group"> 
-                            <div class="input-group" >                                                
+                    <div class="chat-search col-10">
+                        <div class="form-group">
+                            <div class="input-group">
                                 <select name="addEntidad" id="addEntidad" class="select2 form-select ">
-                                    <option value="">-- Seleccionar Entidad --</option>                                    
+                                    <option value="">-- Seleccionar Entidad --</option>
                                     @foreach ($entidad_completo as $ent)
                                         <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }}</option>
                                     @endforeach
                                 </select>
-                                <span class="shadow-none col-3" >
-                                    <button type="button" id="btn-guardar" class="btn btn-primary btn-sm " onclick="btnAddEntidad()">Agregar</button>
-                                </span>                                
-                            </div>                                                    
+                                <span class="shadow-none col-3">
+                                    <button type="button" id="btn-guardar" class="btn btn-primary btn-sm" onclick="btnAddEntidad()">Agregar</button>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    
-                </div> 
+        
+                </div>
                 <hr class="hr-dashed">
-                <div class="d-flex justify-content-between mb-3">  
+                <div class="d-flex justify-content-between mb-3">
                     <div class="col-lg-12" id="datos">
                         <ul class="list-group list-group-flush">
-                            
+        
                             @forelse ($entidad as $e)
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
@@ -111,13 +131,76 @@
                                     <button class="nobtn badge badge-primary badge-pill bandejTool" data-tippy-content="Eliminar" onclick="btnEliminarEntidad('{{ $e->IDMAC_ENTIDAD }}')"><i class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
                                 </li>
                             @empty
-                                <p>No  hay entidades registradas.</p>
+                                <p>No hay entidades registradas.</p>
                             @endforelse
                         </ul>
                     </div>
-                </div>  
-            </div>           
+                </div>
+            </div>
         </div><!--end card-->
+        
+    </div><!--end col-->
+
+    <div class="col-lg-4">
+        <div class="card"  >
+            <div class="card-body">
+                <div class="media mb-3">
+                    <img src="{{ asset('imagen/logo-novosga.png') }}" alt="" class="thumb-md rounded-circle">
+                    <div class="media-body align-self-center text-truncate ms-3">
+                        <h4 class="m-0 fw-semibold text-dark font-15">Agregar Módulos</h4>
+                        <p class="text-muted  mb-0 font-13"><span class="text-dark">Acceso : </span>Por el personal TIC</p>
+                    </div><!--end media-body-->
+                </div>
+                <hr class="hr-dashed">
+                <div class="d-flex justify-content-between mb-1">
+                    <form class="col-12" >
+                        <div class="mb-3 row">
+                            <label for="horizontalInput1" class="col-sm-2 form-label align-self-center mb-lg-0">N° de Módulo</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="n_modulo" name="n_modulo" placeholder="Número de Módulo" onkeypress="return isNumber(event)">
+                            </div>
+                        </div>
+                            
+                        <div class="mb-3 row" id="datos-mod-enc">
+                            <label for="horizontalInput2" class="col-sm-2 form-label align-self-center mb-lg-0">Entidad</label>
+                            <div class="col-sm-10">
+                                <select name="addModEnt" id="addModEnt" class="select2 form-select ">
+                                    <option value="">-- Seleccionar Entidad --</option>
+                                    @foreach ($entidad as $ent)
+                                        <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 ms-auto">
+                                <button type="submit" class="btn btn-primary btn-block col-12" id="btn-guardar-2" onclick="btnAddModulo()">Agregar</button>
+                            </div>
+                        </div> 
+                    </form>
+        
+                </div>
+                <hr class="hr-dashed">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="col-lg-12" id="datos-modd">
+                        <ul class="list-group list-group-flush">
+                            @forelse ($modulos as $mod)
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="la la-check text-muted font-16 me-2"></i>{{ $mod->ABREV_ENTIDAD }} - <strong>Módulo({{ $mod->N_MODULO }})</strong> 
+                                    </div>
+                                    <button class="nobtn badge badge-primary badge-pill bandejTool" data-tippy-content="Eliminar" onclick="btnEliminarModulo('{{ $mod->IDMODULO }}')"><i class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
+                                </li>
+                            @empty
+                                <p>No hay módulos registrados.</p>
+                            @endforelse
+                           
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div><!--end card-->
+        
     </div><!--end col-->
 </div>
 
@@ -158,6 +241,8 @@
     
 <script src="{{asset('js/toastr.min.js')}}"></script>
 
+<script src="{{ asset('js/form.js') }}"></script>
+
 <script>
 $(document).ready(function() {
     // tabla_seccion();
@@ -166,6 +251,9 @@ $(document).ready(function() {
         followCursor: true,
     });
     $('.select2').select2();
+
+    
+
 });
 
 // function tabla_seccion() {
@@ -206,6 +294,7 @@ function btnAddEntidad() {
             document.getElementById("btn-guardar").innerHTML = 'Agregar';
             document.getElementById("btn-guardar").disabled = false;
             $( "#datos" ).load(window.location.href + " #datos" ); 
+            $( "#datos-mod-enc" ).load(window.location.href + " #datos-mod-enc" );
             // tabla_seccion();
         }
     });
@@ -232,17 +321,75 @@ function btnEliminarEntidad(id) {
                 success: function(response){
                     console.log(response);
                     $( "#datos" ).load(window.location.href + " #datos" );
-
+                    $( "#datos-mod-enc" ).load(window.location.href + " #datos-mod-enc" );
                 },
                 error: function(error){
                     console.log('Error '+error);
                 }
             });
         }
-
     })
+}
 
 
+function btnAddModulo(){
+
+    var mac = "{{ $mac->IDCENTRO_MAC }}";
+
+    var formData = new FormData();
+    formData.append("n_modulo", $("#n_modulo").val());
+    formData.append("addModEnt", $("#addModEnt").val());
+    formData.append("idmac", mac);
+    formData.append("_token", $("input[name=_token]").val());
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('configuracion.addModulo') }}",
+        dataType: "json",
+        data:formData,
+        processData: false,
+        contentType: false,
+        beforeSend: function () {
+            document.getElementById("btn-guardar-2").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+            document.getElementById("btn-guardar-2").disabled = true;
+        },
+        success:function(data){        
+            document.getElementById("btn-guardar-2").innerHTML = 'Agregar';
+            document.getElementById("btn-guardar-2").disabled = false;
+            $( "#datos-modd" ).load(window.location.href + " #datos-modd" );
+
+            $("#n_modulo").val('');
+            // $("#addModEnt").val("");
+            // tabla_seccion();
+        }
+    });
+}
+
+function btnEliminarModulo(id) {
+
+swal.fire({
+    title: "Seguro que desea eliminar la entidad?",
+    text: "La entidad será eliminado totalmente ",
+    icon: "error",
+    showCancelButton: !0,
+    confirmButtonText: "Aceptar",
+    cancelButtonText: "Cancelar"
+}).then((result) => {
+    if (result.value) {
+        $.ajax({
+            url: "{{ route('configuracion.deleteModulo') }}",
+            type: 'post',
+            data: {"_token": "{{ csrf_token() }}", id: id},
+            success: function(response){
+                console.log(response);
+                $( "#datos-modd" ).load(window.location.href + " #datos-modd" );
+            },
+            error: function(error){
+                console.log('Error '+error);
+            }
+        });
+    }
+})
 }
 
 </script>
