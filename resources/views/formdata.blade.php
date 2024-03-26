@@ -261,7 +261,7 @@
                   </div>
                   <div class="row col-sm-4 buut">
                     <div class="mb-3">
-                      <label for="IdTipoPersona" class="control-label">Talla<span class="text-danger fw-bolder">(*)</span></label>
+                      <label for="IdTipoPersona" class="control-label">Talla Polo<span class="text-danger fw-bolder">(*)</span> <i class="fa fa-info bandejTool" data-tippy-content="Talla para polos, por ejemplo: S, M, L, XL ..." ></i> </label>
                       <input type="text" class="form-control" name="pcm_talla" id="pcm_talla"  value="{{ $personal->PCM_TALLA }}">
                     </div>
                   </div>
@@ -872,6 +872,9 @@
 
 <script src="{{ asset('js/toastr.min.js')}}"></script>
 
+<script src="{{ asset('js\tipify5\popper.js')}}"></script>
+<script src="{{ asset('js\tipify5\tippy.js')}}"></script>
+
 <script>
 
 $(document).ready(function() {
@@ -879,6 +882,10 @@ $(document).ready(function() {
   $('#divRuc').hide();
   TipoDocumento();
   // $('#n_documento').attr("maxlength", "8");
+  tippy(".bandejTool", {
+    allowHTML: true,
+    followCursor: true,
+  });
 
   document.getElementById('tvl_otros_esp').style.display = 'none';
   document.getElementById('gi_otro_compl').style.display = 'none';
