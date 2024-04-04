@@ -99,223 +99,28 @@
             <tr>
                 <td>{{ $q->N_MODULO }}</td>
                 <td>{{ $q->NOMBRE_ENTIDAD }}</td>
-                <td style="{{ $q->DIA_1 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_1 > 0)
-                        <span class="text-center">SI</span>
+                @for ($i = 1; $i <= 31; $i++)
+                    @if ($q->NOMBRE_ENTIDAD == 'BANCO DE LA NACION')
+                        <td style="{{ $q->{'DIA_' . $i} > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
+                            @if ($q->{'DIA_' . $i} > 0)
+                                <span class="text-center">SI</span>
+                            @else
+                                <span class="text-center">NO</span>
+                            @endif
+                        </td>
                     @else
-                        <span class="text-center">NO</span>
+                        <td style="{{ $q->{'DIA_' . $i} > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
+                            @if ($q->{'DIA_' . $i} > 0)
+                                <span class="text-center">SI</span>
+                            @else
+                                <span class="text-center">NO</span>
+                            @endif
+                        </td>
                     @endif
-                </td>
-                <td style="{{ $q->DIA_2 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_2 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_3 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_3 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_4 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_4 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_5 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_5 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_6 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_6 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_7 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_7 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_8 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_8 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_9 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_9 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_10 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_10 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_11 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_11 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_12 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_12 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_13 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_13 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_14 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_14 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_15 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_15 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_16 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_16 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_17 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_17 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_18 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_18 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_19 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_19 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_20 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_20 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_21 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_21 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_22 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_22 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_23 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_23 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_24 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_24 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_25 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_25 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_26 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_26 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_27 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_27 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_28 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_28 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_29 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_29 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_30 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_30 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
-                <td style="{{ $q->DIA_31 > 0 ? 'color: black !important; background: none' : 'background: #2F75B5; color: white !important' }}">
-                    @if ($q->DIA_31 > 0)
-                        <span class="text-center">SI</span>
-                    @else
-                        <span class="text-center">NO</span>
-                    @endif
-                </td>
+                    
+                @endfor
+
+
                 <td></td>
             </tr>
             

@@ -56,7 +56,18 @@ class OcupabilidadController extends Controller
             'mes' => $fecha_mes,
         ]);
 
-        return view('indicador.ocupabilidad.tablas.tb_index', compact('name_mac', 'query', 'fecha_mes', 'fecha_año'));
+        // cantidad de modulos
+
+        $cant_entidad_modulo = DB::table('M_MODULO')
+                                                ->join('M_ENTIDAD', 'M_MODULO.IDENTIDAD', '=', 'M_ENTIDAD.IDENTIDAD')
+                                                ->select('M_ENTIDAD.NOMBRE_ENTIDAD', DB::raw('count(N_MODULO) as CANT_ENT'))
+                                                ->whereNotNull('M_MODULO.IDENTIDAD')
+                                                ->where('M_MODULO.IDCENTRO_MAC', $this->centro_mac()->idmac)
+                                                ->groupBy('M_MODULO.IDENTIDAD')
+                                                ->havingRaw('count(N_MODULO) > 1')
+                                                ->get();
+
+        return view('indicador.ocupabilidad.tablas.tb_index', compact('name_mac', 'query', 'fecha_mes', 'fecha_año', 'cant_entidad_modulo'));
     }
 
     public function export_excel(Request $request)
