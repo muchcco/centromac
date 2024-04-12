@@ -9,7 +9,7 @@ MODIFICACIONES:
 ==              ==============                              =============                              =============
 ==              ==============                              =============                              =============
 
-==  JHON KEVIN  ==   VERSION 1.3.0                                   
+==  JHON KEVIN  ==   VERSION 1.5.0                                   
 ===========================================================================*/
 
 /*************************************************************************************************************************************************/
@@ -33,6 +33,7 @@ use App\Http\Controllers\Administrador\ConfiguracionController;
 use App\Http\Controllers\Dashboard\PanelInicioController;
 use App\Http\Controllers\ExternoController;
 use App\Http\Controllers\Indicador\OcupabilidadController;
+use App\Http\Controllers\Indicador\PuntualidadController;
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -245,6 +246,15 @@ Route::group(['middleware' => ['auth']], function () {
 
 
             Route::get('/export_excel' , [OcupabilidadController::class, 'export_excel'])->name('export_excel');
+        });
+
+        Route::group(['prefix' => 'puntualidad', 'as' => 'puntualidad.'], function(){
+
+            Route::get('/index' , [PuntualidadController::class, 'index'])->name('index');
+            Route::get('/tablas/tb_index' , [PuntualidadController::class, 'tb_index'])->name('tablas.tb_index');
+
+
+            Route::get('/export_excel' , [PuntualidadController::class, 'export_excel'])->name('export_excel');
         });
 
     });

@@ -95,6 +95,10 @@
                     <a href="{{ route('indicador.ocupabilidad.index') }}" class="@if (Request::is('indicador/ocupabilidad/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Ocupabilidad</span></a>
                 </li>
 
+                <li class="@if (Request::is('indicador/puntualidad*')) mm-active @endif">
+                    <a href="{{ route('indicador.puntualidad.index') }}" class="@if (Request::is('indicador/puntualidad/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Puntualidad</span></a>
+                </li>
+
                 @role('Administrador|Especialista_TIC')
 
                 <li class="menu-label mt-0">PARAMETROS</li>
