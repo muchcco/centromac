@@ -17,6 +17,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.9.0/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.9.0/dist/sweetalert2.all.min.js"></script>
 
+    <link href="{{ asset('css/bootstrap.min.css')}}" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">  
+    {{-- preoad button --}}
+    <link rel="stylesheet" href="{{ asset('css/font-awesome.min.css')}}">
+    <link rel="stylesheet" href="{{ asset('css/sweetalert2.min.css')}}">
+    <script src="{{ asset('js/sweetalert2.all.min.js')}}"></script>
+
     <style>
       .raya{
         width: 100%;
