@@ -1,6 +1,7 @@
 /node_modules
 /public/hot
 /public/formato_archivo/felicitaciones
+/public/personal
 /public/storage
 /storage/*.key
 /vendor
