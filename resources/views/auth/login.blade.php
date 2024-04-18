@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intranet CENTROS MAC</title>
-    <link href="{{ asset('css/bootstrap/bootstrap.min.css')}}" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">    
+    <link href="{{ asset('css/bootstrap/bootstrap.min.css')}}" rel="stylesheet">    
     <script>
         function getRandomImage() {
             var images = [
@@ -20,7 +20,7 @@
         var randomImageUrl = '{{ asset('imagen/auth/') }}/' + getRandomImage();
         document.documentElement.style.setProperty('--random-image', 'url(' + randomImageUrl + ')');
     </script>
-    <script src="{{ asset('js/bootstrap/bootstrap.bundle.min.js')}}" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="{{ asset('js/bootstrap/bootstrap.bundle.min.js')}}" ></script>
     <style>
         #bod_comp {
             position: relative;
@@ -183,7 +183,7 @@
             </div>
             <div class="login-container">
                 <div class="img-login">
-                     <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/PCM-PCM.png" width="230"> 
+                     <img src="{{ asset('imagen/PCM-PCM.png')}}" width="230"> 
                     {{-- <img src="https://pbs.twimg.com/profile_images/1686603105033486336/nqiWn95n_200x200.jpg" width="100" > --}}
                 </div>
                 <form id="loginForm" class="login-form" method="POST" action="{{ route('login') }}">

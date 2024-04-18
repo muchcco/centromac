@@ -75,6 +75,10 @@
 
 <script src="{{ asset('js/toastr.min.js')}}"></script>
 
+
+<script src="{{ asset('js\tipify5\popper.js')}}"></script>
+<script src="{{ asset('js\tipify5\tippy.js')}}"></script>
+
 <script>
 $(document).ready(function() {
     $("#loading-ext").css("display", "none");
