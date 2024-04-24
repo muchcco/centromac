@@ -106,7 +106,7 @@ class FormFelicitacionesController extends Controller
             }
 
             $save = new FLibroFelicitacion;
-            $save->IDPER_REGISTRA = auth()->user()->id;
+            $save->IDPER_REGISTRA = auth()->user()->idpersonal;
             $save->IDCENTRO_MAC = $this->centro_mac()->idmac;
             $save->CORRELATVIO = $codpadron;
             $save->AÑO = Carbon::now()->format('Y');
