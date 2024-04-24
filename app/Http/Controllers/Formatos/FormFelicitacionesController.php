@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Models\FLibroFelicitacion;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
+use App\Exports\FelicitacionExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class FormFelicitacionesController extends Controller
 {
@@ -240,13 +242,33 @@ class FormFelicitacionesController extends Controller
 
     public function export_excel(Request $request)
     {
-        $query = FLibroFelicitacion::join('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'F_LIBRO_FELICITACIONES.IDPER_REGISTRA')
-                                    ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'F_LIBRO_FELICITACIONES.IDCENTRO_MAC')
-                                    ->get();
+        $query = FLibroFelicitacion::from('F_LIBRO_FELICITACIONES as FLF')->select(
+                                                'FLF.IDLIBRO_FELICITACION',
+                                                'FLF.CORRELATVIO',
+                                                'FLF.R_FECHA',
+                                                'MCM.NOMBRE_MAC',
+                                                \DB::raw('MPR.NOMBRE AS NOM_REGISTRA'),
+                                                \DB::raw('CONCAT(FLF.R_NOMBRE, \', \', FLF.R_APE_PAT, \' \', FLF.R_APE_MAT) AS NOMBREU'),
+                                                \DB::raw('CONCAT(DPT.TIPODOC_ABREV, \' - \', FLF.R_NUM_DOC) AS DOCUMENTO'),
+                                                'FLF.R_DESCRIPCION',
+                                                'ME.ABREV_ENTIDAD',
+                                                \DB::raw('CONCAT(MP.NOMBRE, \', \', MP.APE_PAT, \' \', MP.APE_MAT) AS ASESOR'),
+                                                'FLF.R_ARCHIVO_RUT',
+                                                'FLF.R_ARCHIVO_NOM',
+                                                'FLF.AÑO',
+                                            )
+                                        ->leftJoin('M_PERSONAL AS MP', 'MP.IDPERSONAL', '=', 'FLF.IDPERSONAL')
+                                        ->leftJoin('M_PERSONAL AS MPR', 'MPR.IDPERSONAL', '=', 'FLF.IDPER_REGISTRA')
+                                        ->leftJoin('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'FLF.IDCENTRO_MAC')
+                                        ->leftJoin('D_PERSONAL_TIPODOC AS DPT', 'DPT.IDTIPO_DOC', '=', 'FLF.IDTIPO_DOC')
+                                        ->leftJoin('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'FLF.IDENTIDAD')
+                                        ->where('FLF.FLAG', 1)
+                                        ->orderBy('FLF.CORRELATVIO', 'desc')
+                                        ->get();
 
         $name_mac = $this->centro_mac()->name_mac;
 
-        $export = Excel::download(new IndicadorPuntualidadExport($query, $name_mac), 'FORMATO LIBRO DE FELICITACIONES  CENTRO MAC - '.$this->centro_mac()->name_mac.' _'.$fecha_año.' - '.$nombre_mes.'.xlsx');
+        $export = Excel::download(new FelicitacionExport($query, $name_mac), 'FORMATO LIBRO DE FELICITACIONES  CENTRO MAC - '.$this->centro_mac()->name_mac.'.xlsx');
 
         return $export;
 
