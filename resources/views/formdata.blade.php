@@ -836,6 +836,7 @@
 
 @section('ext-script')
 
+<script src="{{ asset('js/form.js') }}"></script>
 
 <script>
 

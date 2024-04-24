@@ -237,4 +237,18 @@ class FormFelicitacionesController extends Controller
         return response()->json(['data'=>$del],200);
         
     }
+
+    public function export_excel(Request $request)
+    {
+        $query = FLibroFelicitacion::join('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'F_LIBRO_FELICITACIONES.IDPER_REGISTRA')
+                                    ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'F_LIBRO_FELICITACIONES.IDCENTRO_MAC')
+                                    ->get();
+
+        $name_mac = $this->centro_mac()->name_mac;
+
+        $export = Excel::download(new IndicadorPuntualidadExport($query, $name_mac), 'FORMATO LIBRO DE FELICITACIONES  CENTRO MAC - '.$this->centro_mac()->name_mac.' _'.$fecha_año.' - '.$nombre_mes.'.xlsx');
+
+        return $export;
+
+    }
 }

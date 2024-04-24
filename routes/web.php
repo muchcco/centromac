@@ -231,6 +231,8 @@ Route::group(['middleware' => ['auth']], function () {
             Route::post('/update' , [FormFelicitacionesController::class, 'update'])->name('update');
             Route::post('/eliminar_archivo' , [FormFelicitacionesController::class, 'eliminar_archivo'])->name('eliminar_archivo');
             Route::post('/delete' , [FormFelicitacionesController::class, 'delete'])->name('delete');
+
+            Route::get('/export_excel' , [FormFelicitacionesController::class, 'export_excel'])->name('export_excel');
         });
 
     });

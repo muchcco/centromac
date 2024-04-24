@@ -52,22 +52,20 @@
                     </h4>
                 </div><!--end card-header-->
                 <div class="card-body">
-                    {{-- <div class="alert custom-alert custom-alert-warning icon-custom-alert shadow-sm fade show d-flex justify-content-between" role="alert">  
-                        <div class="media">
-                            <i class="la la-exclamation-triangle alert-icon text-warning align-self-center font-30 me-3"></i>
-                            <div class="media-body align-self-center">
-                                <h5 class="mb-1 fw-bold mt-0">Importante</h5>
-                                <span>Para una mejor visualización, seleccionar un rango de fechas no mayor a 6 días</span>
-                            </div>
-                        </div>                                   --}}
-                        {{-- <button type="button" class="btn-close align-self-center" data-bs-dismiss="alert" aria-label="Close"></button> --}}
-                    {{-- </div> --}}
+                    
                     <div class="row mb-2">
                         <div class="col-12 ">
-                            <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal" onclick="btnAddFelicitacion()"><i class="fa fa-plus" aria-hidden="true"></i>
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal" onclick="btnAddFelicitacion()"><i class="fa fa-plus" aria-hidden="true"></i>
                                 Agregar Felicitación</button> 
+
+                            <button type="button" class="btn btn-success" id="filtro" onclick="exec_data_excel()">
+                                <i class="fa fa-file-excel-o" aria-hidden="true"></i>
+                                Exportar
+                            </button>
                         </div>
                     </div>
+                    
+                    
                     <div class="row">
                         <div class="col-12">
                             <div class="table-responsive">
@@ -332,6 +330,25 @@ function btnElimnarFelicitacion(idfelicitacion){
 
     })
 }
+
+/****************************************************************************** EXCEL ************************************************************************/
+
+function exec_data_excel(){
+
+    // Definimos la vista dende se enviara
+    var link_up = "{{ route('formatos.f_felicitaciones.export_excel') }}";
+
+    // Crear la URL con las variables como parámetros de consulta
+    var href = link_up;
+
+    console.log(href);
+
+    var blank = "_blank";
+
+    window.open(href);
+
+}
+
 
 </script>
 
