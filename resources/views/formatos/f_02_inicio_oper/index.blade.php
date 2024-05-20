@@ -90,7 +90,7 @@
 
                     <div class="col-md-3 border-end">
                         <h5>Ir al formulario </h5>
-                        @role('Supervisor')
+                        @role('Supervisor|Coordinador|Especialista TIC')
                             <div class="form-group col-12">
                                 @php
                                     $fecha6dias = date("d-m-Y",strtotime(now()));

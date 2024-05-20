@@ -166,7 +166,7 @@
             <tr style="border: 1px solid black; color: #fff;">
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">N°</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Entidad</th>
-                <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">DATOS DEL COLABORADOR<br />(NOMBRES Y APELLIDOS)</th>
+                <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">DATOS DEL COLABORADOR<br />(APELLIDOS Y NOMBRES)</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Cargo / Asesor(a)</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">DNI</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Fecha</th>
