@@ -34,6 +34,9 @@ use App\Http\Controllers\Dashboard\PanelInicioController;
 use App\Http\Controllers\ExternoController;
 use App\Http\Controllers\Indicador\OcupabilidadController;
 use App\Http\Controllers\Indicador\PuntualidadController;
+use App\Http\Controllers\AuthController;
+
+
 
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -89,6 +92,12 @@ Route::prefix('mobile/')->as('mobile.')->group( function () {
 Route::get('/login_verificacion/get/' , [PagesController::class, 'login_verificacion'])->name('login_verificacion.get');
 
 Auth::routes();
+
+Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::get('login', [AuthController::class, 'login']);
+Route::get('authenticate', [AuthController::class, 'authenticateWithToken']);
+
+
 
 /**************************************************************** CUMPLEAÑOS *******************************************************************/
 
