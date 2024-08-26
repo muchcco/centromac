@@ -16,7 +16,11 @@
         @foreach ($query as $i =>$que)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td>{{ $que->NOMBREU }}</td>
+                <td>
+                    <span class="{{ $que->NOMBREU ? '' : 'text-danger' }}">
+                        {{ $que->NOMBREU ?? 'Datos incompletos' }}
+                    </span>
+                </td>
                 <td>{{ $que->TIPODOC_ABREV }} - {{ $que->NUM_DOC }}</td>
                 <td>{{ $que->ABREV_ENTIDAD }}</td>
                 <td>{{ $que->NOMBRE_MAC }}</td>                
