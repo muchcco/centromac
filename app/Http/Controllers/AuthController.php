@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\UserJwt;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -15,10 +17,12 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $credentials = $request->only('name', 'password');
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
+        $user = UserJwt::where('name', $credentials['name'])->first();
+
+        if ($user && Hash::check($credentials['password'], $user->password)) {
+            Auth::login($user);
             $token = $user->createToken('Personal Access Token')->accessToken;
 
             return redirect('/'); 
