@@ -8,9 +8,25 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Mac;
 use Carbon\Carbon;
 use App\Models\Entidad;
+use App\Models\User;
 
 class ConfiguracionController extends Controller
 {
+    private function centro_mac(){
+        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
+        /*================================================================================================================*/
+        $us_id = auth()->user()->idcentro_mac;
+        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+
+        $idmac = $user->IDCENTRO_MAC;
+        $name_mac = $user->NOMBRE_MAC;
+        /*================================================================================================================*/
+
+        $resp = ['idmac'=>$idmac, 'name_mac'=>$name_mac ];
+
+        return (object) $resp;
+    }
+
     public function nuevo_mac()
     {
         return view('configuracion.nuevo_mac');
@@ -23,6 +39,11 @@ class ConfiguracionController extends Controller
                                 ->leftJoin('PROVINCIA as P', 'D.PROVINCIA_ID', '=', 'P.IDPROVINCIA')
                                 ->leftJoin('DEPARTAMENTO as DEP', 'D.DEPARTAMENTO_ID', '=', 'DEP.IDDEPARTAMENTO')
                                 ->select('M_CENTRO_MAC.*', 'D.*', 'P.*', 'DEP.*')
+                                ->where(function($query) {
+                                    if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                                        $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                                    }
+                                })  
                                 ->where('FLAG', 1)
                                 ->get();
 

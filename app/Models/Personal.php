@@ -70,4 +70,9 @@ class Personal extends Model
     {
         return $this->hasMany(Asistencia::class, 'NUM_DOC', 'NUM_DOC');
     }
+
+    public function modulo()
+    {
+        return $this->belongsTo(Modulo::class, 'IDMODULO', 'IDMODULO');
+    }
 }

@@ -128,17 +128,32 @@
                     </li>
                 @endif
 
+                @if ($ocupablidad_k->VALOR == '1')
                 <li class="menu-label mt-0">INDICADORES</li>
 
-                @if ($ocupablidad_k->VALOR == '1')
-                    <li class="@if (Request::is('indicador/ocupabilidad*')) mm-active @endif">
-                        <a href="{{ route('indicador.ocupabilidad.index') }}" class="@if (Request::is('indicador/ocupabilidad/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Ocupabilidad</span></a>
+                
+                    <li class="@if (Request::is('feriado*')) mm-active @endif">
+                        <a href="{{ route('feriados.index') }}" class="@if (Request::is('feriado/index*')) active @endif">
+                            <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Feriado</span></a>
                     </li>
-                @endif
-
-                @if ($puntualida_k->VALOR == '1')
-                    <li class="@if (Request::is('indicador/puntualidad*')) mm-active @endif">
-                        <a href="{{ route('indicador.puntualidad.index') }}" class="@if (Request::is('indicador/puntualidad/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Puntualidad</span></a>
+                    <li class="@if (Request::is('modulos*')) mm-active @endif">
+                        <a href="{{ route('modulos.index') }}" class="@if (Request::is('modulos/index*')) active @endif">
+                            <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Modulo</span></a>
+                    </li>
+                    <li class="@if (Request::is('ocupabilidad*')) mm-active @endif">
+                        <a href="{{ route('ocupabilidad.index') }}" class="@if (Request::is('ocupabilidad/index*')) active @endif">
+                            <i data-feather="bar-chart-2" class="align-self-center menu-icon"></i><span>Ocupabilidad</span>
+                        </a>
+                    </li>
+                    <li class="@if (Request::is('puntualidad*')) mm-active @endif">
+                        <a href="{{ route('puntualidad.index') }}" class="@if (Request::is('puntualidad/index*')) active @endif">
+                            <i data-feather="clock" class="align-self-center menu-icon"></i><span>Puntualidad</span>
+                        </a>
+                    </li>
+                    <li class="@if (Request::is('itinerante*')) mm-active @endif">
+                        <a href="{{ route('itinerante.index') }}" class="@if (Request::is('itinerante/index*')) active @endif">
+                            <i data-feather="map-pin" class="align-self-center menu-icon"></i><span>Itinerante</span>
+                        </a>
                     </li>
                 @endif
 
@@ -170,6 +185,8 @@
                             </ul>
                         </li>
                     @endif
+                @endrole
+                @role('Administrador')
 
                     <hr class="hr-dashed hr-menu">
                     <!--Nombre de la Categoria-->
@@ -179,7 +196,8 @@
                             <a href="{{ route('usuarios.index') }}"><i data-feather="box" class="align-self-center menu-icon"></i><span>Usuarios</span></a>
                         </li>
                     @endif
-
+                @endrole
+                @role('Administrador|Especialista TIC')
 
                     <hr class="hr-dashed hr-menu">
                     <!--Nombre de la Categoria-->

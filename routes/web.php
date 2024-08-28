@@ -32,10 +32,16 @@ use App\Http\Controllers\Formatos\FormFelicitacionesController;
 use App\Http\Controllers\Administrador\ConfiguracionController;
 use App\Http\Controllers\Dashboard\PanelInicioController;
 use App\Http\Controllers\ExternoController;
-use App\Http\Controllers\Indicador\OcupabilidadController;
-use App\Http\Controllers\Indicador\PuntualidadController;
+// use App\Http\Controllers\Indicador\OcupabilidadController;
+// use App\Http\Controllers\Indicador\PuntualidadController;
 use App\Http\Controllers\AuthController;
 
+use App\Http\Controllers\Modulo\PuntualidadController;
+use App\Http\Controllers\Modulo\FeriadoController;
+use App\Http\Controllers\Modulo\ModuloController;
+use App\Http\Controllers\Modulo\OcupabilidadController;
+use App\Http\Controllers\Modulo\ItineranteController;
+use App\Models\Itinerante;
 
 
 
@@ -209,6 +215,58 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/export_serv_entidad' , [ServiciosController::class, 'export_serv_entidad'])->name('export_serv_entidad');
     });
 
+    /******************************************************   FERIADO ************************************************************************/
+
+    // Rutas para la gestión de feriados
+    Route::group(['prefix' => 'feriados', 'as' => 'feriados.'], function () {
+        Route::get('/index', [FeriadoController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [FeriadoController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_feriado', [FeriadoController::class, 'create'])->name('modals.md_add_feriado');
+        Route::post('/modals/md_edit_feriado', [FeriadoController::class, 'edit'])->name('modals.md_edit_feriado');
+        Route::post('/store_feriado', [FeriadoController::class, 'store'])->name('store_feriado');
+        Route::post('/update_feriado', [FeriadoController::class, 'update'])->name('update_feriado');
+        Route::post('/delete_feriado', [FeriadoController::class, 'destroy'])->name('delete_feriado');
+    });
+     /******************************************************   ITINERANTE ************************************************************************/
+
+    // Rutas para la gestión de Itinerante
+    Route::group(['prefix' => 'itinerante', 'as' => 'itinerante.'], function () {
+        Route::get('/index', [ItineranteController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [ItineranteController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_itinerante', [ItineranteController::class, 'create'])->name('modals.md_add_itinerante');
+        Route::post('/modals/md_edit_itinerante', [ItineranteController::class, 'edit'])->name('modals.md_edit_itinerante');
+        Route::post('/store_itinerante', [ItineranteController::class, 'store'])->name('store_itinerante');
+        Route::post('/update_itinerante', [ItineranteController::class, 'update'])->name('update_itinerante');
+        Route::post('/delete_itinerante', [ItineranteController::class, 'destroy'])->name('delete_itinerante');
+    });
+    /******************************************************   OCUPABILIDAD ************************************************************************/
+
+    Route::group(['prefix' => 'ocupabilidad', 'as' => 'ocupabilidad.'], function () {
+        Route::get('/index', [OcupabilidadController::class, 'index'])->name('index');
+    
+        Route::get('/tablas/tb_index', [OcupabilidadController::class, 'tb_index'])->name('tablas.tb_index');
+    });
+    /******************************************************   PUNTUALIDAD ************************************************************************/
+
+    Route::group(['prefix' => 'puntualidad', 'as' => 'puntualidad.'], function () {
+        Route::get('/index', [PuntualidadController::class, 'index'])->name('index');
+    
+        Route::get('/tablas/tb_index', [PuntualidadController::class, 'tb_index'])->name('tablas.tb_index');
+    });
+
+    /******************************************************   MODULO ************************************************************************/
+
+    // Rutas para la gestión de modulos
+    Route::group(['prefix' => 'modulos', 'as' => 'modulos.'], function () {
+        Route::get('/index', [ModuloController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [ModuloController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_modulo', [ModuloController::class, 'create'])->name('modals.md_add_modulo');
+        Route::post('/modals/md_edit_modulo', [ModuloController::class, 'edit'])->name('modals.md_edit_modulo');
+        Route::post('/store_modulo', [ModuloController::class, 'store'])->name('store_modulo');
+        Route::post('/update_modulo', [ModuloController::class, 'update'])->name('update_modulo');
+        Route::post('/delete_modulo', [ModuloController::class, 'destroy'])->name('delete_modulo');
+    });
+
     /******************************************************   FORMATOS *****************************************************************************/
     
     Route::group(['prefix'=>'formatos','as'=>'formatos.' ],function () {
@@ -248,27 +306,27 @@ Route::group(['middleware' => ['auth']], function () {
 
     /******************************************************   INDICADORES *****************************************************************************/
 
-    Route::group(['prefix'=>'indicador','as'=>'indicador.' ],function () {
+    // Route::group(['prefix'=>'indicador','as'=>'indicador.' ],function () {
         
-        Route::group(['prefix' => 'ocupabilidad', 'as' => 'ocupabilidad.'], function(){
+    //     Route::group(['prefix' => 'ocupabilidad', 'as' => 'ocupabilidad.'], function(){
 
-            Route::get('/index' , [OcupabilidadController::class, 'index'])->name('index');
-            Route::get('/tablas/tb_index' , [OcupabilidadController::class, 'tb_index'])->name('tablas.tb_index');
-
-
-            Route::get('/export_excel' , [OcupabilidadController::class, 'export_excel'])->name('export_excel');
-        });
-
-        Route::group(['prefix' => 'puntualidad', 'as' => 'puntualidad.'], function(){
-
-            Route::get('/index' , [PuntualidadController::class, 'index'])->name('index');
-            Route::get('/tablas/tb_index' , [PuntualidadController::class, 'tb_index'])->name('tablas.tb_index');
+    //         Route::get('/index' , [OcupabilidadController::class, 'index'])->name('index');
+    //         Route::get('/tablas/tb_index' , [OcupabilidadController::class, 'tb_index'])->name('tablas.tb_index');
 
 
-            Route::get('/export_excel' , [PuntualidadController::class, 'export_excel'])->name('export_excel');
-        });
+    //         Route::get('/export_excel' , [OcupabilidadController::class, 'export_excel'])->name('export_excel');
+    //     });
 
-    });
+    //     Route::group(['prefix' => 'puntualidad', 'as' => 'puntualidad.'], function(){
+
+    //         Route::get('/index' , [PuntualidadController::class, 'index'])->name('index');
+    //         Route::get('/tablas/tb_index' , [PuntualidadController::class, 'tb_index'])->name('tablas.tb_index');
+
+
+    //         Route::get('/export_excel' , [PuntualidadController::class, 'export_excel'])->name('export_excel');
+    //     });
+
+    // });
 
     /******************************************************   DASHBORAD ***************************************************************************/
 
