@@ -34,19 +34,7 @@
                     <div class="col-9">
                         <input type="text" class="form-control" name="ap_mat" id="ap_mat" placeholder="Apellido Materno" onkeyup="isMayus(this)">
                     </div>
-                </div>                
-                <div class="row mb-3">
-                    <label  class="col-3 col-form-label">Correo</label>
-                    <div class="col-9">
-                        <input type="text" class="form-control" name="correo" id="correo" placeholder="Correo" >
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <label  class="col-3 col-form-label">Fecha de nacimiento</label>
-                    <div class="col-9">
-                        <input type="date" class="form-control" name="fech_nac" id="fech_nac" >
-                    </div>
-                </div>
+                </div>    
                 <div class="row mb-3">
                     <label  class="col-3 col-form-label">Entidad</label>
                     <div class="col-9">
@@ -61,18 +49,16 @@
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <label  class="col-3 col-form-label">Sexo</label>
+                    <label  class="col-3 col-form-label">Módulo</label>
                     <div class="col-9">
-                        <select id="sexo" name="sexo" class="form-control">
-                            <option value="0">Mujer</option>
-                            <option value="1">Hombre</option>
+                        <select id="modulos" name="modulos" class="form-control">
+                            <option disabled selected>-- Seleccione una opción --</option>
+                            @forelse ($modulos as $modulo)
+                                <option value="{{ $modulo->IDMODULO }}">{{ $modulo->N_MODULO }}</option>                                
+                            @empty
+                                <option value="">No hay datos registrados</option>
+                            @endforelse
                         </select>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <label  class="col-3 col-form-label">Teléfono</label>
-                    <div class="col-9">
-                        <input type="text" class="form-control" name="telefono" id="telefono" placeholder="Teléfono" onkeypress="return isNumber(event)">
                     </div>
                 </div>  
             </form>

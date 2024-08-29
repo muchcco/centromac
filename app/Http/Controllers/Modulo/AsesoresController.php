@@ -117,13 +117,20 @@ class AsesoresController extends Controller
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
+        $modulos = DB::table('db_centros_mac.M_MODULO')
+                                ->join('db_centros_mac.M_ENTIDAD', 'db_centros_mac.M_ENTIDAD.IDENTIDAD', '=', 'db_centros_mac.M_MODULO.IDENTIDAD')
+                                ->join('db_centros_mac.M_CENTRO_MAC', 'db_centros_mac.M_CENTRO_MAC.IDCENTRO_MAC', '=', 'db_centros_mac.M_MODULO.IDCENTRO_MAC')
+                                ->where('db_centros_mac.M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                                ->orderBy('db_centros_mac.M_MODULO.N_MODULO','ASC')
+                                ->get(); 
+
         $entidad = DB::table('M_MAC_ENTIDAD')
                             ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
                             ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
                             ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idmac)
                             ->get();
 
-        $view = view('personal.modals.md_add_asesores', compact('entidad'))->render();
+        $view = view('personal.modals.md_add_asesores', compact('entidad', 'modulos'))->render();
 
         return response()->json(['html' => $view]); 
     }
@@ -163,14 +170,14 @@ class AsesoresController extends Controller
 
     public function store_asesores(Request $request)
     {
-        try{
+        try{            
             $validated = $request->validate([
                 'nombre' => 'required',
                 'ap_pat' => 'required',
                 'ap_mat' => 'required',
                 'dni' => 'required',
                 'entidad' => 'required',
-                'sexo' => 'required',
+                'modulos' => 'required',
             ]);
 
             $persona_existe = Personal::where('NUM_DOC', $request->dni)->first();
@@ -201,12 +208,9 @@ class AsesoresController extends Controller
             $save->APE_MAT = $request->ap_mat;
             $save->NUM_DOC = $request->dni;
             $save->IDENTIDAD = $request->entidad;
-            $save->SEXO = $request->sexo;
-            $save->CORREO = $request->correo;
             $save->IDMAC = $idmac;
             $save->IDTIPO_DOC = 1;
-            $save->FECH_NACIMIENTO = $request->fech_nac;
-            $save->CELULAR = $request->telefono;
+            $save->IDMODULO = $request->modulos;
             $save->save();
 
             //$per = new Personalinter;

@@ -163,25 +163,15 @@ if ($('#dni').val() == null || $('#dni').val() == '') {
 } else {
     $('#dni').removeClass("hasError");
 }
-if ($('#correo').val() == null || $('#correo').val() == '') {
-    $('#correo').addClass("hasError");
-} else {
-    $('#correo').removeClass("hasError");
-} 
 if ($('#entidad').val() == null || $('#entidad').val() == '') {
     $('#entidad').addClass("hasError");
 } else {
     $('#entidad').removeClass("hasError");
 } 
-if ($('#sexo').val() == null || $('#sexo').val() == '') {
-    $('#sexo').addClass("hasError");
+if ($('#modulos').val() == null || $('#modulos').val() == '') {
+    $('#modulos').addClass("hasError");
 } else {
-    $('#sexo').removeClass("hasError");
-} 
-if ($('#telefono').val() == null || $('#telefono').val() == '') {
-    $('#telefono').addClass("hasError");
-} else {
-    $('#telefono').removeClass("hasError");
+    $('#modulos').removeClass("hasError");
 } 
     
 var formData = new FormData();
@@ -190,10 +180,7 @@ formData.append("ap_pat", $("#ap_pat").val());
 formData.append("ap_mat", $("#ap_mat").val());
 formData.append("dni", $("#dni").val());
 formData.append("entidad", $("#entidad").val());
-formData.append("sexo", $("#sexo").val());
-formData.append("fech_nac", $("#fech_nac").val());
-formData.append("correo", $("#correo").val());
-formData.append("telefono", $("#telefono").val());
+formData.append("modulos", $("#modulos").val());
 formData.append("_token", $("input[name=_token]").val());
 
 $.ajax({
