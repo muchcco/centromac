@@ -45,7 +45,7 @@
                     @endif
                 </td>
                 <td>
-                    <a href="{{ route('formdata', $que->NUM_DOC) }}" class="nobtn bandejTool" data-tippy-content="Editar personal" target="_blank"><i class="las la-pen text-secondary font-16 text-success"></i></a>
+                    <a href="http://190.187.182.55:8081/external-mac/formdata?num_doc={{ $que->NUM_DOC }}" class="nobtn bandejTool" data-tippy-content="Editar personal" target="_blank"><i class="las la-pen text-secondary font-16 text-success"></i></a>
                     <button class="nobtn bandejTool" data-tippy-content="Dar de baja" onclick="btnElimnarServicio('{{ $que->IDPERSONAL }}' )"><i class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
                 </td>
             </tr>
