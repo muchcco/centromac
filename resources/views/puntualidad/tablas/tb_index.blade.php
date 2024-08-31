@@ -39,7 +39,7 @@
         @endforeach
     </tbody>
 </table>
-
+<!-- 
 <script>
     $(document).ready(function() {
         $('#table_puntualidad').DataTable({
@@ -62,3 +62,4 @@
         });
     });
 </script>
+ -->

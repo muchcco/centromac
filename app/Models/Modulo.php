@@ -32,14 +32,22 @@ class Modulo extends Model
     ];
 
     // Si tienes relaciones, asegúrate de configurarlas aquí
+  
     public function entidad()
-    {
-        return $this->belongsTo(Entidad::class, 'IDENTIDAD');
-    }
+{
+    return $this->belongsTo(Entidad::class, 'IDENTIDAD');
+}
 
     public function centroMac()
     {
         return $this->belongsTo(Mac::class, 'IDCENTRO_MAC');
     }
-        
+    public function personal()
+    {
+        return $this->hasMany(Personal::class, 'IDMODULO');
+    }
+    public function itinerantes()
+    {
+        return $this->hasMany(Itinerante::class, 'IDMODULO');
+    }
 }

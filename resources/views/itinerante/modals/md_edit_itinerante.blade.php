@@ -7,6 +7,7 @@
         <div class="modal-body">
             <form class="form-horizontal">
                 <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="id_itinerante" id="id_itinerante" value="{{ $itinerante->id }}" /> <!-- Agregado -->
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Centro MAC</label>
                     <div class="col-9">

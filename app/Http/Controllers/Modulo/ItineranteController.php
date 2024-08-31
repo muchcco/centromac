@@ -8,13 +8,15 @@ use App\Models\Itinerante;
 use App\Models\MAC;
 use App\Models\Personal;
 use App\Models\Modulo;
+use App\Models\Feriado;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ItineranteController extends Controller
 {
-    private function centro_mac(){
+    private function centro_mac()
+    {
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
@@ -24,7 +26,7 @@ class ItineranteController extends Controller
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
-        $resp = ['idmac'=>$idmac, 'name_mac'=>$name_mac ];
+        $resp = ['idmac' => $idmac, 'name_mac' => $name_mac];
 
         return (object) $resp;
     }
@@ -40,12 +42,12 @@ class ItineranteController extends Controller
     public function tb_index()
     {
         $itinerantes = Itinerante::with('centroMac', 'personal', 'modulo')
-                        ->where(function($query) {
-                            if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                                $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                            }
-                        })
-                        ->get();
+            ->where(function ($query) {
+                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                    $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                }
+            })
+            ->get();
         return view('itinerante.tablas.tb_index', compact('itinerantes'));
     }
 
@@ -63,7 +65,7 @@ class ItineranteController extends Controller
                 $personales = Personal::where('IDMAC', $this->centro_mac()->idmac)->get();
 
                 $modulos = Modulo::where('IDCENTRO_MAC', $this->centro_mac()->idmac)->get();
-            } else{
+            } else {
                 $centros = Mac::all();
                 $personales = Personal::all();
                 $modulos = Modulo::all();
@@ -124,86 +126,92 @@ class ItineranteController extends Controller
     public function edit(Request $request)
     {
         try {
-
-            $itinerante = Itinerante::where('IDCENTRO_MAC', $request->IDCENTRO_MAC)
-                ->where('NUM_DOC', $request->NUM_DOC)
-                ->where('IDMODULO', $request->IDMODULO)
-                ->first();
-
-            // dd($request->all());
+            // Buscar el itinerante por su ID
+            $itinerante = Itinerante::where('id_itinerante', $request->id_itinerante)->first();
 
             if (!$itinerante) {
                 return response()->json(['error' => 'Itinerante no encontrado'], 404);
             }
 
-            if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                $centros = Mac::where('IDCENTRO_MAC', $this->centro_mac()->idmac)->get();
-
-                $personales = Personal::where('IDMAC', $this->centro_mac()->idmac)->get();
-
-                $modulos = Modulo::where('IDCENTRO_MAC', $this->centro_mac()->idmac)->get();
-            } else{
-                $centros = Mac::all();
-                $personales = Personal::all();
-                $modulos = Modulo::all();
-            }
-
-            $view = view('itinerante.modals.md_edit_itinerante', compact('itinerante', 'centros', 'personales', 'modulos'))->render();
+            // Renderizar la vista con los datos del itinerante
+            $view = view('itinerantes.modals.md_edit_itinerante', compact('itinerante'))->render();
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-   // Método para actualizar un itinerante
-   public function update(Request $request)
-   {
-       // Validación de los datos de entrada
-       $request->validate([
-           'IDCENTRO_MAC' => 'required|exists:centros,IDCENTRO_MAC',
-           'NUM_DOC' => 'required|exists:personal,NUM_DOC',
-           'IDMODULO' => 'required|exists:modulos,IDMODULO',
-           'fechainicio' => 'required|date',
-           'fechafin' => 'required|date|after_or_equal:fechainicio',
-       ]);
+    // Método para actualizar un itinerante
+    public function update(Request $request)
+    {
+        // Validar los datos recibidos en la solicitud
+        $validator = Validator::make($request->all(), [
+            'id_itinerante' => 'required|integer|exists:itinerantes,id', // Validación para id_itinerante
+            'NUM_DOC' => 'required|string|max:255',
+            'IDMODULO' => 'required|integer|exists:m_modulo,IDMODULO',
+            'fechainicio' => 'required|date',
+            'fechafin' => 'required|date|after_or_equal:fechainicio',
+            'IDCENTRO_MAC' => 'required|integer|exists:m_centro_mac,IDCENTRO_MAC',
+        ]);
 
-       try {
-           // Buscar el itinerante por su identificador
-           $itinerante = Itinerante::find($request->id_itinerante);
-           if (!$itinerante) {
-               return response()->json(['message' => 'Itinerante no encontrado'], 404);
-           }
+        if ($validator->fails()) {
+            return response()->json([
+                'data' => null,
+                'message' => $validator->errors(),
+                'status' => 422
+            ], 422);
+        }
 
-           // Actualizar los campos del itinerante
-           $itinerante->IDCENTRO_MAC = $request->IDCENTRO_MAC;
-           $itinerante->NUM_DOC = $request->NUM_DOC;
-           $itinerante->IDMODULO = $request->IDMODULO;
-           $itinerante->fechainicio = $request->fechainicio;
-           $itinerante->fechafin = $request->fechafin;
-           $itinerante->save();
+        try {
+            // Buscar el itinerante por ID
+            $itinerante = Itinerante::find($request->id_itinerante);
 
-           return response()->json(['message' => 'Itinerante actualizado exitosamente'], 200);
-       } catch (\Exception $e) {
-           return response()->json(['error' => 'Error al actualizar el itinerante: ' . $e->getMessage()], 400);
-       }
-   }
+            if (!$itinerante) {
+                return response()->json(['error' => 'Itinerante no encontrado'], 404);
+            }
+
+            // Actualizar el itinerante
+            $itinerante->IDMODULO = $request->IDMODULO;
+            $itinerante->NUM_DOC = $request->NUM_DOC;
+            $itinerante->fechainicio = $request->fechainicio;
+            $itinerante->fechafin = $request->fechafin;
+            $itinerante->IDCENTRO_MAC = $request->IDCENTRO_MAC;
+            $itinerante->save();
+
+            return response()->json([
+                'data' => $itinerante,
+                'message' => 'Itinerante actualizado exitosamente',
+                'status' => 200
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'Error al procesar la solicitud',
+                'status' => 400
+            ], 400);
+        }
+    }
+
     // Método para eliminar un itinerante
     public function destroy(Request $request)
     {
+        // Iniciar una transacción para asegurar la integridad de la operación
         DB::beginTransaction();
 
         try {
-            $itinerante = Itinerante::where('IDCENTRO_MAC', $request->IDCENTRO_MAC)
-                ->where('NUM_DOC', $request->NUM_DOC)
-                ->where('IDMODULO', $request->IDMODULO)
-                ->firstOrFail();
+            // Encontrar el itinerante utilizando Eloquent para mayor seguridad
+            $itinerante = Itinerante::findOrFail($request->id);
 
+            // Eliminar el itinerante
             $itinerante->delete();
 
+            // Confirmar la transacción si todo ha ido bien
             DB::commit();
 
             return response()->json(['message' => 'Itinerante eliminado exitosamente'], 200);
         } catch (\Exception $e) {
+            // Revertir la transacción en caso de error
             DB::rollback();
 
             return response()->json(['error' => $e->getMessage()], 400);
