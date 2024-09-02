@@ -43,7 +43,7 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="mb-3">Mes:</label>
-                            <select name="mes" id="mes" class="form-control">
+                            <select name="mes" id="mes" class="form-control" onchange="SearchMes()">
                                 <option value="" disabled selected>-- Seleccione una opción --</option>
                                 <option value="01">Enero</option>
                                 <option value="02">Febrero</option>
@@ -63,7 +63,7 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="mb-3">Año:</label>
-                            <select name="año" id="año" class="form-control select2 año"></select>
+                            <select name="año" id="año" class="form-control select2 año" onchange="SearchAño()"></select>
                         </div>
                     </div><!-- end col -->
                     <div class="col-md-4">
@@ -167,11 +167,23 @@ $(document).ready(function() {
     });
 });
 
-function tabla_seccion() {
+function SearchMes(){
+    var mes = $('#mes').val();
+    var año = $('#año').val();
+    tabla_seccion(mes, año);
+}
+
+function SearchAño(){
+    var mes = $('#mes').val();
+    var año = $('#año').val();
+    tabla_seccion(mes, año);
+}
+
+function tabla_seccion(mes = '0'+ mesSelect.selectedIndex, año = new Date().getFullYear()) {
     $.ajax({
         type: 'GET',
         url: "{{ route('asistencia.tablas.tb_det_entidad') }}", // Ruta que devuelve la vista en HTML
-        data: {},
+        data: {mes: mes, año: año},
         beforeSend: function () {
             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
         },

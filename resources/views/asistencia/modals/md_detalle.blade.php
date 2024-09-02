@@ -19,10 +19,10 @@
                 @forelse ($query as $i => $q)
                     <tr>
                         <td>{{ $i + 1 }}</td>
-                        <td>{{ $q->hora1 }}</td>
-                        <td>{{ $q->hora2 }}</td>
-                        <td>{{ $q->hora3 }}</td>
-                        <td>{{ $q->hora4 }}</td>
+                        <td>{{ $q->HORA_1 }}</td>
+                        <td>{{ $q->HORA_2 }}</td>
+                        <td>{{ $q->HORA_3 }}</td>
+                        <td>{{ $q->HORA_4 }}</td>
                     </tr>
                 @empty
                     <tr>

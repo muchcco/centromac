@@ -86,7 +86,12 @@ class AsistenciaController extends Controller
                                     $que->where('MP.IDENTIDAD', $request->entidad);
                                 }
                             })
-                            ->where('MA.IDCENTRO_MAC', $idmac)
+                            ->where(function($query) {
+                                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                                    $query->where('MA.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                                }
+                            })
+                            // ->where('MA.IDCENTRO_MAC', $idmac)
                             ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ABREV_ENTIDAD', 'MC.NOMBRE_MAC')
                             ->get();
         // // dd($datos);
@@ -145,11 +150,7 @@ class AsistenciaController extends Controller
         $fecha_ = $request->fecha_;
         $query = DB::select("SELECT FECHA,
                                 NUM_DOC,
-                                MAX(CASE WHEN CORRELATIVO = '1' THEN HORA ELSE NULL END) AS hora1,
-                                MAX(CASE WHEN CORRELATIVO = '2' THEN HORA ELSE NULL END) AS hora2,
-                                MAX(CASE WHEN CORRELATIVO = '3' THEN HORA ELSE NULL END) AS hora3,
-                                MAX(CASE WHEN CORRELATIVO = '4' THEN HORA ELSE NULL END) AS hora4,
-                                MAX(CASE WHEN CORRELATIVO = '5' THEN HORA ELSE NULL END) AS hora5
+                                GROUP_CONCAT(DATE_FORMAT(HORA, '%H:%i') ORDER BY HORA) AS HORAS
                             FROM
                             M_ASISTENCIA
                             WHERE FECHA = '$fecha_'
@@ -157,6 +158,33 @@ class AsistenciaController extends Controller
                             GROUP BY NUM_DOC;");
 
         // dd($query);
+
+        foreach ($query as $q) {
+            $horas = explode(',', $q->HORAS);
+            $num_horas = count($horas);
+            if ($num_horas == 1) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = null;
+                $q->HORA_3 = null;
+                $q->HORA_4 = null;
+            } elseif ($num_horas == 2) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = null;
+                $q->HORA_3 = null;
+                $q->HORA_4 = $horas[1];
+            } elseif ($num_horas == 3) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_3 = null;
+                $q->HORA_4 = $horas[2];
+            } elseif ($num_horas >= 4) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_3 = $horas[2];
+                $q->HORA_4 = $horas[3];
+            }
+        }
+
         $view = view('asistencia.modals.md_detalle', compact('query', 'fecha_'))->render();
 
         return response()->json(['html' => $view]); 
@@ -379,23 +407,50 @@ class AsistenciaController extends Controller
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
+        $mes = $request->input('mes', Carbon::now()->month);
+        $año = $request->input('año', Carbon::now()->year);
+
         $data = DB::table('M_PERSONAL')
+                        ->join('M_ASISTENCIA', 'M_ASISTENCIA.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
                         ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
-                        ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
-                        ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
+                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASISTENCIA.IDCENTRO_MAC')
+                        ->select(
+                            'M_ENTIDAD.IDENTIDAD', 
+                            'M_ENTIDAD.NOMBRE_ENTIDAD', 
+                            'M_CENTRO_MAC.IDCENTRO_MAC', 
+                            DB::raw('COUNT(M_PERSONAL.IDPERSONAL) AS COUNT_PER')
+                        )
                         ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                        ->where('M_ASISTENCIA.MES', $mes)
+                        ->where('M_ASISTENCIA.AÑO', $año)
                         ->where('M_PERSONAL.FLAG', 1)
+                        ->groupBy(
+                            'M_PERSONAL.IDPERSONAL', 
+                            'M_ENTIDAD.NOMBRE_ENTIDAD', 
+                            'M_CENTRO_MAC.IDCENTRO_MAC'
+                        )
                         ->get();
 
         $data_spcm = DB::table('M_PERSONAL')
+                        ->join('M_ASISTENCIA', 'M_ASISTENCIA.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
                         ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
-                        ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
-                        ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
+                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASISTENCIA.IDCENTRO_MAC')
+                        ->select(
+                            'M_ENTIDAD.IDENTIDAD', 
+                            'M_ENTIDAD.NOMBRE_ENTIDAD', 
+                            'M_CENTRO_MAC.IDCENTRO_MAC', 
+                            DB::raw('COUNT(M_PERSONAL.IDPERSONAL) AS COUNT_PER')
+                        )
                         ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                        ->where('M_ASISTENCIA.MES', $mes)
+                        ->where('M_ASISTENCIA.AÑO', $año)
                         ->where('M_PERSONAL.FLAG', 1)
-                        ->whereNot('M_ENTIDAD.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
+                        ->groupBy(
+                            'M_PERSONAL.IDPERSONAL', 
+                            'M_ENTIDAD.NOMBRE_ENTIDAD', 
+                            'M_CENTRO_MAC.IDCENTRO_MAC'
+                        )
+                        ->whereNot('M_ENTIDAD.IDENTIDAD', 17) // Quitamos del registro a personal de PCM
                         ->get();
 
         return view('asistencia.tablas.tb_det_entidad', compact('data', 'data_spcm'));

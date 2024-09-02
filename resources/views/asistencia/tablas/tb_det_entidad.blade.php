@@ -50,8 +50,16 @@
                 <button class="nobtn text-dark bandejTool" data-tippy-content="Descargar en formato Excel" id="btn-dow-excel-group" onclick="BtnDowloadExcelGeneral()" ><i class="fa fa-download" aria-hidden="true"></i></button>
             </td>
             <td class="text-center">
-                <button class="nobtn text-dark bandejTool" disabled="true" data-tippy-content="Descargar en formato Excel de forma personalizada" data-toggle="modal" data-target="#large-Modal" onclick="btnExcelPersonalizado('')" ><i class="fa fa-download" aria-hidden="true"></i></button>
+                <button class="nobtn text-dark bandejTool"  data-tippy-content="En desarrollo" data-toggle="modal" data-target="#large-Modal" onclick="btnExcelPersonalizado('')"  style="cursor: no-drop;"><i class="fa fa-download" aria-hidden="true"></i></button>
             </td>
         </tr>
     </tbody>
 </table>
+
+
+<script>
+    tippy(".bandejTool", {
+        allowHTML: true,
+        followCursor: true,
+    });
+</script>
