@@ -10,10 +10,8 @@ class Itinerante extends Model
     use HasFactory;
 
     protected $table = 'm_itinerante';
-
-    protected $primaryKey = ['IDCENTRO_MAC', 'NUM_DOC', 'IDMODULO']; // Llave primaria compuesta
-
-    public $incrementing = false; // Deshabilitar incremento automático de la clave primaria
+    protected $primaryKey = 'ID'; // Define la clave primaria
+    public $timestamps = false;
 
     protected $fillable = [
         'IDCENTRO_MAC',
@@ -22,13 +20,14 @@ class Itinerante extends Model
         'fechainicio',
         'fechafin'
     ];
-
-    public $timestamps = false;
-
-    // Relación con el modelo CentroMAC
+    protected $dates = [
+        'fechainicio',
+        'fechafin'
+    ];
+    // Relación con el modelo CentroMac
     public function centroMac()
     {
-        return $this->belongsTo(Mac::class, 'IDCENTRO_MAC', 'IDCENTRO_MAC');
+        return $this->belongsTo(MAC::class, 'IDCENTRO_MAC', 'IDCENTRO_MAC');
     }
 
     // Relación con el modelo Personal

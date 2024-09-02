@@ -50,7 +50,7 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Fecha de Inicio</label>
                     <div class="col-9">
-                        <input type="date" class="form-control" name="fechainicio" id="fechainicio">
+                        <input type="date" class="form-control" name="FECHAINICIO" id="fechainicio">
                     </div>
                 </div>
 
@@ -58,15 +58,14 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Fecha de Fin</label>
                     <div class="col-9">
-                        <input type="date" class="form-control" name="fechafin" id="fechafin">
+                        <input type="date" class="form-control" name="FECHAFIN" id="fechafin">
                     </div>
                 </div>
             </form>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
-            <button type="button" class="btn btn-outline-success" id="btnEnviarForm"
-                onclick="btnStoreItinerante()">Guardar</button>
+            <button type="button" class="btn btn-outline-success" id="btnEnviarForm" onclick="btnStoreItinerante()">Guardar</button>
         </div>
     </div>
 </div>
