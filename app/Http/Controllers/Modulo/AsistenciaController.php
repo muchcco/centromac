@@ -884,4 +884,25 @@ class AsistenciaController extends Controller
         return $export;
     }
 
+    public function dow_asistencia()
+    {
+        try {
+
+            $insert = DB::select("CALL  SP_CARGA_ASISTENCIA();");
+            
+            
+            return response()->json([
+                'status' => true,
+                'message' => 'Se cargaron las asistencia con éxito.',
+                'data' => $insert,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Hubo un error al actualizar el usuario.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }

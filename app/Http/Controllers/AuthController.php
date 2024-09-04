@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\UserJwt;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redirect;
+
 
 class AuthController extends Controller
 {
@@ -17,13 +20,19 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->only('name', 'password');
+        $credentials = $request->only('email', 'password');
 
-        $user = UserJwt::where('name', $credentials['name'])->first();
+        $user = User::where('email', $credentials['email'])->first();
 
         if ($user && Hash::check($credentials['password'], $user->password)) {
+
             Auth::login($user);
+
+            // dd(Auth::user());
+           
             $token = $user->createToken('Personal Access Token')->accessToken;
+
+            // dd($token);
 
             return redirect('/'); 
         } else {
@@ -50,5 +59,18 @@ class AuthController extends Controller
         } catch (Exception $e) {
             return redirect('login')->withErrors(['msg' => 'Invalid token']);
         }
+    }
+
+    public function logout(Request $request)
+    {
+        // Cierra la sesión del usuario autenticado
+        Auth::logout();
+
+        // Elimina la sesión del usuario
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        // Redirecciona a la URL configurada en el .env
+        return Redirect::to(env('REDIRECT_URL', '/login'));
     }
 }

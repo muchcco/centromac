@@ -102,7 +102,7 @@ Auth::routes();
 Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::get('login', [AuthController::class, 'login']);
 Route::get('authenticate', [AuthController::class, 'authenticateWithToken']);
-
+// Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 
 /**************************************************************** CUMPLEAÑOS *******************************************************************/
@@ -141,6 +141,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/modals/md_add_asistencia' , [AsistenciaController::class, 'md_add_asistencia'])->name('modals.md_add_asistencia');
         Route::post('/modals/md_detalle' , [AsistenciaController::class, 'md_detalle'])->name('modals.md_detalle');
         Route::post('/store_asistencia' , [AsistenciaController::class, 'store_asistencia'])->name('store_asistencia');
+
+        Route::post('/dow_asistencia' , [AsistenciaController::class, 'dow_asistencia'])->name('dow_asistencia');
 
         //POR ENTIDAD
         Route::get('/det_entidad.html/{mac}' , [AsistenciaController::class, 'det_entidad'])->name('det_entidad');         

@@ -2,7 +2,8 @@
 
 @section('style')
 
-<link rel="stylesheet" href="{{ asset('Vendor/toastr/toastr.min.css') }}">
+{{-- <link rel="stylesheet" href="{{ asset('Vendor/toastr/toastr.min.css') }}"> --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 <!-- Plugins css -->
 <link href="{{ asset('nuevo/plugins/select2/select2.min.css') }}" rel="stylesheet" type="text/css" />
 <link href="{{ asset('nuevo/plugins/huebee/huebee.min.css') }}" rel="stylesheet" type="text/css" />
@@ -96,6 +97,10 @@
                         <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal" onclick="btnAddAsistencia()"><i class="fa fa-plus" aria-hidden="true"></i>
                             Agregar Asistencia</button>
                         <a class="btn btn-info" href="{{ route('asistencia.det_entidad', $idmac) }}"> Asistencia por entidad</a>
+                        <button class="btn btn-purple" onclick="btnDowloadAssists();" id="cargandoAsistencia">
+                            <i class="fa fa-database" aria-hidden="true"></i>
+                             Cargar Asistencia
+                        </button>
                     </div>
                 </div>
                 <div class="row">
@@ -122,7 +127,8 @@
 @section('script')
 
 <script src="{{ asset('Script/js/sweet-alert.min.js') }}"></script>
-<script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
+{{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
 
 <!-- Plugins js -->
@@ -284,6 +290,40 @@ var btnModalView = (dni, fecha) => {
     });
 }
 
+var btnDowloadAssists = () => {
+    $.ajax({
+        type:'post',
+        url: "{{ route('asistencia.dow_asistencia') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}"},
+        beforeSend: function () {
+            document.getElementById("cargandoAsistencia").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Cargando';
+            document.getElementById("cargandoAsistencia").disabled = true;
+        },
+        success:function(data){
+            console.log(data);
+            document.getElementById("cargandoAsistencia").innerHTML = '<i class="fa fa-database"></i> Cargar Asistencia';
+            document.getElementById("cargandoAsistencia").disabled = false;
+            Toastify({
+                text: "Se cargaron las asistencias con éxito",
+                className: "success",
+                gravity: "top",
+                style: {
+                    background: "#47B257",
+                }
+            }).showToast();
+            
+        },
+        error: function(error){
+            Swal.fire({
+                icon: "warming",
+                text: "Hubo un erro al cargar las asistencias... Intentar nuevamente!",
+                confirmButtonText: "Aceptar"
+            })
+        }
+    });
+}
+ 
 </script>
 
 @endsection
