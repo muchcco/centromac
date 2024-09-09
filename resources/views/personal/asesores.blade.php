@@ -52,8 +52,11 @@
             <div class="card-body bootstrap-select-1">
                 <div class="row">
                     <div class="col-12 mb-3">
-                        <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal" onclick="btnAddAsesores()"><i class="fa fa-plus" aria-hidden="true"></i>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal" onclick="btnAddAsesores()"><i class="fa fa-plus" aria-hidden="true"></i>
                             Agregar Personal</button>
+
+                        <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal" onclick="btnExportAsesores()"><i class="fa fa-file-excel"></i>
+                                Exportar</button>
                     </div>
                 </div>
                 <div class="row">
@@ -296,6 +299,28 @@ function btnBajaAsesor(idpersonal){
             }
         });
     }
+
+}
+
+
+function btnExportAsesores(identidad){
+    
+    var fecha_inicio = document.getElementById('fecha_inicio').value;
+    var fecha_fin = document.getElementById('fecha_fin').value;
+
+    // Definimos la vista dende se enviara
+    var link_up = "{{ route('asistencia.exportgroup_excel_pr') }}";
+
+    // Crear la URL con las variables como parámetros de consulta
+    var href = link_up +'?fecha_inicio=' + fecha_inicio + '&fecha_fin=' + fecha_fin + '&identidad=' + identidad;
+
+    window.open(href);
+
+    Swal.fire({
+                icon: "success",
+                text: "El archivo se descargo con Exito!",
+                confirmButtonText: "Aceptar"
+            })
 
 }
 

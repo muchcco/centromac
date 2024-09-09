@@ -179,6 +179,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/modals/md_baja_asesores' , [AsesoresController::class, 'md_baja_asesores'])->name('modals.md_baja_asesores');
         Route::post('/baja_asesores' , [AsesoresController::class, 'baja_asesores'])->name('baja_asesores');
 
+        Route::get('/exportasesores_excel' , [AsesoresController::class, 'exportasesores_excel'])->name('exportasesores_excel');
+
         //////  PCM
 
         Route::get('/pcm' , [PcmController::class, 'pcm'])->name('pcm');
