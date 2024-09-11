@@ -62,7 +62,22 @@ return [
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
-
+        // Configuración de 'ankarati_asesores'
+        'ankarati_asesores' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST_ANKARATI', '127.0.0.1'),
+            'port' => env('DB_PORT_ANKARATI', '3306'),
+            'database' => env('DB_DATABASE_ANKARATI', 'ankarati_asesores'),
+            'username' => env('DB_USERNAME_ANKARATI', 'forge'),
+            'password' => env('DB_PASSWORD_ANKARATI', ''),
+            'unix_socket' => env('DB_SOCKET_ANKARATI', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+       
         'mysql2' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL2'),
@@ -143,7 +158,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
         ],
 
         'default' => [
