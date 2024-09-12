@@ -20,6 +20,21 @@ use Carbon\CarbonPeriod;
 
 class AsistenciaController extends Controller
 {
+    private function centro_mac(){
+        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
+        /*================================================================================================================*/
+        $us_id = auth()->user()->idcentro_mac;
+        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+
+        $idmac = $user->IDCENTRO_MAC;
+        $name_mac = $user->NOMBRE_MAC;
+        /*================================================================================================================*/
+
+        $resp = ['idmac'=>$idmac, 'name_mac'=>$name_mac ];
+
+        return (object) $resp;
+    }
+
     public function asistencia()
     {
         // $da = User::first()->locales;
@@ -93,8 +108,8 @@ class AsistenciaController extends Controller
                             })
                             // ->where('MA.IDCENTRO_MAC', $idmac)
                             ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ABREV_ENTIDAD', 'MC.NOMBRE_MAC')
-                            ->get();
-        // // dd($datos);
+                            ->toSql();
+        dd($datos);
         return view('asistencia.tablas.tb_asistencia', compact('datos', 'conf'));
     }
 
