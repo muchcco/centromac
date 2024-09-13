@@ -16,13 +16,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Maatwebsite\Excel\Concerns\WithBackgroundColor;
 
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing;
 use Maatwebsite\Excel\Concerns\WithDrawings;
 
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class AsesoresExport implements FromView, WithDefaultStyles, ShouldAutoSize,  WithDrawings, WithStyles, WithTitle
+class AsesoresExport implements FromView, WithDefaultStyles, ShouldAutoSize,   WithStyles, WithTitle
 {
    
     protected $query;
@@ -50,18 +49,6 @@ class AsesoresExport implements FromView, WithDefaultStyles, ShouldAutoSize,  Wi
                 'startColor' => ['argb' => '000'], // Color negro
             ],
         ];
-    }
-
-    public function drawings()
-    {
-        $drawing = new Drawing();
-        $drawing->setName('Logo');
-        $drawing->setDescription('This is my logo');
-        $drawing->setPath(public_path('imagen/mac_logo_export.jpg'));
-        $drawing->setHeight(50);
-        $drawing->setCoordinates('A1');
-
-        return [$drawing];
     }
 
     public function styles(Worksheet $sheet)
