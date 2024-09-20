@@ -22,7 +22,7 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 <td>{{ $resultado['modulo']->N_MODULO }}</td>
-                <td>{{ $resultado['modulo']->entidad->NOMBRE_ENTIDAD }} - {{ $resultado['mac'] }}</td>
+                <td>{{ $resultado['entidad'] }} - {{ $resultado['mac'] }}</td>
                 <td>{{ $resultado['diasMarcados'] }}</td>
                 <td>{{ $resultado['diasHabiles'] }}</td>
                 <td>{{ number_format($resultado['porcentaje'], 2) }}%</td>

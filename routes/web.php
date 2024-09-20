@@ -34,8 +34,8 @@ use App\Http\Controllers\Formatos\FormFelicitacionesController;
 use App\Http\Controllers\Administrador\ConfiguracionController;
 use App\Http\Controllers\Dashboard\PanelInicioController;
 use App\Http\Controllers\ExternoController;
-// use App\Http\Controllers\Indicador\OcupabilidadController;
-// use App\Http\Controllers\Indicador\PuntualidadController;
+use App\Http\Controllers\Indicador\Ocupabilidad1Controller;
+use App\Http\Controllers\Indicador\Puntualidad1Controller;
 use App\Http\Controllers\AuthController;
 
 use App\Http\Controllers\Modulo\PuntualidadController;
@@ -306,27 +306,27 @@ Route::group(['middleware' => ['auth']], function () {
 
     /******************************************************   INDICADORES *****************************************************************************/
 
-    // Route::group(['prefix'=>'indicador','as'=>'indicador.' ],function () {
+         Route::group(['prefix'=>'indicador','as'=>'indicador.' ],function () {
 
-    //     Route::group(['prefix' => 'ocupabilidad', 'as' => 'ocupabilidad.'], function(){
+             Route::group(['prefix' => 'ocupabilidad', 'as' => 'ocupabilidad.'], function(){
 
-    //         Route::get('/index' , [OcupabilidadController::class, 'index'])->name('index');
-    //         Route::get('/tablas/tb_index' , [OcupabilidadController::class, 'tb_index'])->name('tablas.tb_index');
-
-
-    //         Route::get('/export_excel' , [OcupabilidadController::class, 'export_excel'])->name('export_excel');
-    //     });
-
-    //     Route::group(['prefix' => 'puntualidad', 'as' => 'puntualidad.'], function(){
-
-    //         Route::get('/index' , [PuntualidadController::class, 'index'])->name('index');
-    //         Route::get('/tablas/tb_index' , [PuntualidadController::class, 'tb_index'])->name('tablas.tb_index');
+                 Route::get('/index' , [Ocupabilidad1Controller::class, 'index'])->name('index');
+                 Route::get('/tablas/tb_index' , [Ocupabilidad1Controller::class, 'tb_index'])->name('tablas.tb_index');
 
 
-    //         Route::get('/export_excel' , [PuntualidadController::class, 'export_excel'])->name('export_excel');
-    //     });
+                 Route::get('/export_excel' , [Ocupabilidad1Controller::class, 'export_excel'])->name('export_excel');
+             });
 
-    // });
+             Route::group(['prefix' => 'puntualidad', 'as' => 'puntualidad.'], function(){
+
+                 Route::get('/index' , [Puntualidad1Controller::class, 'index'])->name('index');
+                 Route::get('/tablas/tb_index' , [Puntualidad1Controller::class, 'tb_index'])->name('tablas.tb_index');
+
+
+                 Route::get('/export_excel' , [Puntualidad1Controller::class, 'export_excel'])->name('export_excel');
+             });
+
+         });
 
     /******************************************************   DASHBORAD ***************************************************************************/
 

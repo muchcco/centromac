@@ -41,12 +41,13 @@
             $inicio_oper = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'INICIO OPERA')->first();
             $fecilitaciones = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'FELICITACIONES')->first();
             $ocupablidad_k = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'OCUPABILIDAD K')->first();
-            $puntualida_k = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'PUNTUALIDAD K')->first();
+            $puntualida_i = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'PUNTUALIDAD I')->first();
             $almacen = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'ALMACEN')->first();
             $servicio_ent = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'SERVICIOS ENT')->first();
             $dashboard = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'DASBOARD')->first();
             $usuario = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'USUARIOS')->first();
             $centros_mac = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'CENTROS MAC')->first();
+            
         @endphp
         <div class="menu-content h-100" data-simplebar>
             <ul class="metismenu left-sidenav-menu">
@@ -89,6 +90,19 @@
                             @endif
                         </ul>
                     </li>
+                    <li class="@if (Request::is('feriado*')) mm-active @endif">
+                        <a href="{{ route('feriados.index') }}" class="@if (Request::is('feriado/index*')) active @endif">
+                            <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Feriado</span></a>
+                    </li>
+                    <li class="@if (Request::is('modulos*')) mm-active @endif">
+                        <a href="{{ route('modulos.index') }}" class="@if (Request::is('modulos/index*')) active @endif">
+                            <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Modulo</span></a>
+                    </li>
+                    <li class="@if (Request::is('itinerante*')) mm-active @endif">
+                        <a href="{{ route('itinerante.index') }}" class="@if (Request::is('itinerante/index*')) active @endif">
+                            <i data-feather="map-pin" class="align-self-center menu-icon"></i><span>Itinerante</span>
+                        </a>
+                    </li>
                 <!--    </ul>
                 </li>-->
                 @if ($asignacion_bien->VALOR == '1')
@@ -111,7 +125,16 @@
                 @endif
 
                 <li class="menu-label mt-0">FORMATOS</li>
-                
+                <li class="@if (Request::is('indicador.ocupabilidad*')) mm-active @endif">
+                    <a href="{{ route('indicador.ocupabilidad.index') }}" class="@if (Request::is('indicador/ocupabilidad/index*')) active @endif">
+                        <i data-feather="activity" class="align-self-center menu-icon"></i><span>Ocupabilidad</span>
+                    </a>
+                </li>
+                <li class="@if (Request::is('indicador.puntualidad*')) mm-active @endif">
+                    <a href="{{ route('indicador.puntualidad.index') }}" class="@if (Request::is('indicador/puntualidad/index*')) active @endif">
+                        <i data-feather="activity" class="align-self-center menu-icon"></i><span>Puntualidad</span>
+                    </a>
+                </li>
                 @if ($eval_mot->VALOR == '1')
                     <li class="@if (Request::is('formatos/evaluacion_motivacional*')) mm-active @endif">
                         <a href="{{ route('formatos.evaluacion_motivacional.index') }}" class="@if (Request::is('formatos/evaluacion_motivacional*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Evaluación Motivacional</span></a>
@@ -127,19 +150,11 @@
                         <a href="{{ route('formatos.f_felicitaciones.index') }}" class="@if (Request::is('formatos/f_felicitaciones*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Formato de Felicitaciones</span></a>
                     </li>
                 @endif
-
+               
+    
                 @if ($ocupablidad_k->VALOR == '1')
                 <li class="menu-label mt-0">INDICADORES</li>
 
-                
-                    <li class="@if (Request::is('feriado*')) mm-active @endif">
-                        <a href="{{ route('feriados.index') }}" class="@if (Request::is('feriado/index*')) active @endif">
-                            <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Feriado</span></a>
-                    </li>
-                    <li class="@if (Request::is('modulos*')) mm-active @endif">
-                        <a href="{{ route('modulos.index') }}" class="@if (Request::is('modulos/index*')) active @endif">
-                            <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Modulo</span></a>
-                    </li>
                     <li class="@if (Request::is('ocupabilidad*')) mm-active @endif">
                         <a href="{{ route('ocupabilidad.index') }}" class="@if (Request::is('ocupabilidad/index*')) active @endif">
                             <i data-feather="bar-chart-2" class="align-self-center menu-icon"></i><span>Ocupabilidad</span>
@@ -150,11 +165,7 @@
                             <i data-feather="clock" class="align-self-center menu-icon"></i><span>Puntualidad</span>
                         </a>
                     </li>
-                    <li class="@if (Request::is('itinerante*')) mm-active @endif">
-                        <a href="{{ route('itinerante.index') }}" class="@if (Request::is('itinerante/index*')) active @endif">
-                            <i data-feather="map-pin" class="align-self-center menu-icon"></i><span>Itinerante</span>
-                        </a>
-                    </li>
+                    
                 @endif
 
                 @role('Administrador|Especialista_TIC')

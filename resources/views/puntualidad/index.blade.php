@@ -58,7 +58,36 @@
             </div> <!-- end card -->
         </div> <!-- end col -->
     </div> <!-- end row -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header" style="background-color:#132842">
+                    <h4 class="card-title text-white">Leyenda</h4>
+                </div><!--end card-header-->
+                <div class="card-body bootstrap-select-1">
+                    <div class="row">
+                        <div class="col-md-5 border-end">
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th class="text-center" style=" background: #198754">95% a 100%</th>
+                                    <td>Si cumple el % del ANS</td>
+                                </tr>
 
+                                <tr>
+                                    <th class="text-center" style="background: #ffc107">85% a 95%</th>
+                                    <td>Esta cerca de cumplir el ANS</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-center" style="background: #dc3545">0% a 85%</th>
+                                    <td>No cumple el % de ANS</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div><!-- end card-body -->
+            </div> <!-- end card -->
+        </div> <!-- end col -->
+    </div> <!-- end row -->
     <!-- Tabla de resultados -->
     <div class="row">
         <div class="col-lg-12">
@@ -128,6 +157,5 @@
                 }
             });
         }
-
     </script>
 @endsection

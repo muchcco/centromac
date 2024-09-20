@@ -38,19 +38,27 @@ class ModuloController extends Controller
     // Método para cargar los datos de los módulos en la tabla
     public function tb_index()
     {
+        // Realizar leftJoin para asegurar que los módulos sin entidad o centro MAC también se muestren
         $modulos = DB::table('M_MODULO')
-                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MODULO.IDCENTRO_MAC')
-                        ->where(function($query) {
-                            if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                            }
-                        })
-                        ->get();
+            ->leftJoin('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD') // Usar leftJoin para incluir todos los módulos
+            ->leftJoin('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MODULO.IDCENTRO_MAC')
+            ->where(function ($query) {
+                // Condición para roles específicos
+                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                    $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                }
+            })
+            ->select(
+                'M_MODULO.*', 
+                'M_ENTIDAD.NOMBRE_ENTIDAD', // Campo de la entidad
+                'M_CENTRO_MAC.NOMBRE_MAC'   // Campo del centro MAC
+            )
+            ->get();
         
-        // dd($modulos);
+        // Pasar los módulos a la vista
         return view('modulo.tablas.tb_index', compact('modulos'));
     }
+    
 
     // Método para mostrar el formulario de creación de módulos
     public function create()

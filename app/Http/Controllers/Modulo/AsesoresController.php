@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Entidad;
 use App\Models\Personal;
 use App\Models\User;
+use App\Exports\AsistenciaGroupExport;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\AsesoresExport;
 
 class AsesoresController extends Controller
 {
@@ -236,7 +239,7 @@ class AsesoresController extends Controller
     public function exportasesores_excel()
     {
             
-        $personales = DB::table('db_centros_mac.M_PERSONAL as MP')
+        $query = DB::table('db_centros_mac.M_PERSONAL as MP')
                             ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->join('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
                             ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
@@ -269,7 +272,7 @@ class AsesoresController extends Controller
                                 'MP.I_INGLES',
                                 'MP.I_QUECHUA'
                             )
-                            ->whereIn('MP.FLAG', [1, 2])
+                            ->where('MP.FLAG', 1)
                             ->where(function($query) {
                                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
                                     $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
@@ -281,7 +284,7 @@ class AsesoresController extends Controller
     
 
         // dd($query);
-        $export = Excel::download(new AsistenciaGroupExport($query), 'REPORTE DE PERSONAL ASESORES CENTROS MAC.xlsx');
+        $export = Excel::download(new AsesoresExport($query), 'REPORTE DE PERSONAL ASESORES CENTROS MAC.xlsx');
 
         return $export;
     }

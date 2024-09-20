@@ -20,6 +20,21 @@ use Carbon\CarbonPeriod;
 
 class AsistenciaController extends Controller
 {
+    private function centro_mac(){
+        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
+        /*================================================================================================================*/
+        $us_id = auth()->user()->idcentro_mac;
+        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+
+        $idmac = $user->IDCENTRO_MAC;
+        $name_mac = $user->NOMBRE_MAC;
+        /*================================================================================================================*/
+
+        $resp = ['idmac'=>$idmac, 'name_mac'=>$name_mac ];
+
+        return (object) $resp;
+    }
+
     public function asistencia()
     {
         // $da = User::first()->locales;
@@ -59,6 +74,7 @@ class AsistenciaController extends Controller
         $entidad = Entidad::select('NOMBRE_ENTIDAD', 'ABREV_ENTIDAD', 'IDENTIDAD');
 
         $datos = Asistencia::from('M_ASISTENCIA as MA')
+<<<<<<< HEAD
             ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
             ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
             ->leftJoinSub($entidad, 'I', function ($join) {
@@ -95,6 +111,44 @@ class AsistenciaController extends Controller
             ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ABREV_ENTIDAD', 'MC.NOMBRE_MAC')
             ->get();
         // // dd($datos);
+=======
+                            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                            ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
+                            ->leftJoinSub($entidad, 'I', function($join) {
+                                $join->on('MP.IDENTIDAD', '=', 'I.IDENTIDAD');
+                            })
+                            ->select(
+                                'MA.FECHA as fecha_asistencia',
+                                DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
+                                DB::raw('MIN(MA.FECHA_BIOMETRICO) as fecha_biometrico'),
+                                'MA.NUM_DOC as n_dni',
+                                DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS nombreu'),
+                                'ABREV_ENTIDAD',
+                                'MC.NOMBRE_MAC'
+                            )
+                            ->where(function($que) use ($request) {
+                                $fecha_I = date("Y-m-d");
+                                if($request->fecha != '' ){
+                                    $que->where('MA.FECHA', $request->fecha);
+                                }else{
+                                    $que->where('MA.FECHA', $fecha_I);
+                                }
+                            })
+                            ->where(function($que) use ($request) {
+                                if($request->entidad != '' ){
+                                    $que->where('MP.IDENTIDAD', $request->entidad);
+                                }
+                            })
+                            ->where(function($query) {
+                                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                                    $query->where('MA.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                                }
+                            })
+                            // ->where('MA.IDCENTRO_MAC', $idmac)
+                            ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ABREV_ENTIDAD', 'MC.NOMBRE_MAC')
+                            ->toSql();
+        dd($datos);
+>>>>>>> 51f0224e9a04d015479b3fb7c3082b5f7ca641ce
         return view('asistencia.tablas.tb_asistencia', compact('datos', 'conf'));
     }
 

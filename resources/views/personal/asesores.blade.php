@@ -304,24 +304,17 @@ function btnBajaAsesor(idpersonal){
 
 
 function btnExportAsesores(identidad){
-    
-    var fecha_inicio = document.getElementById('fecha_inicio').value;
-    var fecha_fin = document.getElementById('fecha_fin').value;
 
     // Definimos la vista dende se enviara
-    var link_up = "{{ route('asistencia.exportgroup_excel_pr') }}";
+    var link_up = "{{ route('personal.exportasesores_excel') }}";
 
-    // Crear la URL con las variables como parámetros de consulta
-    var href = link_up +'?fecha_inicio=' + fecha_inicio + '&fecha_fin=' + fecha_fin + '&identidad=' + identidad;
-
-    window.open(href);
+    window.open(link_up);
 
     Swal.fire({
                 icon: "success",
                 text: "El archivo se descargo con Exito!",
                 confirmButtonText: "Aceptar"
             })
-
 }
 
 
