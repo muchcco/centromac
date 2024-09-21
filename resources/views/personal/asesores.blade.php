@@ -302,7 +302,22 @@ function btnBajaAsesor(idpersonal){
 
 }
 
-function btnCambiarEntidad(idpersonal){
+function btnCambiarEntidad (idpersonal){
+
+$.ajax({
+    type:'post',
+    url: "{{ route('personal.modals.md_cambiar_entidad') }}",
+    dataType: "json",
+    data:{"_token": "{{ csrf_token() }}", idpersonal : idpersonal},
+    success:function(data){
+        $("#modal_show_modal").html(data.html);
+        $("#modal_show_modal").modal('show');
+    }
+});
+
+}
+
+function btnUpdateEntidad(idpersonal){
 
     var tipo = $("#entidad").val();
     console.log(tipo)
@@ -312,13 +327,13 @@ function btnCambiarEntidad(idpersonal){
     }
     else {
         var formData = new FormData();
-        formData.append("baja", $("#baja").val());
+        formData.append("entidad", $("#entidad").val());
         formData.append('idpersonal', idpersonal);
         formData.append("_token", $("input[name=_token]").val());
 
         $.ajax({
             type:'post',
-            url: "{{ route('personal.baja_asesores') }}",
+            url: "{{ route('personal.update_entidad') }}",
             dataType: "json",
             data:formData,
             processData: false,
@@ -331,7 +346,7 @@ function btnCambiarEntidad(idpersonal){
                 $("#modal_show_modal").modal('hide');
                 tabla_seccion();
                 Toastify({
-                    text: "Se altero el estado del personal",
+                    text: "Se cambio la entidad",
                     className: "info",
                     style: {
                         background: "#206AC8",

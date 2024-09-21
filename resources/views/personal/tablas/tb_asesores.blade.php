@@ -42,7 +42,11 @@
                 <td>{{ $que->ABREV_ENTIDAD }}</td>
                 <td>{{ $que->N_MODULO }}</td>
                 <td>{{ $que->NOMBRE_MAC }}</td>                
-                <td>{{ $que->CORREO }}</td>                
+                <td>
+                    <span class="{{ $que->CORREO ? '' : 'text-danger' }}">
+                        {{ $que->CORREO ?? 'Datos incompletos' }}
+                    </span>
+                </td>
                 <td>                    
                     <div class="progress " style="height: 20px" id="progreso_por" >
                         <div class="progress-bar badge  {{ $alert_class }}"  role="progressbar" style="width: {{ $porcentaje }}%;" aria-valuenow="{{ $porcentaje }}" aria-valuemin="0" aria-valuemax="50">{{ $porcentaje }}%</div>

@@ -140,6 +140,22 @@ class AsesoresController extends Controller
         return response()->json(['html' => $view]); 
     }
 
+    public function md_cambiar_entidad(Request $request)
+    {
+        $entidad = DB::table('M_MAC_ENTIDAD')
+                            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
+                            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
+                            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
+                            ->orderBy('M_ENTIDAD.NOMBRE_ENTIDAD', 'ASC')
+                            ->get();
+
+        $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
+
+        $view = view('personal.modals.md_cambiar_entidad', compact('entidad', 'personal'))->render();
+
+        return response()->json(['html' => $view]); 
+    }
+
     public function md_baja_asesores(Request $request)
     {
         $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
@@ -149,6 +165,28 @@ class AsesoresController extends Controller
         $view = view('personal.modals.md_baja_asesores', compact('personal'))->render();
 
         return response()->json(['html' => $view]); 
+    }
+
+    public function update_entidad(Request $request)
+    {
+        try{
+
+            $personal = Personal::findOrFail($request->idpersonal);
+            $personal->IDENTIDAD = $request->entidad;
+            $personal->save();
+
+            return $personal;
+
+        } catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
     }
 
     public function baja_asesores(Request $request)
