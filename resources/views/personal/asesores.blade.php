@@ -304,16 +304,16 @@ function btnBajaAsesor(idpersonal){
 
 function btnCambiarEntidad (idpersonal){
 
-$.ajax({
-    type:'post',
-    url: "{{ route('personal.modals.md_cambiar_entidad') }}",
-    dataType: "json",
-    data:{"_token": "{{ csrf_token() }}", idpersonal : idpersonal},
-    success:function(data){
-        $("#modal_show_modal").html(data.html);
-        $("#modal_show_modal").modal('show');
-    }
-});
+    $.ajax({
+        type:'post',
+        url: "{{ route('personal.modals.md_cambiar_entidad') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}", idpersonal : idpersonal},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
 
 }
 
@@ -355,6 +355,62 @@ function btnUpdateEntidad(idpersonal){
             }
         });
     }
+
+}
+
+function btnModulo (idpersonal){
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('personal.modals.md_cambiar_modulo') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}", idpersonal : idpersonal},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
+
+}
+
+function btnUpdateEntidad(idpersonal){
+
+var tipo = $("#modulo").val();
+console.log(tipo)
+
+if (tipo === ""){ 
+    $('#modulo').addClass("hasError");
+}
+else {
+    var formData = new FormData();
+    formData.append("modulo", $("#modulo").val());
+    formData.append('idpersonal', idpersonal);
+    formData.append("_token", $("input[name=_token]").val());
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('personal.update_modulo') }}",
+        dataType: "json",
+        data:formData,
+        processData: false,
+        contentType: false,
+        beforeSend: function () {
+            document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+            document.getElementById("btnEnviarForm").disabled = true;
+        },
+        success:function(data){                
+            $("#modal_show_modal").modal('hide');
+            tabla_seccion();
+            Toastify({
+                text: "Se cambio el módulo",
+                className: "info",
+                style: {
+                    background: "#206AC8",
+                }
+            }).showToast();
+        }
+    });
+}
 
 }
 

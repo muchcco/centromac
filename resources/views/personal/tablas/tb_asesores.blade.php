@@ -40,7 +40,17 @@
                 </td>
                 <td>{{ $que->TIPODOC_ABREV }} - {{ $que->NUM_DOC }}</td>
                 <td>{{ $que->ABREV_ENTIDAD }}</td>
-                <td>{{ $que->N_MODULO }}</td>
+                <td>                    
+                    @if ($que->N_MODULO === NULL)
+                        <button class="nobtn bandejTool" data-tippy-content="Dar de baja" onclick="btnModulo('{{ $que->IDPERSONAL }}' )">
+                            <i class="las la-hand-point-up text-secondary font-16 text-primary"></i>
+                        </button>
+                    @else
+                        <button class="nobtn bandejTool" data-tippy-content="Dar de baja" onclick="btnModulo('{{ $que->IDPERSONAL }}' )">
+                            {{ $que->N_MODULO }}
+                        </button>
+                    @endif
+                </td>
                 <td>{{ $que->NOMBRE_MAC }}</td>                
                 <td>
                     <span class="{{ $que->CORREO ? '' : 'text-danger' }}">

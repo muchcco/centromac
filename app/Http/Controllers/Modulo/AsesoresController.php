@@ -41,7 +41,7 @@ class AsesoresController extends Controller
             ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
             ->join('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
             ->join('D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
-            ->join('M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MP.IDMODULO')
+            ->leftJoin('M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MP.IDMODULO')
             ->join(DB::raw('(SELECT 
                                 IDPERSONAL,
                                 (
@@ -152,6 +152,29 @@ class AsesoresController extends Controller
         $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
 
         $view = view('personal.modals.md_cambiar_entidad', compact('entidad', 'personal'))->render();
+
+        return response()->json(['html' => $view]); 
+    }
+
+    public function md_cambiar_modulo(Request $request)
+    {
+        $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
+
+        // dd($personal);
+
+        $modulo = DB::table('M_MODULO')
+                            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD')
+                            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MODULO.IDCENTRO_MAC')
+                            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac)
+                            ->where(function($query) {
+                                $query->whereDate('M_MODULO.FECHAINICIO', '<=', now()->format('Y-m-d')) // Comparar con la fecha actual en formato 'YYYY-MM-DD'
+                                        ->whereDate('M_MODULO.FECHAFIN', '>=', now()->format('Y-m-d'));    // Comparar con la fecha actual en formato 'YYYY-MM-DD'
+                            })
+                            ->orderBy('M_MODULO.N_MODULO','ASC')
+                            ->toSql();
+
+                            dd($modulo);
+        $view = view('personal.modals.md_cambiar_modulo', compact('personal', 'modulo'))->render();
 
         return response()->json(['html' => $view]); 
     }
