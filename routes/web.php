@@ -177,6 +177,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/modals/md_edit_asesores', [AsesoresController::class, 'md_edit_asesores'])->name('modals.md_edit_asesores');
         Route::post('/update_asesores', [AsesoresController::class, 'update_asesores'])->name('update_asesores');
         Route::post('/modals/md_baja_asesores', [AsesoresController::class, 'md_baja_asesores'])->name('modals.md_baja_asesores');
+        Route::post('/modals/md_cambiar_entidad', [AsesoresController::class, 'md_cambiar_entidad'])->name('modals.md_cambiar_entidad');
         Route::post('/baja_asesores', [AsesoresController::class, 'baja_asesores'])->name('baja_asesores');
 
         Route::get('/exportasesores_excel', [AsesoresController::class, 'exportasesores_excel'])->name('exportasesores_excel');

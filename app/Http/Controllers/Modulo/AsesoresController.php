@@ -41,6 +41,7 @@ class AsesoresController extends Controller
             ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
             ->join('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
             ->join('D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
+            ->join('M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MP.IDMODULO')
             ->join(DB::raw('(SELECT 
                                 IDPERSONAL,
                                 (
@@ -80,6 +81,7 @@ class AsesoresController extends Controller
                 'MP.FLAG',
                 'MP.CORREO',
                 'CONT.CAMPOS_NULL',
+                'MMOD.N_MODULO',
                 DB::raw("(
                     SELECT COUNT(*) 
                     FROM information_schema.columns

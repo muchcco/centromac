@@ -15,21 +15,30 @@
     <tbody>
         @foreach ($query as $i =>$que)
             <tr>
+                @php
+                    $total = $que->TOTAL_CAMPOS;
+                    $datos_complet = $que->DIFERENCIA_CAMPOS;
+
+                    // Calculamos el porcentaje de completitud
+                    $porcentaje = ($total != 0) ? round((100 * $datos_complet) / $total, 2) : 0; // Redondea a 2 decimales
+
+                    // Definimos la clase de alerta en función del porcentaje
+                    if ($porcentaje == 100) {
+                        $alert_class = 'bg-success'; // Verde para 100%
+                    } elseif ($porcentaje >= 60 && $porcentaje < 100) {
+                        $alert_class = 'bg-warning'; // Amarillo entre 60% y 99.99%
+                    } else {
+                        $alert_class = 'bg-danger'; // Rojo para menos del 60%
+                    }
+                @endphp
                 <td>{{ $i + 1 }}</td>
                 <td>{{ $que->NOMBREU }}</td>
                 <td>{{ $que->TIPODOC_ABREV }} - {{ $que->NUM_DOC }}</td>
                 <td>{{ $que->ABREV_ENTIDAD }}</td>
                 <td>{{ $que->NOMBRE_MAC }}</td>                
                 <td>
-                    @php
-                        $total = $que->TOTAL_CAMPOS;
-                        $datos_complet = $que->DIFERENCIA_CAMPOS;
-
-                        $porcentaje = ($total != 0) ? round((100 * $datos_complet) / $total, 2) : 0; // Redondea a 2 decimales
-            
-                    @endphp
                     <div class="progress" style="height: 20px" id="progreso_por">
-                        <div class="progress-bar bg-primary"  role="progressbar" style="width: {{ $porcentaje }}%;" aria-valuenow="{{ $porcentaje }}" aria-valuemin="0" aria-valuemax="50">{{ $porcentaje }}%</div>
+                        <div class="progress-bar badge  {{ $alert_class }}"  role="progressbar" style="width: {{ $porcentaje }}%;" aria-valuenow="{{ $porcentaje }}" aria-valuemin="0" aria-valuemax="50">{{ $porcentaje }}%</div>
                     </div>
                 </td>
                 <td>{{ $que->CORREO }}</td>

@@ -266,7 +266,7 @@ function btnBajaAsesor(idpersonal){
     var tipo = $("#baja").val();
     console.log(tipo)
     
-    if (tipo === ""){ //tell you if the array is empty
+    if (tipo === ""){ 
         $('#baja').addClass("hasError");
     }
     else {
@@ -302,6 +302,46 @@ function btnBajaAsesor(idpersonal){
 
 }
 
+function btnCambiarEntidad(idpersonal){
+
+    var tipo = $("#entidad").val();
+    console.log(tipo)
+
+    if (tipo === ""){ 
+        $('#entidad').addClass("hasError");
+    }
+    else {
+        var formData = new FormData();
+        formData.append("baja", $("#baja").val());
+        formData.append('idpersonal', idpersonal);
+        formData.append("_token", $("input[name=_token]").val());
+
+        $.ajax({
+            type:'post',
+            url: "{{ route('personal.baja_asesores') }}",
+            dataType: "json",
+            data:formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function () {
+                document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+                document.getElementById("btnEnviarForm").disabled = true;
+            },
+            success:function(data){                
+                $("#modal_show_modal").modal('hide');
+                tabla_seccion();
+                Toastify({
+                    text: "Se altero el estado del personal",
+                    className: "info",
+                    style: {
+                        background: "#206AC8",
+                    }
+                }).showToast();
+            }
+        });
+    }
+
+}
 
 function btnExportAsesores(identidad){
 
