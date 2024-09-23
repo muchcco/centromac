@@ -171,9 +171,9 @@ class AsesoresController extends Controller
                                         ->whereDate('M_MODULO.FECHAFIN', '>=', now()->format('Y-m-d'));    // Comparar con la fecha actual en formato 'YYYY-MM-DD'
                             })
                             ->orderBy('M_MODULO.N_MODULO','ASC')
-                            ->toSql();
+                            ->get();
 
-                            dd($modulo);
+                            // dd($modulo);
         $view = view('personal.modals.md_cambiar_modulo', compact('personal', 'modulo'))->render();
 
         return response()->json(['html' => $view]); 
@@ -196,6 +196,28 @@ class AsesoresController extends Controller
 
             $personal = Personal::findOrFail($request->idpersonal);
             $personal->IDENTIDAD = $request->entidad;
+            $personal->save();
+
+            return $personal;
+
+        } catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
+    }
+
+    public function update_modulo(Request $request)
+    {
+        try{
+
+            $personal = Personal::findOrFail($request->idpersonal);
+            $personal->IDMODULO = $request->modulo;
             $personal->save();
 
             return $personal;

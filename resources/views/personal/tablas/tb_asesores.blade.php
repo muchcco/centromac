@@ -42,11 +42,11 @@
                 <td>{{ $que->ABREV_ENTIDAD }}</td>
                 <td>                    
                     @if ($que->N_MODULO === NULL)
-                        <button class="nobtn bandejTool" data-tippy-content="Dar de baja" onclick="btnModulo('{{ $que->IDPERSONAL }}' )">
+                        <button class="nobtn bandejTool" data-tippy-content="Agregar módulo" onclick="btnModulo('{{ $que->IDPERSONAL }}' )">
                             <i class="las la-hand-point-up text-secondary font-16 text-primary"></i>
                         </button>
                     @else
-                        <button class="nobtn bandejTool" data-tippy-content="Dar de baja" onclick="btnModulo('{{ $que->IDPERSONAL }}' )">
+                        <button class="nobtn bandejTool" data-tippy-content="Cambiar módulo" onclick="btnModulo('{{ $que->IDPERSONAL }}' )">
                             {{ $que->N_MODULO }}
                         </button>
                     @endif

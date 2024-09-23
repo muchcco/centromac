@@ -373,7 +373,7 @@ function btnModulo (idpersonal){
 
 }
 
-function btnUpdateEntidad(idpersonal){
+function btnUpdateModulo(idpersonal){
 
 var tipo = $("#modulo").val();
 console.log(tipo)

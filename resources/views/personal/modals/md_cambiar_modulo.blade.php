@@ -29,7 +29,7 @@
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
-            <button type="button" class="btn btn-outline-success" id="btnEnviarForm" onclick="btnUpdateEntidad('{{ $personal->IDPERSONAL }}')">Guardar</button>
+            <button type="button" class="btn btn-outline-success" id="btnEnviarForm" onclick="btnUpdateModulo('{{ $personal->IDPERSONAL }}')">Guardar</button>
         </div>
     </div>
 </div>
