@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Asistencia;
+use App\Models\Asistenciatest;
 use App\Models\Entidad;
 use Illuminate\Support\Facades\DB;
 use App\Imports\AsistenciaImport;
@@ -20,7 +21,8 @@ use Carbon\CarbonPeriod;
 
 class AsistenciaController extends Controller
 {
-    private function centro_mac(){
+    private function centro_mac()
+    {
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
@@ -30,7 +32,7 @@ class AsistenciaController extends Controller
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
-        $resp = ['idmac'=>$idmac, 'name_mac'=>$name_mac ];
+        $resp = ['idmac' => $idmac, 'name_mac' => $name_mac];
 
         return (object) $resp;
     }
@@ -57,6 +59,111 @@ class AsistenciaController extends Controller
         return view('asistencia.asistencia', compact('entidad', 'idmac'));
     }
 
+    public function store_agregar_asistencia(Request $request)
+{
+    // Obtener el IDMAC del usuario autenticado
+    $userIdMac = auth()->user()->idcentro_mac;
+
+    // Verificar si la solicitud es para buscar el nombre por DNI
+    if ($request->has('DNI') && !$request->has('fecha')) {
+        try {
+            // Buscar el nombre completo en la tabla m_personal utilizando el NUM_DOC proporcionado y el IDMAC
+            $personal = DB::table('m_personal')
+                ->where('NUM_DOC', $request->input('DNI'))
+                ->where('IDMAC', $userIdMac)
+                ->first();
+
+            if ($personal) {
+                $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
+                return response()->json(['success' => true, 'nombreCompleto' => $nombreCompleto]);
+            }
+
+            return response()->json(['success' => false, 'message' => 'DNI no encontrado o no pertenece a este centro MAC']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al buscar el nombre: ' . $e->getMessage()]);
+        }
+    }
+
+    // Validar los datos de entrada para guardar la asistencia
+    $request->validate([
+        'DNI' => 'required|string|max:15',
+        'fecha' => 'required|date',
+        'id' => 'required|integer',
+        'hora1' => 'nullable|date_format:H:i',
+        'hora2' => 'nullable|date_format:H:i',
+        'hora3' => 'nullable|date_format:H:i',
+        'hora4' => 'nullable|date_format:H:i',
+    ]);
+
+    try {
+        // Buscar el nombre completo en la tabla m_personal utilizando el NUM_DOC proporcionado y el IDMAC
+        $personal = DB::table('m_personal')
+            ->where('NUM_DOC', $request->input('DNI'))
+            ->where('IDMAC', $userIdMac)
+            ->first();
+
+        if (!$personal) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El DNI proporcionado no corresponde a ningún personal registrado en este centro MAC.'
+            ]);
+        }
+
+        // Concatenar el nombre completo del personal
+        $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
+
+        // Obtener el último correlativo y sumarle 1 para obtener el siguiente
+        $lastCorrelativo = DB::table('asistenciatest')->max('correlativo');
+        $nextCorrelativo = $lastCorrelativo ? $lastCorrelativo + 1 : 1;
+
+        // Crear el nuevo registro en la tabla asistenciatest para cada hora proporcionada
+        $horas = [$request->input('hora1'), $request->input('hora2'), $request->input('hora3'), $request->input('hora4')];
+
+        foreach ($horas as $hora) {
+            if (!empty($hora)) {
+                // Combinar la fecha y la hora en el formato datetime
+                $punchTime = $request->input('fecha') . ' ' . $hora;
+
+                // Verificar si ya existe un registro con el mismo idMAC, DNI y marcacion
+                $existingRecord = Asistenciatest::where('idMAC', $request->input('id'))
+                    ->where('DNI', $request->input('DNI'))
+                    ->where('marcacion', $punchTime)
+                    ->first();
+
+                if ($existingRecord) {
+                    continue; // Si el registro ya existe, omitirlo
+                }
+
+                // Crear un nuevo registro en la tabla asistenciatest
+                $asistenciatest = new Asistenciatest();
+                $asistenciatest->correlativo = $nextCorrelativo;
+                $asistenciatest->idMAC = $request->input('id');
+                $asistenciatest->DNI = $request->input('DNI');
+                $asistenciatest->marcacion = $punchTime;
+                $asistenciatest->save();
+
+                // Incrementar el correlativo para cada registro
+                $nextCorrelativo++;
+            }
+        }
+
+        // Ejecutar el procedimiento almacenado después de guardar los registros
+        DB::statement('CALL SP_CARGA_ASISTENCIA()');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Registro(s) guardado(s) exitosamente para ' . $nombreCompleto
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al guardar el registro: ' . $e->getMessage()
+        ]);
+    }
+}
+
+    
     public function tb_asistencia(Request $request)
     {
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
@@ -152,6 +259,12 @@ class AsistenciaController extends Controller
     public function md_add_asistencia(Request $request)
     {
         $view = view('asistencia.modals.md_add_asistencia')->render();
+
+        return response()->json(['html' => $view]);
+    }
+    public function md_agregar_asistencia(Request $request)
+    {
+        $view = view('asistencia.modals.md_agregar_asistencia')->render();
 
         return response()->json(['html' => $view]);
     }

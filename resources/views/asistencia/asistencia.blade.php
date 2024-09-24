@@ -104,9 +104,16 @@
                 <div class="card-body bootstrap-select-1">
                     <div class="row">
                         <div class="col-12">
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
+                                onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
+                                Subir Archivo de Asistencia
+                            </button>
+
                             <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal"
-                                onclick="btnAddAsistencia()"><i class="fa fa-plus" aria-hidden="true"></i>
-                                Agregar Asistencia</button>
+                                onclick="btnAgregarAsistencia()"><i class="fa fa-plus" aria-hidden="true"></i>
+                                Agregar Asistencia Manualmente
+                            </button>
+
                             <a class="btn btn-info" href="{{ route('asistencia.det_entidad', $idmac) }}"> Asistencia por
                                 entidad</a>
                             <button class="btn btn-purple" onclick="btnDowloadAssists();" id="cargandoAsistencia">
@@ -267,6 +274,70 @@
             });
         }
 
+        function btnAgregarAsistencia() {
+
+            $.ajax({
+                type: 'post',
+                url: "{{ route('asistencia.modals.md_agregar_asistencia') }}",
+                dataType: "json",
+                data: {
+                    "_token": "{{ csrf_token() }}"
+                },
+                success: function(data) {
+                    $("#modal_show_modal").html(data.html);
+                    $("#modal_show_modal").modal('show');
+                }
+            });
+        }
+
+        function storeAsistenciatest() {
+            const form = document.getElementById('formAsistenciatest');
+            const formData = new FormData(form);
+            // Validar antes de enviar el formulario
+            const dni = $('#DNI').val();
+            if (dni.length !== 8) {
+                alert('Por favor ingrese un DNI válido.');
+                return;
+            }
+            fetch("{{ route('asistencia.store_agregar_asistencia') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Toastify({
+                            text: data.message,
+                            className: "info",
+                            gravity: "bottom",
+                            position: "right",
+                            style: {
+                                background: "#47B257",
+                            }
+                        }).showToast();
+                        $("#modal_show_modal").modal('hide');
+                    } else {
+                        Toastify({
+                            text: data.message,
+                            className: "error",
+                            gravity: "bottom",
+                            position: "right",
+                            style: {
+                                background: "#D9534F",
+                            }
+                        }).showToast();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        tippy(".bandejTool", {
+            allowHTML: true,
+            followCursor: true,
+        });
 
         function btnStoreTxt() {
             var file_data = $("#txt_file").prop("files")[0];
