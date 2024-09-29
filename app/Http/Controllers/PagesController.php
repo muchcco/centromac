@@ -12,6 +12,7 @@ use App\Models\Servicio;
 use App\Models\User;
 use GuzzleHttp\Client;
 use Carbon\Carbon;
+use App\Models\ConfiguracionMAc;
 
 class PagesController extends Controller
 {
@@ -662,7 +663,7 @@ class PagesController extends Controller
         // dd($horaActual);
 
         // dd($identidad);
-        $query = DB::connection('mysql2')->select('SELECT 
+        $query = ConfiguracionMAc::select('SELECT 
                                                         DATE(dt_cheg) Fecha,
                                                         CONCAT(sigla_senha, num_senha) Ticket,
                                                         ss.nome Entidad,
