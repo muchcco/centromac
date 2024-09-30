@@ -27,20 +27,14 @@ class AuthController extends Controller
         if ($user && Hash::check($credentials['password'], $user->password)) {
 
             Auth::login($user);
-
-            // dd(Auth::user());
            
             $token = $user->createToken('Personal Access Token')->accessToken;
-
-            // dd($token);
 
             return redirect('/'); 
         } else {
             \Log::info('Login attempt failed', ['credentials' => $credentials]);
-            return response()->json([
-                'status' => false,
-                'message' => 'Invalid credentials'
-            ], 401);
+            
+            return redirect()->away(env('REDIRECT_URL', 'http://default-login-url.com'));
         }
     }
 
