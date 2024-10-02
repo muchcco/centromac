@@ -271,42 +271,83 @@ class AsistenciaController extends Controller
 
     public function store_asistencia(Request $request)
     {
-        $data = Asistencia::where('fecha', $request->fecha_reg)->count();
+         // Obtener el archivo de la solicitud
+        $file = $request->file('txt_file');
+        
+        // Convertir el archivo a un array de líneas
+        $lines = file($file->getRealPath());
 
-        if ($data > '0') {
-            $eliminar = Asistencia::where('fecha', $request->fecha_reg)->delete();
+        // Inicializar arrays vacíos
+        $num_docs = [];
+        $fechas_biometrico = [];
+        $horas = [];
+        $anios = [];
+        $meses = [];
+
+        // Recorrer las líneas y procesar datos
+        foreach ($lines as $line) {
+            // Usar tabulación como separador
+            $data = explode("\t", $line);
+
+            // Verificar que se tengan al menos 7 columnas (ya que la columna 6 contiene la fecha y hora)
+            if (count($data) >= 7) {
+                // Extraer los valores que necesitamos
+                $num_docs[] = trim($data[2]); // DNI o NUM_DOC
+                $fechas_biometrico[] = trim($data[6]); // FECHA_BIOMETRICO
+
+                // Separar la fecha y la hora
+                $fechaHora = explode(' ', trim($data[6]));
+                if (count($fechaHora) == 2) {
+                    $fecha = $fechaHora[0]; // Fecha
+                    $hora = $fechaHora[1]; // Hora
+                    $horas[] = $hora;
+
+                    // Extraer año y mes
+                    $fechaParts = explode('/', $fecha);
+                    if (count($fechaParts) == 3) {
+                        $anios[] = $fechaParts[0]; // Año
+                        $meses[] = $fechaParts[1]; // Mes
+                    }
+                }
+            } else {
+                echo "<pre>Línea con formato incorrecto: " . print_r($line, true) . "</pre>";
+            }
         }
 
-        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
-        /*================================================================================================================*/
-        $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        // Obtener el ID del Centro MAC usando el método
+        $idCentroMac = $this->centro_mac()->idmac;
 
-        $idmac = $user->IDCENTRO_MAC;
-        $name_mac = $user->NOMBRE_MAC;
-        /*================================================================================================================*/
+        // Ahora insertamos los datos en la base de datos
+        foreach ($num_docs as $index => $num_doc) {
+            // Verificar si ya existe un registro con los mismos valores de NUM_DOC, IDCENTRO_MAC y FECHA_BIOMETRICO
+            $existingRecord = Asistencia::where('NUM_DOC', $num_doc)
+                ->where('IDCENTRO_MAC', $idCentroMac)
+                ->where('FECHA_BIOMETRICO', $fechas_biometrico[$index])
+                ->first();
 
-        $file = $request->file('txt_file');
+            // Si no existe el registro, crear uno nuevo
+            if (!$existingRecord) {
+                Asistencia::create([
+                    'IDTIPO_ASISTENCIA' => 1, // Puedes ajustar este valor según tus necesidades
+                    'NUM_DOC' => $num_doc,
+                    'IDCENTRO_MAC' => $idCentroMac,
+                    'MES' => $meses[$index],
+                    'AÑO' => $anios[$index],
+                    'FECHA' => $fechas_biometrico[$index], // Fecha completa (biométrico)
+                    'HORA' => $horas[$index],
+                    'FECHA_BIOMETRICO' => $fechas_biometrico[$index],
+                    'NUM_BIOMETRICO' => '', // Si no hay valor, se puede dejar vacío
+                    'CORRELATIVO' => $index + 1, // Puedes ajustar el correlativo según tu lógica
+                    'CORRELATIVO_DIA' => '' // Puedes agregar el valor según lo que necesites
+                ]);
+            } else {
+                // Si ya existe el registro, lo omitimos y continuamos con el siguiente
+                continue;
+            }
+        }
 
-        $fecha = $request->fecha_reg;
+        return response()->json(['success' => true, 'message' => 'Asistencias cargadas exitosamente.']);
 
-        $upload = Excel::import(new AsistenciaImport, $file);
-
-        $query = DB::select("UPDATE
-                                        M_ASISTENCIA AS A
-                                JOIN
-                                ( SELECT ROW_NUMBER() OVER(PARTITION BY NUM_DOC ORDER BY FECHA, HORA) AS COR, NUM_DOC, IDASISTENCIA, HORA, FECHA
-                                FROM M_ASISTENCIA
-                                WHERE FECHA = '" . $fecha . "'
-                                AND IDCENTRO_MAC = '" . $idmac . "'
-                                ORDER BY HORA ASC
-                                ) AS SUB
-                                ON  A.IDASISTENCIA = SUB.IDASISTENCIA
-                                SET
-                                A.CORRELATIVO = SUB.COR + 0");
-
-
-        return response()->json($query);
     }
 
     public function md_detalle(Request $request)
@@ -574,48 +615,68 @@ class AsistenciaController extends Controller
         $mes = $request->input('mes', Carbon::now()->month);
         $año = $request->input('año', Carbon::now()->year);
 
+        // $data = DB::table('M_PERSONAL')
+        //     ->join('M_ASISTENCIA', 'M_ASISTENCIA.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
+        //     ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
+        //     ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASISTENCIA.IDCENTRO_MAC')
+        //     ->select(
+        //         'M_ENTIDAD.IDENTIDAD',
+        //         'M_ENTIDAD.NOMBRE_ENTIDAD',
+        //         'M_CENTRO_MAC.IDCENTRO_MAC',
+        //         DB::raw('COUNT(M_PERSONAL.IDPERSONAL) AS COUNT_PER')
+        //     )
+        //     ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+        //     ->where('M_ASISTENCIA.MES', $mes)
+        //     ->where('M_ASISTENCIA.AÑO', $año)
+        //     ->where('M_PERSONAL.FLAG', 1)
+        //     ->groupBy(
+        //         'M_PERSONAL.IDPERSONAL',
+        //         'M_ENTIDAD.NOMBRE_ENTIDAD',
+        //         'M_CENTRO_MAC.IDCENTRO_MAC'
+        //     )
+        //     ->get();
+
+        // $data_spcm = DB::table('M_PERSONAL')
+        //     ->join('M_ASISTENCIA', 'M_ASISTENCIA.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
+        //     ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
+        //     ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASISTENCIA.IDCENTRO_MAC')
+        //     ->select(
+        //         'M_ENTIDAD.IDENTIDAD',
+        //         'M_ENTIDAD.NOMBRE_ENTIDAD',
+        //         'M_CENTRO_MAC.IDCENTRO_MAC',
+        //         DB::raw('COUNT(M_PERSONAL.IDPERSONAL) AS COUNT_PER')
+        //     )
+        //     ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+        //     ->where('M_ASISTENCIA.MES', $mes)
+        //     ->where('M_ASISTENCIA.AÑO', $año)
+        //     ->where('M_PERSONAL.FLAG', 1)
+        //     ->groupBy(
+        //         'M_PERSONAL.IDPERSONAL',
+        //         'M_ENTIDAD.NOMBRE_ENTIDAD',
+        //         'M_CENTRO_MAC.IDCENTRO_MAC'
+        //     )
+        //     ->whereNot('M_ENTIDAD.IDENTIDAD', 17) // Quitamos del registro a personal de PCM
+        //     ->get();
+
         $data = DB::table('M_PERSONAL')
-            ->join('M_ASISTENCIA', 'M_ASISTENCIA.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
-            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASISTENCIA.IDCENTRO_MAC')
-            ->select(
-                'M_ENTIDAD.IDENTIDAD',
-                'M_ENTIDAD.NOMBRE_ENTIDAD',
-                'M_CENTRO_MAC.IDCENTRO_MAC',
-                DB::raw('COUNT(M_PERSONAL.IDPERSONAL) AS COUNT_PER')
-            )
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
-            ->where('M_ASISTENCIA.MES', $mes)
-            ->where('M_ASISTENCIA.AÑO', $año)
-            ->where('M_PERSONAL.FLAG', 1)
-            ->groupBy(
-                'M_PERSONAL.IDPERSONAL',
-                'M_ENTIDAD.NOMBRE_ENTIDAD',
-                'M_CENTRO_MAC.IDCENTRO_MAC'
-            )
-            ->get();
+                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
+                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+                        ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', 'M_ENTIDAD.ABREV_ENTIDAD', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
+                        ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
+                        ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                        ->where('M_PERSONAL.FLAG', 1)
+                        ->orderBy('M_ENTIDAD.ABREV_ENTIDAD', 'ASC')
+                        ->get();
 
         $data_spcm = DB::table('M_PERSONAL')
-            ->join('M_ASISTENCIA', 'M_ASISTENCIA.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
-            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASISTENCIA.IDCENTRO_MAC')
-            ->select(
-                'M_ENTIDAD.IDENTIDAD',
-                'M_ENTIDAD.NOMBRE_ENTIDAD',
-                'M_CENTRO_MAC.IDCENTRO_MAC',
-                DB::raw('COUNT(M_PERSONAL.IDPERSONAL) AS COUNT_PER')
-            )
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
-            ->where('M_ASISTENCIA.MES', $mes)
-            ->where('M_ASISTENCIA.AÑO', $año)
-            ->where('M_PERSONAL.FLAG', 1)
-            ->groupBy(
-                'M_PERSONAL.IDPERSONAL',
-                'M_ENTIDAD.NOMBRE_ENTIDAD',
-                'M_CENTRO_MAC.IDCENTRO_MAC'
-            )
-            ->whereNot('M_ENTIDAD.IDENTIDAD', 17) // Quitamos del registro a personal de PCM
-            ->get();
+                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
+                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+                        ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
+                        ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
+                        ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                        ->where('M_PERSONAL.FLAG', 1)
+                        ->whereNot('M_ENTIDAD.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
+                        ->get();
 
         return view('asistencia.tablas.tb_det_entidad', compact('data', 'data_spcm'));
     }

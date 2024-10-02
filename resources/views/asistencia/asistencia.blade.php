@@ -2,7 +2,9 @@
 
 @section('style')
     {{-- <link rel="stylesheet" href="{{ asset('Vendor/toastr/toastr.min.css') }}"> --}}
+    {{-- <link rel="stylesheet" href="{{ asset('Vendor/toastr/toastr.min.css') }}"> --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
     <!-- Plugins css -->
     <link href="{{ asset('nuevo/plugins/select2/select2.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('nuevo/plugins/huebee/huebee.min.css') }}" rel="stylesheet" type="text/css" />
@@ -154,6 +156,10 @@
     {{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
+
+        {{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
+        
+
 
     <!-- Plugins js -->
     <script src="{{ asset('nuevo/plugins/select2/select2.min.js') }}"></script>
@@ -340,25 +346,21 @@
         });
 
         function btnStoreTxt() {
-            var file_data = $("#txt_file").prop("files")[0];
-            var currentDate = document.querySelector('input[id="fecha_reg"]');
-            console.log(currentDate.value);
-            var formData = new FormData();
 
-            formData.append("fecha_reg", currentDate.value);
+            var file_data = $("#txt_file").prop("files")[0];
+            var formData = new FormData();
             formData.append("txt_file", file_data);
             formData.append("_token", $("input[name=_token]").val());
 
             $.ajax({
-                type: 'post',
-                url: "{{ route('asistencia.store_asistencia') }}",
-                dataType: "json",
+                type: 'POST',
+                url: "{{ route('asistencia.store_asistencia') }}", // Cambia la ruta según tu configuración
                 data: formData,
                 processData: false,
                 contentType: false,
                 beforeSend: function() {
                     document.getElementById("btnEnviarForm").innerHTML =
-                        '<i class="fa fa-spinner fa-spin"></i> Espere';
+                        '<i class="fa fa-spinner fa-spin"></i> Espere... Cargando datos';
                     document.getElementById("btnEnviarForm").disabled = true;
                 },
                 success: function(data) {
@@ -372,6 +374,14 @@
                             background: "#47B257",
                         }
                     }).showToast();
+                },
+                error: function(error) {
+                    $("#modal_show_modal").modal('hide');
+                    Swal.fire({
+                        icon: "error",
+                        text: "Hubo un error al cargar las asistencias... Intentar nuevamente! Verifique que el archivo txt no tenga el caracter en la última fila ",
+                        confirmButtonText: "Aceptar"
+                    })
                 }
             });
 
@@ -425,7 +435,7 @@
                 },
                 error: function(error) {
                     Swal.fire({
-                        icon: "warming",
+                        icon: "error",
                         text: "Hubo un erro al cargar las asistencias... Intentar nuevamente!",
                         confirmButtonText: "Aceptar"
                     })

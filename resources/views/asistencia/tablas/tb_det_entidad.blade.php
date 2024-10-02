@@ -15,7 +15,7 @@
         @foreach ($data as $i => $dat)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td>{{ $dat->NOMBRE_ENTIDAD }}</td>
+                <td>{{ $dat->ABREV_ENTIDAD }} - {{ $dat->NOMBRE_ENTIDAD }}</td>
                 <td class="text-center">{{ $dat->COUNT_PER }}</td>
                 <td class="text-center">
                     <button class="nobtn text-dark bandejTool" data-tippy-content="Descargar en formato Excel" id="btn-dow-excel-group" onclick="BtnDowloadExcel('{{ $dat->IDENTIDAD }}')" ><i class="fa fa-download" aria-hidden="true"></i></button>

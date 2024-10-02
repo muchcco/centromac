@@ -663,7 +663,7 @@ class PagesController extends Controller
         // dd($horaActual);
 
         // dd($identidad);
-        $query = ConfiguracionMAc::select('SELECT 
+        $query = DB::connection('mysql2')->select('SELECT 
                                                         DATE(dt_cheg) Fecha,
                                                         CONCAT(sigla_senha, num_senha) Ticket,
                                                         ss.nome Entidad,
