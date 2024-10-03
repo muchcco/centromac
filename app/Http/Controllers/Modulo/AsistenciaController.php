@@ -754,11 +754,7 @@ class AsistenciaController extends Controller
                     'PERS.NOMBREU',
                     DB::raw('DATE(MA.FECHA) AS FECHA'), // Utilizamos DATE para obtener solo la fecha sin la hora
                     'MA.NUM_DOC',
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "3" THEN MA.HORA ELSE NULL END) AS hora3'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "4" THEN MA.HORA ELSE NULL END) AS hora4'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "5" THEN MA.HORA ELSE NULL END) AS hora5'),
+                    DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
                     DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
                     'PERS.IDENTIDAD', // Agregado para cumplir con GROUP BY
                     'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
@@ -771,6 +767,32 @@ class AsistenciaController extends Controller
                 ->groupBy('MA.NUM_DOC', DB::raw('DATE(MA.FECHA)'), 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO')
                 ->orderBy('FECHA', 'ASC')
                 ->get();
+
+                foreach ($querys as $q) {
+                    $horas = explode(',', $q->HORAS);
+                    $num_horas = count($horas);
+                    if ($num_horas == 1) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = null;
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = null;
+                    } elseif ($num_horas == 2) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = null;
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = $horas[1];
+                    } elseif ($num_horas == 3) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = $horas[1];
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = $horas[2];
+                    } elseif ($num_horas >= 4) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = $horas[1];
+                        $q->HORA_3 = $horas[2];
+                        $q->HORA_4 = $horas[3];
+                    }
+                }
 
             // Creamos un array asociativo donde la clave es la fecha y el valor es un array con los datos correspondientes
             $query = [];
@@ -792,11 +814,7 @@ class AsistenciaController extends Controller
                 $detalle = Asistencia::select([
                     'M_ASISTENCIA.FECHA',
                     'M_ASISTENCIA.NUM_DOC',
-                    DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "1" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora1'),
-                    DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "2" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora2'),
-                    DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "3" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora3'),
-                    DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "4" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora4'),
-                    DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "5" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora5'),
+                    DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
                     DB::raw('COUNT(M_ASISTENCIA.NUM_DOC) AS N_NUM_DOC'),
                 ])
                     ->where('NUM_DOC', $encabezado->NUM_DOC)
@@ -805,6 +823,33 @@ class AsistenciaController extends Controller
                     ->groupBy('M_ASISTENCIA.NUM_DOC', 'M_ASISTENCIA.FECHA')
                     ->orderBy('M_ASISTENCIA.FECHA', 'asc')
                     ->get();
+
+
+                    foreach ($detalle as $d) {
+                        $horas = explode(',', $d->HORAS);
+                        $num_horas = count($horas);
+                        if ($num_horas == 1) {
+                            $d->HORA_1 = $horas[0];
+                            $d->HORA_2 = null;
+                            $d->HORA_3 = null;
+                            $d->HORA_4 = null;
+                        } elseif ($num_horas == 2) {
+                            $d->HORA_1 = $horas[0];
+                            $d->HORA_2 = null;
+                            $d->HORA_3 = null;
+                            $d->HORA_4 = $horas[1];
+                        } elseif ($num_horas == 3) {
+                            $d->HORA_1 = $horas[0];
+                            $d->HORA_2 = $horas[1];
+                            $d->HORA_3 = null;
+                            $d->HORA_4 = $horas[2];
+                        } elseif ($num_horas >= 4) {
+                            $d->HORA_1 = $horas[0];
+                            $d->HORA_2 = $horas[1];
+                            $d->HORA_3 = $horas[2];
+                            $d->HORA_4 = $horas[3];
+                        }
+                    }
 
                 // dd($detalle);
 
@@ -819,12 +864,7 @@ class AsistenciaController extends Controller
 
         } else {
             $query = DB::table('M_ASISTENCIA as MA')
-                ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC')
-                ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1')
-                ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2')
-                ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "3" THEN MA.HORA ELSE NULL END) AS hora3')
-                ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "4" THEN MA.HORA ELSE NULL END) AS hora4')
-                ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "5" THEN MA.HORA ELSE NULL END) AS hora5')
+                ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC', DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'))
                 ->selectRaw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
                 ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
                 ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
@@ -839,6 +879,33 @@ class AsistenciaController extends Controller
                 ->whereYear('MA.FECHA', $request->año)
                 ->orderBy('FECHA', 'ASC')
                 ->get();
+
+                foreach ($query as $q) {
+                    $horas = explode(',', $q->HORAS);
+                    $num_horas = count($horas);
+                    if ($num_horas == 1) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = null;
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = null;
+                    } elseif ($num_horas == 2) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = null;
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = $horas[1];
+                    } elseif ($num_horas == 3) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = $horas[1];
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = $horas[2];
+                    } elseif ($num_horas >= 4) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = $horas[1];
+                        $q->HORA_3 = $horas[2];
+                        $q->HORA_4 = $horas[3];
+                    }
+                }
+        
 
             $datosAgrupados = '';
             $fechasArray = '';
@@ -933,11 +1000,7 @@ class AsistenciaController extends Controller
                     'PERS.NOMBREU',
                     'MA.FECHA',
                     'MA.NUM_DOC',
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "3" THEN MA.HORA ELSE NULL END) AS hora3'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "4" THEN MA.HORA ELSE NULL END) AS hora4'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "5" THEN MA.HORA ELSE NULL END) AS hora5'),
+                    DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
                     DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
                     'PERS.IDENTIDAD', // Agregado para cumplir con GROUP BY
                     'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
@@ -948,6 +1011,32 @@ class AsistenciaController extends Controller
                 ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
                 ->orderBy('MA.FECHA', 'asc')
                 ->get();
+
+                foreach ($querys as $q) {
+                    $horas = explode(',', $q->HORAS);
+                    $num_horas = count($horas);
+                    if ($num_horas == 1) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = null;
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = null;
+                    } elseif ($num_horas == 2) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = null;
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = $horas[1];
+                    } elseif ($num_horas == 3) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = $horas[1];
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = $horas[2];
+                    } elseif ($num_horas >= 4) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = $horas[1];
+                        $q->HORA_3 = $horas[2];
+                        $q->HORA_4 = $horas[3];
+                    }
+                }
 
 
             $query = [];
@@ -965,17 +1054,39 @@ class AsistenciaController extends Controller
                     ->select([
                         'M_ASISTENCIA.FECHA',
                         'M_ASISTENCIA.NUM_DOC',
-                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "1" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora1'),
-                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "2" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora2'),
-                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "3" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora3'),
-                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "4" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora4'),
-                        DB::raw('MAX(CASE WHEN M_ASISTENCIA.CORRELATIVO = "5" THEN M_ASISTENCIA.HORA ELSE NULL END) AS hora5'),
+                        DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
                         DB::raw('COUNT(M_ASISTENCIA.NUM_DOC) AS N_NUM_DOC'),
                     ])
                     ->whereBetween(DB::raw('DATE(M_ASISTENCIA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
                     ->groupBy('M_ASISTENCIA.NUM_DOC', 'M_ASISTENCIA.FECHA')
                     ->orderBy('M_ASISTENCIA.FECHA', 'asc')
                     ->get();
+
+                    foreach ($detalle as $d) {
+                        $horas = explode(',', $d->HORAS);
+                        $num_horas = count($horas);
+                        if ($num_horas == 1) {
+                            $d->HORA_1 = $horas[0];
+                            $d->HORA_2 = null;
+                            $d->HORA_3 = null;
+                            $d->HORA_4 = null;
+                        } elseif ($num_horas == 2) {
+                            $d->HORA_1 = $horas[0];
+                            $d->HORA_2 = null;
+                            $d->HORA_3 = null;
+                            $d->HORA_4 = $horas[1];
+                        } elseif ($num_horas == 3) {
+                            $d->HORA_1 = $horas[0];
+                            $d->HORA_2 = $horas[1];
+                            $d->HORA_3 = null;
+                            $d->HORA_4 = $horas[2];
+                        } elseif ($num_horas >= 4) {
+                            $d->HORA_1 = $horas[0];
+                            $d->HORA_2 = $horas[1];
+                            $d->HORA_3 = $horas[2];
+                            $d->HORA_4 = $horas[3];
+                        }
+                    }
 
                 // dd($detalle);
 
@@ -1000,11 +1111,7 @@ class AsistenciaController extends Controller
                     'PERS.NOMBREU',
                     'MA.FECHA',
                     'MA.NUM_DOC',
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "3" THEN MA.HORA ELSE NULL END) AS hora3'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "4" THEN MA.HORA ELSE NULL END) AS hora4'),
-                    DB::raw('MAX(CASE WHEN MA.CORRELATIVO = "5" THEN MA.HORA ELSE NULL END) AS hora5'),
+                    DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
                     DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
                     'PERS.IDENTIDAD', // Agregado para cumplir con GROUP BY
                     'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
@@ -1015,6 +1122,32 @@ class AsistenciaController extends Controller
                 ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
                 ->orderBy('MA.FECHA', 'asc')
                 ->get();
+
+                foreach ($query as $q) {
+                    $horas = explode(',', $q->HORAS);
+                    $num_horas = count($horas);
+                    if ($num_horas == 1) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = null;
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = null;
+                    } elseif ($num_horas == 2) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = null;
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = $horas[1];
+                    } elseif ($num_horas == 3) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = $horas[1];
+                        $q->HORA_3 = null;
+                        $q->HORA_4 = $horas[2];
+                    } elseif ($num_horas >= 4) {
+                        $q->HORA_1 = $horas[0];
+                        $q->HORA_2 = $horas[1];
+                        $q->HORA_3 = $horas[2];
+                        $q->HORA_4 = $horas[3];
+                    }
+                }
 
             $datosAgrupados = '';
             $fechasArray = '';
@@ -1074,34 +1207,73 @@ class AsistenciaController extends Controller
         $identidad = $identidadString;
 
         $query =  DB::table('M_ASISTENCIA as MA')
-            ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC')
-            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "1" THEN MA.HORA ELSE NULL END) AS hora1')
-            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "2" THEN MA.HORA ELSE NULL END) AS hora2')
-            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "3" THEN MA.HORA ELSE NULL END) AS hora3')
-            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "4" THEN MA.HORA ELSE NULL END) AS hora4')
-            ->selectRaw('MAX(CASE WHEN MA.CORRELATIVO = "5" THEN MA.HORA ELSE NULL END) AS hora5')
-            ->selectRaw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
-            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-            ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
-                                FROM M_PERSONAL
-                                LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
-                                JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
-                                JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
-            ->whereIn('PERS.IDENTIDAD', $identidadArray) // Filtra por las entidades del centro mac
-            ->where('PERS.IDCENTRO_MAC', $idmac)
-            ->whereMonth('MA.FECHA', $request->mes)
-            ->whereYear('MA.FECHA', $request->año)
-            ->groupBy('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC') // Incluye todas las columnas no agregadas en GROUP BY
-            ->orderBy('PERS.ABREV_ENTIDAD', 'ASC') // Ordenar por ABREV_ENTIDAD en orden ascendente
-            ->orderBy('MA.FECHA', 'ASC') // Luego, ordenar por FECHA en orden ascendente
-            ->get();
+        ->select(
+            'PERS.ABREV_ENTIDAD', 
+            'PERS.NOMBREU', 
+            'PERS.NOMBRE_CARGO', 
+            'MA.FECHA', 
+            'MA.NUM_DOC',
+            DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+            DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
+        )
+        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+        ->join(DB::raw('(
+            SELECT 
+                CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU, 
+                ME.ABREV_ENTIDAD, 
+                MCM.IDCENTRO_MAC, 
+                MP.NUM_DOC, 
+                ME.IDENTIDAD, 
+                DPC.NOMBRE_CARGO
+            FROM M_PERSONAL AS MP
+            LEFT JOIN D_PERSONAL_CARGO AS DPC ON DPC.IDCARGO_PERSONAL = MP.IDCARGO_PERSONAL
+            JOIN M_ENTIDAD AS ME ON ME.IDENTIDAD = MP.IDENTIDAD
+            JOIN M_CENTRO_MAC AS MCM ON MCM.IDCENTRO_MAC = MP.IDMAC
+        ) AS PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+        ->whereIn('PERS.IDENTIDAD', $identidadArray) // Reemplaza con tu array de identidades
+        ->where('PERS.IDCENTRO_MAC', $idmac)
+        ->whereMonth('MA.FECHA', $request->mes)
+        ->whereYear('MA.FECHA', $request->año)
+        ->groupBy(
+            'PERS.ABREV_ENTIDAD', 
+            'PERS.NOMBREU', 
+            'PERS.NOMBRE_CARGO', 
+            'MA.FECHA', 
+            'MA.NUM_DOC'
+        )
+        ->orderBy('PERS.ABREV_ENTIDAD', 'ASC')
+        ->orderBy('MA.FECHA', 'ASC')
+        ->get();
 
+        foreach ($query as $q) {
+            $horas = explode(',', $q->HORAS);
+            $num_horas = count($horas);
+            if ($num_horas == 1) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = null;
+                $q->HORA_3 = null;
+                $q->HORA_4 = null;
+            } elseif ($num_horas == 2) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = null;
+                $q->HORA_3 = null;
+                $q->HORA_4 = $horas[1];
+            } elseif ($num_horas == 3) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_3 = null;
+                $q->HORA_4 = $horas[2];
+            } elseif ($num_horas >= 4) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_3 = $horas[2];
+                $q->HORA_4 = $horas[3];
+            }
+        }
 
         $datosAgrupados = '';
         $fechasArray = '';
 
-
-        // dd($query);
         $export = Excel::download(new AsistenciaGroupExport($query, $name_mac, $nombreMES, $tipo_desc, $fecha_inicial, $fecha_fin, $hora_1, $hora_2, $hora_3, $hora_4, $hora_5, $identidad, $datosAgrupados, $fechasArray,), 'REPORTE DE ASISTENCIA CENTRO MAC - ' . $name_mac . ' _' . $nombreMES . '.xlsx');
 
         return $export;

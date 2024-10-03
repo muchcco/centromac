@@ -38,7 +38,7 @@
                 <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($fecha)));  ?>
                 @if ($detalle)
                         @php
-                            $horaEntrada = $detalle->hora1;
+                            $horaEntrada = $detalle->HORA_1;
                             $timestamp = strtotime($horaEntrada);
                             $nuevaFecha = date("H:i:s", $timestamp + (5 * 60)); //  5 minutos representan 300 segundos
                             if($FECHA == 's?bado'){
@@ -49,13 +49,13 @@
                             $confTimestamp += (5 * 60); // Aumentar 5 minutos
                             $confNuevaFecha = date("H:i:s", $confTimestamp);
                         @endphp
-                        @if ($detalle->hora1 > $confNuevaFecha)
+                        @if ($detalle->HORA_1 > $confNuevaFecha)
                             <td style="border: 1px solid black; color:#ca0606;">
-                                {{ $detalle->hora1 }} 
+                                {{ $detalle->HORA_1 }} 
                             </td>
                         @else
                             <td style="border: 1px solid black">
-                                {{ $detalle->hora1 }}
+                                {{ $detalle->HORA_1 }}
                             </td>
                         @endif
                         
@@ -69,23 +69,23 @@
                    
                     
                     @if ($FECHA == 's?bado')
-                        @if ($detalle->hora2 < $hora_5->SUM_SOLO)
+                        @if ($detalle->HORA_2 < $hora_5->SUM_SOLO)
                             <td style="border: 1px solid black; color:#ca0606;">
-                                {{ $detalle->hora2 }}
+                                {{ $detalle->HORA_2 }}
                             </td>
                         @else
                             <td style="border: 1px solid black">
-                                {{ $detalle->hora2 }}
+                                {{ $detalle->HORA_2 }}
                             </td>
                         @endif
                     @else
-                        @if ($detalle->hora2 < $hora_2->SUM_SOLO)
+                        @if ($detalle->HORA_2 < $hora_2->SUM_SOLO)
                             <td style="border: 1px solid black;color:#ca0606;">
-                                {{ $detalle->hora2 }}
+                                {{ $detalle->HORA_2 }}
                             </td>
                         @else
                             <td style="border: 1px solid black">
-                                {{ $detalle->hora2 }}
+                                {{ $detalle->HORA_2 }}
                             </td>
                         @endif
                     @endif
@@ -185,7 +185,7 @@
         <tbody>
             @forelse ($query as $i => $q)
                 @php
-                    $hora1 = strtotime($q->hora1); // Convierte la hora1 a un timestamp
+                    $hora1 = strtotime($q->HORA_1); // Convierte la hora1 a un timestamp
                     $horaInicial1 = strtotime('06:00:00');
                     $horaFinal1 = strtotime('10:00:00');
                 @endphp
@@ -196,6 +196,39 @@
                     <th style="border: 1px solid black">Asesor de Servicio</th>
                     <th style="border: 1px solid black">{{ $q->NUM_DOC }}</th>
                     <th style="border: 1px solid black">{{ date("d/m/Y", strtotime($q->FECHA)) }}  </th>
+                    <th style="border: 1px solid black">{{ $q->HORA_1 }}</th>
+                    <th style="border: 1px solid black">{{ $q->HORA_2 }}</th>
+                    <th style="border: 1px solid black">{{ $q->HORA_3 }}</th>
+                    <th style="border: 1px solid black">{{ $q->HORA_4 }}</th>
+                    <th style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_3->VALOR }}
+                        @else
+                            {{ $hora_1->VALOR }}
+                        @endif
+                    </th>
+                    <th style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+
+                        @if ($FECHA == 's?bado')
+                            {{ $hora_4->VALOR }}
+                        @else
+                            {{ $hora_2->VALOR }}
+                        @endif
+                    </th>
+                    <th style="border: 1px solid black">
+                        <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es'); $FECHA = utf8_decode(strftime('%A',strtotime($q->FECHA)));  ?>
+
+                        @if ($FECHA == 's?bado')
+                            Sábado
+                        @else
+
+                        @endif
+
+                    </th>
+
+{{-- 
                     @if($q->N_NUM_DOC > '2' )
                         <th style="border: 1px solid black; color: {{ strtotime($q->hora1) > strtotime('08:15:00') ? 'red' : 'black' }}">
                             {{ $q->hora1 }}
@@ -320,7 +353,7 @@
 
                         </th>
                     @endif
-                    
+                     --}}
                 </tr>    
             @empty
                 <tr>
