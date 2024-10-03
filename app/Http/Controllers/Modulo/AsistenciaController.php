@@ -972,6 +972,7 @@ class AsistenciaController extends Controller
                 ->leftJoin('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
                 ->select('DPC.NOMBRE_CARGO', DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'), 'MP.NUM_DOC', 'MP.IDENTIDAD')
                 ->where('MP.IDENTIDAD', 17)
+                ->where('MP.IDMAC', $this->centro_mac()->idmac)
                 ->get();
 
             $primerDia = $request->fecha_inicio;
@@ -1054,7 +1055,7 @@ class AsistenciaController extends Controller
                     ->select([
                         'M_ASISTENCIA.FECHA',
                         'M_ASISTENCIA.NUM_DOC',
-                        DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+                        DB::raw('GROUP_CONCAT(DATE_FORMAT(HORA, "%H:%i:%s") ORDER BY HORA) AS HORAS'),
                         DB::raw('COUNT(M_ASISTENCIA.NUM_DOC) AS N_NUM_DOC'),
                     ])
                     ->whereBetween(DB::raw('DATE(M_ASISTENCIA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
