@@ -106,28 +106,34 @@
                 <div class="card-body bootstrap-select-1">
                     <div class="row">
                         <div class="col-12">
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
-                                onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
-                                Subir Archivo de Asistencia
-                            </button>
+                            @role('Administrador|Especialista_TIC')
+                                <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
+                                    onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
+                                    Subir Archivo de Asistencia
+                                </button>
+                            @endrole
 
                             <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal"
                                 onclick="btnAgregarAsistencia()"><i class="fa fa-plus" aria-hidden="true"></i>
                                 Agregar Asistencia Manualmente
                             </button>
-
+                            
                             <a class="btn btn-info" href="{{ route('asistencia.det_entidad', $idmac) }}"> Asistencia por
-                                entidad</a>
-                            <button class="btn btn-purple" onclick="btnDowloadAssists();" id="cargandoAsistencia">
-                                <i class="fa fa-database" aria-hidden="true"></i>
-                                Cargar Asistencia
-                            </button>
-                            @if ($idmac == 11)
-                                <button class="btn btn-warning" onclick="migrarDatos()" id="cargandoMigra">
-                                    <i class="fa fa-sync" aria-hidden="true"></i>
-                                    Migrar Datos
+                                entidad
+                            </a>
+                            @role('Administrador|Especialista_TIC')
+                                <button class="btn btn-purple" onclick="btnDowloadAssists();" id="cargandoAsistencia">
+                                    <i class="fa fa-database" aria-hidden="true"></i>
+                                    Cargar Asistencia
                                 </button>
-                            @endif
+                                
+                                @if ($idmac == 11)
+                                    <button class="btn btn-warning" onclick="migrarDatos()" id="cargandoMigra">
+                                        <i class="fa fa-sync" aria-hidden="true"></i>
+                                        Migrar Datos
+                                    </button>
+                                @endif
+                            @endrole
                         </div>
                     </div>
                     <div class="row">
