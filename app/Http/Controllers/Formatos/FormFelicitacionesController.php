@@ -163,7 +163,7 @@ class FormFelicitacionesController extends Controller
                             ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
                             ->get();
 
-        $asesor = Personal::where('FLAG' , 1)->where('IDMAC', $this->centro_mac()->idmac)->get();
+        $asesor = Personal::where('FLAG' , 1)->where('IDMAC', $this->centro_mac()->idmac)->orderBy('APE_PAT', 'ASC')->get();
 
         $felicitacion = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->first();
 

@@ -74,8 +74,8 @@
                             </select>
                         </div><!--end col-->
                         <div class="col-lg-3 col-6">
-                            <label class="form-label" for="pro-end-date">Asesor</label>
-                            <select class="form-select" id="asesor" name="asesor">
+                            <label class="form-label" for="pro-end-date">Asesor</label><br />
+                            <select class="form-control select2 col-6" id="asesor" name="asesor" style="width: 100%">
                                 <option value="" disabled selected>-- Seleccione una opción --</option>
                                 @forelse ($asesor as $a)
                                     <option value="{{ $a->IDPERSONAL }}">{{ $a->APE_PAT }} {{ $a->APE_MAT }}, {{ $a->NOMBRE }}</option>
@@ -110,6 +110,9 @@ $(document).ready(function() {
     tippy(".bandejTool", {
         allowHTML: true,
         followCursor: true,
+    });
+    $('.select2').select2({
+        dropdownParent: $('#modal_show_modal')
     });
 
     // Agrega un controlador de eventos para el cambio en el elemento con id 'num_doc'
