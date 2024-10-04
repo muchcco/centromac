@@ -59,6 +59,7 @@ class FormFelicitacionesController extends Controller
                                             ->leftJoin('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'FLF.IDENTIDAD')
                                             ->where('FLF.FLAG', 1)
                                             ->orderBy('FLF.CORRELATVIO', 'desc')
+                                            ->where('FLF.IDCENTRO_MAC', $this->centro_mac()->idmac)
                                             ->get();
 
         return view('formatos.f_felicitaciones.tablas.tb_index', compact('query'));
@@ -85,8 +86,12 @@ class FormFelicitacionesController extends Controller
     public function store(Request $request)
     {
         try {
-            // dd($request->all());
-            $corr_ = FLibroFelicitacion::orderby('IDLIBRO_FELICITACION', 'DESC')->first();
+
+            $currentYear = Carbon::now()->format('Y');
+
+            $corr_ =  FLibroFelicitacion::where('AÑO', $currentYear)
+                                ->orderby('IDLIBRO_FELICITACION', 'DESC')
+                                ->first();
 
             if(isset($corr_->CORRELATVIO)){
                 $cont_ = $corr_->CORRELATVIO + 1;
