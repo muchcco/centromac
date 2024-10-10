@@ -58,8 +58,12 @@ class FormFelicitacionesController extends Controller
                                             ->leftJoin('D_PERSONAL_TIPODOC AS DPT', 'DPT.IDTIPO_DOC', '=', 'FLF.IDTIPO_DOC')
                                             ->leftJoin('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'FLF.IDENTIDAD')
                                             ->where('FLF.FLAG', 1)
-                                            ->orderBy('FLF.CORRELATVIO', 'desc')
-                                            ->where('FLF.IDCENTRO_MAC', $this->centro_mac()->idmac)
+                                            ->where(function($query) {
+                                                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                                                    $query->where('FLF.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                                                }
+                                            })
+                                            ->orderBy('FLF.CORRELATVIO', 'desc')                                            
                                             ->get();
 
         return view('formatos.f_felicitaciones.tablas.tb_index', compact('query'));

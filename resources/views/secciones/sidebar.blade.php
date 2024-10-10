@@ -90,10 +90,13 @@
                             @endif
                         </ul>
                     </li>
-                    <li class="@if (Request::is('feriado*')) mm-active @endif">
-                        <a href="{{ route('feriados.index') }}" class="@if (Request::is('feriado/index*')) active @endif">
-                            <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Feriado</span></a>
-                    </li>
+                    @role('Administrador|Especialista_TIC')
+                        <li class="@if (Request::is('feriado*')) mm-active @endif">
+                            <a href="{{ route('feriados.index') }}" class="@if (Request::is('feriado/index*')) active @endif">
+                                <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Feriado</span></a>
+                        </li>
+                    @endrole
+                    @role('Administrador|Especialista_TIC|Supervisor|Coordinador')
                     <li class="@if (Request::is('modulos*')) mm-active @endif">
                         <a href="{{ route('modulos.index') }}" class="@if (Request::is('modulos/index*')) active @endif">
                             <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Modulo</span></a>
@@ -106,7 +109,7 @@
                 <!--    </ul>
                 </li>-->
                 @if ($asignacion_bien->VALOR == '1')
-                    @role('Administrador|Especialista_TIC|Supervisor|Coordinador')
+                    
                     <li class="@if (Request::is('asignacion*')) mm-active @endif">
                         <a href="{{ route('asignacion.index') }}" class="@if (Request::is('asignacion*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Asignación de bienes</span></a>
                     </li>
