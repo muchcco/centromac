@@ -340,6 +340,7 @@ class AsesoresController extends Controller
                                 'MP.FECH_NACIMIENTO',
                                 'MP.CELULAR',
                                 'MP.PCM_TALLA',
+                                'MP.PD_FECHA_INGRESO',
                                 'MP.ESTADO_CIVIL',
                                 'MP.DF_N_HIJOS',
                                 'MP.NUMERO_MODULO',

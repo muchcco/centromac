@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Entidad;
 use App\Models\Personal;
 use App\Models\User;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\AsesoresExport;
 
 class PcmController extends Controller
 {
@@ -233,5 +235,114 @@ class PcmController extends Controller
 
             return $response_;
         }
+    }
+
+    public function exporta_excel(Request $request)
+    {
+
+        $tipo = $request->tipo;
+
+        if($tipo == 1)
+        {
+            $query = DB::table('db_centros_mac.M_PERSONAL as MP')
+                    ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+                    ->join('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                    ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
+                    ->select(
+                        'MP.IDPERSONAL',
+                        DB::raw("CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU"),
+                        'DPT.TIPODOC_ABREV',
+                        'MP.NUM_DOC',
+                        'ME.ABREV_ENTIDAD',
+                        'MCM.NOMBRE_MAC',
+                        'MP.FLAG',
+                        'MP.CORREO',
+                        'MP.FECH_NACIMIENTO',
+                        'MP.PD_FECHA_INGRESO',
+                        'MP.CELULAR',
+                        'MP.PCM_TALLA',
+                        'MP.ESTADO_CIVIL',
+                        'MP.DF_N_HIJOS',
+                        'MP.NUMERO_MODULO',
+                        'MP.IDCARGO_PERSONAL',
+                        'MP.TVL_ID',
+                        'MP.N_CONTRATO',
+                        'MP.TIP_CAS',
+                        'MP.GI_ID',
+                        'MP.GI_CARRERA',
+                        'MP.GI_CURSO_ESP',
+                        'MP.DLP_JEFE_INMEDIATO',
+                        'MP.APE_MAT',
+                        'MP.DLP_CARGO',
+                        'MP.DLP_TELEFONO',
+                        'MP.I_INGLES',
+                        'MP.I_QUECHUA'
+                    )
+                    ->where('MP.FLAG', 1)
+                    ->where(function($query) {
+                        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                            $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
+                        }
+                    })
+                    // ->where('MP.IDENTIDAD', '!=', 17)
+                    ->orderBy('MCM.NOMBRE_MAC', 'asc')
+                    ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
+                    ->get();
+        }
+        elseif($tipo == 2)
+        {
+            $query = DB::table('db_centros_mac.M_PERSONAL as MP')
+                    ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+                    ->join('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                    ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
+                    ->select(
+                        'MP.IDPERSONAL',
+                        DB::raw("CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU"),
+                        'DPT.TIPODOC_ABREV',
+                        'MP.NUM_DOC',
+                        'ME.ABREV_ENTIDAD',
+                        'MCM.NOMBRE_MAC',
+                        'MP.FLAG',
+                        'MP.CORREO',
+                        'MP.FECH_NACIMIENTO',
+                        'MP.CELULAR',
+                        'MP.PD_FECHA_INGRESO',
+                        'MP.PCM_TALLA',
+                        'MP.ESTADO_CIVIL',
+                        'MP.DF_N_HIJOS',
+                        'MP.NUMERO_MODULO',
+                        'MP.IDCARGO_PERSONAL',
+                        'MP.TVL_ID',
+                        'MP.N_CONTRATO',
+                        'MP.TIP_CAS',
+                        'MP.GI_ID',
+                        'MP.GI_CARRERA',
+                        'MP.GI_CURSO_ESP',
+                        'MP.DLP_JEFE_INMEDIATO',
+                        'MP.APE_MAT',
+                        'MP.DLP_CARGO',
+                        'MP.DLP_TELEFONO',
+                        'MP.I_INGLES',
+                        'MP.I_QUECHUA'
+                    )
+                    ->where('MP.FLAG', 1)
+                    ->where(function($query) {
+                        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                            $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
+                        }
+                    })
+                    ->where('MP.IDENTIDAD', 17)
+                    ->orderBy('MCM.NOMBRE_MAC', 'asc')
+                    ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
+                    ->get();
+        }
+
+        
+
+
+        // dd($query);
+        $export = Excel::download(new AsesoresExport($query), 'REPORTE DE PERSONAL CENTROS MAC.xlsx');
+
+        return $export;
     }
 }

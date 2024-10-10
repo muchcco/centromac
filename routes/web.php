@@ -198,6 +198,10 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/delete_pcm', [PcmController::class, 'delete_pcm'])->name('delete_pcm');
         Route::post('/modals/md_baja_pcm', [PcmController::class, 'md_baja_pcm'])->name('modals.md_baja_pcm');
         Route::post('/baja_pcm', [PcmController::class, 'baja_pcm'])->name('baja_pcm');
+
+        /// EXPORTABLE
+
+        Route::get('/exporta_excel', [PcmController::class, 'exporta_excel'])->name('exporta_excel');
     });
 
     /********************************************************** SERVICIOS *******************************************************************************/

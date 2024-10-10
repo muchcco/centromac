@@ -13,6 +13,13 @@
 <!-- Responsive datatable examples -->
 <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" /> 
 
+<style>
+    .dow{
+        border-left: 2px solid  #8a8989;
+        padding-left: 1em;
+        margin-left: .7em;
+    }
+</style>
 
 
 @endsection
@@ -53,13 +60,22 @@
                     <div class="col-12 mb-3">
                         <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal" onclick="btnAddPcm()"><i class="fa fa-plus" aria-hidden="true"></i>
                             Agregar Personal</button>
+
+                        <div class="list-inline-item dow">
+                            <label for="">Descarga de registros:</label>
+                            <div class="col-12">
+                                <button class="btn btn-info bandejTool" data-tippy-content="Registo completo con personal PCM y Asesores" onclick="btnTotalExport()">Total</button>
+                                <button class="btn btn-primary bandejTool" data-tippy-content="Registro de Asesores" onclick="btnExportAsesores()">Asesores</button>
+                                <button class="btn btn-purple bandejTool" data-tippy-content="Registro PCM" onclick="btnPCMExport()">PCM</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-12">
                         <div class="table-responsive">
                             <div class="table-responsive" id="table_data">
-            
+                                
                             </div>
                         </div>
                     </div>
@@ -108,6 +124,10 @@
 <script>
 $(document).ready(function() {
     tabla_seccion();
+    tippy(".bandejTool", {
+        allowHTML: true,
+        followCursor: true,
+    });
 });
 
 function tabla_seccion() {
@@ -325,43 +345,103 @@ $.ajax({
 
 function btnUpdateEntidad(idpersonal){
 
-var tipo = $("#entidad").val();
-console.log(tipo)
+    var tipo = $("#entidad").val();
+    console.log(tipo)
 
-if (tipo === ""){ 
-    $('#entidad').addClass("hasError");
+    if (tipo === ""){ 
+        $('#entidad').addClass("hasError");
+    }
+    else {
+        var formData = new FormData();
+        formData.append("entidad", $("#entidad").val());
+        formData.append('idpersonal', idpersonal);
+        formData.append("_token", $("input[name=_token]").val());
+
+        $.ajax({
+            type:'post',
+            url: "{{ route('personal.update_entidad') }}",
+            dataType: "json",
+            data:formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function () {
+                document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+                document.getElementById("btnEnviarForm").disabled = true;
+            },
+            success:function(data){                
+                $("#modal_show_modal").modal('hide');
+                tabla_seccion();
+                Toastify({
+                    text: "Se cambio la entidad",
+                    className: "info",
+                    style: {
+                        background: "#206AC8",
+                    }
+                }).showToast();
+            }
+        });
+    }
+
 }
-else {
-    var formData = new FormData();
-    formData.append("entidad", $("#entidad").val());
-    formData.append('idpersonal', idpersonal);
-    formData.append("_token", $("input[name=_token]").val());
 
-    $.ajax({
-        type:'post',
-        url: "{{ route('personal.update_entidad') }}",
-        dataType: "json",
-        data:formData,
-        processData: false,
-        contentType: false,
-        beforeSend: function () {
-            document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
-            document.getElementById("btnEnviarForm").disabled = true;
-        },
-        success:function(data){                
-            $("#modal_show_modal").modal('hide');
-            tabla_seccion();
-            Toastify({
-                text: "Se cambio la entidad",
-                className: "info",
-                style: {
-                    background: "#206AC8",
-                }
-            }).showToast();
-        }
-    });
+function btnTotalExport(){
+
+    var tipo = '1'; // TIPO 1 ES TOTAL Y TIPO 2 ES PCM
+
+    // Definimos la vista dende se enviara
+    var link_up = "{{ route('personal.exporta_excel') }}";
+
+    // Crear la URL con las variables como parámetros de consulta
+    var href = link_up +'?tipo=' + tipo;
+
+    console.log(href);
+
+    var blank = "_blank";
+
+    window.open(href);
+
+    Swal.fire({
+                icon: "success",
+                text: "El archivo se descargo con Exito!",
+                confirmButtonText: "Aceptar"
+            })
 }
 
+function btnPCMExport(){
+
+    var tipo = '2'; // TIPO 1 ES TOTAL Y TIPO 2 ES PCM
+
+    // Definimos la vista dende se enviara
+    var link_up = "{{ route('personal.exporta_excel') }}";
+
+    // Crear la URL con las variables como parámetros de consulta
+    var href = link_up +'?tipo=' + tipo;
+
+    console.log(href);
+
+    var blank = "_blank";
+
+    window.open(href);
+
+    Swal.fire({
+                icon: "success",
+                text: "El archivo se descargo con Exito!",
+                confirmButtonText: "Aceptar"
+            })
+}
+
+function btnExportAsesores(identidad){
+
+    // Definimos la vista dende se enviara
+    var link_up = "{{ route('personal.exportasesores_excel') }}";
+
+    window.open(link_up);
+
+    Swal.fire({
+                icon: "success",
+                text: "El archivo se descargo con Exito!",
+                confirmButtonText: "Aceptar"
+            })
 }
 
 </script>
