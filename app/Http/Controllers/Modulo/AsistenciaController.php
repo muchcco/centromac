@@ -598,7 +598,18 @@ class AsistenciaController extends Controller
 
     public function det_entidad(Request $request)
     {
-        return view('asistencia.det_entidad');
+
+        $mac = DB::table('M_CENTRO_MAC')
+                    ->where(function($query) {
+                        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                            $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                        }
+                    })
+                    ->orderBy('NOMBRE_MAC', 'ASC')
+                    ->get();
+
+
+        return view('asistencia.det_entidad', compact('mac'));
     }
 
     public function tb_det_entidad(Request $request)
@@ -615,55 +626,20 @@ class AsistenciaController extends Controller
         $mes = $request->input('mes', Carbon::now()->month);
         $año = $request->input('año', Carbon::now()->year);
 
-        // $data = DB::table('M_PERSONAL')
-        //     ->join('M_ASISTENCIA', 'M_ASISTENCIA.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
-        //     ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-        //     ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASISTENCIA.IDCENTRO_MAC')
-        //     ->select(
-        //         'M_ENTIDAD.IDENTIDAD',
-        //         'M_ENTIDAD.NOMBRE_ENTIDAD',
-        //         'M_CENTRO_MAC.IDCENTRO_MAC',
-        //         DB::raw('COUNT(M_PERSONAL.IDPERSONAL) AS COUNT_PER')
-        //     )
-        //     ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
-        //     ->where('M_ASISTENCIA.MES', $mes)
-        //     ->where('M_ASISTENCIA.AÑO', $año)
-        //     ->where('M_PERSONAL.FLAG', 1)
-        //     ->groupBy(
-        //         'M_PERSONAL.IDPERSONAL',
-        //         'M_ENTIDAD.NOMBRE_ENTIDAD',
-        //         'M_CENTRO_MAC.IDCENTRO_MAC'
-        //     )
-        //     ->get();
-
-        // $data_spcm = DB::table('M_PERSONAL')
-        //     ->join('M_ASISTENCIA', 'M_ASISTENCIA.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
-        //     ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-        //     ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASISTENCIA.IDCENTRO_MAC')
-        //     ->select(
-        //         'M_ENTIDAD.IDENTIDAD',
-        //         'M_ENTIDAD.NOMBRE_ENTIDAD',
-        //         'M_CENTRO_MAC.IDCENTRO_MAC',
-        //         DB::raw('COUNT(M_PERSONAL.IDPERSONAL) AS COUNT_PER')
-        //     )
-        //     ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
-        //     ->where('M_ASISTENCIA.MES', $mes)
-        //     ->where('M_ASISTENCIA.AÑO', $año)
-        //     ->where('M_PERSONAL.FLAG', 1)
-        //     ->groupBy(
-        //         'M_PERSONAL.IDPERSONAL',
-        //         'M_ENTIDAD.NOMBRE_ENTIDAD',
-        //         'M_CENTRO_MAC.IDCENTRO_MAC'
-        //     )
-        //     ->whereNot('M_ENTIDAD.IDENTIDAD', 17) // Quitamos del registro a personal de PCM
-        //     ->get();
-
         $data = DB::table('M_PERSONAL')
                         ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
                         ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
                         ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', 'M_ENTIDAD.ABREV_ENTIDAD', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
                         ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
-                        ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                        ->where(function($query) use ($request) {
+                            $mac = $request->mac;
+
+                            if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                            }else{
+                                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $mac);
+                            }
+                        })
                         ->where('M_PERSONAL.FLAG', 1)
                         ->orderBy('M_ENTIDAD.ABREV_ENTIDAD', 'ASC')
                         ->get();
@@ -673,7 +649,15 @@ class AsistenciaController extends Controller
                         ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
                         ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
                         ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
-                        ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                        // ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+                        ->where(function($query) use ($request) {
+                            $mac = $request->mac;
+                            if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                            }else{
+                                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $mac);
+                            }
+                        })
                         ->where('M_PERSONAL.FLAG', 1)
                         ->whereNot('M_ENTIDAD.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
                         ->get();

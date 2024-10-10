@@ -11,4 +11,9 @@ class PanelInicioController extends Controller
     {
         return view('dashboard.index');
     }
+
+    public function getion_interna(Request $request)
+    {
+        return view('dashboard.getion_interna');
+    }
 }

@@ -338,13 +338,7 @@ Route::group(['middleware' => ['auth']], function () {
 
          });
 
-    /******************************************************   DASHBORAD ***************************************************************************/
-
-    Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.'], function () {
-        Route::get('/index', [PanelInicioController::class, 'index'])->name('index');
-    });
-
-
+    
     /******************************************************   ASIGNACION ***************************************************************************/
 
     Route::group(['prefix' => 'asignacion', 'as' => 'asignacion.'], function () {
@@ -413,4 +407,16 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/addModulo', [ConfiguracionController::class, 'addModulo'])->name('addModulo');
         Route::post('/deleteModulo', [ConfiguracionController::class, 'deleteModulo'])->name('deleteModulo');
     });
+
+    /******************************************************   DASHBORAD ***************************************************************************/
+
+    Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.'], function () {
+        Route::get('/index', [PanelInicioController::class, 'index'])->name('index');
+        Route::get('/getion_interna', [PanelInicioController::class, 'getion_interna'])->name('getion_interna');
+    });
+
+
+    /******************************************************   REPORTERIA ************************************************************************/
+
+    
 });

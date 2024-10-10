@@ -64,13 +64,13 @@
                 
 
 
-                <li class="menu-label mt-0">MODULOS</li>
+                <li class="menu-label mt-0">MÓDULOS</li>
                
                 {{-- @hasanyrole('Administrador') --}}
                 <!--if(Auth::user()->hasPermissionTo('Documentos SGD'))-->
                 @if ($asistencia->VALOR == '1')
-                    <li class="@if (Request::is('asistencia/asistencia*')) mm-active @endif">
-                        <a href="{{ route('asistencia.asistencia') }}" class="@if (Request::is('asistencia/asistencia*')) active @endif"> <i data-feather="server" class="align-self-center menu-icon"></i><span>Asistencia</span></a>
+                    <li class="@if (Request::is('asistencia/*')) mm-active @endif">
+                        <a href="{{ route('asistencia.asistencia') }}" class="@if (Request::is('asistencia/*')) active @endif"> <i data-feather="server" class="align-self-center menu-icon"></i><span>Asistencia</span></a>
                     </li>
                 @endif
                 <!--endif-->
@@ -99,7 +99,7 @@
                     @role('Administrador|Especialista_TIC|Supervisor|Coordinador')
                     <li class="@if (Request::is('modulos*')) mm-active @endif">
                         <a href="{{ route('modulos.index') }}" class="@if (Request::is('modulos/index*')) active @endif">
-                            <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Modulo</span></a>
+                            <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Módulo</span></a>
                     </li>
                     <li class="@if (Request::is('itinerante*')) mm-active @endif">
                         <a href="{{ route('itinerante.index') }}" class="@if (Request::is('itinerante/index*')) active @endif">
@@ -119,13 +119,7 @@
                     <li class="@if (Request::is('serv_mac*')) mm-active @endif">
                         <a href="{{ route('serv_mac.index') }}" class="@if (Request::is('serv_mac/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por MAC</span></a>
                     </li>
-                @endif
-
-                @if ($externos->VALOR == '1')
-                    <li class="@if (Request::is('externo*')) mm-active @endif">
-                        <a href="{{ route('externo') }}" class="@if (Request::is('externo*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Páginas externas</span></a>
-                    </li>
-                @endif
+                @endif                
 
                 <li class="menu-label mt-0">FORMATOS</li>
                 <li class="@if (Request::is('indicador.ocupabilidad*')) mm-active @endif">
@@ -171,10 +165,35 @@
                     
                 @endif
 
-                @role('Administrador|Especialista_TIC')
+                <hr class="hr-dashed hr-menu">
+
+                <li class="menu-label mt-0">APOYO</li>
+
+                @if ($externos->VALOR == '1')
+                    <li class="@if (Request::is('externo*')) mm-active @endif">
+                        <a href="{{ route('externo') }}" class="@if (Request::is('externo*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Páginas externas</span></a>
+                    </li>
+                @endif
                 
-                    <li class="menu-label mt-0">PARAMETROS</li>
+                @if ($dashboard->VALOR == '1')
+                    
+                
+                    <li class="menu-label mt-0">REPORTES</li>
+
+                
+                    <li>
+                        <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i><span>Dashboard</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
+                        <ul class="nav-second-level" aria-expanded="false">
+                            <li class="nav-item @if (Request::is('dashboard/index')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.index') }}"><i class="ti-control-record"></i>Atenciones</a></li>
+                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>Gestión Interna</a></li>
+                        </ul>
+                    </li>
+                @endif
+
+                @role('Administrador|Especialista_TIC')
                     @if ($almacen->VALOR == '1')
+                    <li class="menu-label mt-0">PARÁMETROS</li>
+                    
                         <li class="@if (Request::is('almacen*')) mm-active @endif">
                             <a href="{{ route('almacen.index') }}" class="@if (Request::is('almacen*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Almacen</span></a>
                         </li>
@@ -185,20 +204,8 @@
                         <a href="{{ route('servicios.index') }}" class="@if (Request::is('servicios/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por Entidad</span></a>
                     </li>
                     @endif
-                    
-                    @if ($dashboard->VALOR == '1')
-                        <hr class="hr-dashed hr-menu">
-                    
-                        <li class="menu-label mt-0">DASHBOARD</li>
 
                     
-                        <li>
-                            <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i><span>Dashboard</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
-                            <ul class="nav-second-level" aria-expanded="false">
-                                <li class="nav-item @if (Request::is('dashboard/index*')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.index') }}"><i class="ti-control-record"></i>Reporte General</a></li>
-                            </ul>
-                        </li>
-                    @endif
                 @endrole
                 @role('Administrador')
 

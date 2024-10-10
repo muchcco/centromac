@@ -40,10 +40,28 @@
             </div><!--end card-header-->
             <div class="card-body bootstrap-select-1">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="mb-3">Centro MAC:</label>
+                            <select name="mac" id="mac" class="form-select" onchange="SearchMac()">
+                                @role('Administrador|Moderador')
+                                    <option value="" disabled selected>-- Seleccione una opción --</option>
+                                    @forelse ($mac as $m)
+                                        <option value="{{ $m->IDCENTRO_MAC }}">{{ $m->NOMBRE_MAC }}</option>
+                                    @empty
+                                        <option value="">SIN RESULTADOS</option>
+                                    @endforelse
+                                @else
+                                    <option value="{{ auth()->user()->idcentro_mac }}" selected>{{ auth()->user()->centro_mac->NOMBRE_MAC }}</option> <!-- Mostrar el MAC asignado al usuario -->
+                                @endrole
+                            </select>
+                            
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="mb-3">Mes:</label>
-                            <select name="mes" id="mes" class="form-control" onchange="SearchMes()">
+                            <select name="mes" id="mes" class="form-select" onchange="SearchMes()">
                                 <option value="" disabled selected>-- Seleccione una opción --</option>
                                 <option value="01">Enero</option>
                                 <option value="02">Febrero</option>
@@ -60,10 +78,10 @@
                             </select>
                         </div>
                     </div><!-- end col -->
-                    <div class="col-md-4">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label class="mb-3">Año:</label>
-                            <select name="año" id="año" class="form-control select2 año" onchange="SearchAño()"></select>
+                            <select name="año" id="año" class="form-select select2 año" onchange="SearchAño()"></select>
                         </div>
                     </div><!-- end col -->
                     <div class="col-md-4">
@@ -179,11 +197,24 @@ function SearchAño(){
     tabla_seccion(mes, año);
 }
 
-function tabla_seccion(mes = '0'+ mesSelect.selectedIndex, año = new Date().getFullYear()) {
+function tabla_seccion( mes = '0'+ mesSelect.selectedIndex, año = new Date().getFullYear()) {
+
+    // Obtener el valor del MAC
+    var mac = '';
+
+    // Si el usuario tiene el rol, seleccionar el mac asignado
+    @if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador'))
+        mac = '{{ auth()->user()->idcentro_mac }}'; // ID del MAC del usuario
+    @else
+        // Si no tiene los roles, obtener el valor seleccionado del select de MAC
+        mac = $('#mac').val();
+    @endif
+
+
     $.ajax({
         type: 'GET',
         url: "{{ route('asistencia.tablas.tb_det_entidad') }}", // Ruta que devuelve la vista en HTML
-        data: {mes: mes, año: año},
+        data: {mes: mes, año: año, mac: mac},
         beforeSend: function () {
             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
         },
@@ -226,6 +257,19 @@ $.ajax({
 });
 }
 
+function SearchMac() {
+    var mac = $('#mac').val();
+    var mes = $('#mes').val();
+    var año = $('#año').val();
+    
+    if (!mac) {
+        @if (!auth()->user()->hasRole('Administrador|Moderador'))
+            mac = {{ auth()->user()->idcentro_mac }}; // Asignar el MAC por defecto si el rol no es Admin/Moderador
+        @endif
+    }
+
+    tabla_seccion(mac, mes, año);  // Añadimos el mac a la llamada de la tabla
+}
 
 /******************************************* METODOS PARA EXPORTAR DATOS ***********************************************************/
 
