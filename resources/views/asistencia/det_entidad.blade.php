@@ -52,7 +52,11 @@
                                         <option value="">SIN RESULTADOS</option>
                                     @endforelse
                                 @else
-                                    <option value="{{ auth()->user()->idcentro_mac }}" selected>{{ auth()->user()->centro_mac->NOMBRE_MAC }}</option> <!-- Mostrar el MAC asignado al usuario -->
+                                    @forelse ($mac as $m)
+                                        <option value="{{ $m->IDCENTRO_MAC }}" disabled selected>{{ $m->NOMBRE_MAC }}</option>
+                                    @empty
+                                        <option value="">SIN RESULTADOS</option>
+                                    @endempty
                                 @endrole
                             </select>
                             
