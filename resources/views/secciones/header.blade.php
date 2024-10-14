@@ -20,7 +20,7 @@
                 </div> --}}
                 <div style="text-align: center;">
                     <h3 style="color:#fff;margin-bottom: 0px;">
-                        SISTEMA INTRANET - PLATAFORMA MAC
+                        Sistema de Gestión de la Plataforma MAC – SISMAC
                     </h3>
                     @php
                         $us_id = auth()->user()->idcentro_mac;

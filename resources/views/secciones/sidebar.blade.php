@@ -64,7 +64,7 @@
                 
 
 
-                <li class="menu-label mt-0">MÓDULOS</li>
+                <li class="menu-label mt-0">Gestión de Personal</li>
                
                 {{-- @hasanyrole('Administrador') --}}
                 <!--if(Auth::user()->hasPermissionTo('Documentos SGD'))-->
@@ -80,7 +80,7 @@
                     <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('documentos/bandeja*')) mm-active @endif"></i><span>Mi Bandeja</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
                     <ul class="nav-second-level" aria-expanded="false">-->
                     <li>
-                        <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('personal*')) mm-active @endif"></i><span>Personal</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
+                        <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('personal*')) mm-active @endif"></i><span>Directorio de personal </span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
                         <ul class="nav-second-level" aria-expanded="false">
                             @if ($per_asesores->VALOR == '1')
                                 <li class="nav-item @if (Request::is('personal/asesores*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.asesores') }}"><i class="ti-control-record"></i>Asesores</a></li>
@@ -90,79 +90,97 @@
                             @endif
                         </ul>
                     </li>
-                    @role('Administrador|Especialista_TIC')
-                        <li class="@if (Request::is('feriado*')) mm-active @endif">
-                            <a href="{{ route('feriados.index') }}" class="@if (Request::is('feriado/index*')) active @endif">
-                                <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Feriado</span></a>
-                        </li>
-                    @endrole
-                    @role('Administrador|Especialista_TIC|Supervisor|Coordinador')
-                    <li class="@if (Request::is('modulos*')) mm-active @endif">
-                        <a href="{{ route('modulos.index') }}" class="@if (Request::is('modulos/index*')) active @endif">
-                            <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Módulo</span></a>
-                    </li>
-                    <li class="@if (Request::is('itinerante*')) mm-active @endif">
-                        <a href="{{ route('itinerante.index') }}" class="@if (Request::is('itinerante/index*')) active @endif">
-                            <i data-feather="map-pin" class="align-self-center menu-icon"></i><span>Itinerante</span>
-                        </a>
-                    </li>
+                    
                 <!--    </ul>
                 </li>-->
-                @if ($asignacion_bien->VALOR == '1')
-                    
-                    <li class="@if (Request::is('asignacion*')) mm-active @endif">
-                        <a href="{{ route('asignacion.index') }}" class="@if (Request::is('asignacion*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Asignación de bienes</span></a>
-                    </li>
-                    @endrole
-                @endif
-                @if ($servicio_mac->VALOR == '1')
-                    <li class="@if (Request::is('serv_mac*')) mm-active @endif">
-                        <a href="{{ route('serv_mac.index') }}" class="@if (Request::is('serv_mac/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por MAC</span></a>
-                    </li>
-                @endif                
+                             
 
-                <li class="menu-label mt-0">FORMATOS</li>
-                <li class="@if (Request::is('indicador.ocupabilidad*')) mm-active @endif">
-                    <a href="{{ route('indicador.ocupabilidad.index') }}" class="@if (Request::is('indicador/ocupabilidad/index*')) active @endif">
-                        <i data-feather="activity" class="align-self-center menu-icon"></i><span>Ocupabilidad</span>
+                <li class="menu-label mt-0">Monitoreo y control </li>
+
+                <li>
+                    <a href="javascript: void(0);">
+                        <i data-feather="clipboard" class="align-self-center menu-icon @if (Request::is('indicador*') || Request::is('formatos*')) mm-active @endif"></i>
+                        <span>Formatos</span>
+                        <span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span>
                     </a>
+                    <ul class="nav-second-level" aria-expanded="false">
+                
+                            <li class="@if (Request::is('indicador.ocupabilidad*')) mm-active @endif">
+                                <a href="{{ route('indicador.ocupabilidad.index') }}" class="@if (Request::is('indicador/ocupabilidad/index*')) active @endif">
+                                    <i class="ti-control-record"></i><span>Ocupabilidad</span>
+                                </a>
+                            </li>
+                            <li class="@if (Request::is('indicador.puntualidad*')) mm-active @endif">
+                                <a href="{{ route('indicador.puntualidad.index') }}" class="@if (Request::is('indicador/puntualidad/index*')) active @endif">
+                                    <i class="ti-control-record"></i><span>Puntualidad</span>
+                                </a>
+                            </li>
+                
+                            @if ($eval_mot->VALOR == '1')
+                                <li class="@if (Request::is('formatos/evaluacion_motivacional*')) mm-active @endif">
+                                    <a href="{{ route('formatos.evaluacion_motivacional.index') }}" class="@if (Request::is('formatos/evaluacion_motivacional*')) active @endif">
+                                        <i class="ti-control-record"></i><span>Evaluación Motivacional</span>
+                                    </a>
+                                </li>
+                            @endif
+                            @if ($inicio_oper->VALOR == '1')
+                                <li class="@if (Request::is('formatos/f_02_inicio_oper*')) mm-active @endif">
+                                    <a href="{{ route('formatos.f_02_inicio_oper.index') }}" class="@if (Request::is('formatos/f_02_inicio_oper*')) active @endif">
+                                        <i class="ti-control-record"></i><span>Formato de Inicio de Operaciones</span>
+                                    </a>
+                                </li>
+                            @endif
+                            @if ($fecilitaciones->VALOR == '1')
+                                <li class="@if (Request::is('formatos.f_felicitaciones*')) mm-active @endif">
+                                    <a href="{{ route('formatos.f_felicitaciones.index') }}" class="@if (Request::is('formatos/f_felicitaciones*')) active @endif">
+                                        <i class="ti-control-record"></i><span>Formato de Felicitaciones</span>
+                                    </a>
+                                </li>
+                            @endif
+                    </ul>
                 </li>
-                <li class="@if (Request::is('indicador.puntualidad*')) mm-active @endif">
-                    <a href="{{ route('indicador.puntualidad.index') }}" class="@if (Request::is('indicador/puntualidad/index*')) active @endif">
-                        <i data-feather="activity" class="align-self-center menu-icon"></i><span>Puntualidad</span>
-                    </a>
-                </li>
-                @if ($eval_mot->VALOR == '1')
-                    <li class="@if (Request::is('formatos/evaluacion_motivacional*')) mm-active @endif">
-                        <a href="{{ route('formatos.evaluacion_motivacional.index') }}" class="@if (Request::is('formatos/evaluacion_motivacional*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Evaluación Motivacional</span></a>
-                    </li>
-                @endif
-                @if ($inicio_oper->VALOR == '1')
-                    <li class="@if (Request::is('formatos/f_02_inicio_oper*')) mm-active @endif">
-                        <a href="{{ route('formatos.f_02_inicio_oper.index') }}" class="@if (Request::is('formatos/f_02_inicio_oper*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Formato de Inicio de Operaciones</span></a>
-                    </li>
-                @endif
-                @if ($fecilitaciones->VALOR == '1')
-                    <li class="@if (Request::is('formatos/f_felicitaciones*')) mm-active @endif">
-                        <a href="{{ route('formatos.f_felicitaciones.index') }}" class="@if (Request::is('formatos/f_felicitaciones*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Formato de Felicitaciones</span></a>
-                    </li>
-                @endif
                
     
                 @if ($ocupablidad_k->VALOR == '1')
-                <li class="menu-label mt-0">INDICADORES</li>
+                
+                    {{-- <li class="menu-label mt-0">INDICADORES</li> --}}
 
-                    <li class="@if (Request::is('ocupabilidad*')) mm-active @endif">
-                        <a href="{{ route('ocupabilidad.index') }}" class="@if (Request::is('ocupabilidad/index*')) active @endif">
-                            <i data-feather="bar-chart-2" class="align-self-center menu-icon"></i><span>Ocupabilidad</span>
+                    <li>
+                        <a href="javascript: void(0);">
+                            <i data-feather="bar-chart-2" class="align-self-center menu-icon @if (Request::is('ocupabilidad*') || Request::is('puntualidad*')) mm-active @endif"></i>
+                            <span>Indicadores</span>
+                            <span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span>
                         </a>
-                    </li>
-                    <li class="@if (Request::is('puntualidad*')) mm-active @endif">
-                        <a href="{{ route('puntualidad.index') }}" class="@if (Request::is('puntualidad/index*')) active @endif">
-                            <i data-feather="clock" class="align-self-center menu-icon"></i><span>Puntualidad</span>
-                        </a>
+                        <ul class="nav-second-level" aria-expanded="false">
+
+                            <li class="@if (Request::is('ocupabilidad.*')) mm-active @endif">
+                                <a href="{{ route('ocupabilidad.index') }}" class="@if (Request::is('ocupabilidad/index*')) active @endif">
+                                    <i  class="ti-control-record"></i><span>Ocupabilidad</span>
+                                </a>
+                            </li>
+                            <li class="@if (Request::is('puntualidad.*')) mm-active @endif">
+                                <a href="{{ route('puntualidad.index') }}" class="@if (Request::is('puntualidad/index*')) active @endif">
+                                    <i class="ti-control-record"></i><span>Puntualidad</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     
+                @endif
+
+                @if ($dashboard->VALOR == '1')
+                    
+                
+                    <li class="menu-label mt-0">Tableros de Información </li>
+
+                
+                    <li>
+                        <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i><span>Dashboard</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
+                        <ul class="nav-second-level" aria-expanded="false">
+                            <li class="nav-item @if (Request::is('dashboard/index')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.index') }}"><i class="ti-control-record"></i>Atenciones</a></li>
+                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>Gestión Interna</a></li>
+                        </ul>
+                    </li>
                 @endif
 
                 <hr class="hr-dashed hr-menu">
@@ -175,20 +193,7 @@
                     </li>
                 @endif
                 
-                @if ($dashboard->VALOR == '1')
-                    
                 
-                    <li class="menu-label mt-0">REPORTES</li>
-
-                
-                    <li>
-                        <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i><span>Dashboard</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
-                        <ul class="nav-second-level" aria-expanded="false">
-                            <li class="nav-item @if (Request::is('dashboard/index')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.index') }}"><i class="ti-control-record"></i>Atenciones</a></li>
-                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>Gestión Interna</a></li>
-                        </ul>
-                    </li>
-                @endif
 
                 @role('Administrador|Especialista_TIC')
                     @if ($almacen->VALOR == '1')
@@ -229,7 +234,39 @@
                             <a href="{{ route('configuracion.nuevo_mac') }}"><i data-feather="box" class="align-self-center menu-icon"></i><span>Centro MAC</span></a>
                         </li>
                     @endif
-                @endrole          
+                @endrole     
+                @role('Administrador|Especialista_TIC')
+                    <li class="@if (Request::is('feriado*')) mm-active @endif">
+                        <a href="{{ route('feriados.index') }}" class="@if (Request::is('feriado/index*')) active @endif">
+                            <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Feriado</span></a>
+                    </li>
+                @endrole     
+                
+                @role('Administrador|Especialista_TIC|Supervisor|Coordinador')
+                    <li class="@if (Request::is('modulos*')) mm-active @endif">
+                        <a href="{{ route('modulos.index') }}" class="@if (Request::is('modulos/index*')) active @endif">
+                            <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Módulo</span></a>
+                    </li>
+                    <li class="@if (Request::is('itinerante*')) mm-active @endif">
+                        <a href="{{ route('itinerante.index') }}" class="@if (Request::is('itinerante/index*')) active @endif">
+                            <i data-feather="map-pin" class="align-self-center menu-icon"></i><span>Itinerante</span>
+                        </a>
+                    </li>
+                @endrole
+                
+                @role('Administrador|Especialista_TIC|Supervisor|Coordinador')
+                @if ($asignacion_bien->VALOR == '1')
+                    
+                    <li class="@if (Request::is('asignacion*')) mm-active @endif">
+                        <a href="{{ route('asignacion.index') }}" class="@if (Request::is('asignacion*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Asignación de bienes</span></a>
+                    </li>
+                @endrole
+                @endif
+                @if ($servicio_mac->VALOR == '1')
+                    <li class="@if (Request::is('serv_mac*')) mm-active @endif">
+                        <a href="{{ route('serv_mac.index') }}" class="@if (Request::is('serv_mac/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Servicios por MAC</span></a>
+                    </li>
+                @endif   
             </ul>
         </div>
     </div>
