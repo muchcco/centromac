@@ -248,6 +248,7 @@ class PcmController extends Controller
                     ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                     ->join('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
                     ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
+                    ->join('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
                     ->select(
                         'MP.IDPERSONAL',
                         DB::raw("CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU"),
@@ -258,8 +259,9 @@ class PcmController extends Controller
                         'MP.FLAG',
                         'MP.CORREO',
                         'MP.FECH_NACIMIENTO',
-                        'MP.PD_FECHA_INGRESO',
                         'MP.CELULAR',
+                        'DPC.NOMBRE_CARGO',
+                        'MP.PD_FECHA_INGRESO',
                         'MP.PCM_TALLA',
                         'MP.ESTADO_CIVIL',
                         'MP.DF_N_HIJOS',
@@ -295,6 +297,7 @@ class PcmController extends Controller
                     ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                     ->join('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
                     ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
+                    ->join('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
                     ->select(
                         'MP.IDPERSONAL',
                         DB::raw("CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU"),
@@ -306,6 +309,7 @@ class PcmController extends Controller
                         'MP.CORREO',
                         'MP.FECH_NACIMIENTO',
                         'MP.CELULAR',
+                        'DPC.NOMBRE_CARGO',
                         'MP.PD_FECHA_INGRESO',
                         'MP.PCM_TALLA',
                         'MP.ESTADO_CIVIL',

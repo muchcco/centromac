@@ -100,7 +100,7 @@
                 <div class="card-header">
                     <div class="row align-items-center">
                         <div class="col">                      
-                            <h4 class="card-title">Constrol de Asistencia</h4>                      
+                            <h4 class="card-title">Control de Asistencia</h4>                      
                         </div><!--end col-->
                         <div class="col-auto"> 
                             <div class="dropdown">Fecha:

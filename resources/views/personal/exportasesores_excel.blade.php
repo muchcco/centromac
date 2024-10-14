@@ -16,14 +16,13 @@
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Estado Civil</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Número de Hijos</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Talla de polo</th>
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Cargo</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Fecha de Ingreso al centro MAC</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">N° de modulo</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Número de contrato</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Grado</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Carrera / Profesión</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Jefe inmediato superior</th>
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Cargo</th>
+            <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Cargo Jefe</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Teléfono</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Ingles</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Quechua</th>
@@ -40,7 +39,7 @@
                         {{ ($q->NOMBREU ?? 'Datos incompletos') === 'null' ? 'Datos incompletos' : $q->NOMBREU }}
                     </span>
                 </th>
-                <th style="border: 1px solid black">Asesor de Servicio</th>
+                <th style="border: 1px solid black">{{ ($q->NOMBRE_CARGO ?? '') === 'null' ? '' : $q->NOMBRE_CARGO }}</th>
                 <th style="border: 1px solid black">{{ ($q->NUM_DOC ?? '') === 'null' ? '' : $q->NUM_DOC }}</th>
                 <th style="border: 1px solid black">{{ ($q->CELULAR ?? '') === 'null' ? '' : $q->CELULAR }}</th>
                 <th style="border: 1px solid black">{{ ($q->CORREO ?? '') === 'null' ? '' : $q->CORREO }}</th>
@@ -50,7 +49,6 @@
                 <th style="border: 1px solid black">{{ ($q->ESTADO_CIVIL ?? '') === 'null' ? '' : $q->ESTADO_CIVIL }}</th>
                 <th style="border: 1px solid black">{{ ($q->DF_N_HIJOS ?? '') === 'null' ? '' : $q->DF_N_HIJOS }}</th>
                 <th style="border: 1px solid black">{{ ($q->PCM_TALLA ?? '') === 'null' ? '' : $q->PCM_TALLA }}</th>
-                <th style="border: 1px solid black">{{ ($q->TVL_ID ?? '') === 'null' ? '' : $q->TVL_ID }}</th>
                 <th style="border: 1px solid black">{{ ($q->PD_FECHA_INGRESO ?? '') === 'null' ? '' : $q->PD_FECHA_INGRESO }}</th>
 
 
