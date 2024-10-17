@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Models\ConfiguracionMAc;
 
 return [
 
@@ -80,7 +83,7 @@ return [
        
         'mysql2' => [
             'driver' => 'mysql',
-            'url' => env('DATABASE_URL2'),
+            'url' => env('DATABASE_URL2', config('database.connections.mysql2.url')),
             'host' => env('DB_HOST2', '127.0.0.1'),
             'port' => env('DB_PORT2', '3306'),
             'database' => env('DB_DATABASE2', 'forge'),
