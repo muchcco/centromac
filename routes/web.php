@@ -69,7 +69,6 @@ Route::get('vista.html5', [PagesController::class, 'vista'])->name('vista');
 Route::post('validar_entidad', [PagesController::class, 'validar_entidad'])->name('validar_entidad');
 Route::get('entidad_cola.html5/{identidad}', [PagesController::class, 'entidad_cola'])->name('entidad_cola');
 
-Route::post('recibir-datos', [PagesController::class, 'recibirDatos'])->name('recibir-datos');
 
 /******************  RECURSOS  ********************/
 
