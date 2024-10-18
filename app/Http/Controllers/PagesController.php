@@ -637,6 +637,14 @@ class PagesController extends Controller
 
     /******************************************************** CONSUMO NOVOSGA***********************************************************************************/
 
+    private function recibirDatos(Request $request)
+    {
+        return response()->json([
+            'message' => 'Datos recibidos correctamente',
+            'data' => $request->all()
+        ], 200);
+    }
+
     public function vista(Request $request)
     {
         $macs = Mac::get();
