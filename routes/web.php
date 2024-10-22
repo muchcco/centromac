@@ -44,6 +44,7 @@ use App\Http\Controllers\Modulo\ModuloController;
 use App\Http\Controllers\Modulo\OcupabilidadController;
 use App\Http\Controllers\Modulo\ItineranteController;
 use App\Models\Itinerante;
+use App\Http\Controllers\Modulo\VerificacionController;
 
 
 
@@ -316,29 +317,28 @@ Route::group(['middleware' => ['auth']], function () {
 
     /******************************************************   INDICADORES *****************************************************************************/
 
-         Route::group(['prefix'=>'indicador','as'=>'indicador.' ],function () {
+    Route::group(['prefix' => 'indicador', 'as' => 'indicador.'], function () {
 
-             Route::group(['prefix' => 'ocupabilidad', 'as' => 'ocupabilidad.'], function(){
+        Route::group(['prefix' => 'ocupabilidad', 'as' => 'ocupabilidad.'], function () {
 
-                 Route::get('/index' , [Ocupabilidad1Controller::class, 'index'])->name('index');
-                 Route::get('/tablas/tb_index' , [Ocupabilidad1Controller::class, 'tb_index'])->name('tablas.tb_index');
-
-
-                 Route::get('/export_excel' , [Ocupabilidad1Controller::class, 'export_excel'])->name('export_excel');
-             });
-
-             Route::group(['prefix' => 'puntualidad', 'as' => 'puntualidad.'], function(){
-
-                 Route::get('/index' , [Puntualidad1Controller::class, 'index'])->name('index');
-                 Route::get('/tablas/tb_index' , [Puntualidad1Controller::class, 'tb_index'])->name('tablas.tb_index');
+            Route::get('/index', [Ocupabilidad1Controller::class, 'index'])->name('index');
+            Route::get('/tablas/tb_index', [Ocupabilidad1Controller::class, 'tb_index'])->name('tablas.tb_index');
 
 
-                 Route::get('/export_excel' , [Puntualidad1Controller::class, 'export_excel'])->name('export_excel');
-             });
+            Route::get('/export_excel', [Ocupabilidad1Controller::class, 'export_excel'])->name('export_excel');
+        });
 
-         });
+        Route::group(['prefix' => 'puntualidad', 'as' => 'puntualidad.'], function () {
 
-    
+            Route::get('/index', [Puntualidad1Controller::class, 'index'])->name('index');
+            Route::get('/tablas/tb_index', [Puntualidad1Controller::class, 'tb_index'])->name('tablas.tb_index');
+
+
+            Route::get('/export_excel', [Puntualidad1Controller::class, 'export_excel'])->name('export_excel');
+        });
+    });
+
+
     /******************************************************   ASIGNACION ***************************************************************************/
 
     Route::group(['prefix' => 'asignacion', 'as' => 'asignacion.'], function () {
@@ -418,5 +418,19 @@ Route::group(['middleware' => ['auth']], function () {
 
     /******************************************************   REPORTERIA ************************************************************************/
 
+    /******************************************************   VERIFICACION ********************************************************************* */
     
+    Route::get('/verificaciones/{verificacion}/change-apertura', [VerificacionController::class, 'changeApertura'])->name('verificaciones.changeApertura');
+    Route::get('/verificaciones/observaciones', [VerificacionController::class, 'observaciones'])->name('verificaciones.observaciones');
+    Route::get('/verificaciones', [VerificacionController::class, 'index'])->name('verificaciones.index');
+    Route::get('/verificaciones/create', [VerificacionController::class, 'create'])->name('verificaciones.create');
+    Route::post('/verificaciones', [VerificacionController::class, 'store'])->name('verificaciones.store');
+    Route::get('/verificaciones/edit', [VerificacionController::class, 'edit'])->name('verificaciones.edit');
+    Route::put('/verificaciones/{verificacion}', [VerificacionController::class, 'update'])->name('verificaciones.update');
+    Route::delete('/verificaciones/{verificacion}', [VerificacionController::class, 'destroy'])->name('verificaciones.destroy');
+    Route::get('/verificaciones/contingencia', [VerificacionController::class, 'contingencia'])->name('verificaciones.contingencia');
+    Route::get('/verificaciones/filtrar', [VerificacionController::class, 'filtrar'])->name('verificaciones.filtrar');
+    Route::get('verificaciones/{fecha}', [VerificacionController::class, 'show'])->name('verificaciones.show');
+    Route::get('/verificaciones/change-apertura', [VerificacionController::class, 'changeApertura'])->name('verificaciones.changeApertura');
+    Route::get('/verificaciones/get-observations', [VerificacionController::class, 'getObservations'])->name('verificaciones.getObservations');
 });
