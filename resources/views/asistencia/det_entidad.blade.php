@@ -248,17 +248,17 @@ console.log(mesActual);
 mesSelect.selectedIndex = mesActual
 
 function btnExcelPersonalizado (identidad)  {
-
-$.ajax({
-    type:'post',
-    url: "{{ route('asistencia.modals.md_det_entidad_perso') }}",
-    dataType: "json",
-    data:{"_token": "{{ csrf_token() }}", identidad : identidad},
-    success:function(data){
-        $("#modal_show_modal").html(data.html);
-        $("#modal_show_modal").modal('show');
-    }
-});
+    var mac = document.getElementById('mac').value;
+    $.ajax({
+        type:'post',
+        url: "{{ route('asistencia.modals.md_det_entidad_perso') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}", identidad : identidad, mac: mac},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
 }
 
 function SearchMac() {
@@ -279,7 +279,7 @@ function SearchMac() {
 
 
 function BtnDowloadExcel(identidad) {
-
+    console.log("datos aqui")
     swal.fire({
         title: "Seguro que desea descargar el archivo?",
         text: "El archivo será descargará con fecha seleccionada en la sección de filtro de búsqueda",
@@ -290,6 +290,7 @@ function BtnDowloadExcel(identidad) {
     }).then((result) => {
         if (result.value) {
             console.log(identidad);
+            var mac = document.getElementById('mac').value;
             var año = document.getElementById('año').value;
             var mes = document.getElementById('mes').value;
 
@@ -297,7 +298,7 @@ function BtnDowloadExcel(identidad) {
             var link_up = "{{ route('asistencia.exportgroup_excel') }}";
 
             // Crear la URL con las variables como parámetros de consulta
-            var href = link_up +'?año=' + año + '&mes=' + mes + '&identidad=' + identidad;
+            var href = link_up +'?año=' + año + '&mes=' + mes + '&identidad=' + identidad + '&mac=' + mac;
 
             window.open(href);
 
@@ -324,16 +325,18 @@ function BtnDowloadExcelPers(identidad){
     } else {
         $('#fecha_fin').removeClass("hasError");
     }
+    
 
     console.log(identidad);
     var fecha_inicio = document.getElementById('fecha_inicio').value;
     var fecha_fin = document.getElementById('fecha_fin').value;
+    var mac = document.getElementById('mac').value;
 
     // Definimos la vista dende se enviara
     var link_up = "{{ route('asistencia.exportgroup_excel_pr') }}";
 
     // Crear la URL con las variables como parámetros de consulta
-    var href = link_up +'?fecha_inicio=' + fecha_inicio + '&fecha_fin=' + fecha_fin + '&identidad=' + identidad;
+    var href = link_up +'?fecha_inicio=' + fecha_inicio + '&fecha_fin=' + fecha_fin + '&identidad=' + identidad + '&mac=' + mac;
 
     window.open(href);
 
@@ -348,6 +351,7 @@ function BtnDowloadExcelPers(identidad){
 /******************************************************  EXPORTAR DE FORMA GENERAL ******************************************************/
 
 function BtnDowloadExcelGeneral(){
+    console.log("asdadad")
     swal.fire({
                 title: "Seguro que desea descargar el archivo?",
                 text: "El archivo será descargará con fecha seleccionada en la sección de filtro de búsqueda",
@@ -357,6 +361,7 @@ function BtnDowloadExcelGeneral(){
                 cancelButtonText: "Cancelar"
             }).then((result) => {
                 if (result.value) {
+                    var mac = document.getElementById('mac').value;
                     var año = document.getElementById('año').value;
                     var mes = document.getElementById('mes').value;
 
@@ -364,7 +369,7 @@ function BtnDowloadExcelGeneral(){
                     var link_up = "{{ route('asistencia.exportgroup_excel_general') }}";
 
                     // Crear la URL con las variables como parámetros de consulta
-                    var href = link_up +'?año=' + año + '&mes=' + mes;
+                    var href = link_up +'?mac=' + mac + '&año=' + año + '&mes=' + mes;
 
                     window.open(href);
 

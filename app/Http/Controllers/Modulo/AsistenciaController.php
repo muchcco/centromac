@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Asistencia;
 use App\Models\Asistenciatest;
 use App\Models\Entidad;
+use App\Models\Mac;
 use Illuminate\Support\Facades\DB;
 use App\Imports\AsistenciaImport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -682,14 +683,14 @@ class AsistenciaController extends Controller
         $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
         $hora_5 = Configuracion::where('PARAMETRO', 'HORA_5')->first();
 
-        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
-        /*================================================================================================================*/
-        $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+            $idmac = $this->centro_mac()->idmac;
+        }else{
+            $idmac = $request->mac;
+        }
 
-        $idmac = $user->IDCENTRO_MAC;
-        $name_mac = $user->NOMBRE_MAC;
-        /*================================================================================================================*/
+        $dec_mac = Mac::where('IDCENTRO_MAC', $idmac)->first();
+        $name_mac = $dec_mac->NOMBRE_MAC;
 
         // DEFINIMOS EL TIPO DE DESCA
         $tipo_desc = '1';
@@ -906,7 +907,9 @@ class AsistenciaController extends Controller
     {
         $identidad = $request->identidad;
 
-        $view = view('asistencia.modals.md_det_entidad_perso', compact('identidad'))->render();
+        $mac = $request->mac;
+
+        $view = view('asistencia.modals.md_det_entidad_perso', compact('identidad', 'mac'))->render();
 
         return response()->json(['html' => $view]);
     }
@@ -923,14 +926,14 @@ class AsistenciaController extends Controller
         // Obtiene el nombre completo del mes en español
         $nombreMES = $fecha->formatLocalized('%B');
 
-        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
-        /*================================================================================================================*/
-        $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+            $idmac = $this->centro_mac()->idmac;
+        }else{
+            $idmac = $request->mac;
+        }
 
-        $idmac = $user->IDCENTRO_MAC;
-        $name_mac = $user->NOMBRE_MAC;
-        /*================================================================================================================*/
+        $dec_mac = Mac::where('IDCENTRO_MAC', $idmac)->first();
+        $name_mac = $dec_mac->NOMBRE_MAC;
 
         // DEFINIMOS EL TIPO DE DESCA
 
@@ -1159,14 +1162,16 @@ class AsistenciaController extends Controller
         // Obtiene el nombre completo del mes en español
         $nombreMES = $fecha->formatLocalized('%B');
 
-        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
-        /*================================================================================================================*/
-        $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+            $idmac = $this->centro_mac()->idmac;
+        }else{
+            $idmac = $request->mac;
+        }
+        
+        $dec_mac = Mac::where('IDCENTRO_MAC', $idmac)->first();
+        $name_mac = $dec_mac->NOMBRE_MAC;
 
-        $idmac = $user->IDCENTRO_MAC;
-        $name_mac = $user->NOMBRE_MAC;
-        /*================================================================================================================*/
+        
 
         // DEFINIMOS EL TIPO DE DESCA
 

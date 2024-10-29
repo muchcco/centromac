@@ -269,7 +269,7 @@ mesSelect.selectedIndex = mesActual
 /****************************************************************************** FIN ************************************************************************/
 
 function exec_data_excel(){
-
+    var mac = $('#mac').val();
     var año = document.getElementById('año').value;
     var mes = document.getElementById('mes').value;
 
@@ -277,7 +277,7 @@ function exec_data_excel(){
     var link_up = "{{ route('indicador.puntualidad.export_excel') }}";
 
     // Crear la URL con las variables como parámetros de consulta
-    var href = link_up +'?año=' + año + '&mes=' + mes;
+    var href = link_up +'?mac=' + mac + '&año=' + año+ '&mes=' + mes;
 
     console.log(href);
 

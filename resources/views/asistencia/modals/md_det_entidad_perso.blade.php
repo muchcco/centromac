@@ -8,6 +8,7 @@
             
             <form action="" class="form">                
                 <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="mac" id="mac" value="{{ $mac }}" />
 
                 <div class="row">
                     <div class="col">

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Indicador;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Mac;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\IndicadorPuntualidadExport;
@@ -136,14 +137,21 @@ class Puntualidad1Controller extends Controller
 
     public function export_excel(Request $request)
     {
-        $idmac = $this->centro_mac()->idmac;
+        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+            $idmac = $this->centro_mac()->idmac;
+        }else{
+            $idmac = $request->mac;
+        }
+
+        $dec_mac = Mac::where('IDCENTRO_MAC', $idmac)->first();
+
         // Obtener fecha actual si no se proporciona año o mes
         $fecha_I = date("Y-m-d");
         $fecha_mes = $request->mes ?: date('m', strtotime($fecha_I));
         $fecha_año = $request->año ?: date('Y', strtotime($fecha_I));
 
         // Obtener el centro MAC
-        $name_mac = $this->centro_mac()->name_mac;
+        $name_mac = $dec_mac->NOMBRE_MAC;
 
         // Obtener los feriados del mes actual
         $feriados = DB::table('feriados')
