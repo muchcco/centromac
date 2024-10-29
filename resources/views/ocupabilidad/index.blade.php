@@ -136,12 +136,18 @@
                     fechafin: fechafin,
                     entidad: entidad
                 },
+                beforeSend: function () {
+                    document.getElementById("filtro").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Buscando';
+                    document.getElementById("filtro").disabled = true;
+                },
                 success: function(response) {
+                    document.getElementById("filtro").innerHTML = 'Buscar';
+                    document.getElementById("filtro").disabled = false;
                     $('#table_data').html(response);
                 },
                 error: function(xhr, status, error) {
                     console.error("Error: " + error);
-                    alert("Ocurrió un error al filtrar los datos.");
+                    alert("Ocurrió un error al filtrar los datos. Por favor actualice la página!");
                 }
             });
         }

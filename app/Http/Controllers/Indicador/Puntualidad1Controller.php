@@ -30,12 +30,26 @@ class Puntualidad1Controller extends Controller
 
     public function index(Request $request)
     {
-        return view('indicador.puntualidad.index');
+        $mac = DB::table('M_CENTRO_MAC')
+                ->where(function($query) {
+                    if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                        $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                    }
+                })
+                ->orderBy('NOMBRE_MAC', 'ASC')
+                ->get();
+
+        return view('indicador.puntualidad.index', compact('mac'));
     }
 
     public function tb_index(Request $request)
     {
-        $idmac = $this->centro_mac()->idmac;
+        // $idmac = $this->centro_mac()->idmac;
+        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+            $idmac = $this->centro_mac()->idmac;
+        }else{
+            $idmac = $request->mac;
+        }
         $fecha_año = $request->año ?: date('Y'); // Año actual si no se proporciona
         $fecha_mes = $request->mes ?: date('m'); // Mes actual si no se proporciona
         // Obtener los feriados del mes actual

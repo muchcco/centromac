@@ -80,10 +80,31 @@
                 <div class="card-body">
                     
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="mb-3">Centro MAC:</label>
+                                <select name="mac" id="mac" class="form-select" onchange="SearchMac()">
+                                    @role('Administrador|Moderador')
+                                        <option value="" disabled selected>-- Seleccione una opción --</option>
+                                        @forelse ($mac as $m)
+                                            <option value="{{ $m->IDCENTRO_MAC }}">{{ $m->NOMBRE_MAC }}</option>
+                                        @empty
+                                            <option value="">SIN RESULTADOS</option>
+                                        @endforelse
+                                    @else
+                                        @forelse ($mac as $m)
+                                            <option value="{{ $m->IDCENTRO_MAC }}" disabled selected>{{ $m->NOMBRE_MAC }}</option>
+                                        @empty
+                                            <option value="">SIN RESULTADOS</option>
+                                        @endempty
+                                    @endrole
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label class="mb-3">Mes:</label>
-                                <select name="mes" id="mes" class="form-control" onchange="SearchMes()">
+                                <select name="mes" id="mes" class="form-select" onchange="SearchMes()">
                                     <option value="" disabled selected>-- Seleccione una opción --</option>
                                     <option value="01">Enero</option>
                                     <option value="02">Febrero</option>
@@ -100,13 +121,13 @@
                                 </select>
                             </div>
                         </div><!-- end col -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label class="mb-3">Año:</label>
-                                <select name="año" id="año" class="form-control año" onchange="SearchAño()"></select>
+                                <select name="año" id="año" class="form-select año" onchange="SearchAño()"></select>
                             </div>
                         </div><!-- end col -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group" style="margin-top:2.6em;">                                
                                 <button type="button" class="btn btn-success" id="filtro" onclick="exec_data_excel()">
                                     <i class="fa fa-file-excel-o" aria-hidden="true"></i>
@@ -171,33 +192,59 @@ $(document).ready(function() {
     tabla_seccion();
     $('.select2').select2();
 });
-function tabla_seccion(mes = '', año = '') {
+function SearchMac() {
+    var mac = $('#mac').val();
+    var mes = $('#mes').val() || new Date().getMonth() + 1; // Toma el mes seleccionado o el mes actual si no está definido
+    var año = $('#año').val() || new Date().getFullYear(); // Año actual si no está definido
+
+    if (!mac) {
+        @if (!auth()->user()->hasRole('Administrador|Moderador'))
+            mac = '{{ auth()->user()->idcentro_mac }}'; // Asigna el MAC del usuario
+        @endif
+    }
+
+    tabla_seccion(mac, mes, año); // Llamada a la función con valores correctos
+}
+
+// Función tabla_seccion
+function tabla_seccion(mac, mes, año) {
     $.ajax({
         type: 'GET',
         url: "{{ route('indicador.puntualidad.tablas.tb_index') }}", // Ruta que devuelve la vista en HTML
-        data: {mes: mes, año : año},
+        data: { mes: mes, año: año, mac: mac }, // Envía los datos en forma de objeto
         beforeSend: function () {
             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
         },
         success: function(data) {
             $('#table_data').html(data); // Inserta la vista en un contenedor en tu página
-        },
-        error: function(error){
-            // tabla_seccion();
         }
     });
 }
 
 function SearchMes(){
-    var mes = $('#mes').val();
-    var año = $('#año').val();
-    tabla_seccion(mes, año);
+    var mac = $('#mac').val();
+    var mes = $('#mes').val() || new Date().getMonth() + 1; // Toma el mes seleccionado o el mes actual si no está definido
+    var año = $('#año').val() || new Date().getFullYear(); // Año actual si no está definido
+    if (!mac) {
+        @if (!auth()->user()->hasRole('Administrador|Moderador'))
+            mac = '{{ auth()->user()->idcentro_mac }}'; // Asigna el MAC del usuario
+        @endif
+    }
+
+    tabla_seccion(mac, mes, año);
 }
 
 function SearchAño(){
-    var mes = $('#mes').val();
-    var año = $('#año').val();
-    tabla_seccion(mes, año);
+    var mac = $('#mac').val();
+    var mes = $('#mes').val() || new Date().getMonth() + 1; // Toma el mes seleccionado o el mes actual si no está definido
+    var año = $('#año').val() || new Date().getFullYear(); // Año actual si no está definido
+    if (!mac) {
+        @if (!auth()->user()->hasRole('Administrador|Moderador'))
+            mac = '{{ auth()->user()->idcentro_mac }}'; // Asigna el MAC del usuario
+        @endif
+    }
+
+    tabla_seccion(mac, mes, año);
 }
 
 /**************************************************************** CARGAR COMBOS POR FECHA ACTUAL *************************************************************/

@@ -86,7 +86,7 @@
                                 <li class="nav-item @if (Request::is('personal/asesores*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.asesores') }}"><i class="ti-control-record"></i>Asesores</a></li>
                             @endif
                             @if ($per_mac->VALOR == '1')
-                                <li class="nav-item @if (Request::is('personal/pcm*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.pcm') }}"><i class="ti-control-record"></i>Pcm (MAC)</a></li>
+                                <li class="nav-item @if (Request::is('personal/pcm*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.pcm') }}"><i class="ti-control-record"></i>PCM</a></li>
                             @endif
                         </ul>
                     </li>
@@ -136,6 +136,11 @@
                                         <i class="ti-control-record"></i><span>Formato de Felicitaciones</span>
                                     </a>
                                 </li>
+                                <li class="@if (Request::is('verificaciones.*')) mm-active @endif">
+                                    <a href="{{ route('verificaciones.index') }}" class="@if (Request::is('verificaciones/index*')) active @endif">
+                                        <i class="ti-control-record"></i><span>Check List</span>
+                                    </a>
+                                </li>
                             @endif
                     </ul>
                 </li>
@@ -163,11 +168,7 @@
                                     <i class="ti-control-record"></i><span>Puntualidad</span>
                                 </a>
                             </li>
-                            <li class="@if (Request::is('verificaciones.*')) mm-active @endif">
-                                <a href="{{ route('verificaciones.index') }}" class="@if (Request::is('verificaciones/index*')) active @endif">
-                                    <i class="ti-control-record"></i><span>Check List</span>
-                                </a>
-                            </li>
+                            
                         </ul>
                     </li>
                     
