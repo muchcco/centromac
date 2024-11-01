@@ -27,9 +27,7 @@
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('inicio') }}"><i data-feather="home"
                                         class="align-self-center" style="height: 70%; display: block;"></i></a></li>
-                            <li class="breadcrumb-item"><a href="javascript:void(0);" style="color: #7081b9;">Hoy
-                                    <strong>(<?php setlocale(LC_TIME, 'es_PE', 'Spanish_Spain', 'Spanish');
-                                    echo strftime('%d de %B del %Y', strtotime('now')); ?>)</strong></a></li>
+                            <li class="breadcrumb-item">Módulo de Asistencia</li>
                         </ol>
                     </div><!--end col-->
                 </div><!--end row-->
