@@ -138,7 +138,7 @@
                                 </li>
                                 <li class="@if (Request::is('verificaciones.*')) mm-active @endif">
                                     <a href="{{ route('verificaciones.index') }}" class="@if (Request::is('verificaciones/index*')) active @endif">
-                                        <i class="ti-control-record"></i><span>Check List</span>
+                                        <i class="ti-control-record"></i><span>Verificación de apertura (check list)</span>
                                     </a>
                                 </li>
                             @endif

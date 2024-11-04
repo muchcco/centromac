@@ -32,19 +32,54 @@
                 </div><!--end card-header-->
                 <div class="card-body bootstrap-select-1">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label class="mb-3">Fecha de Inicio:</label>
-                                <input type="date" name="fechainicio" id="fechainicio" class="form-control">
+                                <label class="mb-3">Centro MAC:</label>
+                                <select name="mac" id="mac" class="form-select" onchange="SearchMac()">
+                                    @role('Administrador|Moderador')
+                                        <option value="" disabled selected>-- Seleccione una opción --</option>
+                                        @forelse ($mac as $m)
+                                            <option value="{{ $m->IDCENTRO_MAC }}">{{ $m->NOMBRE_MAC }}</option>
+                                        @empty
+                                            <option value="">SIN RESULTADOS</option>
+                                        @endforelse
+                                    @else
+                                        @forelse ($mac as $m)
+                                            <option value="{{ $m->IDCENTRO_MAC }}" disabled selected>{{ $m->NOMBRE_MAC }}</option>
+                                        @empty
+                                            <option value="">SIN RESULTADOS</option>
+                                        @endempty
+                                    @endrole
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="mb-3">Mes:</label>
+                                <select name="mes" id="mes" class="form-select" onchange="SearchMes()">
+                                    <option value="" disabled selected>-- Seleccione una opción --</option>
+                                    <option value="01">Enero</option>
+                                    <option value="02">Febrero</option>
+                                    <option value="03">Marzo</option>
+                                    <option value="04">Abril</option>
+                                    <option value="05">Mayo</option>
+                                    <option value="06">Junio</option>
+                                    <option value="07">Julio</option>
+                                    <option value="08">Agosto</option>
+                                    <option value="09">Setiembre</option>
+                                    <option value="10">Octubre</option>
+                                    <option value="11">Noviembre</option>
+                                    <option value="12">Diciembre</option>
+                                </select>
                             </div>
                         </div><!-- end col -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label class="mb-3">Fecha de Fin:</label>
-                                <input type="date" name="fechafin" id="fechafin" class="form-control">
+                                <label class="mb-3">Año:</label>
+                                <select name="año" id="año" class="form-select año" onchange="SearchAño()"></select>
                             </div>
                         </div><!-- end col -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group" style="margin-top: 2.6em">
                                 <button type="button" class="btn btn-primary" id="filtro" onclick="execute_filter()">
                                     <i class="fa fa-search" aria-hidden="true"></i> Buscar
@@ -132,21 +167,24 @@
 
         // Función para aplicar los filtros
         function execute_filter() {
-            var fechainicio = $('#fechainicio').val();
-            var fechafin = $('#fechafin').val();
+            var mac = $('#mac').val();
+            var mes = $('#mes').val();
+            var año = $('#año').val();
 
-            if (!fechainicio || !fechafin) {
-                alert("Por favor, seleccione tanto la fecha de inicio como la fecha de fin.");
+            // Verifica que los campos obligatorios no estén vacíos
+            if (!mac || !mes || !año) {
+                alert("Por favor, seleccione todos los campos obligatorios: MAC, Mes y Año.");
                 return;
             }
 
-            // Realiza la solicitud AJAX para filtrar los datos según las fechas seleccionadas
+            // Realiza la solicitud AJAX para filtrar los datos
             $.ajax({
                 type: 'GET',
                 url: "{{ route('puntualidad.tablas.tb_index') }}",
                 data: {
-                    fechainicio: fechainicio,
-                    fechafin: fechafin
+                    mac: mac,
+                    mes: mes,
+                    año: año
                 },
                 beforeSend: function () {
                     document.getElementById("filtro").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Buscando';
@@ -159,9 +197,29 @@
                 },
                 error: function(xhr, status, error) {
                     console.error("Error: " + error);
-                    alert("Ocurrió un error al filtrar los datos. Por favor actualice la página!");
+                    alert("Ocurrió un error al filtrar los datos. Por favor, actualice la página.");
                 }
             });
         }
+
+
+        /**************************************************************** CARGAR COMBOS POR FECHA ACTUAL *************************************************************/
+        function ComboAno(){
+        var n = (new Date()).getFullYear()
+        var select = document.querySelector(".año");
+        for(var i = n; i>=2023; i--)select.options.add(new Option(i,i)); 
+        };
+        window.onload = ComboAno;
+
+        // Obtén el elemento select por su ID
+        var mesSelect = document.getElementById('mes');
+
+        // Obtén el mes actual (0 = enero, 1 = febrero, ..., 11 = diciembre)
+        var mesActual = new Date().getMonth() + 1;
+
+        console.log(mesActual);
+
+        // Selecciona el mes actual en el select
+        mesSelect.selectedIndex = mesActual
     </script>
 @endsection
