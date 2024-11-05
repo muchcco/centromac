@@ -98,6 +98,7 @@ class OcupabilidadController extends Controller
                             ->where('fechafin', '>=', $fechaFin);
                     });
             })
+            ->orderBy('n_modulo', 'asc')
             ->get();
 
         // Preparar array para almacenar los resultados

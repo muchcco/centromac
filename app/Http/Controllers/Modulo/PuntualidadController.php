@@ -58,7 +58,7 @@ class PuntualidadController extends Controller
 
         $centroMac = $this->centro_mac();
 
-        $modulos = Modulo::with('entidad')->where('IDCENTRO_MAC', $mac)->get();
+        $modulos = Modulo::with('entidad')->where('IDCENTRO_MAC', $mac)->orderBy('n_modulo', 'asc')->get();
 
         $data = $modulos->map(function ($modulo) use ($fechaInicio, $fechaFin) {
             // Combinamos las fechas marcadas por personal regular e itinerante
