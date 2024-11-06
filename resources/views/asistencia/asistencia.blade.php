@@ -104,7 +104,7 @@
                 <div class="card-body bootstrap-select-1">
                     <div class="row">
                         <div class="col-12">
-                            @role('Administrador|Especialista_TIC')
+                            @role('Administrador|Especialista TIC')
                                 <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
                                     onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
                                     Subir Archivo de Asistencia
