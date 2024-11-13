@@ -115,6 +115,18 @@
                                     <i class="ti-control-record"></i><span>Puntualidad</span>
                                 </a>
                             </li>
+
+                            <li class="">
+                                <a href="https://apps.powerapps.com/play/e/default-34b48e4e-2519-4060-a09e-5b05d901a4d7/a/a2036540-c323-4a79-8cf2-0a9330c23119?tenantId=34b48e4e-2519-4060-a09e-5b05d901a4d7&hint=7bbca76f-2366-4f77-82a7-401fa606b4c1&sourcetime=1720627181714&source=portal" target="_blank">
+                                    <i class="ti-control-record"></i><span>Observaciones e Interrupciones</span>
+                                </a>
+                            </li>
+
+                            <li class="">
+                                <a href="https://pcmgobperu-my.sharepoint.com/:x:/g/personal/sscs_06_pcm_gob_pe/EVYcqSpCEG1CoVMmnMcl6vQBUUe08LMNg8JC3Da32IxLhA?wdOrigin=TEAMS-MAGLEV.p2p_ns.rwc&wdExp=TEAMS-TREATMENT&wdhostclicktime=1731515745580&web=1" target="_blank">
+                                    <i class="ti-control-record"></i><span>Módulos asignados</span>
+                                </a>
+                            </li>
                 
                             @if ($eval_mot->VALOR == '1')
                                 <li class="@if (Request::is('formatos/evaluacion_motivacional*')) mm-active @endif">
@@ -142,6 +154,7 @@
                                     </a>
                                 </li>
                             @endif
+                            
                     </ul>
                 </li>
                
@@ -177,14 +190,15 @@
                 @if ($dashboard->VALOR == '1')
                     
                 
-                    <li class="menu-label mt-0">Tableros de Información </li>
+                    <li class="menu-label mt-0">Tableros de Información  </li>
 
                 
                     <li>
-                        <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i><span>Dashboard</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
+                        <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i><span>Plataforma MAC</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
                         <ul class="nav-second-level" aria-expanded="false">
                             <li class="nav-item @if (Request::is('dashboard/index')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.index') }}"><i class="ti-control-record"></i>Atenciones</a></li>
-                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>Gestión Interna</a></li>
+                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>Centros MAC y MAC EXPRESS</a></li>
+                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>Entidades y servicios</a></li>
                         </ul>
                     </li>
                 @endif
