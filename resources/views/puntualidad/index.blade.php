@@ -45,7 +45,7 @@
                                         @endforelse
                                     @else
                                         @forelse ($mac as $m)
-                                            <option value="{{ $m->IDCENTRO_MAC }}" disabled selected>{{ $m->NOMBRE_MAC }}</option>
+                                            <option value="{{ $m->IDCENTRO_MAC }}" selected>{{ $m->NOMBRE_MAC }}</option>
                                         @empty
                                             <option value="">SIN RESULTADOS</option>
                                         @endempty

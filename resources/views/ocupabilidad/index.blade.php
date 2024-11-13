@@ -74,7 +74,7 @@
                                         @endforelse
                                     @else
                                         @forelse ($mac as $m)
-                                            <option value="{{ $m->IDCENTRO_MAC }}" disabled selected>{{ $m->NOMBRE_MAC }}</option>
+                                            <option value="{{ $m->IDCENTRO_MAC }}" selected>{{ $m->NOMBRE_MAC }}</option>
                                         @empty
                                             <option value="">SIN RESULTADOS</option>
                                         @endempty
@@ -159,6 +159,8 @@
             var mac = $('#mac').val();
             var mes = $('#mes').val();
             var año = $('#año').val();
+
+            console.log($('#mac').val() + $('#mes').val() + $('#año').val()) 
 
             if (!mac || !mes || !año) {
                 alert("Por favor, seleccione todos los campos obligatorios: MAC, Mes y Año.");
