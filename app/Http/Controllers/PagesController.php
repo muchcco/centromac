@@ -869,4 +869,43 @@ class PagesController extends Controller
         return $result;
     }
 
+    /******************************************************   PAGINAS DE APOYO *****************************************************************************/
+
+    public function directorio()
+    {
+        $coordinadores = DB::table('M_PERSONAL as MP')
+                            ->join('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
+                            ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                            ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+                            ->where('MP.IDCARGO_PERSONAL', 2)
+                            ->whereIn('ME.IDENTIDAD', [98, 100, 103, 17])
+                            ->where('MP.FLAG', 1)
+                            ->orderBy('MCM.NOMBRE_MAC', 'ASC')
+                            ->get();
+
+        $especialistas_tic = DB::table('M_PERSONAL as MP')
+                            ->join('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
+                            ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                            ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+                            ->where('MP.IDCARGO_PERSONAL', 1)
+                            ->whereIn('ME.IDENTIDAD', [98, 100, 103, 17])
+                            ->where('MP.FLAG', 1)
+                            ->orderBy('MCM.NOMBRE_MAC', 'ASC')
+                            ->get();
+
+                
+        $supervisores = DB::table('M_PERSONAL as MP')
+                            ->join('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
+                            ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                            ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+                            ->where('MP.IDCARGO_PERSONAL', 3)
+                            ->whereIn('ME.IDENTIDAD', [98, 100, 103, 17])
+                            ->where('MP.FLAG', 1)
+                            ->orderBy('MCM.NOMBRE_MAC', 'ASC')
+                            ->get();      
+
+        return view('directorio', compact('coordinadores', 'especialistas_tic', 'supervisores'));
+
+    }
+
 }

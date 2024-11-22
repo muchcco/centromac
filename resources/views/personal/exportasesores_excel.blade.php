@@ -5,7 +5,7 @@
     <thead style="background: #3D61B2; color:#fff;">
         <tr style="border: 1px solid black; color: #fff;">
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">N°</th>
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Centro Mac</th>
+            <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Centro MAC</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Entidad</th>            
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Nombres y Apellidos</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Cargo / Asesor(a)</th>

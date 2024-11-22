@@ -197,8 +197,8 @@
                         <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i><span>Plataforma MAC</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
                         <ul class="nav-second-level" aria-expanded="false">
                             <li class="nav-item @if (Request::is('dashboard/index')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.index') }}"><i class="ti-control-record"></i>Atenciones</a></li>
-                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>Centros MAC y MAC EXPRESS</a></li>
-                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>Entidades y servicios</a></li>
+                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>CMAC y MAC Express (Implementación y Módulos asignados)</a></li>
+                            <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>CMAC y MAC Express (Entidades y servicios)</a></li>
                         </ul>
                     </li>
                 @endif
@@ -210,6 +210,11 @@
                 @if ($externos->VALOR == '1')
                     <li class="@if (Request::is('externo*')) mm-active @endif">
                         <a href="{{ route('externo') }}" class="@if (Request::is('externo*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Páginas externas</span></a>
+                    </li>
+                @endif
+                @if ($externos->VALOR == '1')
+                    <li class="@if (Request::is('directorio*')) mm-active @endif">
+                        <a href="{{ route('directorio') }}" class="@if (Request::is('directorio*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Directorio</span></a>
                     </li>
                 @endif
                 

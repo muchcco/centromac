@@ -433,4 +433,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('verificaciones/{fecha}', [VerificacionController::class, 'show'])->name('verificaciones.show');
     Route::get('/verificaciones/change-apertura', [VerificacionController::class, 'changeApertura'])->name('verificaciones.changeApertura');
     Route::get('/verificaciones/get-observations', [VerificacionController::class, 'getObservations'])->name('verificaciones.getObservations');
+
+
+    /******************************************************   PAGINAS DE APOYO *****************************************************************************/
+
+    // SE ALMACENA LOS ACCESOS A LAS PAGINAS EXTERNA QUE NO ES NECESARIO LOGGIN
+    Route::get('/directorio', [PagesController::class, 'directorio'])->name('directorio');
 });
