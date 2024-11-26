@@ -2,7 +2,7 @@
 <div class="topbar" >       
     <!-- Navbar -->
     <nav class="navbar-custom" >    
-        <div class=" row align-items-center" style=" padding-top: 0.7%;"> 
+        <div class=" row align-items-center" style=" padding-top: 0.7%; width:100% !important"> 
             <div class="col-1" id="divicnav1">
                 <ul class="list-unstyled topbar-nav mb-0">                        
                     <li>

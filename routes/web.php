@@ -369,8 +369,10 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/index', [AlmacenController::class, 'index'])->name('index');
         Route::get('/tablas/tb_index', [AlmacenController::class, 'tb_index'])->name('tablas.tb_index');
         Route::post('/modals/md_add_datos', [AlmacenController::class, 'md_add_datos'])->name('modals.md_add_datos');
+        Route::post('/modals/md_categorias', [AlmacenController::class, 'md_categorias'])->name('modals.md_categorias');
         Route::post('/store_datos', [AlmacenController::class, 'store_datos'])->name('store_datos');
     });
+
 
     /******************************************************   ADMINISTRADOR ************************************************************************/
 

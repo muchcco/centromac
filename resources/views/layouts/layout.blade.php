@@ -97,10 +97,11 @@
             position: fixed;
             text-align: center;
             vertical-align: text-bottom	;                     
-            z-index:9999;
+            z-index:1;
             height: 100vh;
             width: 100vw;
-            background-color: #fff;
+            /* background-color: #fff; */
+            opacity: .5;
         }
 
         .navbar-custom {
@@ -126,13 +127,76 @@
             border: 1px solid #f00 !important;
         }
     
+        .loader {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            z-index: 9999;
+            height: 100vh;
+            width: 100vw;
+            background-color: #fff;
+            text-align: center;
+        }
+
+        .logo-container {
+            position: relative;
+            animation: bounce 1.5s infinite ease-in-out; /* Movimiento de la imagen */
+        }
+
+        .logo_d {
+            width: 50px; /* Ajusta el tamaño de la imagen */
+            animation: pulse-colors 2s infinite; /* Parpadeo de colores */
+        }
+
+        @keyframes pulse-colors {
+            0% { filter: hue-rotate(0deg); }
+            25% { filter: hue-rotate(90deg); }
+            50% { filter: hue-rotate(180deg); }
+            75% { filter: hue-rotate(270deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .loading-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff; /* Color azul */
+            margin-top: 15px;
+            animation: fade-in-out 1.5s infinite;
+        }
+
+        @keyframes fade-in-out {
+            0%, 100% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
      </style>
 
 </head>
     <body class="dark-sidenav">
-    <div class="loader">
+    {{-- <div class="loader">
         <div class="spinner-border spinner-border-custom-4 text-primary" role="status"></div><br />
         <div>Cargando...</div>
+    </div> --}}
+    <div class="loader">
+        <div class="logo-container">
+            <img src="{{ asset('imagen/mac-logo.png') }}" alt="Logo" class="logo_d" width="50">
+        </div>
+        <div class="loading-text">Cargando...</div>
     </div>
 
     
@@ -166,29 +230,29 @@
 
         {{-- CARGA IMAGEN ANTES DE CARGAR PAGINA --}}
         <script>
-            $(document).ready(function(){
-              $(".loader").fadeOut();
-                $(window).resize(function(){    
-                    if (window.matchMedia("(max-width: 700px)").matches) {
-                        $('#divicnav1').addClass('col-3');
-                        $('#divicnav2').addClass('col-6');
-                        $('#divicnav3').addClass('col-3');
+         $(document).ready(function(){
+           $(".loader").fadeOut();
+             $(window).resize(function(){    
+                 if (window.matchMedia("(max-width: 700px)").matches) {
+                     $('#divicnav1').addClass('col-3');
+                     $('#divicnav2').addClass('col-6');
+                     $('#divicnav3').addClass('col-3');
 
-                        $('#divicnav1').removeClass('col-1');
-                        $('#divicnav2').removeClass('col-10');
-                        $('#divicnav3').removeClass('col-1');
-                    } else {
-                        $('#divicnav1').addClass('col-1');
-                        $('#divicnav2').addClass('col-10');
-                        $('#divicnav3').addClass('col-1');
+                     $('#divicnav1').removeClass('col-1');
+                     $('#divicnav2').removeClass('col-10');
+                     $('#divicnav3').removeClass('col-1');
+                 } else {
+                     $('#divicnav1').addClass('col-1');
+                     $('#divicnav2').addClass('col-10');
+                     $('#divicnav3').addClass('col-1');
 
-                        $('#divicnav1').removeClass('col-3');
-                        $('#divicnav2').removeClass('col-6');
-                        $('#divicnav3').removeClass('col-3');
-                    }
-                }).resize()// trigger on page load
-                    
-            });
+                     $('#divicnav1').removeClass('col-3');
+                     $('#divicnav2').removeClass('col-6');
+                     $('#divicnav3').removeClass('col-3');
+                 }
+             }).resize()// trigger on page load
+              
+         });
         </script>
 
         <script>

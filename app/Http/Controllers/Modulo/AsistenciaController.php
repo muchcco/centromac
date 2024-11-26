@@ -860,7 +860,7 @@ class AsistenciaController extends Controller
                                 JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
                 ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO')
                 ->where('PERS.IDENTIDAD', $request->identidad)
-                ->where('PERS.IDCENTRO_MAC', $idmac)
+                ->where('PERS.IDCENTRO_MAC', $this->centro_mac()->idmac)
                 ->whereMonth('MA.FECHA', $request->mes)
                 ->whereYear('MA.FECHA', $request->año)
                 ->orderBy('FECHA', 'ASC')
@@ -995,7 +995,7 @@ class AsistenciaController extends Controller
                     'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
                 ])
                 ->where('PERS.IDENTIDAD', $request->identidad)
-                ->where('PERS.IDCENTRO_MAC', $idmac)
+                ->where('PERS.IDCENTRO_MAC', $this->centro_mac()->idmac)
                 ->whereBetween(DB::raw('DATE(MA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
                 ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
                 ->orderBy('MA.FECHA', 'asc')
@@ -1106,7 +1106,7 @@ class AsistenciaController extends Controller
                     'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
                 ])
                 ->where('PERS.IDENTIDAD', $request->identidad)
-                ->where('PERS.IDCENTRO_MAC', $idmac)
+                ->where('PERS.IDCENTRO_MAC', $this->centro_mac()->idmac)
                 ->whereBetween(DB::raw('DATE(MA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
                 ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
                 ->orderBy('MA.FECHA', 'asc')
@@ -1222,7 +1222,7 @@ class AsistenciaController extends Controller
             JOIN M_CENTRO_MAC AS MCM ON MCM.IDCENTRO_MAC = MP.IDMAC
         ) AS PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
         ->whereIn('PERS.IDENTIDAD', $identidadArray) // Reemplaza con tu array de identidades
-        ->where('PERS.IDCENTRO_MAC', $idmac)
+        ->where('PERS.IDCENTRO_MAC', $this->centro_mac()->idmac)
         ->whereMonth('MA.FECHA', $request->mes)
         ->whereYear('MA.FECHA', $request->año)
         ->groupBy(

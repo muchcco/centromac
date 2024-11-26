@@ -6,6 +6,7 @@
             <th class="th">Código SBN</th>
             <th class="th">Código PROMSACE</th>
             <th class="th">Código Interno de PCM</th>
+            <th class="th">Categoria del bien</th>
             <th class="th">Descripcion</th>
             <th class="th">Marca</th>
             <th class="th">Modelo</th>
@@ -22,12 +23,15 @@
                 <td>{{ $que->COD_SBN }}</td>
                 <td>{{ $que->COD_PRONSACE }}</td>
                 <td>{{ $que->COD_INTERNO_PCM}}</td>
+                <td>{{ $que->CODIGO_CATEGORIA}} - {{ $que->ABREV_CATEGORIA}}</td>
                 <td>{{ $que->DESCRIPCION }}</td>
-                <td>{{ $que->MARCA }}</td>
-                <td>{{ $que->MODELO }}</td>
+                <td>{{ $que->ABREV_MARCA }}</td>
+                <td>{{ $que->ABREV_MODELO }}</td>
                 <td>{{ $que->SERIE_MEDIDA }}</td>
                 <td>{{ $que->UBICACION_EQUIPOS }}</td>
-                <td></td>
+                <td>
+
+                </td>
             </tr>
         @endforeach
     </tbody>
@@ -58,6 +62,7 @@ $(document).ready(function() {
         language: {"url": "{{ asset('js/Spanish.json')}}"}, 
         "columns": [
             { "width": "" },            
+            { "width": "" },
             { "width": "" },
             { "width": "" },
             { "width": "" },

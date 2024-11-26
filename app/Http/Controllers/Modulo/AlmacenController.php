@@ -35,6 +35,9 @@ class AlmacenController extends Controller
     {
         $query = Almacen::from('M_ALMACEN as MA')
                             ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
+                            ->join('ALM_CATEGORIA as AC', 'AC.IDCATEGORIA', '=', 'MA.IDCENTRO_MAC')
+                            ->join('ALM_MODELO as AM', 'AM.IDMODELO', '=', 'MA.IDMODELO')
+                            ->join('ALM_MARCA as AMM', 'AMM.IDMARCA', '=', 'AM.IDMARCA')
                             ->where('MA.FLAG', 1)
                             ->where('MCM.IDCENTRO_MAC', $this->centro_mac()->idmac)
                             ->get();
@@ -45,6 +48,13 @@ class AlmacenController extends Controller
     public function md_add_datos(Request $requet)
     {
         $view = view('almacen.modals.md_add_datos')->render();
+
+        return response()->json(['html' => $view]);
+    }
+
+    public function md_categorias(Request $requet)
+    {
+        $view = view('almacen.modals.md_categorias')->render();
 
         return response()->json(['html' => $view]);
     }
