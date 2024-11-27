@@ -23,14 +23,15 @@
                 <td>{{ $que->COD_SBN }}</td>
                 <td>{{ $que->COD_PRONSACE }}</td>
                 <td>{{ $que->COD_INTERNO_PCM}}</td>
-                <td>{{ $que->CODIGO_CATEGORIA}} - {{ $que->ABREV_CATEGORIA}}</td>
+                <td>{{ $que->CODIGO_CATEGORIA}} - {{ $que->NOMBRE_CATEGORIA}}</td>
                 <td>{{ $que->DESCRIPCION }}</td>
-                <td>{{ $que->ABREV_MARCA }}</td>
-                <td>{{ $que->ABREV_MODELO }}</td>
+                <td>{{ $que->NOMBRE_MARCA }}</td>
+                <td>{{ $que->NOMBRE_MODELO }}</td>
                 <td>{{ $que->SERIE_MEDIDA }}</td>
                 <td>{{ $que->UBICACION_EQUIPOS }}</td>
                 <td>
-
+                    <button class="nobtn bandejTool" data-tippy-content="Editar Item" onclick="btnEditarItem('{{ $que->IDALMACEN }}' )"><i class="las la-pen text-secondary font-16 text-success"></i></button>
+                    <button class="nobtn bandejTool" data-tippy-content="Eliminar Item" onclick="btnElimnarItem('{{ $que->IDALMACEN }}' )"><i class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
                 </td>
             </tr>
         @endforeach
@@ -39,6 +40,10 @@
 
 <script>
 $(document).ready(function() {
+    tippy(".bandejTool", {
+        allowHTML: true,
+        followCursor: true,
+    });
 
     $('#table_almacen').DataTable({
         "responsive": true,

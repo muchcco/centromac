@@ -14,7 +14,9 @@ class Almacen extends Model
     protected $primaryKey = 'IDALMACEN';
 
     protected $fillable = [  
-                            'IDCENTRO_MAC', 
+                            'IDCENTRO_MAC',
+                            'IDCATEGORIA',
+                            'IDMODELO',
                             'OC',                            
                             'COD_SBN', 
                             'COD_PRONSACE', 
@@ -22,13 +24,13 @@ class Almacen extends Model
                             'FECHA_OC',
                             'PROVEEDOR',
                             'DESCRIPCION',
-                            'MARCA',  
-                            'MODELO',
                             'SERIE_MEDIDA',
                             'COLOR',
                             'UBICACION_EQUIPOS',
                             'CANTIDAD',         
-                            'FLAG',                 
+                            'FLAG',        
+                            'USU_REG',
+                            'ESTADO'         
                         ];
 
     public $timestamps = true;

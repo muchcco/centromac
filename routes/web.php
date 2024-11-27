@@ -81,6 +81,7 @@ Route::get('consultas_novo', [PagesController::class, 'consultas_novo'])->name('
 Route::get('entidad/{idcentro_mac}', [PagesController::class, 'entidad'])->name('entidad');
 
 
+
 /******************  GRAFICOS  ********************/
 
 Route::get('asist_xdia', [PagesController::class, 'asist_xdia'])->name('asist_xdia');
@@ -368,9 +369,23 @@ Route::group(['middleware' => ['auth']], function () {
     Route::group(['prefix' => 'almacen', 'as' => 'almacen.'], function () {
         Route::get('/index', [AlmacenController::class, 'index'])->name('index');
         Route::get('/tablas/tb_index', [AlmacenController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::get('/tablas/tb_modelos', [AlmacenController::class, 'tb_modelos'])->name('tablas.tb_modelos');
+        Route::post('/modals/md_add_item', [AlmacenController::class, 'md_add_item'])->name('modals.md_add_item');
+        Route::post('/modals/md_edit_item/{id}', [AlmacenController::class, 'md_edit_item'])->name('modals.md_edit_item');
         Route::post('/modals/md_add_datos', [AlmacenController::class, 'md_add_datos'])->name('modals.md_add_datos');
         Route::post('/modals/md_categorias', [AlmacenController::class, 'md_categorias'])->name('modals.md_categorias');
+        Route::post('/modals/md_modelo', [AlmacenController::class, 'md_modelo'])->name('modals.md_modelo');
+        Route::get('/buscar-marca', [AlmacenController::class, 'searchMarca'])->name('buscar-marca');
         Route::post('/store_datos', [AlmacenController::class, 'store_datos'])->name('store_datos');
+        Route::post('/store_modelo', [AlmacenController::class, 'storeModelo'])->name('store_modelo');
+        Route::post('/store_item', [AlmacenController::class, 'store_item'])->name('store_item');
+        Route::post('/update_item/{id}', [AlmacenController::class, 'update_item'])->name('update_item');
+        Route::post('/delete_item', [AlmacenController::class, 'delete_item'])->name('delete_item');
+        Route::post('/delete_masivo', [AlmacenController::class, 'delete_masivo'])->name('delete_masivo');
+        Route::delete('/eliminar_modelo/{id}', [AlmacenController::class, 'eliminar_modelo'])->name('eliminar_modelo');
+
+
+        Route::get('/modelo_marca/{idmarca}', [AlmacenController::class, 'modelo_marca'])->name('modelo_marca');
     });
 
 

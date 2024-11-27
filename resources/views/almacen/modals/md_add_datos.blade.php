@@ -12,13 +12,13 @@
             <div class="row">
                 <div class="form-group">
                     <button type="button" class="btn btn-success" onclick="btnCategoria()">Categorias</button>
-                    <button type="button" class="btn btn-info">Marca y Modelo</button>
+                    <button type="button" class="btn btn-info" onclick="btnModelo()">Marcas y Modelos</button>
                 </div>
             </div>
             
             <form action="" class="form">                
                 <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
-                <h5>Adjuntar archivo  <strong>(descargar archivo modelo xls => <a href="{{ asset('archivo_modelo/asistencia.xlsx') }}" class="bandejTool" data-tippy-content="Modelo de carga... copiar informacion en las columnas indicadas" target="_blank"><i class="fa fa-file-excel-o text-success" aria-hidden="true"></i></a>)</strong></h5>
+                <h5>Adjuntar archivo  <strong>(descargar archivo modelo xls => <a href="{{ asset('archivo_modelo/modelo_carga_almacen.xlsx') }}" class="bandejTool" data-tippy-content="Modelo de carga... copiar informacion en las columnas indicadas" target="_blank"><i class="fa fa-file-excel-o text-success" aria-hidden="true"></i></a>)</strong></h5>
                 <div class="form-group">
                     <input type="file" class="form-control" name="excel_file" id="excel_file">
                 </div>                
@@ -43,6 +43,20 @@ function btnCategoria ()  {
     $.ajax({
         type:'post',
         url: "{{ route('almacen.modals.md_categorias') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}"},
+        success:function(data){
+            $("#modal_show_modal_sub").html(data.html);
+            $("#modal_show_modal_sub").modal('show');
+        }
+    });
+}
+
+function btnModelo ()  {
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('almacen.modals.md_modelo') }}",
         dataType: "json",
         data:{"_token": "{{ csrf_token() }}"},
         success:function(data){

@@ -18,27 +18,32 @@ class AlmacenImport implements ToModel, WithBatchInserts, WithChunkReading, With
 
     protected $id;
 
-    function __construct($id) {
+    protected $usu_reg;
+
+    function __construct($id, $usu_reg) {
             $this->id = $id;
+            $this->usu_reg = $usu_reg;
     }
     public function model(array $row)
     {        
         // dd($row);
         $save = new Almacen;
         $save->IDCENTRO_MAC = $this->id;
+        $save->IDCATEGORIA = $row['IDCATEGORIA'];
+        $save->IDMODELO = $row['IDMODELO'];
         $save->OC = $row['O/C'];
         $save->COD_SBN = $row['CODIGO SBN'];
         $save->COD_PRONSACE = $row['CODIGO PROMSACE'];
         $save->COD_INTERNO_PCM = $row['CODIGO INTERNO'];
         $save->FECHA_OC = $row['FECHA OC'];
         $save->PROVEEDOR = $row['PROVEEDOR'];
-        $save->DESCRIPCION = $row['DESCRIPCION'];
-        $save->MARCA = $row['MARCA'];
-        $save->MODELO = $row['MODELO'];
+        $save->DESCRIPCION = $row['DESCRIPCION'];        
         $save->SERIE_MEDIDA = $row['SERIE / MEDIDA'];
         $save->COLOR = $row['COLOR'];
-        $save->UBICACION_EQUIPOS = $row['UBICACION'];
+        $save->UBICACION_EQUIPOS = $row['UBICACIÓN'];
         $save->CANTIDAD = $row['CANTIDAD'];
+        $save->USU_REG = $this->usu_reg;
+        $save->ESTADO = $row['ESTADO'];
         $save->save();
     }
 

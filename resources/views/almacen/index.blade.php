@@ -14,6 +14,18 @@
 <!-- Responsive datatable examples -->
 <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" /> 
 
+<style>
+    .padre_dat {
+        background-color: #f0f8ff  !important; /* Azul claro */
+        font-weight: 900 !important;
+        color: #000000 !important;
+    }
+
+    .hasError{
+        border: 1px solid #f00 !important;
+    }
+
+</style>
 @endsection
 
 @section('main')
@@ -50,8 +62,12 @@
             <div class="card-body bootstrap-select-1">
                 <div class="row">
                     <div class="col-12">
-                        <button class="btn btn-outline-primary" data-toggle="modal" data-target="#large-Modal" onclick="btnAddAsistencia()"><i class="fa fa-database" aria-hidden="true"></i>
-                            Importar Data</button>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal" onclick="btnAddItem()"><i class="fa fa-plus" aria-hidden="true"></i>
+                            Nuevo Registro</button>
+                        <button class="btn btn-outline-info" data-toggle="modal" data-target="#large-Modal" onclick="btnAddExcel()"><i class="fa fa-database" aria-hidden="true"></i>
+                                Importar Data</button>
+                        <button class="btn btn-outline-danger" data-toggle="modal" data-target="#large-Modal" onclick="btnDeleteCompleto()"><i class="fa fa-database" aria-hidden="true"></i>
+                                    Eliminar Data Completa</button>
                     </div>
                 </div>
                 <div class="row">
@@ -80,6 +96,10 @@
 <script src="{{ asset('Script/js/sweet-alert.min.js') }}"></script>
 <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
 <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
+
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
 
 <!-- Plugins js -->
 <script src="{{ asset('nuevo/plugins/select2/select2.min.js') }}"></script>
@@ -124,7 +144,42 @@ function tabla_seccion() {
     });
 }
 
-function btnAddAsistencia ()  {
+function btnAddItem() {
+    $.ajax({
+        type:'post',
+        url: "{{ route('almacen.modals.md_add_item') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}"},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
+}
+
+function btnEditarItem(id) {
+    $.ajax({
+        type: 'post',
+        url: "{{ route('almacen.modals.md_edit_item', ':id') }}".replace(':id', id), // Reemplaza el placeholder con el ID
+        dataType: "json",
+        data: { "_token": "{{ csrf_token() }}", id: id },
+        success: function(data) {
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        },
+        error: function(xhr) {
+            console.error("Error en la solicitud:", xhr.responseText);
+            Toastify({
+                text: "Error al cargar el modal",
+                backgroundColor: "#dc3545",
+            }).showToast();
+        }
+    });
+}
+
+
+
+function btnAddExcel ()  {
 
     $.ajax({
         type:'post',
@@ -166,6 +221,166 @@ function btnStoreExcel () {
             }).showToast();
         }
     });
+
+}
+
+function btnStoreItem(){
+    var formData = new FormData();
+    formData.append("idcategoria", $("#idcategoria").val());
+    formData.append("cod_interno_pcm", $("#cod_interno_pcm").val());
+    formData.append("cod_sbn", $("#cod_sbn").val());
+    formData.append("cod_pronsace", $("#cod_pronsace").val());
+    formData.append("descripcion", $("#descripcion").val());
+    formData.append("idmarca", $("#idmarca").val());
+    formData.append("idmodelo", $("#idmodelo").val());
+    formData.append("serie", $("#serie").val());
+    formData.append("oc", $("#oc").val());
+    formData.append("fecha_oc", $("#fecha_oc").val());
+    formData.append("proveedor", $("#proveedor").val());
+    formData.append("ubicacion", $("#ubicacion").val());
+    formData.append("cantidad", $("#cantidad").val());
+    formData.append("estado", $("#estado").val());
+    formData.append("color", $("#color").val());
+    formData.append("_token", $("input[name=_token]").val());
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('almacen.store_item') }}",
+        dataType: "json",
+        data:formData,
+        processData: false,
+        contentType: false,
+        success:function(data){        
+            $("#modal_show_modal").modal('hide');
+            tabla_seccion();
+            Toastify({
+                text: "Se agregó exitosamente los registros",
+                className: "info",
+                gravity: "bottom",
+                style: {
+                    background: "#47B257",
+                }
+            }).showToast();
+        }
+    });
+}
+
+function btnUpdateItem(id) {
+    let formData = new FormData();
+    formData.append("idcategoria", $("#idcategoria").val());
+    formData.append("cod_interno_pcm", $("#cod_interno_pcm").val());
+    formData.append("cod_sbn", $("#cod_sbn").val());
+    formData.append("cod_pronsace", $("#cod_pronsace").val());
+    formData.append("descripcion", $("#descripcion").val());
+    formData.append("idmodelo", $("#idmodelo").val());
+    formData.append("serie", $("#serie").val());
+    formData.append("oc", $("#oc").val());
+    formData.append("fecha_oc", $("#fecha_oc").val());
+    formData.append("proveedor", $("#proveedor").val());
+    formData.append("ubicacion", $("#ubicacion").val());
+    formData.append("cantidad", $("#cantidad").val());
+    formData.append("estado", $("#estado").val());
+    formData.append("color", $("#color").val());
+    formData.append("_token", $("input[name=_token]").val());
+
+    $.ajax({
+        type: 'POST',
+        url: "{{ route('almacen.update_item', ':id') }}".replace(':id', id), // Reemplaza el ID dinámicamente en la ruta
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            $("#modal_show_modal").modal('hide'); // Cerrar el modal
+            tabla_seccion(); // Actualizar la tabla
+            Toastify({
+                text: response.message || "Item actualizado correctamente.",
+                backgroundColor: "#28a745",
+            }).showToast();
+        },
+        error: function (xhr) {
+            console.error("Error al actualizar:", xhr.responseText);
+            Toastify({
+                text: "Error al actualizar el item.",
+                backgroundColor: "#dc3545",
+            }).showToast();
+        }
+    });
+}
+
+
+function btnElimnarItem(id){
+    swal.fire({
+        title: "Seguro que desea eliminar el item?",
+        text: "El item será eliminado totalmente con su perfil asignado",
+        icon: "error",
+        showCancelButton: !0,
+        confirmButtonText: "Aceptar",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.value) {
+            $.ajax({
+                url: "{{ route('almacen.delete_item') }}",
+                type: 'post',
+                data: {"_token": "{{ csrf_token() }}", id: id},
+                success: function(response){
+                    console.log(response);
+
+                    tabla_seccion(); 
+
+                    Toastify({
+                        text: "Se eliminó el item",
+                        className: "danger",
+                        style: {
+                            background: "#DF1818",
+                        }
+                    }).showToast();
+
+                },
+                error: function(error){
+                    console.log('Error '+error);
+                }
+            });
+        }
+
+    })
+}
+
+function btnDeleteCompleto() {
+
+    swal.fire({
+        title: "Seguro que desea eliminar todos los bienes?",
+        text: "Se eliminara todos los bienes asignados a su centro mac",
+        icon: "error",
+        showCancelButton: !0,
+        confirmButtonText: "Aceptar",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.value) {
+            $.ajax({
+                url: "{{ route('almacen.delete_masivo') }}",
+                type: 'post',
+                data: {"_token": "{{ csrf_token() }}"},
+                success: function(response){
+                    console.log(response);
+
+                    tabla_seccion(); 
+
+                    Toastify({
+                        text: "Se eliminó la data",
+                        className: "danger",
+                        style: {
+                            background: "#DF1818",
+                        }
+                    }).showToast();
+
+                },
+                error: function(error){
+                    console.log('Error '+error);
+                }
+            });
+        }
+
+    })
 
 }
 
