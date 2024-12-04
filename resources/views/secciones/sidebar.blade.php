@@ -88,6 +88,9 @@
                             @if ($per_mac->VALOR == '1')
                                 <li class="nav-item @if (Request::is('personal/pcm*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.pcm') }}"><i class="ti-control-record"></i>PCM</a></li>
                             @endif
+                            @if ($per_mac->VALOR == '1')
+                                <li class="nav-item @if (Request::is('directorio/*')) mm-active @endif"><a class="nav-link" href="{{ route('directorio') }}"><i class="ti-control-record"></i>Directorio</a></li>
+                            @endif
                         </ul>
                     </li>
                     
@@ -121,13 +124,13 @@
                                     <i class="ti-control-record"></i><span>Observaciones e Interrupciones</span>
                                 </a>
                             </li>
-
-                            <li class="">
-                                <a href="https://pcmgobperu-my.sharepoint.com/:x:/g/personal/sscs_06_pcm_gob_pe/EVYcqSpCEG1CoVMmnMcl6vQBUUe08LMNg8JC3Da32IxLhA?wdOrigin=TEAMS-MAGLEV.p2p_ns.rwc&wdExp=TEAMS-TREATMENT&wdhostclicktime=1731515745580&web=1" target="_blank">
-                                    <i class="ti-control-record"></i><span>Módulos asignados</span>
-                                </a>
-                            </li>
-                
+                            @role('Administrador|Coordinador|Supervisor|Moderador')
+                                <li class="">
+                                    <a href="https://pcmgobperu-my.sharepoint.com/:x:/g/personal/sscs_06_pcm_gob_pe/EVYcqSpCEG1CoVMmnMcl6vQBUUe08LMNg8JC3Da32IxLhA?wdOrigin=TEAMS-MAGLEV.p2p_ns.rwc&wdExp=TEAMS-TREATMENT&wdhostclicktime=1731515745580&web=1" target="_blank">
+                                        <i class="ti-control-record"></i><span>Módulos asignados</span>
+                                    </a>
+                                </li> 
+                            @endrole
                             @if ($eval_mot->VALOR == '1')
                                 <li class="@if (Request::is('formatos/evaluacion_motivacional*')) mm-active @endif">
                                     <a href="{{ route('formatos.evaluacion_motivacional.index') }}" class="@if (Request::is('formatos/evaluacion_motivacional*')) active @endif">
@@ -212,11 +215,11 @@
                         <a href="{{ route('externo') }}" class="@if (Request::is('externo*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Páginas externas</span></a>
                     </li>
                 @endif
-                @if ($externos->VALOR == '1')
+                {{-- @if ($externos->VALOR == '1')
                     <li class="@if (Request::is('directorio*')) mm-active @endif">
                         <a href="{{ route('directorio') }}" class="@if (Request::is('directorio*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Directorio</span></a>
                     </li>
-                @endif
+                @endif --}}
                 
                 
 
@@ -226,6 +229,9 @@
                     
                         <li class="@if (Request::is('almacen*')) mm-active @endif">
                             <a href="{{ route('almacen.index') }}" class="@if (Request::is('almacen*')) active @endif"> <i data-feather="clipboard" class="align-self-center menu-icon"></i><span>Almacen</span></a>
+                        </li>
+                        <li class="@if (Request::is('mantenimiento*')) mm-active @endif">
+                            <a href="{{ route('mantenimiento.index') }}" class="@if (Request::is('mantenimiento/index*')) active @endif"> <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Programación de Mantenimientos</span></a>
                         </li>
                     @endif
 

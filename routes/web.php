@@ -45,6 +45,7 @@ use App\Http\Controllers\Modulo\OcupabilidadController;
 use App\Http\Controllers\Modulo\ItineranteController;
 use App\Models\Itinerante;
 use App\Http\Controllers\Modulo\VerificacionController;
+use App\Http\Controllers\Modulo\MantenimientoController;
 
 
 
@@ -386,6 +387,14 @@ Route::group(['middleware' => ['auth']], function () {
 
 
         Route::get('/modelo_marca/{idmarca}', [AlmacenController::class, 'modelo_marca'])->name('modelo_marca');
+    });
+
+    /******************************************************   MANTENIMIENTO  *****************************************************************************/
+
+    Route::group(['prefix' => 'mantenimiento', 'as' => 'mantenimiento.'], function () {
+
+        Route::get('/index', [MantenimientoController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [MantenimientoController::class, 'tb_index'])->name('tablas.tb_index');
     });
 
 

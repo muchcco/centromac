@@ -78,9 +78,10 @@ class AlmacenController extends Controller
                         ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
                         ->leftJoin('ALM_CATEGORIA as AC', 'AC.IDCATEGORIA', '=', 'MA.IDCATEGORIA')
                         ->leftJoin('ALM_MODELO as AM', 'AM.IDMODELO', '=', 'MA.IDMODELO')
-                        ->join('ALM_MARCA as AMM', 'AMM.IDMARCA', '=', 'AM.IDMARCA')
+                        ->leftJoin('ALM_MARCA as AMM', 'AMM.IDMARCA', '=', 'AM.IDMARCA')
                         ->where('IDALMACEN', $id)
                         ->first();
+        // dd($almacen);
 
         $view = view('almacen.modals.md_edit_item', compact('categorias', 'marca', 'almacen'))->render();
 
@@ -368,7 +369,7 @@ class AlmacenController extends Controller
 
     public function modelo_marca($idmarca)
     {
-        $modelo = DB::table('ALM_MODELO')->where('IDMODELO', $idmarca)->get();
+        $modelo = DB::table('ALM_MODELO')->where('IDMARCA', $idmarca)->get();
 
         $options = '<option value="">Selecciona una opción</option>';
         foreach ($modelo as $prov) {

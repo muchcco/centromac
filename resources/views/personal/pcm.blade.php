@@ -65,7 +65,7 @@
                             <label for="">Descarga de registros:</label>
                             <div class="col-12">
                                 <button class="btn btn-info bandejTool" data-tippy-content="Registo completo con personal PCM y Asesores" onclick="btnTotalExport()">Total</button>
-                                <button class="btn btn-primary bandejTool" data-tippy-content="Registro de Asesores" onclick="btnExportAsesores()">Asesores</button>
+                                {{-- <button class="btn btn-primary bandejTool" data-tippy-content="Registro de Asesores" onclick="btnExportAsesores()">Asesores</button> --}}
                                 <button class="btn btn-purple bandejTool" data-tippy-content="Registro PCM" onclick="btnPCMExport()">PCM</button>
                             </div>
                         </div>
