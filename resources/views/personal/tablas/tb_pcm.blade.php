@@ -32,7 +32,7 @@
                     }
                 @endphp
                 <td>{{ $i + 1 }}</td>
-                <td>{{ $que->NOMBREU }}</td>
+                <td class="text-uppercase">{{ $que->NOMBREU }}</td>
                 <td>{{ $que->TIPODOC_ABREV }} - {{ $que->NUM_DOC }}</td>
                 <td>{{ $que->ABREV_ENTIDAD }}</td>
                 <td>{{ $que->NOMBRE_MAC }}</td>                

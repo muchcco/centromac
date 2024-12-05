@@ -66,6 +66,7 @@
                             <div class="col-12">
                                 <button class="btn btn-info bandejTool" data-tippy-content="Registo completo con personal PCM y Asesores" onclick="btnTotalExport()">Total</button>
                                 {{-- <button class="btn btn-primary bandejTool" data-tippy-content="Registro de Asesores" onclick="btnExportAsesores()">Asesores</button> --}}
+                                <button class="btn btn-primary bandejTool" data-tippy-content="Registro de Asesores" onclick="btnExportMac()">Centros MAC</button>
                                 <button class="btn btn-purple bandejTool" data-tippy-content="Registro PCM" onclick="btnPCMExport()">PCM</button>
                             </div>
                         </div>
@@ -409,7 +410,7 @@ function btnTotalExport(){
 
 function btnPCMExport(){
 
-    var tipo = '2'; // TIPO 1 ES TOTAL Y TIPO 2 ES PCM
+    var tipo = '2'; // TIPO 1 ES TOTAL Y TIPO 2 ES PCM 
 
     // Definimos la vista dende se enviara
     var link_up = "{{ route('personal.exporta_excel') }}";
@@ -436,6 +437,29 @@ function btnExportAsesores(identidad){
     var link_up = "{{ route('personal.exportasesores_excel') }}";
 
     window.open(link_up);
+
+    Swal.fire({
+                icon: "success",
+                text: "El archivo se descargo con Exito!",
+                confirmButtonText: "Aceptar"
+            })
+}
+
+function btnExportMac(){
+
+    var tipo = '3'; // TIPO 1 ES TOTAL Y TIPO 2 ES PCM Y 3 ES PARA CENTROS MAC
+
+    // Definimos la vista dende se enviara
+    var link_up = "{{ route('personal.exporta_excel') }}";
+
+    // Crear la URL con las variables como parámetros de consulta
+    var href = link_up +'?tipo=' + tipo;
+
+    console.log(href);
+
+    var blank = "_blank";
+
+    window.open(href);
 
     Swal.fire({
                 icon: "success",

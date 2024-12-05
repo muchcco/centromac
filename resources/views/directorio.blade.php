@@ -46,6 +46,12 @@
                         <li class="nav-item waves-effect waves-light">
                             <a class="nav-link" data-bs-toggle="tab" href="#settings-1" role="tab" aria-selected="false">DIRECTORIO DE ESPECIALISTAS TIC</a>
                         </li>
+                        <li class="nav-item waves-effect waves-light">
+                            <a class="nav-link" data-bs-toggle="tab" href="#macexpres-1" role="tab" aria-selected="false">DIRECTORIO DE MAC EXPRESS</a>
+                        </li>
+                        <li class="nav-item waves-effect waves-light">
+                            <a class="nav-link" data-bs-toggle="tab" href="#orientacion-1" role="tab" aria-selected="false">DIRECTORIO DE OREINTADORES</a>
+                        </li>
                     </ul>
 
                     <!-- Tab panes -->
@@ -70,8 +76,8 @@
                                                         @forelse ($coordinadores as $i => $c)
                                                             <tr>
                                                                 <td>{{ $i + 1 }}</td>
-                                                                <td>{{ $c->APE_PAT }} {{ $c->APE_MAT }}, {{ $c->NOMBRE }}</td>
-                                                                <td>{{ $c->NOMBRE_MAC }} - {{ $c->NOMBRE_ENTIDAD }}</td>
+                                                                <td class="text-uppercase">{{ $c->APE_PAT }} {{ $c->APE_MAT }}, {{ $c->NOMBRE }}</td>
+                                                                <td class="text-uppercase">{{ $c->NOMBRE_MAC }} - {{ $c->NOMBRE_ENTIDAD }}</td>
                                                                 <td>{{ $c->CORREO_INSTITUCIONAL }} / {{ $c->CORREO }}</td>
                                                                 <td>{{ $c->CELULAR }} / {{ $c->TELEFONO }}</td>
                                                             </tr>
@@ -109,8 +115,8 @@
                                                         @forelse ($supervisores as $i => $s)
                                                             <tr>
                                                                 <td>{{ $i + 1 }}</td>
-                                                                <td>{{ $s->APE_PAT }} {{ $s->APE_MAT }}, {{ $s->NOMBRE }}</td>
-                                                                <td>{{ $s->NOMBRE_MAC }} - {{ $s->NOMBRE_ENTIDAD }}</td>
+                                                                <td class="text-uppercase">{{ $s->APE_PAT }} {{ $s->APE_MAT }}, {{ $s->NOMBRE }}</td>
+                                                                <td class="text-uppercase">{{ $s->NOMBRE_MAC }} - {{ $s->NOMBRE_ENTIDAD }}</td>
                                                                 <td>{{ $s->CORREO_INSTITUCIONAL }} / {{ $s->CORREO }}</td>
                                                                 <td>{{ $s->CELULAR }} / {{ $s->TELEFONO }}</td>
                                                             </tr>
@@ -147,10 +153,86 @@
                                                         @forelse ($especialistas_tic as $i => $tic)
                                                             <tr>
                                                                 <td>{{ $i + 1 }}</td>
-                                                                <td>{{ $tic->APE_PAT }} {{ $tic->APE_MAT }}, {{ $tic->NOMBRE }}</td>
-                                                                <td>{{ $tic->NOMBRE_MAC }} - {{ $tic->NOMBRE_ENTIDAD }}</td>
+                                                                <td class="text-uppercase">{{ $tic->APE_PAT }} {{ $tic->APE_MAT }}, {{ $tic->NOMBRE }}</td>
+                                                                <td class="text-uppercase">{{ $tic->NOMBRE_MAC }} - {{ $tic->NOMBRE_ENTIDAD }}</td>
                                                                 <td>{{ $tic->CORREO_INSTITUCIONAL }} / {{ $tic->CORREO }}</td>
                                                                 <td>{{ $tic->CELULAR }} / {{ $tic->TELEFONO }}</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="5">No hay datos disponibles</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </p>
+                        </div>
+                        <div class="tab-pane p-3" id="macexpres-1" role="tabpanel">
+                            <p class="text-muted mb-0">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="table-responsive">
+                                            <div class="table-responsive" id="table_data">
+                                                <table class="table table-hover table-bordered table-striped" id="table_asistencia">
+                                                    <thead class="tenca">
+                                                        <tr>
+                                                            <th>N°</th>
+                                                            <th>NOMBRES</th>
+                                                            <th>CENTRO MAC</th>
+                                                            <th>CORREO</th>
+                                                            <th>TELEFONO</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse ($mac_express as $i => $me)
+                                                            <tr>
+                                                                <td>{{ $i + 1 }}</td>
+                                                                <td class="text-uppercase">{{ $me->APE_PAT }} {{ $me->APE_MAT }}, {{ $me->NOMBRE }}</td>
+                                                                <td class="text-uppercase">{{ $me->NOMBRE_MAC }} - {{ $me->NOMBRE_ENTIDAD }}</td>
+                                                                <td>{{ $me->CORREO_INSTITUCIONAL }} / {{ $me->CORREO }}</td>
+                                                                <td>{{ $me->CELULAR }} / {{ $me->TELEFONO }}</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="5">No hay datos disponibles</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </p>
+                        </div>
+                        <div class="tab-pane p-3" id="orientacion-1" role="tabpanel">
+                            <p class="text-muted mb-0">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="table-responsive">
+                                            <div class="table-responsive" id="table_data">
+                                                <table class="table table-hover table-bordered table-striped" id="table_asistencia">
+                                                    <thead class="tenca">
+                                                        <tr>
+                                                            <th>N°</th>
+                                                            <th>NOMBRES</th>
+                                                            <th>CENTRO MAC</th>
+                                                            <th>CORREO</th>
+                                                            <th>TELEFONO</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse ($orientadores as $i => $ori)
+                                                            <tr>
+                                                                <td>{{ $i + 1 }}</td>
+                                                                <td class="text-uppercase" >{{ $ori->APE_PAT }} {{ $ori->APE_MAT }}, {{ $ori->NOMBRE }}</td>
+                                                                <td class="text-uppercase">{{ $ori->NOMBRE_MAC }} - {{ $ori->NOMBRE_ENTIDAD }}</td>
+                                                                <td>{{ $ori->CORREO_INSTITUCIONAL }} / {{ $ori->CORREO }}</td>
+                                                                <td>{{ $ori->CELULAR }} / {{ $ori->TELEFONO }}</td>
                                                             </tr>
                                                         @empty
                                                             <tr>

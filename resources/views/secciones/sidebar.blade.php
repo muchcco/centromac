@@ -82,15 +82,16 @@
                     <li>
                         <a href="javascript: void(0);"><i data-feather="lock" class="align-self-center menu-icon @if (Request::is('personal*')) mm-active @endif"></i><span>Directorio de personal </span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
                         <ul class="nav-second-level" aria-expanded="false">
+                            @if ($per_mac->VALOR == '1')
+                                <li class="nav-item @if (Request::is('directorio/*')) mm-active @endif"><a class="nav-link" href="{{ route('directorio') }}"><i class="ti-control-record"></i>Centros MAC</a></li>
+                            @endif
                             @if ($per_asesores->VALOR == '1')
                                 <li class="nav-item @if (Request::is('personal/asesores*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.asesores') }}"><i class="ti-control-record"></i>Asesores</a></li>
                             @endif
                             @if ($per_mac->VALOR == '1')
-                                <li class="nav-item @if (Request::is('personal/pcm*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.pcm') }}"><i class="ti-control-record"></i>PCM</a></li>
+                                <li class="nav-item @if (Request::is('personal/pcm*')) mm-active @endif"><a class="nav-link" href="{{ route('personal.pcm') }}"><i class="ti-control-record"></i>Entidad administradora</a></li>
                             @endif
-                            @if ($per_mac->VALOR == '1')
-                                <li class="nav-item @if (Request::is('directorio/*')) mm-active @endif"><a class="nav-link" href="{{ route('directorio') }}"><i class="ti-control-record"></i>Directorio</a></li>
-                            @endif
+                            
                         </ul>
                     </li>
                     

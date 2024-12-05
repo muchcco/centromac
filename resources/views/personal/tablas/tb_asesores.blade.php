@@ -33,7 +33,7 @@
             @endphp
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td>
+                <td class="text-uppercase">
                     <span class="{{ $que->NOMBREU ? '' : 'text-danger' }}">
                         {{ $que->NOMBREU ?? 'Datos incompletos' }}
                     </span>

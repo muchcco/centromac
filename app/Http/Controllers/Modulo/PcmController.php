@@ -40,6 +40,7 @@ class PcmController extends Controller
             ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
             ->join('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
             ->join('D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
+            ->join('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
             ->join(DB::raw('(SELECT 
                                 IDPERSONAL,
                                 (
@@ -103,7 +104,8 @@ class PcmController extends Controller
                 }
             })                
             ->whereIn('MP.FLAG', [1, 2])
-            ->where('MP.IDENTIDAD', 17) 
+            ->whereIn('MP.IDENTIDAD', [17, 100, 98]) 
+            ->where('DPC.IDCARGO_PERSONAL' , '<>', 6)
             ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
             ->get();
 
@@ -291,7 +293,7 @@ class PcmController extends Controller
                     ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
                     ->get();
         }
-        elseif($tipo == 2)
+        elseif($tipo == 3)
         {
             $query = DB::table('db_centros_mac.M_PERSONAL as MP')
                     ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
@@ -336,9 +338,14 @@ class PcmController extends Controller
                         }
                     })
                     ->where('MP.IDENTIDAD', 17)
+                    ->whereNotIn('MCM.IDCENTRO_MAC', [5])
                     ->orderBy('MCM.NOMBRE_MAC', 'asc')
                     ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
                     ->get();
+        }
+        elseif($tipo == 2)
+        {
+
         }
 
         

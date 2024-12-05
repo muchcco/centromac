@@ -184,6 +184,10 @@
             }
         }
 
+        .text-uppercase {
+            text-transform: uppercase !important;
+        }
+
      </style>
 
 </head>
@@ -231,6 +235,7 @@
         {{-- CARGA IMAGEN ANTES DE CARGAR PAGINA --}}
         <script>
          $(document).ready(function(){
+            mayuscular();
            $(".loader").fadeOut();
              $(window).resize(function(){    
                  if (window.matchMedia("(max-width: 700px)").matches) {
@@ -253,6 +258,26 @@
              }).resize()// trigger on page load
               
          });
+
+         function mayuscular(){
+            const nombresColumnIndex = 1; // Índice de la columna "NOMBRES" (comienza en 0)
+            const centrosMacColumnIndex = 2; // Índice de la columna "CENTRO MAC"
+
+            // Recorrer todas las filas del tbody
+            $('.table_asistencia').each(function () {
+                // Transformar NOMBRES a mayúsculas
+                const nombresCell = $(this).find('td').eq(nombresColumnIndex);
+                if (nombresCell.length) {
+                    nombresCell.text(nombresCell.text().toUpperCase());
+                }
+
+                // Transformar CENTRO MAC a mayúsculas
+                const centrosMacCell = $(this).find('td').eq(centrosMacColumnIndex);
+                if (centrosMacCell.length) {
+                    centrosMacCell.text(centrosMacCell.text().toUpperCase());
+                }
+            });
+         }
         </script>
 
         <script>
