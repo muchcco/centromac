@@ -134,7 +134,7 @@
                                                         @if ($verificaciones->where('Fecha', $fecha)->where('AperturaCierre', 0)->isNotEmpty())
                                                             <a href="{{ route('verificaciones.edit', ['AperturaCierre' => 0, 'Fecha' => $verificacion->Fecha]) }}"
                                                                 class="btn btn-success" title="Editar Apertura">
-                                                                <i class="fas fa-pencil-alt"></i> A
+                                                                <i class="fas fa-pencil-alt"></i> Apertura
                                                                 <!-- Letra para Apertura -->
                                                             </a>
                                                         @endif
@@ -143,7 +143,7 @@
                                                         @if ($verificaciones->where('Fecha', $fecha)->where('AperturaCierre', 1)->isNotEmpty())
                                                             <a href="{{ route('verificaciones.edit', ['AperturaCierre' => 1, 'Fecha' => $verificacion->Fecha]) }}"
                                                                 class="btn btn-primary" title="Editar Relevo">
-                                                                <i class="fas fa-pencil-alt"></i> R
+                                                                <i class="fas fa-pencil-alt"></i> Relevo
                                                                 <!-- Letra para Relevo -->
                                                             </a>
                                                         @endif
@@ -152,7 +152,7 @@
                                                         @if ($verificaciones->where('Fecha', $fecha)->where('AperturaCierre', 2)->isNotEmpty())
                                                             <a href="{{ route('verificaciones.edit', ['AperturaCierre' => 2, 'Fecha' => $verificacion->Fecha]) }}"
                                                                 class="btn btn-danger" title="Editar Cierre">
-                                                                <i class="fas fa-pencil-alt"></i> C
+                                                                <i class="fas fa-pencil-alt"></i> Cierre
                                                                 <!-- Letra para Cierre -->
                                                             </a>
                                                         @endif

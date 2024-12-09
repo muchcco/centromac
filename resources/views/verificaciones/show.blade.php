@@ -111,12 +111,34 @@
                     <td colspan="2" rowspan="3" class="text-center align-middle">Verifica si el recurso u otro, está
                         dañado, roto, depósito, inoperativo o funcionando inadecuadamente según aplique</td>
                     <td>Hora de registro</td>
-                    <td>8:15</td>
+                    <td>
+                        @foreach ($verificaciones as $verificacion)
+                            @if ($verificacion->AperturaCierre == 0)
+                                <!-- Mostrar hora de registro para Apertura -->
+                                {{ $verificacion->hora_registro ? \Carbon\Carbon::parse($verificacion->hora_registro)->format('H:i') : 'No disponible' }}
+                            @endif
+                        @endforeach
+                    </td>
                     <td>Hora de registro</td>
-                    <td>15:00</td> <!-- Hora para el Relevo -->
+                    <td>
+                        @foreach ($verificaciones as $verificacion)
+                            @if ($verificacion->AperturaCierre == 1)
+                                <!-- Mostrar hora de registro para Relevo -->
+                                {{ $verificacion->hora_registro ? \Carbon\Carbon::parse($verificacion->hora_registro)->format('H:i') : 'No disponible' }}
+                            @endif
+                        @endforeach
+                    </td>
                     <td>Hora de registro</td>
-                    <td>17:15</td>
+                    <td>
+                        @foreach ($verificaciones as $verificacion)
+                            @if ($verificacion->AperturaCierre == 2)
+                                <!-- Mostrar hora de registro para Cierre -->
+                                {{ $verificacion->hora_registro ? \Carbon\Carbon::parse($verificacion->hora_registro)->format('H:i') : 'No disponible' }}
+                            @endif
+                        @endforeach
+                    </td>
                 </tr>
+
                 <tr>
                     <td>Supervisor</td>
                     <td>

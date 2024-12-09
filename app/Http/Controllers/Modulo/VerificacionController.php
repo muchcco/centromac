@@ -13,20 +13,22 @@ class VerificacionController extends Controller
     public function index(Request $request)
     {
         $query = Verificacion::query();
-        // Obtener el usuario autenticado
         $user = auth()->user();
 
-        // Filtrar solo por user_id
-        $query->where('user_id', $user->id); // El user_id en verificacions
+        // Filtrar solo por id_centromac del usuario autenticado, sin importar el user_id
+        $query->where('id_centromac', $user->idcentro_mac);
 
+        // Filtrar por rango de fechas si se proporcionan
         if ($request->has('fecha_inicio') && $request->has('fecha_fin')) {
             $fechaInicio = $request->input('fecha_inicio');
             $fechaFin = $request->input('fecha_fin');
             $query->whereBetween('Fecha', [$fechaInicio, $fechaFin]);
         }
 
+        // Obtener las verificaciones filtradas
         $verificaciones = $query->orderBy('Fecha', 'desc')->get();
 
+        // Pasar las verificaciones a la vista
         return view('verificaciones.index', compact('verificaciones'));
     }
 
@@ -40,12 +42,17 @@ class VerificacionController extends Controller
     {
         // Convertir la fecha a un objeto Carbon
         if (!Carbon::hasFormat($fecha, 'Y-m-d')) {
-            return redirect()->back()->with('error', 'Formato de fecha no válidoAAAAAAA.');
+            return redirect()->back()->with('error', 'Formato de fecha no válido.');
         }
 
         // Convertir la fecha a un objeto Carbon
         $fechaCarbon = Carbon::createFromFormat('Y-m-d', $fecha);
-        $verificaciones = Verificacion::with('user')->whereDate('Fecha', $fechaCarbon)->get(); // Cargar la relación user
+
+        // Filtrar por id_centromac del usuario autenticado
+        $verificaciones = Verificacion::with('user')
+            ->whereDate('Fecha', $fechaCarbon) // Filtra por la fecha
+            ->where('id_centromac', auth()->user()->idcentro_mac) // Filtra por id_centromac
+            ->get(); // Recuperar las verificaciones
 
         // Mapear los nombres completos de los campos
         $campos = [
@@ -114,10 +121,9 @@ class VerificacionController extends Controller
             }
         }
 
-        // Retornar la vista con los datos
+        // Retornar la vista con los datos filtrados
         return view('verificaciones.show', compact('verificaciones', 'campos', 'fechaCarbon', 'observacionesApertura', 'observacionesRelevo', 'observacionesCierre'));
     }
-
 
     public function store(Request $request)
     {
@@ -129,22 +135,26 @@ class VerificacionController extends Controller
             'Fecha' => [
                 Rule::unique('m_verificacion', 'Fecha')->where(function ($query) use ($request) {
                     return $query->where('Fecha', $request->Fecha)
-                        ->where('AperturaCierre', $request->AperturaCierre);
+                        ->where('AperturaCierre', $request->AperturaCierre)
+                        ->where('id_centromac', auth()->user()->idcentro_mac);  // Aquí agregamos la validación del id_centromac
                 }),
             ],
         ], [
-            'Fecha.unique' => 'Ya existe una verificación para esta fecha y tipo de apertura/cierre.',
-            'AperturaCierre.in' => 'El campo Apertura/Cierre debe ser 0 (Apertura), 1 (Relevo) o 2 (Cierre).', // Mensaje de error personalizado
+            'Fecha.unique' => 'Ya existe una verificación para esta fecha, tipo de apertura/cierre y centro.',
+            'AperturaCierre.in' => 'El campo Apertura/Cierre debe ser 0 (Apertura), 1 (Relevo) o 2 (Cierre).',
         ]);
+
 
         try {
             // Crear y llenar el modelo de Verificación
             $verificacion = new Verificacion();
             $verificacion->fill($request->all());
+            $verificacion->hora_registro = now();  // Esto asigna la hora actual a la columna hora_registro
 
             // Agregar el user_id
             $verificacion->user_id = auth()->user()->id; // Asegúrate de que este es el campo correcto en tu tabla
-
+            // Asignar el id_centromac desde el usuario autenticado
+            $verificacion->id_centromac = auth()->user()->idcentro_mac;
             // Recoger y concatenar observaciones
             $observaciones = '';
             $campos = [
@@ -322,8 +332,13 @@ class VerificacionController extends Controller
     }
     public function contingencia()
     {
-        // Obtener todas las verificaciones ordenadas por fecha
-        $verificaciones = Verificacion::orderBy('Fecha')->get();
+        // Obtener el id_centromac del usuario autenticado
+        $idCentroMac = auth()->user()->idcentro_mac;
+
+        // Obtener todas las verificaciones del id_centromac del usuario ordenadas por fecha
+        $verificaciones = Verificacion::where('id_centromac', $idCentroMac)
+            ->orderBy('Fecha')
+            ->get();
 
         // Obtener la lista de campos
         $campos = [
@@ -394,6 +409,7 @@ class VerificacionController extends Controller
         return view('verificaciones.contingencia', compact('tablaContingencia', 'campos'));
     }
 
+
     public function filtrar(Request $request)
     {
         // Validar los datos del formulario
@@ -402,8 +418,12 @@ class VerificacionController extends Controller
             'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
         ]);
 
-        // Obtener las verificaciones dentro del rango de fechas
-        $verificaciones = Verificacion::whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin])
+        // Obtener el id_centromac del usuario autenticado
+        $idCentroMac = auth()->user()->idcentro_mac;
+
+        // Obtener las verificaciones dentro del rango de fechas y que coincidan con el id_centromac del usuario
+        $verificaciones = Verificacion::where('id_centromac', $idCentroMac)
+            ->whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin])
             ->orderBy('Fecha')
             ->get();
 
@@ -452,17 +472,19 @@ class VerificacionController extends Controller
             if (!isset($tablaContingencia[$fecha])) {
                 $tablaContingencia[$fecha] = ['Apertura' => [], 'Cierre' => []];
             }
+
             // Transformar los valores booleanos a 'Sí' o 'No'
             $verificacionData = $verificacion->only($campos);
             foreach ($verificacionData as $key => $value) {
                 $verificacionData[$key] = $value ? 'Sí' : 'No';
             }
+
             $tablaContingencia[$fecha][$tipo] = $verificacionData;
         }
+
         // Retornar la vista con los datos filtrados
         return view('verificaciones.contingencia', compact('tablaContingencia', 'campos'));
     }
-
 
     public function observaciones(Request $request)
     {
@@ -472,16 +494,29 @@ class VerificacionController extends Controller
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
         ]);
 
-        // Si no se proporcionan fechas, obtener los últimos 20 registros
+        // Obtener el id_centromac del usuario autenticado
+        $idCentroMac = auth()->user()->idcentro_mac;
+
+        // Depuración para verificar el id_centromac del usuario
+        // dd('id_centromac usuario: ' . $idCentroMac); // Esta línea solo la debes usar para verificar el valor.
+
+        // Si no se proporcionan fechas, obtener los últimos 20 registros del id_centromac del usuario
         if (!$request->has('fecha_inicio') || !$request->has('fecha_fin')) {
-            $verificaciones = Verificacion::orderBy('Fecha', 'desc')
+            $verificaciones = Verificacion::where('id_centromac', $idCentroMac)
+                ->orderBy('Fecha', 'desc')
                 ->take(20)
                 ->get();
         } else {
-            // Obtener las verificaciones dentro del rango de fechas
-            $verificaciones = Verificacion::whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin])
+            // Obtener las verificaciones dentro del rango de fechas para el id_centromac del usuario
+            $verificaciones = Verificacion::where('id_centromac', $idCentroMac)
+                ->whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin])
                 ->orderBy('Fecha')
                 ->get();
+        }
+
+        // Si no se encuentran verificaciones para el id_centromac
+        if ($verificaciones->isEmpty()) {
+            return redirect()->back()->with('error', 'No se encontraron registros para este Centro MAC.');
         }
 
         // Obtener la lista de campos
@@ -540,8 +575,8 @@ class VerificacionController extends Controller
                     $tipoEjecucion = 'Desconocido'; // Manejo de casos no esperados
             }
 
-            // Generar hora aleatoria para apertura y cierre
-            $hora = $this->generarHoraAleatoria($verificacion->AperturaCierre);
+            // Obtener la hora real de registro
+            $hora = $verificacion->hora_registro ? Carbon::parse($verificacion->hora_registro)->format('H:i') : 'No registrada';
 
             $observaciones = $verificacion->Observaciones; // Asumiendo que hay un campo Observaciones
 
@@ -564,27 +599,4 @@ class VerificacionController extends Controller
 
         return view('verificaciones.observaciones', compact('verificacionesInfo'));
     }
-    private function generarHoraAleatoria($aperturaCierre)
-{
-    switch ($aperturaCierre) {
-        case 0: // Apertura
-            $min = strtotime("08:15");
-            $max = strtotime("08:30");
-            break;
-        case 1: // Relevo
-            $min = strtotime("13:30");
-            $max = strtotime("13:45"); // Puedes ajustar este rango si es necesario
-            break;
-        case 2: // Cierre
-            $min = strtotime("17:00");
-            $max = strtotime("17:15");
-            break;
-        default:
-            return null; // Manejo de errores, si el estado no es válido
-    }
-    
-    $randTime = rand($min, $max);
-    return date('H:i', $randTime);
-}
-
 }

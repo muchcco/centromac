@@ -56,7 +56,7 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-4">
                 <form action="{{ route('verificaciones.store') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
+                    
 
                     <table class="table table-sm">
                         <thead>
@@ -94,6 +94,8 @@
                                         </div>
                                     </div>
                                 </div>
+
+
                                 <td>Modulo de Recepción</td>
                                 <td>
                                     <input type="hidden" name="ModuloDeRecepcion" value="0">
