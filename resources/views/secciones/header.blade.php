@@ -77,6 +77,10 @@
                                 <div class="dropdown-menu dropdown-menu-end">
                                     <a class="dropdown-item" href=""><i data-feather="file-text" class="align-self-center icon-xs icon-dual me-1"></i> Usuario: {{ auth()->user()->email }}</a>
                                     <a class="dropdown-item" href=""><i data-feather="file-text" class="align-self-center icon-xs icon-dual me-1"></i> Rol: {{ auth()->user()->roles->pluck('name')->implode(', ') }}</a>
+                                    <button class="dropdown-item"  data-toggle="modal" data-target="#large-Modal" onclick="btnCambiarPass()">
+                                        <i data-feather="file-text" class="align-self-center icon-xs icon-dual me-1"></i> 
+                                        Cambiar contraseña
+                                    </button>
                                     {{-- <a class="dropdown-item" href="javascript:abrirpdf('manual_sistema');"><i data-feather="file-text" class="align-self-center icon-xs icon-dual me-1"></i> Manual del Sistema</a> --}}
                                     <div class="dropdown-divider mb-0"></div>
                                     <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i data-feather="power" class="align-self-center icon-xs icon-dual me-1"></i> Cerrar Sesión</a>

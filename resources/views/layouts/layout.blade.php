@@ -216,6 +216,8 @@
                 <!-- end page content -->
             </div>
         </div>
+        {{-- Ver Modales --}}
+        <div class="modal fade" id="modal_show_modal_pass" tabindex="-1" role="dialog" ></div>
         <!-- jQuery  -->
         <script src="{{asset('nuevo/assets/js/jquery.min.js')}}"></script>
         <!-- end page-wrapper -->
@@ -278,6 +280,66 @@
                 }
             });
          }
+
+         function btnCambiarPass() {
+
+            $.ajax({
+                type:'post',
+                url: "{{ route('modal-password') }}",
+                dataType: "json",
+                data:{"_token": "{{ csrf_token() }}"},
+                success:function(data){
+                    $("#modal_show_modal_pass").html(data.html);
+                    $("#modal_show_modal_pass").modal('show');
+                }
+            });
+
+        }
+
+        function validateAndSubmitPassword_n() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Expresión regular para validar la contraseña
+            const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*[0-9]).{10,}$/;
+
+            // Validación de la contraseña
+            if (!passwordRegex.test(password)) {
+                alert("La contraseña debe tener al menos 10 caracteres, incluir un carácter especial y un número.");
+                return;
+            }
+
+            // Validación de coincidencia
+            if (password !== confirmPassword) {
+                alert("Las contraseñas no coinciden. Por favor, verifícalas.");
+                return;
+            }
+
+            // Si todo es válido, enviar la contraseña al servidor
+            fetch('store-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.getElementById('_token').value,
+                },
+                body: JSON.stringify({ password }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'error') {
+                    alert(data.message); // Mostrar mensaje de error
+                } else {
+                    alert(data.message); // Contraseña actualizada correctamente
+                    // Opcional: cerrar el modal o recargar la página
+                    $("#modal_show_modal_pass").modal('hide');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+
         </script>
 
         <script>
