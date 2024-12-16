@@ -13,6 +13,7 @@ use App\Models\User;
 use GuzzleHttp\Client;
 use Carbon\Carbon;
 use App\Models\ConfiguracionMAc;
+use Illuminate\Support\Facades\Validator;
 
 class PagesController extends Controller
 {
@@ -929,4 +930,52 @@ class PagesController extends Controller
 
     }
 
+    public function modalPassword(Request $request)
+    {
+        $view = view('modal-password')->render();
+
+        return response()->json(['html' => $view]); 
+    }
+
+    public function storePassword(Request $request)
+    {
+        // Validación personalizada para la contraseña
+        $validator = Validator::make($request->all(), [
+            'password' => [
+                'required',
+                'string',
+                'min:10', // Mínimo 10 caracteres
+                'regex:/[!@#$%^&*(),.?":{}|<>]/', // Al menos un carácter especial
+                'regex:/[0-9]/', // Al menos un número
+            ],
+        ], [
+            // Mensajes personalizados
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.min' => 'La contraseña debe tener al menos 10 caracteres.',
+            'password.regex' => 'La contraseña debe incluir al menos un carácter especial y un número.',
+        ]);
+
+        // Si falla la validación, devolver error
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first('password'),
+            ], 400);
+        }
+
+        // Actualización de la contraseña
+        $auth_id = auth()->user()->id;
+
+        $save = User::findOrFail($auth_id);
+        $save->password = bcrypt($request->password);
+        $save->save();
+
+        // Actualizar en tabla adicional si aplica
+        $update = DB::table('jwt-mac.users')->where('name', $save->email)->update(['password' => bcrypt($request->password)]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Contraseña actualizada correctamente.',
+        ]);
+    }
 }

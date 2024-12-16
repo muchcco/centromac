@@ -130,6 +130,9 @@ Route::group(['middleware' => ['auth']], function () {
         return redirect('/');
     });
 
+    Route::post('modal-password', [PagesController::class, 'modalPassword'])->name('modal-password');
+    Route::post('store-password', [PagesController::class, 'storePassword'])->name('store-password');
+
     /******************************************************   EXTERNO *****************************************************************************/
 
     // SE ALMACENA LOS ACCESOS A LAS PAGINAS EXTERNA QUE NO ES NECESARIO LOGGIN
