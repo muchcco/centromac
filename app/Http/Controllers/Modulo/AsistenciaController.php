@@ -1319,6 +1319,7 @@ class AsistenciaController extends Controller
                 // Incrementar el correlativo y formatear con ceros a la izquierda
                 $nextCorrelativo++;
                 $formattedCorrelativo = str_pad($nextCorrelativo, 5, '0', STR_PAD_LEFT);
+                $formattedPunchTime = Carbon::createFromFormat('Y-m-d H:i:s', $asistencia->punch_time)->second(0);
 
                 try {
                     // Intentar insertar el registro
@@ -1326,7 +1327,7 @@ class AsistenciaController extends Controller
                         'correlativo' => $formattedCorrelativo,
                         'idMAC' => 11,
                         'DNI' => $asistencia->emp_code,
-                        'marcacion' => $asistencia->punch_time
+                        'marcacion' => $formattedPunchTime
                     ]);
 
                     // Marcar el registro como procesado en 'ankarati_asesores'

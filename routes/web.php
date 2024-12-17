@@ -43,6 +43,7 @@ use App\Http\Controllers\Modulo\FeriadoController;
 use App\Http\Controllers\Modulo\ModuloController;
 use App\Http\Controllers\Modulo\OcupabilidadController;
 use App\Http\Controllers\Modulo\ItineranteController;
+use App\Http\Controllers\Modulo\PersonalModuloController;
 use App\Models\Itinerante;
 use App\Http\Controllers\Modulo\VerificacionController;
 use App\Http\Controllers\Modulo\MantenimientoController;
@@ -232,7 +233,32 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/delete_servicio', [ServiciosController::class, 'delete_servicio'])->name('delete_servicio');
         Route::get('/export_serv_entidad', [ServiciosController::class, 'export_serv_entidad'])->name('export_serv_entidad');
     });
+    
+    /******************************************************   MODULO Y PERSONAL ************************************************************************/
 
+    // Rutas para la gestión de modulos
+    Route::group(['prefix' => 'personalmodulos', 'as' => 'personalModulo.'], function () {
+        Route::get('/index', [PersonalModuloController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [PersonalModuloController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_personalModulo', [PersonalModuloController::class, 'create'])->name('modals.md_add_personalModulo');
+        Route::post('/modals/md_edit_personalModulo', [PersonalModuloController::class, 'edit'])->name('modals.md_edit_personalModulo');
+        Route::post('/store_personalModulo', [PersonalModuloController::class, 'store'])->name('store_personalModulo');
+        Route::post('/update_personalModulo', [PersonalModuloController::class, 'update'])->name('update_personalModulo');
+        Route::post('/delete_personalModulo', [PersonalModuloController::class, 'destroy'])->name('delete_personalModulo');
+    });
+
+    /******************************************************   MODULO Y PERSONAL ITINERANTE ************************************************************************/
+
+    // Rutas para la gestión de modulos
+    Route::group(['prefix' => 'itinerantes', 'as' => 'personalModuloI.'], function () {
+        Route::get('/index', [ItineranteController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [ItineranteController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_personalModuloI', [ItineranteController::class, 'create'])->name('modals.md_add_personalModuloI');
+        Route::post('/modals/md_edit_personalModuloI', [ItineranteController::class, 'edit'])->name('modals.md_edit_personalModuloI');
+        Route::post('/store_personalModuloI', [ItineranteController::class, 'store'])->name('store_personalModuloI');
+        Route::post('/update_personalModuloI', [ItineranteController::class, 'update'])->name('update_personalModuloI');
+        Route::post('/delete_personalModuloI', [ItineranteController::class, 'destroy'])->name('delete_personalModuloI');
+    });
     /******************************************************   FERIADO ************************************************************************/
 
     // Rutas para la gestión de feriados
@@ -448,7 +474,7 @@ Route::group(['middleware' => ['auth']], function () {
     /******************************************************   REPORTERIA ************************************************************************/
 
     /******************************************************   VERIFICACION ********************************************************************* */
-    
+
     Route::get('/verificaciones/{verificacion}/change-apertura', [VerificacionController::class, 'changeApertura'])->name('verificaciones.changeApertura');
     Route::get('/verificaciones/observaciones', [VerificacionController::class, 'observaciones'])->name('verificaciones.observaciones');
     Route::get('/verificaciones', [VerificacionController::class, 'index'])->name('verificaciones.index');
