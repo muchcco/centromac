@@ -44,67 +44,180 @@ class PuntualidadController extends Controller
 
     public function tb_index(Request $request)
     {
-        if (!$request->filled('mac') || !$request->filled('mes') || !$request->filled('año')) {
-            return response()->json(['error' => 'Por favor, proporciona los campos obligatorios: MAC, Mes y Año.'], 422);
+
+        if (!$request->filled('mes') || !$request->filled('año') || !is_numeric($request->mes) || !is_numeric($request->año)) {
+            return response()->json(['error' => 'Por favor, proporciona un mes y un año válidos.'], 422);
         }
 
-        $mac = $request->input('mac');
-        $mes = $request->input('mes');
-        $año = $request->input('año');
+        $mes = $request->mes;
+        $año = $request->año;
+        $fechaInicio = Carbon::create($año, $mes, 1);
+        $fechaActual = Carbon::now();
+        $fechaFin = ($fechaActual->month == $mes && $fechaActual->year == $año) ? $fechaActual->startOfDay() : $fechaInicio->copy()->endOfMonth();
 
-        // Calcula las fechas de inicio y fin del mes especificado
-        $fechaInicio = Carbon::createFromDate($año, $mes, 1)->startOfMonth();
-        $fechaFin = Carbon::createFromDate($año, $mes, 1)->endOfMonth();
+        $period = CarbonPeriod::create($fechaInicio, $fechaFin);
 
-        $centroMac = $this->centro_mac();
+        $diasTotales = $period->count();
 
-        $modulos = Modulo::with('entidad')->where('IDCENTRO_MAC', $mac)->orderBy('n_modulo', 'asc')->get();
+        $feriados = Feriado::whereBetween('fecha', [$fechaInicio, $fechaFin])->pluck('fecha')->toArray();
 
-        $data = $modulos->map(function ($modulo) use ($fechaInicio, $fechaFin) {
-            // Combinamos las fechas marcadas por personal regular e itinerante
-            $diasMarcados = DB::table('m_asistencia')
-                ->join('m_personal', 'm_personal.NUM_DOC', '=', 'm_asistencia.NUM_DOC')
-                ->leftJoin('m_itinerante', 'm_itinerante.NUM_DOC', '=', 'm_asistencia.NUM_DOC')
-                ->where(function ($query) use ($modulo) {
-                    $query->where('m_personal.IDMODULO', $modulo->IDMODULO)
-                        ->orWhere('m_itinerante.IDMODULO', $modulo->IDMODULO);
-                })
-                ->whereBetween(DB::raw('DATE(m_asistencia.FECHA_BIOMETRICO)'), [$fechaInicio, $fechaFin])
-                ->select(DB::raw('DISTINCT DATE(m_asistencia.FECHA_BIOMETRICO) as fecha_biometrico'))
-                ->get()
-                ->pluck('fecha_biometrico');
+        $domingos = 0;
+        foreach ($period as $date) {
+            if ($date->isSunday()) {
+                $domingos++;
+            }
+        }
 
-            // Calculamos los días puntuales
-            $diasPuntuales = DB::table('m_asistencia')
-                ->join('m_personal', 'm_personal.NUM_DOC', '=', 'm_asistencia.NUM_DOC')
-                ->leftJoin('m_itinerante', 'm_itinerante.NUM_DOC', '=', 'm_asistencia.NUM_DOC')
-                ->where(function ($query) use ($modulo) {
-                    $query->where('m_personal.IDMODULO', $modulo->IDMODULO)
-                        ->orWhere('m_itinerante.IDMODULO', $modulo->IDMODULO);
-                })
-                ->whereBetween(DB::raw('DATE(m_asistencia.FECHA_BIOMETRICO)'), [$fechaInicio, $fechaFin])
-                ->whereTime('m_asistencia.FECHA_BIOMETRICO', '<', '08:16:00')
-                ->select(DB::raw('DISTINCT DATE(m_asistencia.FECHA_BIOMETRICO) as fecha_biometrico'))
-                ->get()
-                ->pluck('fecha_biometrico');
+        $diasFeriados = count(array_filter($feriados, function ($feriado) {
+            return !Carbon::parse($feriado)->isSunday();
+        }));
 
-            $diasMarcadosCount = $diasMarcados->count();
-            $diasPuntualesCount = $diasPuntuales->count();
+        $diasHabiles = $diasTotales - $domingos - $diasFeriados;
+        // Obtener el idcentromac desde el formulario (si está presente)
+        $idmac = $request->input('mac');
 
-            $porcentaje = $diasMarcadosCount > 0 ? round(($diasPuntualesCount / $diasMarcadosCount) * 100, 2) : 0;
+        // Verificar si no se proporcionó el idcentromac
+        if (empty($idmac)) {
+            // Si no se proporcionó, tomar el idcentromac del usuario autenticado
+            $idmac = auth()->user()->idcentro_mac;
+        }
 
-            return [
-                'modulo' => $modulo->N_MODULO,
-                'entidad' => $modulo->entidad ? $modulo->entidad->NOMBRE_ENTIDAD : 'Sin Entidad',
-                'mac' => $modulo->NOMBRE_MAC,
-                'dias_marcados' => $diasMarcadosCount,
-                'dias_puntuales' => $diasPuntualesCount,
-                'porcentaje' => $porcentaje
-            ];
-        });
+        // Verificar si aún no se ha asignado un idcentromac (en caso de que el usuario no esté autenticado o no tenga este campo)
+        if (empty($idmac)) {
+            // Si no se encontró, asignar el valor por defecto 11
+            $idmac = 11;
+        }
 
-        return view('puntualidad.tablas.tb_index', compact('data'));
+        // Ahora, obtenemos el NOMBRE_MAC utilizando el idmac
+        $mac = DB::table('M_CENTRO_MAC')
+            ->where('IDCENTRO_MAC', '=', $idmac) // Filtrar por el idmac
+            ->select('NOMBRE_MAC') // Seleccionamos solo el campo NOMBRE_MAC
+            ->first(); // Usamos first() porque esperamos solo un resultado
+
+        // Verificar si se encontró el nombre del centro MAC
+        $nombreMac = $mac ? $mac->NOMBRE_MAC : 'Nombre no disponible'; // Si $mac es null, retorna un valor predeterminado
+
+        // Ahora puedes usar $nombreMac para mostrar el nombre del centro MAC
+
+        $fecha_año = $request->año ?: date('Y');
+        $fecha_mes = $request->mes ?: date('m');
+        // Crear un array con los nombres de los meses
+        $meses = [
+            '01' => 'Enero',
+            '02' => 'Febrero',
+            '03' => 'Marzo',
+            '04' => 'Abril',
+            '05' => 'Mayo',
+            '06' => 'Junio',
+            '07' => 'Julio',
+            '08' => 'Agosto',
+            '09' => 'Septiembre',
+            '10' => 'Octubre',
+            '11' => 'Noviembre',
+            '12' => 'Diciembre',
+        ];
+
+        // Convertir el número del mes a su nombre correspondiente
+        $mesNombre = $meses[$fecha_mes];  // Esto convertirá el número del mes al nombre en letras
+        // Calcular el primer y último día del mes
+        $fecha_inicio = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->startOfMonth()->format('Y-m-d');
+        $fecha_fin = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->endOfMonth()->format('Y-m-d');
+
+        // Inicializar un array para los días
+        $dias = [];
+
+        // Inicializar un array para almacenar los módulos y entidades
+        // Inicializar un array para almacenar los módulos y entidades
+        $modulos = DB::table('m_modulo')
+            ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
+            ->where('m_modulo.idcentro_mac', $idmac) // Filtrar por el idcentro_mac recibido
+            ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                $query->where('m_modulo.fechainicio', '<=', $fechaFin)
+                    ->where('m_modulo.fechafin', '>=', $fechaInicio);
+            })
+            ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
+            ->orderBy('m_modulo.n_modulo') // Ordena por el nombre del módulo
+            ->get();
+
+        // Obtener feriados del mes y año especificados
+        $feriados = DB::table('feriados')
+            ->whereYear('fecha', $fecha_año)
+            ->whereMonth('fecha', $fecha_mes)
+            ->pluck('fecha')
+            ->toArray();
+
+        // Crear un array para los días
+        $numeroDias = Carbon::create($fecha_año, $fecha_mes, 1)->daysInMonth;
+
+        for ($dia = 1; $dia <= $numeroDias; $dia++) {
+            $fecha = sprintf('%04d-%02d-%02d', $fecha_año, $fecha_mes, $dia);
+
+            // Verificar si el día es un feriado
+            $esFeriado = in_array($fecha, $feriados);
+
+            // Realizar la consulta con el idcentromac
+            $resultados = DB::select("
+                WITH CTE AS (
+                    SELECT 
+                        pm.IDMODULO,
+                        p.NUM_DOC, 
+                        a.hora,
+                        pm.status
+                    FROM 
+                        m_personal_modulo pm
+                    JOIN 
+                        m_personal p ON pm.NUM_DOC = p.NUM_DOC 
+                    JOIN 
+                        m_modulo m ON pm.IDMODULO = m.IDMODULO 
+                    LEFT JOIN 
+                        m_asistencia a ON pm.NUM_DOC = a.NUM_DOC AND DATE(a.FECHA_BIOMETRICO) = ?
+                    WHERE 
+                        pm.status IN ('itinerante', 'fijo') 
+                        AND ? BETWEEN pm.fechainicio AND pm.fechafin 
+                        AND m.IDCENTRO_MAC = ?  -- Filtrar por idcentromac del módulo
+                )
+                SELECT 
+                    IDMODULO,
+                    MIN(CASE WHEN status = 'itinerante' THEN hora END) AS hora_minima_itinerante,
+                    CASE 
+                        WHEN MIN(CASE WHEN status = 'itinerante' THEN hora END) IS NOT NULL THEN NULL
+                        ELSE MIN(CASE WHEN status = 'fijo' THEN hora END) 
+                    END AS hora_minima_fijo,
+                    CASE 
+                        WHEN MIN(CASE WHEN status = 'itinerante' THEN hora END) IS NOT NULL THEN 
+                            MIN(CASE WHEN status = 'itinerante' THEN hora END) 
+                        ELSE 
+                            MIN(CASE WHEN status = 'fijo' AND 
+                                      NUM_DOC NOT IN (SELECT NUM_DOC FROM CTE WHERE status = 'itinerante') THEN hora END) 
+                    END AS hora_minima,
+                    CASE 
+                        WHEN MIN(CASE WHEN status = 'itinerante' THEN hora END) IS NOT NULL THEN 
+                            MAX(CASE WHEN status = 'itinerante' THEN NUM_DOC END) 
+                        ELSE 
+                            MAX(CASE WHEN status = 'fijo' AND 
+                                      NUM_DOC NOT IN (SELECT NUM_DOC FROM CTE WHERE status = 'itinerante') THEN NUM_DOC END) 
+                    END AS num_doc
+                FROM 
+                    CTE
+                GROUP BY 
+                    IDMODULO
+                HAVING 
+                    hora_minima IS NOT NULL
+                ORDER BY 
+                    IDMODULO;
+            ", [$fecha, $fecha, $idmac]); // Añadimos el idcentromac a la consulta
+
+            // Agregar resultados al array de días
+            foreach ($resultados as $resultado) {
+                $dias[$dia][$resultado->IDMODULO] = [
+                    'idmodulo' => $resultado->IDMODULO,
+                    'hora_minima' => $resultado->hora_minima,
+                    'es_feriado' => $esFeriado, // Añadir indicador de feriado
+                ];
+            }
+        }
+
+        // Retornar la vista con los días y sus módulos
+        return view('puntualidad.tablas.tb_index', compact('mesNombre', 'diasHabiles', 'nombreMac', 'dias', 'modulos', 'numeroDias', 'fecha_año', 'fecha_mes', 'feriados'));
     }
-
-    
 }

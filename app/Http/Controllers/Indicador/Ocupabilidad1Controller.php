@@ -32,13 +32,13 @@ class Ocupabilidad1Controller extends Controller
     public function index(Request $request)
     {
         $mac = DB::table('M_CENTRO_MAC')
-                ->where(function($query) {
-                    if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                        $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                    }
-                })
-                ->orderBy('NOMBRE_MAC', 'ASC')
-                ->get();
+            ->where(function ($query) {
+                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                    $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                }
+            })
+            ->orderBy('NOMBRE_MAC', 'ASC')
+            ->get();
 
         return view('indicador.ocupabilidad.index', compact('mac'));
     }
@@ -46,103 +46,159 @@ class Ocupabilidad1Controller extends Controller
 
     public function tb_index(Request $request)
     {
-        // dd($request->all());
-        // $idmac = $request->mac;
-        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-            $idmac = $this->centro_mac()->idmac;
-        }else{
-            $idmac = $request->mac;
+        // Obtener el idcentromac desde el formulario (si está presente)
+        $idmac = $request->input('mac');
+
+        // Verificar si no se proporcionó el idcentromac
+        if (empty($idmac)) {
+            // Si no se proporcionó, tomar el idcentromac del usuario autenticado
+            $idmac = auth()->user()->idcentro_mac;
         }
 
-        $fecha_año = $request->año ?: date('Y'); // Año actual si no se proporciona
-        $fecha_mes = $request->mes ?: date('m'); // Mes actual si no se proporciona
-        // Obtener los feriados del mes actual
+        // Verificar si aún no se ha asignado un idcentromac (en caso de que el usuario no esté autenticado o no tenga este campo)
+        if (empty($idmac)) {
+            // Si no se encontró, asignar el valor por defecto 11
+            $idmac = 11;
+        }
+
+        // Ahora, obtenemos el NOMBRE_MAC utilizando el idmac
+        $mac = DB::table('M_CENTRO_MAC')
+            ->where('IDCENTRO_MAC', '=', $idmac) // Filtrar por el idmac
+            ->select('NOMBRE_MAC') // Seleccionamos solo el campo NOMBRE_MAC
+            ->first(); // Usamos first() porque esperamos solo un resultado
+
+        // Verificar si se encontró el nombre del centro MAC
+        $nombreMac = $mac ? $mac->NOMBRE_MAC : 'Nombre no disponible'; // Si $mac es null, retorna un valor predeterminado
+
+        // Ahora puedes usar $nombreMac para mostrar el nombre del centro MAC
+
+        $fecha_año = $request->año ?: date('Y');
+        $fecha_mes = $request->mes ?: date('m');
+        // Crear un array con los nombres de los meses
+        $meses = [
+            '01' => 'Enero',
+            '02' => 'Febrero',
+            '03' => 'Marzo',
+            '04' => 'Abril',
+            '05' => 'Mayo',
+            '06' => 'Junio',
+            '07' => 'Julio',
+            '08' => 'Agosto',
+            '09' => 'Septiembre',
+            '10' => 'Octubre',
+            '11' => 'Noviembre',
+            '12' => 'Diciembre',
+        ];
+
+        // Convertir el número del mes a su nombre correspondiente
+        $mesNombre = $meses[$fecha_mes];  // Esto convertirá el número del mes al nombre en letras
+        // Calcular el primer y último día del mes
+        $fecha_inicio = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->startOfMonth()->format('Y-m-d');
+        $fecha_fin = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->endOfMonth()->format('Y-m-d');
+
+        // Inicializar un array para los días
+        $dias = [];
+
+        // Inicializar un array para almacenar los módulos y entidades
+        // Inicializar un array para almacenar los módulos y entidades
+        $modulos = DB::table('m_modulo')
+            ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
+            ->where('m_modulo.idcentro_mac', $idmac) // Filtrar por el idcentro_mac recibido
+            // Añadir condiciones para filtrar módulos que tienen actividad dentro del rango de fechas
+            ->where(function ($query) use ($fecha_inicio, $fecha_fin) {
+                $query->where('m_modulo.fechainicio', '<=', $fecha_fin)
+                    ->where('m_modulo.fechafin', '>=', $fecha_inicio);
+            })
+            ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
+            ->get();
+
+        // Obtener feriados del mes y año especificados
         $feriados = DB::table('feriados')
             ->whereYear('fecha', $fecha_año)
             ->whereMonth('fecha', $fecha_mes)
-            ->pluck('fecha') // Obtenemos solo las fechas
-            ->toArray(); // Convertir en un array para fácil manipulación
-        // Obtener el nombre del mes en español
-        $meses = [
-            1 => 'Enero',
-            2 => 'Febrero',
-            3 => 'Marzo',
-            4 => 'Abril',
-            5 => 'Mayo',
-            6 => 'Junio',
-            7 => 'Julio',
-            8 => 'Agosto',
-            9 => 'Septiembre',
-            10 => 'Octubre',
-            11 => 'Noviembre',
-            12 => 'Diciembre'
-        ];
+            ->pluck('fecha')
+            ->toArray();
 
-        $numero_mes = (int) $fecha_mes;
-        $nombre_mes = $meses[$numero_mes];
+        // Crear un array para los días
+        $numeroDias = Carbon::create($fecha_año, $fecha_mes, 1)->daysInMonth;
 
-        // Calcular el número de días en el mes
-        $daysInMonth = Carbon::create($fecha_año, $fecha_mes, 1)->daysInMonth;
+        for ($dia = 1; $dia <= $numeroDias; $dia++) {
+            $fecha = sprintf('%04d-%02d-%02d', $fecha_año, $fecha_mes, $dia);
 
-        // Obtener el primer y último día del mes actual
-        $startOfMonth = Carbon::create($fecha_año, $fecha_mes, 1)->startOfMonth()->format('Y-m-d');
-        $endOfMonth = Carbon::create($fecha_año, $fecha_mes, 1)->endOfMonth()->format('Y-m-d');
+            // Verificar si el día es un feriado
+            $esFeriado = in_array($fecha, $feriados);
 
-        // Crear dinámicamente las columnas DIA_1, DIA_2, ..., DIA_N (según el número de días del mes)
-        $selectRaw = [
-            'M_MODULO.N_MODULO',
-            'M_ENTIDAD.NOMBRE_ENTIDAD',
-            'M_MODULO.FECHAINICIO',
-            'M_MODULO.FECHAFIN'
-        ];
+            // Realizar la consulta con el idcentromac
+            $resultados = DB::select("
+                WITH CTE AS (
+                    SELECT 
+                        pm.IDMODULO,
+                        p.NUM_DOC, 
+                        a.hora,
+                        pm.status
+                    FROM 
+                        m_personal_modulo pm
+                    JOIN 
+                        m_personal p ON pm.NUM_DOC = p.NUM_DOC 
+                    JOIN 
+                        m_modulo m ON pm.IDMODULO = m.IDMODULO 
+                    LEFT JOIN 
+                        m_asistencia a ON pm.NUM_DOC = a.NUM_DOC AND DATE(a.FECHA_BIOMETRICO) = ?
+                    WHERE 
+                        pm.status IN ('itinerante', 'fijo') 
+                        AND ? BETWEEN pm.fechainicio AND pm.fechafin 
+                        AND m.IDCENTRO_MAC = ?  -- Filtrar por idcentromac del módulo
+                )
+                SELECT 
+                    IDMODULO,
+                    MIN(CASE WHEN status = 'itinerante' THEN hora END) AS hora_minima_itinerante,
+                    CASE 
+                        WHEN MIN(CASE WHEN status = 'itinerante' THEN hora END) IS NOT NULL THEN NULL
+                        ELSE MIN(CASE WHEN status = 'fijo' THEN hora END) 
+                    END AS hora_minima_fijo,
+                    CASE 
+                        WHEN MIN(CASE WHEN status = 'itinerante' THEN hora END) IS NOT NULL THEN 
+                            MIN(CASE WHEN status = 'itinerante' THEN hora END) 
+                        ELSE 
+                            MIN(CASE WHEN status = 'fijo' AND 
+                                      NUM_DOC NOT IN (SELECT NUM_DOC FROM CTE WHERE status = 'itinerante') THEN hora END) 
+                    END AS hora_minima,
+                    CASE 
+                        WHEN MIN(CASE WHEN status = 'itinerante' THEN hora END) IS NOT NULL THEN 
+                            MAX(CASE WHEN status = 'itinerante' THEN NUM_DOC END) 
+                        ELSE 
+                            MAX(CASE WHEN status = 'fijo' AND 
+                                      NUM_DOC NOT IN (SELECT NUM_DOC FROM CTE WHERE status = 'itinerante') THEN NUM_DOC END) 
+                    END AS num_doc
+                FROM 
+                    CTE
+                GROUP BY 
+                    IDMODULO
+                HAVING 
+                    hora_minima IS NOT NULL
+                ORDER BY 
+                    IDMODULO;
+            ", [$fecha, $fecha, $idmac]); // Añadimos el idcentromac a la consulta
 
-        // Crear dinámicamente las columnas de días según las fechas disponibles
-        for ($i = 1; $i <= $daysInMonth; $i++) {
-            $fecha_dia = Carbon::create($fecha_año, $fecha_mes, $i)->format('Y-m-d'); // Genera la fecha para el día
-
-            // Comprobar que la fecha esté dentro del rango de FECHAINICIO y FECHAFIN
-            $selectRaw[] = DB::raw("
-            CASE 
-                WHEN '$fecha_dia' BETWEEN M_MODULO.FECHAINICIO AND M_MODULO.FECHAFIN 
-                THEN MIN(CASE WHEN DATE(M_ASISTENCIA.FECHA) = '$fecha_dia' THEN M_ASISTENCIA.HORA END) 
-                ELSE NULL 
-            END AS DIA_$i
-        ");
+            // Agregar resultados al array de días
+            foreach ($resultados as $resultado) {
+                $dias[$dia][$resultado->IDMODULO] = [
+                    'idmodulo' => $resultado->IDMODULO,
+                    'hora_minima' => $resultado->hora_minima,
+                    'es_feriado' => $esFeriado, // Añadir indicador de feriado
+                ];
+            }
         }
 
-        // Consulta
-        $query = DB::table('M_MODULO')
-            ->join('M_PERSONAL', 'M_PERSONAL.IDMODULO', '=', 'M_MODULO.IDMODULO')
-            ->join('M_ASISTENCIA', 'M_ASISTENCIA.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
-            ->join('M_ENTIDAD', 'M_MODULO.IDENTIDAD', '=', 'M_ENTIDAD.IDENTIDAD')
-            ->select($selectRaw)
-            // Asegurar que el módulo está activo al menos un día durante el mes actual
-            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
-                $query->whereBetween('M_MODULO.FECHAINICIO', [$startOfMonth, $endOfMonth])
-                    ->orWhereBetween('M_MODULO.FECHAFIN', [$startOfMonth, $endOfMonth])
-                    ->orWhere(function ($query) use ($startOfMonth, $endOfMonth) {
-                        // El módulo abarca todo el mes
-                        $query->where('M_MODULO.FECHAINICIO', '<=', $startOfMonth)
-                            ->where('M_MODULO.FECHAFIN', '>=', $endOfMonth);
-                    });
-            })
-            ->where('M_MODULO.IDCENTRO_MAC', '=', $idmac)
-            ->where('M_ASISTENCIA.IDCENTRO_MAC', '=', $idmac)
-            ->groupBy('M_MODULO.IDMODULO', 'M_MODULO.N_MODULO', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_MODULO.FECHAINICIO', 'M_MODULO.FECHAFIN')
-            ->orderBy('M_MODULO.N_MODULO')
-            ->get();
-
-        $name_mac = $this->centro_mac()->name_mac;
-
-        // Pasar las variables a la vista
-        return view('indicador.ocupabilidad.tablas.tb_index', compact('name_mac', 'query', 'fecha_mes', 'fecha_año', 'nombre_mes', 'daysInMonth', 'feriados'));
+        // Retornar la vista con los días y sus módulos
+        return view('indicador.ocupabilidad.tablas.tb_index', compact('mesNombre', 'nombreMac', 'dias', 'modulos', 'numeroDias', 'fecha_año', 'fecha_mes', 'feriados'));
     }
 
     public function export_excel(Request $request)
     {
         if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
             $idmac = $this->centro_mac()->idmac;
-        }else{
+        } else {
             $idmac = $request->mac;
         }
 

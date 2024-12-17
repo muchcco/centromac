@@ -279,8 +279,12 @@
                         <a href="{{ route('modulos.index') }}" class="@if (Request::is('modulos/index*')) active @endif">
                             <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Módulo</span></a>
                     </li>
-                    <li class="@if (Request::is('itinerante*')) mm-active @endif">
-                        <a href="{{ route('itinerante.index') }}" class="@if (Request::is('itinerante/index*')) active @endif">
+                    <li class="@if (Request::is('personalModulo*')) mm-active @endif">
+                        <a href="{{ route('personalModulo.index') }}" class="@if (Request::is('personalModulo/index*')) active @endif">
+                            <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Personal - Modulo</span></a>
+                    </li>
+                    <li class="@if (Request::is('personalModuloI*')) mm-active @endif">
+                        <a href="{{ route('personalModuloI.index') }}" class="@if (Request::is('personalModuloI/index*')) active @endif">
                             <i data-feather="map-pin" class="align-self-center menu-icon"></i><span>Itinerante</span>
                         </a>
                     </li>

@@ -4,16 +4,14 @@ namespace App\Http\Controllers\Modulo;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Itinerante;
-use App\Models\MAC;
-use App\Models\Personal;
-use App\Models\Modulo;
 use App\Models\PersonalModulo; // Modelo para m_personal_modulo
+use App\Models\Personal; // Modelo para m_personal
+use App\Models\Modulo;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
-class ItineranteController extends Controller
+class PersonalModuloController extends Controller
 {
     private function centro_mac()
     {
@@ -32,35 +30,33 @@ class ItineranteController extends Controller
     // Mostrar la vista principal
     public function index()
     {
-        return view('personalmoduloitinerante.index'); // Cambia el nombre de la vista según la ruta de tu proyecto
+        return view('personalmodulo.index'); // Cambia el nombre de la vista según la ruta de tu proyecto
     }
+    // Cargar datos de la tabla
     public function tb_index()
     {
-        // Realizar la consulta a la base de datos usando el Query Builder de Laravel
         $personalModulos = DB::table('m_personal_modulo')
-            ->join('m_personal', 'm_personal_modulo.num_doc', '=', 'm_personal.num_doc')  // Join con la tabla m_personal
-            ->join('m_modulo', 'm_personal_modulo.idmodulo', '=', 'm_modulo.IDMODULO')     // Join con la tabla m_modulo
-            ->leftJoin('m_entidad', 'm_modulo.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')      // Left Join con la tabla m_entidad
-            ->join('m_centro_mac', 'm_personal_modulo.idcentro_mac', '=', 'm_centro_mac.IDCENTRO_MAC')  // Join con la tabla m_centro_mac
-            ->where('m_personal_modulo.idcentro_mac', '=', auth()->user()->idcentro_mac)  // Filtrar por el centro MAC del usuario autenticado
-            ->where('m_personal_modulo.status', '=', 'itinerante')  // Agregar condición para filtrar por el status 'itinerante'
+            ->join('m_personal', 'm_personal_modulo.num_doc', '=', 'm_personal.num_doc')
+            ->join('m_modulo', 'm_personal_modulo.idmodulo', '=', 'm_modulo.IDMODULO')
+            ->leftJoin('m_entidad', 'm_modulo.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')
+            ->join('m_centro_mac', 'm_personal_modulo.idcentro_mac', '=', 'm_centro_mac.IDCENTRO_MAC')
+            ->where('m_personal_modulo.status', '=', 'fijo')  // Agregar condición para filtrar por el status 'itinerante'
+            ->where('m_personal_modulo.idcentro_mac', '=', auth()->user()->idcentro_mac)  // Filtra solo por el idcentro_mac del usuario autenticado
             ->select(
-                'm_personal_modulo.*',  // Seleccionar todos los campos de m_personal_modulo
-                'm_personal.NOMBRE',    // Nombre del personal
-                'm_personal.APE_PAT',   // Apellido paterno del personal
-                'm_personal.APE_MAT',   // Apellido materno del personal
-                'm_modulo.N_MODULO',    // Nombre del módulo
-                'm_entidad.NOMBRE_ENTIDAD',  // Nombre de la entidad
-                'm_centro_mac.NOMBRE_MAC'    // Nombre del centro MAC
+                'm_personal_modulo.*',
+                'm_personal.NOMBRE',
+                'm_personal.APE_PAT',
+                'm_personal.APE_MAT',
+                'm_modulo.N_MODULO',
+                'm_entidad.NOMBRE_ENTIDAD',
+                'm_centro_mac.NOMBRE_MAC'
             )
-            ->get();  // Obtener los resultados
+            ->get();
 
-        // Ver los datos recuperados (para depuración, comentar o eliminar en producción)
-        // dd($personalModulos);
-
-        // Retornar la vista con los datos
-        return view('personalmoduloitinerante.tablas.tb_index', compact('personalModulos'));
+        return view('personalmodulo.tablas.tb_index', compact('personalModulos'));
     }
+
+
     // Mostrar el formulario de creación
     public function create()
     {
@@ -79,7 +75,7 @@ class ItineranteController extends Controller
             ->get();
         try {
             // Pasa las variables 'modulos' y 'personal' a la vista
-            $view = view('personalmoduloitinerante.modals.md_add_personalModulo', compact('modulos', 'personal'))->render();
+            $view = view('personalmodulo.modals.md_add_personalModulo', compact('modulos', 'personal'))->render();
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -110,7 +106,7 @@ class ItineranteController extends Controller
             $personalModulo->idmodulo = $request->idmodulo;
             $personalModulo->fechainicio = $request->fechainicio;
             $personalModulo->fechafin = $request->fechafin;
-            $personalModulo->status = 'itinerante'; // Asignar el status 'itinerante'
+            $personalModulo->status = 'fijo'; // Asignar el status 'itinerante'
             $personalModulo->idcentro_mac = auth()->user()->idcentro_mac; // Obtener el ID del Centro MAC del usuario autenticado
             $personalModulo->save();
 
@@ -151,7 +147,7 @@ class ItineranteController extends Controller
                 ->get();
 
             // Renderizar la vista con los datos obtenidos
-            $view = view('personalmoduloitinerante.modals.md_edit_personalModulo', compact('personalModulo', 'modulos', 'personal'))->render();
+            $view = view('personalmodulo.modals.md_edit_personalModulo', compact('personalModulo', 'modulos', 'personal'))->render();
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -187,7 +183,6 @@ class ItineranteController extends Controller
             $personalModulo->idmodulo = $request->idmodulo;
             $personalModulo->fechainicio = $request->fechainicio;
             $personalModulo->fechafin = $request->fechafin;
-            $personalModulo->status = 'itinerante'; // Asegurarse de que el status sea 'itinerante'
             $personalModulo->idcentro_mac = auth()->user()->idcentro_mac; // Actualizar el idcentro_mac con el del usuario autenticado
             $personalModulo->save();
 
