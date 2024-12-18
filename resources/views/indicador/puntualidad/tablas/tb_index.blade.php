@@ -47,68 +47,53 @@
                 <td>{{ $modulo->nombre_entidad }}</td>
                 @for ($i = 1; $i <= $numeroDias; $i++)
                     @php
-                        // Crear fecha del día actual en el bucle
                         $fechaActual = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->format('Y-m-d');
-                        // Determinar si es domingo
                         $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
-                        // Verificar si el día es feriado
                         $esFeriado = in_array($fechaActual, $feriados);
+                        $esActivo = $fechaActual >= $modulo->fechainicio && $fechaActual <= $modulo->fechafin;
                     @endphp
 
                     @if ($esDomingo || $esFeriado)
                         <td style="min-width: 28px; background-color: rgba(50,50,50,.8);">&nbsp;</td>
-                    @else
-                        <td style="min-width: 28px; 
-                            @if (isset($dias[$i][$modulo->idmodulo])) 
-                                @php
-                                    $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'] ?? null;
-                                @endphp
-                                @if ($horaMinima)
-                                    @php
-                                        // Comparación de la hora mínima
-                                        $horaLimite = '08:15';
-                                        $horaRegistro = new DateTime($horaMinima);
-                                        $horaLimiteObj = new DateTime($horaLimite);
-                                    @endphp
-                                    @if ($horaRegistro < $horaLimiteObj)
-                                        background: #FFFFFF !important; color: black !important; /* SI */
-                                    @else
-                                        background: #2F75B5 !important; color: white !important; /* NO */
-                                    @endif
-                                @else
-                                    background: #474747 !important; color: white !important; /* - */
-                                @endif
-                            @else
-                                background: #474747 !important; color: white !important; /* - */
-                            @endif
-                        ">
-                            @if (isset($dias[$i][$modulo->idmodulo]) && $dias[$i][$modulo->idmodulo]['hora_minima'])
-                                @php
-                                    // Mostrar "SI" o "NO" basado en la hora comparada
+                    @elseif ($esActivo)
+                        <td
+                            style="min-width: 28px; 
+                            @if (isset($dias[$i][$modulo->idmodulo]['hora_minima'])) @php
                                     $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
                                     $horaLimite = '08:15';
                                     $horaRegistro = new DateTime($horaMinima);
                                     $horaLimiteObj = new DateTime($horaLimite);
-                                    if ($horaRegistro < $horaLimiteObj) {
-                                        $horaMostrar = 'SI';
-                                    } else {
-                                        $horaMostrar = 'NO';
-                                    }
+                                    $esTarde = $horaRegistro > $horaLimiteObj;
                                 @endphp
-                                <span class="text-center">{{ $horaMostrar }}</span>
+                                @if (!$esTarde) 
+                                    background: #FFFFFF; color: black; /* SI */
+                                @else
+                                    background: #2F75B5; color: white; /* NO */ @endif
+@else
+background: #474747; color: white; /* - */
+                            @endif">
+                            @if (isset($dias[$i][$modulo->idmodulo]['hora_minima']))
+                                @php
+                                    $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
+                                    $esTarde = new DateTime($horaMinima) > new DateTime('08:15');
+                                @endphp
+                                <span class="text-center">{{ !$esTarde ? 'SI' : 'NO' }}</span>
                             @else
-                                <span class="text-center">-</span> <!-- Si no hay hora mínima -->
+                                <span class="text-center">-</span> <!-- Si no hay registro y está activo -->
                             @endif
                         </td>
+                    @else
+                        <td></td> <!-- Celda vacía fuera del rango activo -->
                     @endif
                 @endfor
-                <td></td>
+                <td></td> <!-- Columna de observaciones vacía -->
             </tr>
         @empty
             <tr>
                 <td colspan="{{ $numeroDias + 3 }}" class="text-center">No hay datos disponibles</td>
             </tr>
         @endforelse
+
     </tbody>
 </table>
 <script>
@@ -116,7 +101,7 @@
         $('#table_formato2').DataTable({
             "paging": false, // Desactiva la paginación
             "searching": false, // Desactiva la búsqueda
-            "info": false,  // Desactiva la información de paginación
+            "info": false, // Desactiva la información de paginación
             "order": [
                 [0, 'asc']
             ], // Ordena ascendente por la primera columna (asumiendo que es la de módulos)

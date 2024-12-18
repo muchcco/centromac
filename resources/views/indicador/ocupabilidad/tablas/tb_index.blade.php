@@ -50,9 +50,10 @@
                         $fechaActual = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->format('Y-m-d');
                         $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
                         $esFeriado = in_array($fechaActual, $feriados);
+                        $activo = $fechaActual >= $modulo->fechainicio && $fechaActual <= $modulo->fechafin;
                     @endphp
 
-                    @if ($esDomingo || $esFeriado)
+                    @if ($esDomingo || $esFeriado || !$activo)
                         <td style="min-width: 28px; background-color: rgba(50,50,50,.8);">&nbsp;</td>
                     @else
                         @php
@@ -87,7 +88,7 @@
         $('#table_formato2').DataTable({
             "paging": false, // Desactiva la paginación
             "searching": false, // Desactiva la búsqueda
-            "info": false,  // Desactiva la información de paginación
+            "info": false, // Desactiva la información de paginación
             "order": [
                 [0, 'asc']
             ], // Ordena ascendente por la primera columna (asumiendo que es la de módulos)
