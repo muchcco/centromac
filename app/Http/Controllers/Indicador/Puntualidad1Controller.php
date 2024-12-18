@@ -102,9 +102,15 @@ class Puntualidad1Controller extends Controller
         // Inicializar un array para almacenar los módulos y entidades
         $modulos = DB::table('m_modulo')
             ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
-            ->where('m_modulo.idcentro_mac', $idmac) // Filtrar por el idcentromac recibido
-            ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad')
+            ->where('m_modulo.idcentro_mac', $idmac) // Filtrar por el idcentro_mac recibido
+            // Añadir condiciones para filtrar módulos que tienen actividad dentro del rango de fechas
+            ->where(function ($query) use ($fecha_inicio, $fecha_fin) {
+                $query->where('m_modulo.fechainicio', '<=', $fecha_fin)
+                    ->where('m_modulo.fechafin', '>=', $fecha_inicio);
+            })
+            ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
             ->get();
+
 
         // Obtener feriados del mes y año especificados
         $feriados = DB::table('feriados')
