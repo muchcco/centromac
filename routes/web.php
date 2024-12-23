@@ -245,6 +245,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/store_personalModulo', [PersonalModuloController::class, 'store'])->name('store_personalModulo');
         Route::post('/update_personalModulo', [PersonalModuloController::class, 'update'])->name('update_personalModulo');
         Route::post('/delete_personalModulo', [PersonalModuloController::class, 'destroy'])->name('delete_personalModulo');
+        Route::get('/get-fechas-modulo/{id}', [PersonalModuloController::class, 'getFechasModulo'])->name('getFechasModulo');
     });
 
     /******************************************************   MODULO Y PERSONAL ITINERANTE ************************************************************************/

@@ -10,6 +10,7 @@ use App\Models\Modulo;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PersonalModuloController extends Controller
 {
@@ -199,6 +200,29 @@ class PersonalModuloController extends Controller
                 'status' => 400
             ], 400);
         }
+    }
+    public function getFechasModulo($id)
+    {
+        $modulo = DB::table('m_modulo')
+            ->select('fechainicio', 'fechafin')
+            ->where('idmodulo', '=', $id)
+            ->first();
+
+        // Aborta directamente si no se encuentra el módulo, sin necesidad de comprobarlo después
+        if (!$modulo) {
+            return abort(404, 'Módulo no encontrado');
+        }
+
+        // Utiliza una función de transformación para manejar las fechas de forma más elegante
+        $transformDate = function ($date) {
+            return $date ? Carbon::createFromFormat('Y-m-d', $date)->format('Y-m-d') : null;
+        };
+
+        // Aplica la transformación a las fechas de inicio y fin
+        return response()->json([
+            'fechainicio' => $transformDate($modulo->fechainicio),
+            'fechafin' => $transformDate($modulo->fechafin)
+        ]);
     }
 
     // Eliminar un registro
