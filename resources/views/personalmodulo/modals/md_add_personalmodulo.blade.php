@@ -15,7 +15,8 @@
                         <select class="form-control select2" name="num_doc" id="num_doc">
                             <option value="" disabled selected>Seleccione un personal</option>
                             @foreach ($personal as $p)
-                                <option value="{{ $p->num_doc }}">{{ $p->num_doc }} - {{ $p->nombre_completo }}</option>
+                                <option value="{{ $p->num_doc }}">{{ $p->num_doc }} - {{ $p->nombre_completo }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -26,7 +27,8 @@
                         <select class="form-control select2" name="idmodulo" id="idmodulo">
                             <option value="" disabled selected>Seleccione un módulo</option>
                             @foreach ($modulos as $modulo)
-                                <option value="{{ $modulo->IDMODULO }}">{{ $modulo->N_MODULO }} - {{ $modulo->NOMBRE_ENTIDAD }}</option>
+                                <option value="{{ $modulo->IDMODULO }}">{{ $modulo->N_MODULO }} -
+                                    {{ $modulo->NOMBRE_ENTIDAD }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -47,26 +49,53 @@
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
-            <button type="button" class="btn btn-outline-success" id="btnEnviarForm" onclick="btnStorePersonalModulo()">Guardar</button>
+            <button type="button" class="btn btn-outline-success" id="btnEnviarForm"
+                onclick="btnStorePersonalModulo()">Guardar</button>
         </div>
     </div>
 </div>
 
 <script>
-    // Inicializar select2
     $(document).ready(function() {
         $('#num_doc').select2({
-            dropdownParent: $('#modal_show_modal'), // Establece el contenedor del dropdown dentro del modal
+            dropdownParent: $('#modal_show_modal'),
             placeholder: "Seleccione un personal",
-            width: '100%', // Ajusta el ancho para que sea responsivo
+            width: '100%',
             allowClear: true
+        });
+
+        $('#idmodulo').select2({
+            dropdownParent: $('#modal_show_modal'),
+            placeholder: "Seleccione un módulo",
+            width: '100%',
+            allowClear: true
+        });
+
+        $('#idmodulo').on('change', function() {
+            var moduloId = $(this).val();
+            if (moduloId) {
+                $.ajax({
+                    url: "{{ route('personalModulo.getFechasModulo', ':id') }}".replace(':id', moduloId),
+                    type: 'GET',
+                    success: function(data) {
+                        console.log(
+                        data); // Esto te ayudará a ver lo que se devuelve desde el servidor
+                        if (data.fechainicio && data.fechafin) {
+                            $('#fechainicio').val(data.fechainicio);
+                            $('#fechafin').val(data.fechafin);
+                        } else {
+                            alert('Las fechas no están disponibles para este módulo.');
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        alert('Error al cargar las fechas: ' + textStatus + ' - ' +
+                            errorThrown);
+                    }
+                });
+            } else {
+                $('#fechainicio, #fechafin').val(''); // Limpia las fechas si no hay módulo seleccionado
+            }
         });
         
-        $('#idmodulo').select2({
-            dropdownParent: $('#modal_show_modal'), // Establece el contenedor del dropdown dentro del modal
-            placeholder: "Seleccione un módulo",
-            width: '100%', // Ajusta el ancho para que sea responsivo
-            allowClear: true
-        });
     });
 </script>
