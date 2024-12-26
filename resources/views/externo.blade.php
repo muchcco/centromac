@@ -61,6 +61,10 @@
                                         <td><a href="https://pcmgobperu-my.sharepoint.com/:x:/g/personal/sscs_06_pcm_gob_pe/EVYcqSpCEG1CoVMmnMcl6vQBUUe08LMNg8JC3Da32IxLhA?e=dglwpb" target="_blank">Ir al link</a></td>
                                     </tr>
                                     @endrole
+                                    <tr>
+                                        <th class="text-dark"><li>Ingreso de asistencia</li></th>
+                                        <td><a href="http://190.187.182.55:8081/carga_asistencia/carga_manual/cargardatos.php" target="_blank">Ir al link</a></td>
+                                    </tr>
                                 </table>
                                 
                             </div>
