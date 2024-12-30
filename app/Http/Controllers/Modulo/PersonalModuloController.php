@@ -61,6 +61,27 @@ class PersonalModuloController extends Controller
     // Mostrar el formulario de creación
     public function create()
     {
+
+        $allowedCentrosMac = [10, 12, 13, 14, 19];
+
+        $userCentroMac = auth()->user()->idcentro_mac;
+
+        if (!in_array($userCentroMac, $allowedCentrosMac)) {
+            // Obtener el personal junto con sus nombres completos
+            $personal = DB::table('m_personal')
+            ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+            ->where('IDMAC', auth()->user()->idcentro_mac)
+            // Filtrar por el centro MAC del usuario autenticado
+            ->get();
+        }else{
+            // Obtener el personal junto con sus nombres completos
+            $personal = DB::table('m_personal')
+            ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+            ->whereIn('IDMAC', [10, 12, 13, 14, 19])
+            // Filtrar por el centro MAC del usuario autenticado
+            ->get();
+        }
+
         // Obtener los módulos disponibles junto con la entidad asociada
         $modulos = DB::table('m_modulo')
             ->join('m_entidad', 'm_modulo.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')
@@ -68,12 +89,7 @@ class PersonalModuloController extends Controller
             ->where('m_modulo.IDCENTRO_MAC', auth()->user()->idcentro_mac) // Filtrar por el centro MAC del usuario autenticado
             ->get();
 
-        // Obtener el personal junto con sus nombres completos
-        $personal = DB::table('m_personal')
-            ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-            ->where('IDMAC', auth()->user()->idcentro_mac)
-            // Filtrar por el centro MAC del usuario autenticado
-            ->get();
+       
         try {
             // Pasa las variables 'modulos' y 'personal' a la vista
             $view = view('personalmodulo.modals.md_add_personalModulo', compact('modulos', 'personal'))->render();
@@ -131,6 +147,28 @@ class PersonalModuloController extends Controller
     public function edit(Request $request)
     {
         try {
+
+            $allowedCentrosMac = [10, 12, 13, 14, 19];
+
+            $userCentroMac = auth()->user()->idcentro_mac;
+
+            if (!in_array($userCentroMac, $allowedCentrosMac)) {
+                // Obtener el personal junto con sus nombres completos
+                $personal = DB::table('m_personal')
+                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+                ->where('IDMAC', auth()->user()->idcentro_mac)
+                // Filtrar por el centro MAC del usuario autenticado
+                ->get();
+            }else{
+                // Obtener el personal junto con sus nombres completos
+                $personal = DB::table('m_personal')
+                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+                ->whereIn('IDMAC', [10, 12, 13, 14, 19])
+                // Filtrar por el centro MAC del usuario autenticado
+                ->get();
+            }
+
+
             // Buscar el registro de PersonalModulo utilizando el ID proporcionado
             $personalModulo = PersonalModulo::findOrFail($request->id);
 
@@ -139,12 +177,6 @@ class PersonalModuloController extends Controller
                 ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_modulo.IDENTIDAD')
                 ->select('m_modulo.IDMODULO', 'm_modulo.N_MODULO', 'm_entidad.NOMBRE_ENTIDAD')
                 ->where('m_modulo.IDCENTRO_MAC', auth()->user()->idcentro_mac)
-                ->get();
-
-            // Obtener la lista de personal del centro MAC del usuario autenticado
-            $personal = DB::table('m_personal')
-                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-                ->where('IDMAC', auth()->user()->idcentro_mac)
                 ->get();
 
             // Renderizar la vista con los datos obtenidos
