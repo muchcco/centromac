@@ -129,9 +129,16 @@ class VerificacionController extends Controller
             }
         }
 
-        // Retornar la vista con los datos filtrados
-        return view('verificaciones.show', compact('verificaciones', 'campos', 'fechaCarbon', 'observacionesApertura', 'observacionesRelevo', 'observacionesCierre'));
-    }
+        // Retornar la vista con los datos
+        return view('verificaciones.show', compact(
+            'verificaciones',
+            'campos',
+            'fechaCarbon',
+            'observacionesApertura',
+            'observacionesRelevo',
+            'observacionesCierre',
+            'centroMac'
+        )); }
 
     public function store(Request $request)
     {
