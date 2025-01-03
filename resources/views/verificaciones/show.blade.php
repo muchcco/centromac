@@ -81,8 +81,9 @@
                         <td class="col-8 text-center fw-bold fs-4" colspan="8">FORMATO</td>
                     </tr>
                     <tr>
-                        <td class="col-8 text-center fw-bold fs-4" colspan="8">VERIFICACIÓN DIARIA DE OPERACIONES DEL
-                            CENTRO MAC HUÁNUCO</td>
+                        <td class="col-8 text-center fw-bold fs-4" colspan="8">
+                            VERIFICACIÓN DIARIA DE OPERACIONES DEL CENTRO MAC {{ $centroMac->NOMBRE_MAC }}
+                        </td>
                     </tr>
                 </tbody>
             </table>

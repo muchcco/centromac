@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Verificacion;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class VerificacionController extends Controller
 {
@@ -47,7 +48,14 @@ class VerificacionController extends Controller
 
         // Convertir la fecha a un objeto Carbon
         $fechaCarbon = Carbon::createFromFormat('Y-m-d', $fecha);
+        // Obtener el usuario autenticado
+        $user = auth()->user();
+        $idCentroMac = $user->idcentro_mac;
 
+        // Buscar el centro en la tabla m_centro_mac usando DB
+        $centroMac = DB::table('m_centro_mac')
+            ->where('idcentro_mac', $idCentroMac)
+            ->first();
         // Filtrar por id_centromac del usuario autenticado
         $verificaciones = Verificacion::with('user')
             ->whereDate('Fecha', $fechaCarbon) // Filtra por la fecha
