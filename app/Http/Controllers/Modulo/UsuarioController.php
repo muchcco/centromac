@@ -39,7 +39,14 @@ class UsuarioController extends Controller
     {
         $usuarios = User::leftJoin('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
                             ->leftJoin('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'users.idpersonal')
-                            ->where('users.idcentro_mac', $this->centro_mac()->idmac)                         
+                            // ->where('users.idcentro_mac', $this->centro_mac()->idmac)
+                            ->where(function($query) {
+                                if (!auth()->user()->hasRole('Administrador')) { 
+                                    if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                                        $query->where('users.idcentro_mac', '=', $this->centro_mac()->idmac);
+                                    }
+                                }
+                            })                      
                             ->get();
 
         return view('usuarios.tablas.tb_index', compact('usuarios'));
