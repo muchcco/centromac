@@ -130,7 +130,6 @@ function tabla_seccion() {
 }
 
 function btnAddAsesores ()  {
-
     $.ajax({
         type:'post',
         url: "{{ route('personal.modals.md_add_asesores') }}",
@@ -139,6 +138,13 @@ function btnAddAsesores ()  {
         success:function(data){
             $("#modal_show_modal").html(data.html);
             $("#modal_show_modal").modal('show');
+
+            // Asegurarse de que Select2 se inicie correctamente después de cargar el modal
+            $('#modulos_entidades').select2({
+                placeholder: "Seleccione un módulo y entidad",
+                allowClear: true,
+                width: '100%'
+            });
         }
     });
 }
@@ -146,74 +152,61 @@ function btnAddAsesores ()  {
 
 var btnStoreAsesor = () => {
 
-if ($('#nombre').val() == null || $('#nombre').val() == '') {
-    $('#nombre').addClass("hasError");
-} else {
-    $('#nombre').removeClass("hasError");
+// Validaciones previas para asegurar que los campos no estén vacíos
+if ($('#nombre').val() == '' || 
+    $('#ap_pat').val() == '' || 
+    $('#ap_mat').val() == '' || 
+    $('#dni').val() == '' || 
+    $('#modulos_entidades').val() == null ||
+    $('#fechainicio').val() == '' || 
+    $('#fechafin').val() == '') {
+
+    toastr.error('Por favor complete todos los campos obligatorios.');
+    return;
 }
-if ($('#ap_pat').val() == null || $('#ap_pat').val() == '') {
-    $('#ap_pat').addClass("hasError");
-} else {
-    $('#ap_pat').removeClass("hasError");
-} 
-if ($('#ap_mat').val() == null || $('#ap_mat').val() == '') {
-    $('#ap_mat').addClass("hasError");
-} else {
-    $('#ap_mat').removeClass("hasError");
-} 
-if ($('#dni').val() == null || $('#dni').val() == '') {
-    $('#dni').addClass("hasError");
-} else {
-    $('#dni').removeClass("hasError");
-}
-if ($('#entidad').val() == null || $('#entidad').val() == '') {
-    $('#entidad').addClass("hasError");
-} else {
-    $('#entidad').removeClass("hasError");
-} 
-if ($('#modulos').val() == null || $('#modulos').val() == '') {
-    $('#modulos').addClass("hasError");
-} else {
-    $('#modulos').removeClass("hasError");
-} 
-    
+
 var formData = new FormData();
 formData.append("nombre", $("#nombre").val());
 formData.append("ap_pat", $("#ap_pat").val());
 formData.append("ap_mat", $("#ap_mat").val());
 formData.append("dni", $("#dni").val());
-formData.append("entidad", $("#entidad").val());
-formData.append("modulos", $("#modulos").val());
+formData.append("modulos_entidades", $("#modulos_entidades").val());
+formData.append("fechainicio", $("#fechainicio").val());
+formData.append("fechafin", $("#fechafin").val());
 formData.append("_token", $("input[name=_token]").val());
 
+// Petición AJAX
 $.ajax({
-    type:'post',
+    type: 'post',
     url: "{{ route('personal.store_asesores') }}",
     dataType: "json",
-    data:formData,
+    data: formData,
     processData: false,
     contentType: false,
     beforeSend: function () {
         document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE';
         document.getElementById("btnEnviarForm").disabled = true;
     },
-    success:function(data){ 
-        console.log(data);
-        if(data.status == '201'){
+    success: function(data) { 
+        // Estructura conservada con alertas y Toastify
+        if(data.status == 201){
             document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
-                document.getElementById("btnEnviarForm").disabled = false;
-                document.getElementById('alerta').innerHTML = `<div class="alert custom-alert custom-alert-warning icon-custom-alert shadow-sm fade show d-flex justify-content-between" role="alert"><div class="media">
-                                                                    <i class="la la-exclamation-triangle alert-icon text-warning align-self-center font-30 me-3"></i>
-                                                                    <div class="media-body align-self-center">
-                                                                        <h5 class="mb-1 fw-bold mt-0">Importante</h5>
-                                                                        <span>`+ data.message.replace(/\n/g, "<br>") +`.</span>
-                                                                    </div>
-                                                                </div></div>`;
-        }else{
+            document.getElementById("btnEnviarForm").disabled = false;
+            document.getElementById('alerta').innerHTML = `
+                <div class="alert custom-alert custom-alert-warning icon-custom-alert shadow-sm fade show d-flex justify-content-between" role="alert">
+                    <div class="media">
+                        <i class="la la-exclamation-triangle alert-icon text-warning align-self-center font-30 me-3"></i>
+                        <div class="media-body align-self-center">
+                            <h5 class="mb-1 fw-bold mt-0">Importante</h5>
+                            <span>${data.message.replace(/\n/g, "<br>")}.</span>
+                        </div>
+                    </div>
+                </div>`;
+        } else {
             $("#modal_show_modal").modal('hide');
-            tabla_seccion();
+            tabla_seccion(); // Actualizar la tabla
             Toastify({
-                text: "Se guardo exitosamente el registro",
+                text: "Se guardó exitosamente el registro",
                 className: "info",
                 gravity: "bottom",
                 style: {
@@ -221,17 +214,19 @@ $.ajax({
                 }
             }).showToast();
         }
-
-        
     },
-    error: function(){
-        document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE';
-        document.getElementById("btnEnviarForm").disabled = true;
+    error: function(response) {
+        document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
+        document.getElementById("btnEnviarForm").disabled = false;
+        
+        if(response.responseJSON && response.responseJSON.error) {
+            toastr.error(response.responseJSON.error);
+        } else {
+            toastr.error("Ocurrió un error inesperado. Por favor, inténtelo de nuevo.");
+        }
     }
 });
-
 }
-
 
 var isNumber = (evt) =>{
   evt = (evt) ? evt : window.event;
