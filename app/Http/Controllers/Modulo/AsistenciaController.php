@@ -849,22 +849,69 @@ class AsistenciaController extends Controller
 
 
         } else {
+
             $query = DB::table('M_ASISTENCIA as MA')
-                ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC', DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'))
-                ->selectRaw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
-                ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-                ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
-                                FROM M_PERSONAL
-                                LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
-                                JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
-                                JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
-                ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO')
-                ->where('PERS.IDENTIDAD', $request->identidad)
-                ->where('MA.IDCENTRO_MAC', $idmac)
-                ->whereMonth('MA.FECHA', $request->mes)
-                ->whereYear('MA.FECHA', $request->año)
-                ->orderBy('FECHA', 'ASC')
-                ->get();
+                        ->select(
+                            'PERS.ABREV_ENTIDAD',
+                            'PERS.NOMBREU',
+                            'PERS.NOMBRE_CARGO',
+                            'MA.FECHA',
+                            'MA.NUM_DOC',
+                            DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+                            DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
+                        )
+                        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                        ->joinSub(
+                            DB::table('M_PERSONAL')
+                                ->select(
+                                    DB::raw('CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU'),
+                                    'M_ENTIDAD.ABREV_ENTIDAD',
+                                    'M_CENTRO_MAC.IDCENTRO_MAC',
+                                    'M_PERSONAL.NUM_DOC',
+                                    'M_ENTIDAD.IDENTIDAD',
+                                    'D_PERSONAL_CARGO.NOMBRE_CARGO',
+                                    'MPM.FECHAINICIO',
+                                    'MPM.FECHAFIN'
+                                )
+                                ->leftJoin('D_PERSONAL_CARGO', 'D_PERSONAL_CARGO.IDCARGO_PERSONAL', '=', 'M_PERSONAL.IDCARGO_PERSONAL')
+                                ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+                                ->join('M_PERSONAL_MODULO AS MPM', 'MPM.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
+                                ->join('M_MODULO', function ($join) {
+                                    $join->on('M_MODULO.IDMODULO', '=', 'MPM.IDMODULO')
+                                        ->on('M_MODULO.IDCENTRO_MAC', '=', 'MPM.IDCENTRO_MAC');
+                                })
+                                ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD')
+                                ->where('M_MODULO.ESTADO', 1),
+                            'PERS',
+                            'PERS.NUM_DOC',
+                            '=',
+                            'MA.NUM_DOC'
+                        )
+                        ->where('PERS.IDENTIDAD', $request->identidad)
+                        ->where('MA.IDCENTRO_MAC', $idmac)
+                        ->whereMonth('MA.FECHA', $request->mes)
+                        ->whereYear('MA.FECHA', $request->año)
+                        ->whereBetween('MA.FECHA', [DB::raw('PERS.FECHAINICIO'), DB::raw('PERS.FECHAFIN')])
+                        ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO')
+                        ->orderBy('MA.FECHA', 'ASC')
+                        ->get();
+
+            // $query = DB::table('M_ASISTENCIA as MA')
+            //     ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC', DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'))
+            //     ->selectRaw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
+            //     ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+            //     ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
+            //                     FROM M_PERSONAL
+            //                     LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
+            //                     JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
+            //                     JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+            //     ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO')
+            //     ->where('PERS.IDENTIDAD', $request->identidad)
+            //     ->where('MA.IDCENTRO_MAC', $idmac)
+            //     ->whereMonth('MA.FECHA', $request->mes)
+            //     ->whereYear('MA.FECHA', $request->año)
+            //     ->orderBy('FECHA', 'ASC')
+            //     ->get();
                 // dd($query);
 
                 foreach ($query as $q) {
@@ -1088,30 +1135,69 @@ class AsistenciaController extends Controller
 
 
         } else {
+
             $query =  DB::table('M_ASISTENCIA as MA')
-                ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-                ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
+                        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                        ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, 
+                                                M_ENTIDAD.ABREV_ENTIDAD, 
+                                                M_CENTRO_MAC.IDCENTRO_MAC, 
+                                                M_PERSONAL.NUM_DOC, 
+                                                M_ENTIDAD.IDENTIDAD, 
+                                                D_PERSONAL_CARGO.NOMBRE_CARGO, 
+                                                MPM.FECHAINICIO, 
+                                                MPM.FECHAFIN
                                         FROM M_PERSONAL
                                         LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
-                                        JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
-                                        JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
-                ->select([
-                    'PERS.ABREV_ENTIDAD',
-                    'PERS.NOMBRE_CARGO',
-                    'PERS.NOMBREU',
-                    'MA.FECHA',
-                    'MA.NUM_DOC',
-                    DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
-                    DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
-                    'PERS.IDENTIDAD', // Agregado para cumplir con GROUP BY
-                    'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
-                ])
-                ->where('PERS.IDENTIDAD', $request->identidad)
-                ->where('MA.IDCENTRO_MAC', $idmac)
-                ->whereBetween(DB::raw('DATE(MA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
-                ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
-                ->orderBy('MA.FECHA', 'asc')
-                ->get();
+                                        JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC
+                                        JOIN M_PERSONAL_MODULO AS MPM ON MPM.NUM_DOC = M_PERSONAL.NUM_DOC
+                                        JOIN M_MODULO ON M_MODULO.IDMODULO = MPM.IDMODULO AND M_MODULO.IDCENTRO_MAC = MPM.IDCENTRO_MAC
+                                        JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_MODULO.IDENTIDAD
+                                        WHERE M_MODULO.ESTADO = 1
+                                        ) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+                        ->select([
+                            'PERS.ABREV_ENTIDAD',
+                            'PERS.NOMBRE_CARGO',
+                            'PERS.NOMBREU',
+                            'MA.FECHA',
+                            'MA.NUM_DOC',
+                            DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+                            DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
+                            'PERS.IDENTIDAD',
+                            'PERS.IDCENTRO_MAC'
+                        ])
+                        ->where('PERS.IDENTIDAD', $request->identidad)
+                        ->where('MA.IDCENTRO_MAC', $idmac)
+                        ->whereBetween(DB::raw('DATE(MA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
+                        ->whereRaw('MA.FECHA BETWEEN PERS.FECHAINICIO AND PERS.FECHAFIN') // Validación del rango de fechas de asignación
+                        ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
+                        ->orderBy('MA.FECHA', 'asc')
+                        ->get();
+
+
+            // $query =  DB::table('M_ASISTENCIA as MA')
+            //     ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+            //     ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
+            //                             FROM M_PERSONAL
+            //                             LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
+            //                             JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
+            //                             JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+            //     ->select([
+            //         'PERS.ABREV_ENTIDAD',
+            //         'PERS.NOMBRE_CARGO',
+            //         'PERS.NOMBREU',
+            //         'MA.FECHA',
+            //         'MA.NUM_DOC',
+            //         DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+            //         DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
+            //         'PERS.IDENTIDAD', // Agregado para cumplir con GROUP BY
+            //         'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
+            //     ])
+            //     ->where('PERS.IDENTIDAD', $request->identidad)
+            //     ->where('MA.IDCENTRO_MAC', $idmac)
+            //     ->whereBetween(DB::raw('DATE(MA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
+            //     ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
+            //     ->orderBy('MA.FECHA', 'asc')
+            //     ->get();
 
                 foreach ($query as $q) {
                     $horas = explode(',', $q->HORAS);
@@ -1197,45 +1283,90 @@ class AsistenciaController extends Controller
 
         // dd($identidadString);
         $identidad = $identidadString;
-
         $query =  DB::table('M_ASISTENCIA as MA')
-        ->select(
-            'PERS.ABREV_ENTIDAD', 
-            'PERS.NOMBREU', 
-            'PERS.NOMBRE_CARGO', 
-            'MA.FECHA', 
-            'MA.NUM_DOC',
-            DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
-            DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
-        )
-        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-        ->join(DB::raw('(
-            SELECT 
-                CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU, 
-                ME.ABREV_ENTIDAD, 
-                MCM.IDCENTRO_MAC, 
-                MP.NUM_DOC, 
-                ME.IDENTIDAD, 
-                DPC.NOMBRE_CARGO
-            FROM M_PERSONAL AS MP
-            LEFT JOIN D_PERSONAL_CARGO AS DPC ON DPC.IDCARGO_PERSONAL = MP.IDCARGO_PERSONAL
-            JOIN M_ENTIDAD AS ME ON ME.IDENTIDAD = MP.IDENTIDAD
-            JOIN M_CENTRO_MAC AS MCM ON MCM.IDCENTRO_MAC = MP.IDMAC
-        ) AS PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
-        ->whereIn('PERS.IDENTIDAD', $identidadArray) // Reemplaza con tu array de identidades
-        ->where('MA.IDCENTRO_MAC', $idmac)
-        ->whereMonth('MA.FECHA', $request->mes)
-        ->whereYear('MA.FECHA', $request->año)
-        ->groupBy(
-            'PERS.ABREV_ENTIDAD', 
-            'PERS.NOMBREU', 
-            'PERS.NOMBRE_CARGO', 
-            'MA.FECHA', 
-            'MA.NUM_DOC'
-        )
-        ->orderBy('PERS.ABREV_ENTIDAD', 'ASC')
-        ->orderBy('MA.FECHA', 'ASC')
-        ->get();
+                        ->select(
+                            'PERS.ABREV_ENTIDAD', 
+                            'PERS.NOMBREU', 
+                            'PERS.NOMBRE_CARGO', 
+                            'MA.FECHA', 
+                            'MA.NUM_DOC',
+                            DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+                            DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
+                        )
+                        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                        ->join(DB::raw('(
+                            SELECT 
+                                CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU, 
+                                ME.ABREV_ENTIDAD, 
+                                MCM.IDCENTRO_MAC, 
+                                MP.NUM_DOC, 
+                                ME.IDENTIDAD, 
+                                DPC.NOMBRE_CARGO,
+                                MPM.FECHAINICIO,
+                                MPM.FECHAFIN
+                            FROM M_PERSONAL AS MP
+                            LEFT JOIN D_PERSONAL_CARGO AS DPC ON DPC.IDCARGO_PERSONAL = MP.IDCARGO_PERSONAL
+                            JOIN M_PERSONAL_MODULO AS MPM ON MPM.NUM_DOC = MP.NUM_DOC
+                            JOIN M_MODULO AS MM ON MM.IDMODULO = MPM.IDMODULO AND MM.IDCENTRO_MAC = MPM.IDCENTRO_MAC
+                            JOIN M_ENTIDAD AS ME ON ME.IDENTIDAD = MM.IDENTIDAD
+                            JOIN M_CENTRO_MAC AS MCM ON MCM.IDCENTRO_MAC = MM.IDCENTRO_MAC
+                            WHERE MM.ESTADO = 1
+                        ) AS PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+                        ->whereIn('PERS.IDENTIDAD', $identidadArray) // Lista de identidades
+                        ->where('MA.IDCENTRO_MAC', $idmac)
+                        ->whereMonth('MA.FECHA', $request->mes)
+                        ->whereYear('MA.FECHA', $request->año)
+                        ->whereRaw('MA.FECHA BETWEEN PERS.FECHAINICIO AND PERS.FECHAFIN') // Validación del rango de fechas de asignación
+                        ->groupBy(
+                            'PERS.ABREV_ENTIDAD', 
+                            'PERS.NOMBREU', 
+                            'PERS.NOMBRE_CARGO', 
+                            'MA.FECHA', 
+                            'MA.NUM_DOC'
+                        )
+                        ->orderBy('PERS.ABREV_ENTIDAD', 'ASC')
+                        ->orderBy('MA.FECHA', 'ASC')
+                        ->get();
+
+
+        // $query =  DB::table('M_ASISTENCIA as MA')
+        // ->select(
+        //     'PERS.ABREV_ENTIDAD', 
+        //     'PERS.NOMBREU', 
+        //     'PERS.NOMBRE_CARGO', 
+        //     'MA.FECHA', 
+        //     'MA.NUM_DOC',
+        //     DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+        //     DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
+        // )
+        // ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+        // ->join(DB::raw('(
+        //     SELECT 
+        //         CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU, 
+        //         ME.ABREV_ENTIDAD, 
+        //         MCM.IDCENTRO_MAC, 
+        //         MP.NUM_DOC, 
+        //         ME.IDENTIDAD, 
+        //         DPC.NOMBRE_CARGO
+        //     FROM M_PERSONAL AS MP
+        //     LEFT JOIN D_PERSONAL_CARGO AS DPC ON DPC.IDCARGO_PERSONAL = MP.IDCARGO_PERSONAL
+        //     JOIN M_ENTIDAD AS ME ON ME.IDENTIDAD = MP.IDENTIDAD
+        //     JOIN M_CENTRO_MAC AS MCM ON MCM.IDCENTRO_MAC = MP.IDMAC
+        // ) AS PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
+        // ->whereIn('PERS.IDENTIDAD', $identidadArray) // Reemplaza con tu array de identidades
+        // ->where('MA.IDCENTRO_MAC', $idmac)
+        // ->whereMonth('MA.FECHA', $request->mes)
+        // ->whereYear('MA.FECHA', $request->año)
+        // ->groupBy(
+        //     'PERS.ABREV_ENTIDAD', 
+        //     'PERS.NOMBREU', 
+        //     'PERS.NOMBRE_CARGO', 
+        //     'MA.FECHA', 
+        //     'MA.NUM_DOC'
+        // )
+        // ->orderBy('PERS.ABREV_ENTIDAD', 'ASC')
+        // ->orderBy('MA.FECHA', 'ASC')
+        // ->get();
 
         foreach ($query as $q) {
             $horas = explode(',', $q->HORAS);

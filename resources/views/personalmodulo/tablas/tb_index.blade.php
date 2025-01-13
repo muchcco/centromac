@@ -41,3 +41,33 @@
         @endforelse
     </tbody>
 </table>
+<script>
+    $(document).ready(function() {
+    
+        $('#table_personal_modulo').DataTable({
+            "responsive": true,
+            "bLengthChange": true,
+            "autoWidth": false,
+            "searching": true,
+            info: true,
+            "ordering": false,
+            language: {"url": "{{ asset('js/Spanish.json')}}"}, 
+            "columns": [
+                { "width": "5px" },
+                { "width": "" },
+                { "width": "" },
+                { "width": "" },
+                { "width": "" },
+                { "width": "" },
+                { "width": "" },
+                { "width": "" },
+                { "width": ""}
+            ]
+        });
+    
+        tippy(".bandejTool", {
+            allowHTML: true,
+            followCursor: true,
+        });
+    });
+    </script>

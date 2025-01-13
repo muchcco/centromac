@@ -42,7 +42,12 @@ class PersonalModuloController extends Controller
             ->leftJoin('m_entidad', 'm_modulo.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')
             ->join('m_centro_mac', 'm_personal_modulo.idcentro_mac', '=', 'm_centro_mac.IDCENTRO_MAC')
             ->where('m_personal_modulo.status', '=', 'fijo')  // Agregar condición para filtrar por el status 'itinerante'
-            ->where('m_personal_modulo.idcentro_mac', '=', auth()->user()->idcentro_mac)  // Filtra solo por el idcentro_mac del usuario autenticado
+            // ->where('m_personal_modulo.idcentro_mac', '=', auth()->user()->idcentro_mac)  // Filtra solo por el idcentro_mac del usuario autenticado
+            ->where(function ($query) {
+                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                    $query->where('m_personal_modulo.idcentro_mac', '=', $this->centro_mac()->idmac);
+                }
+            })
             ->select(
                 'm_personal_modulo.*',
                 'm_personal.NOMBRE',
