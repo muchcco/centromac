@@ -192,6 +192,9 @@ class UsuarioController extends Controller
         $save->password = bcrypt($request->password);
         $save->save();
 
+        // Actualizar en tabla adicional si aplica
+        $update = DB::table('jwt-mac.users')->where('name', $save->email)->update(['password' => bcrypt($request->password)]);
+
         return $save;
     }
 
