@@ -25,7 +25,7 @@
         @forelse ($query as $i => $q)
             <tr>
                 <td style="border: 1px solid black">{{ $i + 1 }}</td>
-                <td style="border: 1px solid black">{{ $q->CORRELATVIO }} - {{ $q->AÑO }}</td>
+                <td style="border: 1px solid black">{{ $q->CORRELATIVO_MAC }}</td>
                 <td style="border: 1px solid black">{{ $q->R_FECHA }}</td>
                 <td style="border: 1px solid black">{{ $q->NOMBRE_MAC }}</td>
                 <td style="border: 1px solid black">{{ $q->ABREV_ENTIDAD }}</td>

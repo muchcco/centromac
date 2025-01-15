@@ -202,12 +202,18 @@ function btSave(){
     } else {
         $('#descripcion').removeClass("hasError");
     } 
+    if ($('#correlativo_mac').val() == null || $('#correlativo_mac').val() == '') {
+        $('#correlativo_mac').addClass("hasError");
+    } else {
+        $('#correlativo_mac').removeClass("hasError");
+    } 
 
     var file_data = $("#file_doc").prop("files")[0];
     var formData = new FormData();
     
     formData.append("file_doc", file_data);
     formData.append("tipo_doc", $("#tipo_doc").val());
+    formData.append("correlativo_mac", $("#correlativo_mac").val());
     formData.append("num_doc", $("#num_doc").val());
     formData.append("nombre", $("#nombre").val());
     formData.append("ape_pat", $("#ape_pat").val());
@@ -268,6 +274,7 @@ function btnEdit(idfelicitacion){
     formData.append("file_doc", file_data);
     formData.append("idfelicitacion", idfelicitacion);
     formData.append("fecha", $("#fecha").val());
+    formData.append("correlativo_mac", $("#correlativo_mac").val());
     formData.append("correo", $("#correo").val());
     formData.append("entidad", $("#entidad").val());
     formData.append("asesor", $("#asesor").val());

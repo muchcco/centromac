@@ -51,6 +51,7 @@ class FormFelicitacionesController extends Controller
                                             'FLF.R_ARCHIVO_RUT',
                                             'FLF.R_ARCHIVO_NOM',
                                             'FLF.AÑO',
+                                            'FLF.CORRELATIVO_MAC',
                                         )
                                             ->leftJoin('M_PERSONAL AS MP', 'MP.IDPERSONAL', '=', 'FLF.IDPERSONAL')
                                             ->leftJoin('M_PERSONAL AS MPR', 'MPR.IDPERSONAL', '=', 'FLF.IDPER_REGISTRA')
@@ -118,6 +119,7 @@ class FormFelicitacionesController extends Controller
             $save->IDPER_REGISTRA = auth()->user()->idpersonal;
             $save->IDCENTRO_MAC = $this->centro_mac()->idmac;
             $save->CORRELATVIO = $codpadron;
+            $save->CORRELATIVO_MAC = $request->correlativo_mac;
             $save->AÑO = Carbon::now()->format('Y');
             $save->MES = Carbon::now()->format('m');
             $save->R_FECHA = $request->fecha;
@@ -188,6 +190,7 @@ class FormFelicitacionesController extends Controller
             }
 
             $save = FLibroFelicitacion::findOrFail($request->idfelicitacion);
+            $save->CORRELATIVO_MAC = $request->correlativo_mac;
             $save->R_FECHA = $request->fecha;
             $save->R_CORREO = $request->correo;
             $save->R_DESCRIPCION = $request->descripcion;
@@ -265,6 +268,7 @@ class FormFelicitacionesController extends Controller
                                                 'FLF.R_ARCHIVO_RUT',
                                                 'FLF.R_ARCHIVO_NOM',
                                                 'FLF.AÑO',
+                                                'FLF.CORRELATIVO_MAC',
                                             )
                                         ->leftJoin('M_PERSONAL AS MP', 'MP.IDPERSONAL', '=', 'FLF.IDPERSONAL')
                                         ->leftJoin('M_PERSONAL AS MPR', 'MPR.IDPERSONAL', '=', 'FLF.IDPER_REGISTRA')

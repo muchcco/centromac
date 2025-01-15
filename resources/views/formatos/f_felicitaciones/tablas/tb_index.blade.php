@@ -2,7 +2,7 @@
     <thead class="tenca">
         <tr>
             <th class="text-white" width="50px">N°</th>
-            <th class="text-white">Correlativo</th>
+            <th class="text-white">Correlativo MAC</th>
             <th class="text-white">Fecha de registro</th>
             <th class="text-white">Centro MAC</th>
             <th class="text-white">Entidad</th>            
@@ -18,7 +18,7 @@
         @foreach ($query as $i =>$que)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td>{{ $que->CORRELATVIO }} - {{ $que->AÑO }}</td>
+                <td>{{ $que->CORRELATIVO_MAC }}</td>
                 <td>{{ $que->R_FECHA }}</td>
                 <td>{{ $que->NOMBRE_MAC }}</td>
                 <td>{{ $que->ABREV_ENTIDAD }}</td>
