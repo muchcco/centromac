@@ -39,10 +39,19 @@ class AsesoresController extends Controller
     public function tb_asesores(Request $request)
     {
         $query = DB::table('M_PERSONAL as MP')
+            ->leftJoin('M_PERSONAL_MODULO as MPM', function ($join) {
+                $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
+                    ->whereDate('MPM.FECHAINICIO', '<=', now())
+                    ->whereDate('MPM.FECHAFIN', '>=', now());
+            })
+            ->leftJoin('M_MODULO as MMOD', function ($join) {
+                $join->on('MMOD.IDMODULO', '=', 'MPM.IDMODULO');
+            })
+            ->leftJoin('M_ENTIDAD as ME', function ($join) {
+                $join->on('ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD');
+            })
             ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
-            ->join('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
             ->join('D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
-            ->leftJoin('M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MP.IDMODULO')
             ->join(DB::raw('(SELECT 
                                 IDPERSONAL,
                                 (
@@ -77,12 +86,12 @@ class AsesoresController extends Controller
                 DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'),
                 'DPT.TIPODOC_ABREV',
                 'MP.NUM_DOC',
-                'ME.ABREV_ENTIDAD',
+                DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
+                DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
                 'MCM.NOMBRE_MAC',
                 'MP.FLAG',
                 'MP.CORREO',
                 'CONT.CAMPOS_NULL',
-                'MMOD.N_MODULO',
                 DB::raw("(
                     SELECT COUNT(*) 
                     FROM information_schema.columns
@@ -104,10 +113,10 @@ class AsesoresController extends Controller
                 }
             })
             ->whereIn('MP.FLAG', [1, 2])
-            ->where('MP.IDENTIDAD', '!=', 17) // Excluyendo personal de PCM
+            ->where('MP.IDENTIDAD', '!=', 17)
             ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
             ->get();
-
+            
         return view('personal.tablas.tb_asesores', compact('query'));
     }
 
@@ -328,14 +337,17 @@ class AsesoresController extends Controller
             ]);
         }
     }
-
-
     public function exportasesores_excel()
     {
-
         $query = DB::table('db_centros_mac.M_PERSONAL as MP')
+            ->leftJoin('db_centros_mac.M_PERSONAL_MODULO as MPM', function ($join) {
+                $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
+                    ->whereDate('MPM.FECHAINICIO', '<=', now())
+                    ->whereDate('MPM.FECHAFIN', '>=', now());
+            })
+            ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
+            ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
             ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
-            ->join('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
             ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
             ->join('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
             ->select(
@@ -343,7 +355,8 @@ class AsesoresController extends Controller
                 DB::raw("CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU"),
                 'DPT.TIPODOC_ABREV',
                 'MP.NUM_DOC',
-                'ME.ABREV_ENTIDAD',
+                DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
+                DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
                 'MCM.NOMBRE_MAC',
                 'MP.FLAG',
                 'MP.CORREO',
@@ -379,8 +392,6 @@ class AsesoresController extends Controller
             ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
             ->get();
 
-
-        // dd($query);
         $export = Excel::download(new AsesoresExport($query), 'REPORTE DE PERSONAL ASESORES CENTROS MAC.xlsx');
 
         return $export;

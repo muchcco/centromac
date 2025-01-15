@@ -33,7 +33,7 @@
             <tr>
                 <th style="border: 1px solid black">{{ $i + 1 }}</th>
                 <th style="border: 1px solid black">{{ ($q->NOMBRE_MAC ?? '') === 'null' ? '' : $q->NOMBRE_MAC }}</th>
-                <th style="border: 1px solid black">{{ ($q->ABREV_ENTIDAD ?? '') === 'null' ? '' : $q->ABREV_ENTIDAD }}</th>
+                <th style="border: 1px solid black">{{ ($q->NOMBRE_ENTIDAD ?? $q->ABREV_ENTIDAD) ?: 'Datos incompletos' }}</th>
                 <th style="border: 1px solid black">
                     <span class="{{ $q->NOMBREU && $q->NOMBREU !== 'null' ? '' : 'text-danger' }}">
                         {{ ($q->NOMBREU ?? 'Datos incompletos') === 'null' ? 'Datos incompletos' : $q->NOMBREU }}
