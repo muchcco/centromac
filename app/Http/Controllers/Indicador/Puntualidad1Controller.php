@@ -132,22 +132,23 @@ class Puntualidad1Controller extends Controller
             $resultados = DB::select("
                 WITH CTE AS (
                     SELECT 
-                        pm.IDMODULO,
-                        p.NUM_DOC, 
-                        a.hora,
-                        pm.status
+                pm.IDMODULO,
+                p.NUM_DOC, 
+                a.HORA,
+                pm.status
                     FROM 
                         m_personal_modulo pm
                     JOIN 
                         m_personal p ON pm.NUM_DOC = p.NUM_DOC 
                     JOIN 
                         m_modulo m ON pm.IDMODULO = m.IDMODULO 
-                    LEFT JOIN 
-                        m_asistencia a ON pm.NUM_DOC = a.NUM_DOC AND DATE(a.FECHA_BIOMETRICO) = ?
+                    INNER JOIN 
+                        m_asistencia a ON pm.NUM_DOC = a.NUM_DOC 
+                        AND a.FECHA = ? -- Comparación directa de fechas
                     WHERE 
                         pm.status IN ('itinerante', 'fijo') 
                         AND ? BETWEEN pm.fechainicio AND pm.fechafin 
-                        AND m.IDCENTRO_MAC = ?  -- Filtrar por idcentromac del módulo
+                        AND a.IDCENTRO_MAC = ?
                 )
                 SELECT 
                     IDMODULO,

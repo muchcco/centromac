@@ -39,7 +39,7 @@
                     @else
                        
                             {{ $que->N_MODULO }}
-                       
+                    
                     @endif
                 </td>
                 <td>{{ $que->NOMBRE_MAC }}</td>
