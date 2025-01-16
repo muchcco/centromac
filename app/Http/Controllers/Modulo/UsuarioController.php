@@ -134,42 +134,56 @@ class UsuarioController extends Controller
 
     public function update_user(Request $request)
     {
-        try{
-
+        try {
             $save = User::findOrFail($request->id);
             $save->name = $request->name;
             $save->flag = $request->flag;
             $save->save();
 
-            // split the string into an array of role names
+            // Dividir los roles en un array
             $roles = explode(',', $request->roles);
 
-            // filter out any empty elements
+            // Filtrar elementos vacíos
             $roles = array_filter($roles, function ($value) {
                 return !empty($value);
             });
 
-            // create roles if they don't exist
-            foreach ($roles as $role) {
-                $role = Role::firstOrCreate(['name' => $role]);
+            // Crear roles si no existen y sincronizar con el usuario
+            $roleIds = [];
+            foreach ($roles as $roleName) {
+                $role = Role::firstOrCreate(['name' => $roleName]);
+                $roleIds[] = $role->id; // Guardar el ID del rol
             }
 
-            // sync roles
             $save->syncRoles($roles);
+
+            // Buscar el usuario relacionado en jwt-mac.users
+            $user_bd2 = DB::table('jwt-mac.users')
+                ->where('name', $save->email)
+                ->where('id_personal', $save->idpersonal)
+                ->first();
+
+            if ($user_bd2) {
+                // Actualizar roles en la tabla model_has_roles con los IDs de los roles
+                DB::table('jwt-mac.model_has_roles')
+                    ->where('model_id', $user_bd2->id)
+                    ->update([
+                        'role_id' => implode(',', $roleIds), // Actualiza con los IDs de los roles
+                    ]);
+            }
 
             return $save;
 
         } catch (\Exception $e) {
-            //Si existe algún error en la Transacción
-            $response_ = response()->json([
+            // Manejar errores
+            return response()->json([
                 'data' => null,
                 'error' => $e->getMessage(),
                 'message' => 'BAD'
             ], 400);
-
-            return $response_;
         }
     }
+
 
     public function md_password_usuario(Request $request)
     {
