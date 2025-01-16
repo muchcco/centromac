@@ -58,7 +58,7 @@
                             <div class="form-group">
                                 <label class="mb-3">Entidad:</label>
                                 <select name="entidad" id="entidad" class="form-control col-sm-12 select2">
-                                    <option value="" disabled selected>-- Selecciones una opción --</option>
+                                    <option value="0" disabled selected>-- Selecciones una opción --</option>
                                     @forelse ($entidad as $ent)
                                         <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }}</option>
                                     @empty
@@ -104,7 +104,7 @@
                 <div class="card-body bootstrap-select-1">
                     <div class="row">
                         <div class="col-12">
-                            @role('Administrador|Especialista TIC')
+                            @role('Administrador|Especialista TIC|Especialista_TIC')
                                 <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
                                     onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
                                     Subir Archivo de Asistencia
@@ -217,17 +217,19 @@
         }
 
         $("#limpiar").on("click", function(e) {
+            console.log("adsda")
+            e.preventDefault(); // Evita comportamiento por defecto del botón
 
             var fechaActual = new Date();
-
             var formatoFecha = fechaActual.toISOString().split('T')[0];
 
             document.getElementById('fecha').value = formatoFecha;
-            document.getElementById('entidad').value = "";
 
-            tabla_seccion();
+            // Regresa el select de entidad a su primera opción
+            $('#entidad').val("").trigger("change"); 
 
-        })
+            tabla_seccion(); // Refresca la tabla
+        });
 
         // EJECUTA LOS FILTROS Y ENVIA AL CONTROLLADOR PARA  MOSTRAR EL RESULTADO EN LA TABLA
         var execute_filter = () => {
