@@ -17,7 +17,7 @@
                             <option value="" disabled selected>-- SELECCIONE UNA OPCION --</option>
                             <option value="1" {{ $personal->FLAG == '1' ? 'disabled' : '' }} >Activar personal</option>
                             <option value="2" {{ $personal->FLAG == '2' ? 'disabled' : '' }} >Baja del centro MAC</option>
-                            <option value="3">Elimiinar del centro MAC</option>
+                            <option value="3">Eliminar del centro MAC</option>
                         </select>
                     </div>
                 </div>
