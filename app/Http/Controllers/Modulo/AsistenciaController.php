@@ -1152,7 +1152,7 @@ class AsistenciaController extends Controller
                                         JOIN M_PERSONAL_MODULO AS MPM ON MPM.NUM_DOC = M_PERSONAL.NUM_DOC
                                         JOIN M_MODULO ON M_MODULO.IDMODULO = MPM.IDMODULO AND M_MODULO.IDCENTRO_MAC = MPM.IDCENTRO_MAC
                                         JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_MODULO.IDENTIDAD
-                                        WHERE M_MODULO.ESTADO = 1
+                                        
                                         ) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
                         ->select([
                             'PERS.ABREV_ENTIDAD',
@@ -1310,7 +1310,7 @@ class AsistenciaController extends Controller
                             JOIN M_MODULO AS MM ON MM.IDMODULO = MPM.IDMODULO AND MM.IDCENTRO_MAC = MPM.IDCENTRO_MAC
                             JOIN M_ENTIDAD AS ME ON ME.IDENTIDAD = MM.IDENTIDAD
                             JOIN M_CENTRO_MAC AS MCM ON MCM.IDCENTRO_MAC = MM.IDCENTRO_MAC
-                            WHERE MM.ESTADO = 1
+                            
                         ) AS PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
                         ->whereIn('PERS.IDENTIDAD', $identidadArray) // Lista de identidades
                         ->where('MA.IDCENTRO_MAC', $idmac)

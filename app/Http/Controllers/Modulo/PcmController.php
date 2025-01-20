@@ -126,11 +126,8 @@ class PcmController extends Controller
 
         $cargos = DB::table('D_PERSONAL_CARGO')->get();
 
-        $entidad = DB::table('M_MAC_ENTIDAD')
-                            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                            ->where('M_ENTIDAD.IDENTIDAD', 17)
-                            ->get();
+        $entidad = DB::table('M_ENTIDAD')->where('IDENTIDAD', 17)->get();
+    
 
         $view = view('personal.modals.md_add_pcm', compact('entidad', 'cargos'))->render();
 
