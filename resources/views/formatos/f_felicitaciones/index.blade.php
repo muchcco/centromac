@@ -273,6 +273,9 @@ function btnEdit(idfelicitacion){
     
     formData.append("file_doc", file_data);
     formData.append("idfelicitacion", idfelicitacion);
+    formData.append("nombre", $("#nombre").val());
+    formData.append("ape_pat", $("#ape_pat").val());
+    formData.append("ape_mat", $("#ape_mat").val());
     formData.append("fecha", $("#fecha").val());
     formData.append("correlativo_mac", $("#correlativo_mac").val());
     formData.append("correo", $("#correo").val());

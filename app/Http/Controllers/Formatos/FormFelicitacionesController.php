@@ -190,6 +190,9 @@ class FormFelicitacionesController extends Controller
             }
 
             $save = FLibroFelicitacion::findOrFail($request->idfelicitacion);
+            $save->R_NOMBRE = $request->nombre;
+            $save->R_APE_PAT = $request->ape_pat;
+            $save->R_APE_MAT = $request->ape_mat;
             $save->CORRELATIVO_MAC = $request->correlativo_mac;
             $save->R_FECHA = $request->fecha;
             $save->R_CORREO = $request->correo;
