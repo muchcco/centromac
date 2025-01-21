@@ -241,15 +241,29 @@ class FormFelicitacionesController extends Controller
 
     public function delete(Request $request)
     {
-        $archivo = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->first();
-        if(file_exists( $archivo->R_ARCHIVO_RUT.'/'.$archivo->R_ARCHIVO_NOM)){
-            unlink($archivo->R_ARCHIVO_RUT.'/'.$archivo->R_ARCHIVO_NOM);
+        try {
+            $archivo = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->first();
+
+            if ($archivo) {
+                $rutaCompleta = public_path($archivo->R_ARCHIVO_RUT . '/' . $archivo->R_ARCHIVO_NOM);
+
+                // Verifica si el archivo existe antes de intentar eliminarlo
+                if (file_exists($rutaCompleta) && is_file($rutaCompleta)) {
+                    unlink($rutaCompleta);
+                }
+            }
+
+            // Elimina el registro de la base de datos
+            $del = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->delete();
+
+            return response()->json(['status' => true, 'message' => 'Archivo eliminado correctamente.', 'data' => $del], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Ocurrió un error al eliminar el archivo.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $del = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->delete();
-
-        return response()->json(['data'=>$del],200);
-        
     }
 
     public function export_excel(Request $request)
