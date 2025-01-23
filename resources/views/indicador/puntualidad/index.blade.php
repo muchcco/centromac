@@ -101,7 +101,7 @@
                                             @endforelse
                                         @else
                                             @forelse ($mac as $m)
-                                                <option value="{{ $m->IDCENTRO_MAC }}" disabled selected>{{ $m->NOMBRE_MAC }}
+                                                <option value="{{ $m->IDCENTRO_MAC }}"  selected>{{ $m->NOMBRE_MAC }}
                                                 </option>
                                             @empty
                                                 <option value="">SIN RESULTADOS</option>
@@ -308,7 +308,7 @@
         // Crear la URL con las variables como parámetros de consulta
         var href = link_up + '?mac=' + mac + '&año=' + año + '&mes=' + mes;
 
-        console.log(href);
+        // console.log(mac);
 
         var blank = "_blank";
 
