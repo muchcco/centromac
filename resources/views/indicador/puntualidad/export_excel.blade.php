@@ -20,9 +20,9 @@
     </tr>
     <tr>
         <th style="border: 1px solid black" colspan="2">Centro MAC</th>
-        <th style="border: 1px solid rgb(0, 0, 0)" colspan="15">{{ $name_mac }} </th>
+        <th style="border: 1px solid rgb(0, 0, 0)" colspan="15">{{ $nombreMac }} </th>
         <th style="border: 1px solid black" colspan="2">MES:</th>
-        <th style="border: 1px solid black" colspan="12">{{ $nombre_mes }}</th>        
+        <th style="border: 1px solid black" colspan="12">{{ $mesNombre }}</th>        
     </tr>
 </table>
 
@@ -43,51 +43,66 @@
         <tr style="border: 1px solid black; color: #fff;">
             <th style="color: white; border: 1px solid black; background-color: #0B22B4;">MODULOS</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4;">NOMBRE DE LAS ENTIDADES</th>
-            @for ($i = 1; $i <= 31; $i++) {{-- Generar dinámicamente los días del mes --}}
+            @for ($i = 1; $i <= $numeroDias; $i++)
                 <th style="color: white; border: 1px solid black; background-color: #0B22B4;">{{ $i }}</th>
             @endfor
             <th style="color: white; border: 1px solid black; background-color: #0B22B4;">OBSERVACIONES O COMENTARIOS</th>
         </tr>
     </thead>
+
     <tbody>
-        @forelse ($query as $q)
+        @forelse ($modulos as $modulo)
             <tr>
-                <td style="border: 1px solid #2F75B5">{{ $q->N_MODULO }}</td>
-                <td style="border: 1px solid #2F75B5">{{ $q->NOMBRE_ENTIDAD }}</td>
-                @for ($i = 1; $i <= 31; $i++)
+                <td style="border: 1px solid #2F75B5">{{ $modulo->n_modulo }}</td>
+                <td style="border: 1px solid #2F75B5">{{ $modulo->nombre_entidad }}</td>
+                @for ($i = 1; $i <= $numeroDias; $i++)
                     @php
                         $fechaActual = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->format('Y-m-d');
-                        $fechaInicio = Carbon\Carbon::parse($q->FECHAINICIO)->format('Y-m-d');
-                        $fechaFin = Carbon\Carbon::parse($q->FECHAFIN)->format('Y-m-d');
                         $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
                         $esFeriado = in_array($fechaActual, $feriados);
+                        $esActivo = $fechaActual >= $modulo->fechainicio && $fechaActual <= $modulo->fechafin;
                     @endphp
 
                     @if ($esDomingo || $esFeriado)
-                        {{-- Si es domingo o feriado, celda en blanco con estilo de fondo --}}
                         <td style="border: 1px solid #ffffff; min-width: 28px; background:#323232;">&nbsp;</td>
-                    @elseif ($fechaActual < $fechaInicio || $fechaActual > $fechaFin)
-                        {{-- Si la fecha está fuera del rango, dejar en blanco --}}
-                        <td style="border: 1px solid #2F75B5; min-width: 28px;">&nbsp; &nbsp;</td>
-                    @else
-                        {{-- Mostrar SI, NO o en blanco dependiendo de la hora de marcación --}}
-                        <td style="border: 1px solid #2F75B5; min-width: 28px; {{ isset($q->{'DIA_' . $i}) && $q->{'DIA_' . $i} < '08:16:00' ? 'color: black !important; background: none;' : (isset($q->{'DIA_' . $i}) ? 'color: white; background: #2F75B5;' : 'background:#323232;') }}">
-                            @if (isset($q->{'DIA_' . $i}) && $q->{'DIA_' . $i} < '08:16:00')
-                                <span class="text-center">SI</span>
-                            @elseif (isset($q->{'DIA_' . $i}) && $q->{'DIA_' . $i} >= '08:16:00')
-                                <span class="text-center">NO</span>
+                    @elseif ($esActivo)
+                        <td
+                            style="min-width: 28px; 
+                            @if (isset($dias[$i][$modulo->idmodulo]['hora_minima'])) @php
+                                    $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
+                                    $horaLimite = '08:15';
+                                    $horaRegistro = new DateTime($horaMinima);
+                                    $horaLimiteObj = new DateTime($horaLimite);
+                                    $esTarde = $horaRegistro > $horaLimiteObj;
+                                @endphp
+                                @if (!$esTarde) 
+                                    background: #FFFFFF; color: #000; /* SI */
+                                @else
+                                    background: #2F75B5; color: #fff; /* NO */ @endif
+@else
+background: #474747; color: #fff; /* - */
+                            @endif">
+                            @if (isset($dias[$i][$modulo->idmodulo]['hora_minima']))
+                                @php
+                                    $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
+                                    $esTarde = new DateTime($horaMinima) > new DateTime('08:15');
+                                @endphp
+                                <span class="text-center">{{ !$esTarde ? 'SI' : 'NO' }}</span>
                             @else
-                                &nbsp; <!-- Dejar en blanco si no hay marcación con el estilo aplicado -->
+                                <span class="text-center">-</span> <!-- Si no hay registro y está activo -->
                             @endif
                         </td>
+                    @else
+                        <td style="border: 1px solid #2F75B5"></td> <!-- Celda vacía fuera del rango activo -->
                     @endif
                 @endfor
-                <td style="border: 1px solid #2F75B5"></td>
+                <td style="border: 1px solid #2F75B5"></td> <!-- Columna de observaciones vacía -->
             </tr>
         @empty
             <tr>
-                <td colspan="34" class="text-center" style="border: 1px solid black">No hay datos disponibles</td>
+                <td colspan="{{ $numeroDias + 3 }}" class="text-center">No hay datos disponibles</td>
             </tr>
         @endforelse
+
     </tbody>
 </table>

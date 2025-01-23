@@ -20,35 +20,38 @@ class IndicadorPuntualidadExport implements FromView, WithDefaultStyles, ShouldA
 {
     use Exportable;
 
-    protected $query;
+    protected $mesNombre;
+    protected $nombreMac;
+    protected $dias;
+    protected $modulos;
+    protected $numeroDias;
     protected $fecha_año;
     protected $fecha_mes;
-    protected $name_mac;
-    protected $nombre_mes;
-    protected $daysInMonth;
     protected $feriados;
 
-    public function __construct($query, $fecha_año, $fecha_mes, $name_mac, $nombre_mes, $daysInMonth, $feriados)
+    function __construct($mesNombre, $nombreMac, $dias,  $modulos, $numeroDias, $fecha_año, $fecha_mes, $feriados)
     {
-        $this->query = $query;
+        $this->mesNombre = $mesNombre;
+        $this->nombreMac = $nombreMac;
+        $this->dias = $dias;
+        $this->modulos = $modulos;
+        $this->numeroDias = $numeroDias;
         $this->fecha_año = $fecha_año;
         $this->fecha_mes = $fecha_mes;
-        $this->name_mac = $name_mac;
-        $this->nombre_mes = $nombre_mes;
-        $this->daysInMonth = $daysInMonth;
         $this->feriados = $feriados;
     }
 
     public function view(): View
     {
         return view('indicador.puntualidad.export_excel', [
-            'query' => $this->query,
+            'mesNombre' => $this->mesNombre,
+            'nombreMac' => $this->nombreMac,
+            'dias' => $this->dias,
+            'modulos' => $this->modulos,
+            'numeroDias' => $this->numeroDias,
             'fecha_año' => $this->fecha_año,
             'fecha_mes' => $this->fecha_mes,
-            'name_mac' => $this->name_mac,
-            'nombre_mes' => $this->nombre_mes,
-            'daysInMonth' => $this->daysInMonth,
-            'feriados' => $this->feriados, // Pasamos los feriados a la vista
+            'feriados' => $this->feriados,
         ]);
     }
 
@@ -82,6 +85,6 @@ class IndicadorPuntualidadExport implements FromView, WithDefaultStyles, ShouldA
 
     public function title(): string
     {
-        return $this->name_mac;
+        return $this->nombreMac;
     }
 }
