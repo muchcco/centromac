@@ -235,10 +235,11 @@ class VerificacionController extends Controller
         $aperturaCierre = $request->input('AperturaCierre');
 
         // Obtener la verificación correspondiente a la fecha y estado
-        $verificacion = Verificacion::where('Fecha', $fecha)
-            ->where('AperturaCierre', $aperturaCierre)
-            ->first();
-
+        $verificacion = Verificacion::where(function ($query) use ($request) {
+            $query->where('Fecha', $request->Fecha)
+                ->where('AperturaCierre', $request->AperturaCierre)
+                ->where('id_centromac', auth()->user()->idcentro_mac);
+        })->first();
         // Si no se encuentra la verificación, manejarlo según tu lógica
         if (!$verificacion) {
             return redirect()->route('verificaciones.index')->with('error', 'No se encontraron verificaciones para esta fecha y estado.');
