@@ -47,10 +47,10 @@
                                         <th class="text-dark"><li>Revisión de ciudadanos por entidad</li></th>
                                         <td><a href="{{ route('vista') }}" target="_blank">Ir al link</a></td>
                                     </tr> --}}
-                                    {{-- <tr>
-                                        <th class="text-dark"><li>PowerApp</li></th>
-                                        <td><a href="https://apps.powerapps.com/play/e/default-34b48e4e-2519-4060-a09e-5b05d901a4d7/a/a2036540-c323-4a79-8cf2-0a9330c23119?tenantId=34b48e4e-2519-4060-a09e-5b05d901a4d7&hint=7bbca76f-2366-4f77-82a7-401fa606b4c1&sourcetime=1720627181714&source=portal" target="_blank">Ir al link</a></td>
-                                    </tr> --}}
+                                    <tr>
+                                        <th class="text-dark"><li>Tutoriales</li></th>
+                                        <td><a href="https://pcmgobperu-my.sharepoint.com/:f:/g/personal/lguevara_pcm_gob_pe/EgglsNEv59pFkSiWYaqznH8BtdJMNyqeOZKDcXNOOZ4qDw?e=BMdHdI" target="_blank">Ir al link</a></td>
+                                    </tr>
                                     <tr>
                                         <th class="text-dark"><li>Registro de asistencia manual</li></th>
                                         <td><a href="http://190.187.182.55:8081/external-mac/assists" target="_blank">Ir al link</a></td>
