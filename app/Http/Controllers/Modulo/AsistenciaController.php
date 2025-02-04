@@ -364,7 +364,7 @@ class AsistenciaController extends Controller
         if ($request->hasFile('txt_file') && $request->file('txt_file')->isValid()) {
             $fileTmpPath = $request->file('txt_file')->getPathName();
             $dsn = "odbc:Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=$fileTmpPath;";
-
+    
             try {
                 $accessDb = new PDO($dsn);
                 $mysqli = new mysqli('localhost', 'root', '', 'asistencia_callao');
@@ -372,26 +372,26 @@ class AsistenciaController extends Controller
                     return response()->json(['success' => false, 'message' => 'Error de conexión a MySQL: ' . $mysqli->connect_error], 500);
                 }
                 $mysqli->set_charset('utf8mb4');
-
+    
                 $tablesQuery = $accessDb->query("SELECT Name FROM MSysObjects WHERE Type=1 AND Name NOT LIKE 'MSys%'");
                 $tables = $tablesQuery->fetchAll(PDO::FETCH_COLUMN);
-
+    
                 foreach ($tables as $table) {
                     if ($table === 'Switchboard Items') {
                         continue;
                     }
-
+    
                     try {
                         $dataQuery = $accessDb->query("SELECT * FROM [$table]");
                         $rows = $dataQuery->fetchAll(PDO::FETCH_ASSOC);
                     } catch (PDOException $e) {
                         continue;
                     }
-
+    
                     if (!empty($rows)) {
                         $columns = array_keys($rows[0]);
                         $tableExistsQuery = $mysqli->query("SHOW TABLES LIKE '$table'");
-
+    
                         if ($tableExistsQuery->num_rows > 0) {
                             $mysqli->query("ALTER TABLE `$table` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                             foreach ($columns as $column) {
@@ -407,32 +407,41 @@ class AsistenciaController extends Controller
                                 continue;
                             }
                         }
-
+    
                         $mysqli->query("DELETE FROM `$table`");
-
-                        foreach ($rows as $row) {
+    
+                        foreach ($rows as &$row) {
+                            // Verificar y convertir cada valor a UTF-8 si es necesario
+                            array_walk_recursive($row, function (&$value) {
+                                if (!mb_check_encoding($value, 'UTF-8')) {
+                                    $value = utf8_encode($value);
+                                }
+                            });
+    
                             $values = array_map(function ($value) use ($mysqli) {
                                 if (is_null($value)) {
                                     return 'NULL';
                                 }
-
-                                // Verificar y convertir a UTF-8
-                                if (!mb_check_encoding($value, 'UTF-8')) {
-                                    $value = utf8_encode($value);
-                                }
-
                                 $escapedValue = $mysqli->real_escape_string($value);
                                 return "'" . $escapedValue . "'";
                             }, $row);
-
+    
                             $insertSQL = "INSERT INTO `$table` (" . implode(',', array_keys($row)) . ") VALUES (" . implode(',', $values) . ")";
                             $mysqli->query($insertSQL);
                         }
                     }
                 }
-
-                return response()->json(['success' => true, 'message' => 'Asistencias cargadas exitosamente.']);
-
+    
+                // Verificar y convertir la respuesta JSON a UTF-8
+                $responseData = ['success' => true, 'message' => 'Asistencias cargadas exitosamente.'];
+                array_walk_recursive($responseData, function (&$item) {
+                    if (!mb_check_encoding($item, 'UTF-8')) {
+                        $item = utf8_encode($item);
+                    }
+                });
+    
+                return response()->json($responseData);
+    
             } catch (PDOException $e) {
                 return response()->json(['success' => false, 'message' => 'Error al procesar el archivo Access: ' . $e->getMessage()], 500);
             }
@@ -440,6 +449,7 @@ class AsistenciaController extends Controller
             return response()->json(['success' => false, 'message' => 'No se envió ningún archivo o hubo un error en la carga.'], 400);
         }
     }
+    
 
 
     public function md_detalle(Request $request)
