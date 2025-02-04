@@ -1430,6 +1430,7 @@ class AsistenciaController extends Controller
                         )
                         ->orderBy('PERS.ABREV_ENTIDAD', 'ASC')
                         ->orderBy('MA.FECHA', 'ASC')
+                        ->orderBy('PERS.N_MODULO', 'ASC')
                         ->get();
 
 
