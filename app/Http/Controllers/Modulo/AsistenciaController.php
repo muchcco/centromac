@@ -954,6 +954,7 @@ class AsistenciaController extends Controller
             $query = DB::table('M_ASISTENCIA as MA')
                         ->select(
                             'PERS.ABREV_ENTIDAD',
+                            'PERS.N_MODULO', 
                             'PERS.NOMBREU',
                             'PERS.NOMBRE_CARGO',
                             'MA.FECHA',
@@ -972,7 +973,8 @@ class AsistenciaController extends Controller
                                     'M_ENTIDAD.IDENTIDAD',
                                     'D_PERSONAL_CARGO.NOMBRE_CARGO',
                                     'MPM.FECHAINICIO',
-                                    'MPM.FECHAFIN'
+                                    'MPM.FECHAFIN',
+                                    'MM.N_MODULO'
                                 )
                                 ->leftJoin('D_PERSONAL_CARGO', 'D_PERSONAL_CARGO.IDCARGO_PERSONAL', '=', 'M_PERSONAL.IDCARGO_PERSONAL')
                                 ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
@@ -993,7 +995,7 @@ class AsistenciaController extends Controller
                         ->whereMonth('MA.FECHA', $request->mes)
                         ->whereYear('MA.FECHA', $request->año)
                         ->whereBetween('MA.FECHA', [DB::raw('PERS.FECHAINICIO'), DB::raw('PERS.FECHAFIN')])
-                        ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO')
+                        ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO', 'PERS.N_MODULO')
                         ->orderBy('MA.FECHA', 'ASC')
                         ->get();
 
@@ -1246,7 +1248,8 @@ class AsistenciaController extends Controller
                                                 M_ENTIDAD.IDENTIDAD, 
                                                 D_PERSONAL_CARGO.NOMBRE_CARGO, 
                                                 MPM.FECHAINICIO, 
-                                                MPM.FECHAFIN
+                                                MPM.FECHAFIN,
+                                                 MM.N_MODULO
                                         FROM M_PERSONAL
                                         LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
                                         JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC
@@ -1259,6 +1262,7 @@ class AsistenciaController extends Controller
                             'PERS.ABREV_ENTIDAD',
                             'PERS.NOMBRE_CARGO',
                             'PERS.NOMBREU',
+                            'PERS.N_MODULO', 
                             'MA.FECHA',
                             'MA.NUM_DOC',
                             DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
@@ -1270,7 +1274,7 @@ class AsistenciaController extends Controller
                         ->where('MA.IDCENTRO_MAC', $idmac)
                         ->whereBetween(DB::raw('DATE(MA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
                         ->whereRaw('MA.FECHA BETWEEN PERS.FECHAINICIO AND PERS.FECHAFIN') // Validación del rango de fechas de asignación
-                        ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO')
+                        ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO','PERS.N_MODULO')
                         ->orderBy('MA.FECHA', 'asc')
                         ->get();
 
