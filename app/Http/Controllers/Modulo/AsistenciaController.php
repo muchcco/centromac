@@ -1249,7 +1249,7 @@ class AsistenciaController extends Controller
                                                 D_PERSONAL_CARGO.NOMBRE_CARGO, 
                                                 MPM.FECHAINICIO, 
                                                 MPM.FECHAFIN,
-                                                 MM.N_MODULO
+                                                 M_MODULO.N_MODULO
                                         FROM M_PERSONAL
                                         LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
                                         JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC
