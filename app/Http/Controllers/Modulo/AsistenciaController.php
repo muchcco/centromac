@@ -974,7 +974,7 @@ class AsistenciaController extends Controller
                                     'D_PERSONAL_CARGO.NOMBRE_CARGO',
                                     'MPM.FECHAINICIO',
                                     'MPM.FECHAFIN',
-                                    'MM.N_MODULO'
+                                    'M_MODULO.N_MODULO'
                                 )
                                 ->leftJoin('D_PERSONAL_CARGO', 'D_PERSONAL_CARGO.IDCARGO_PERSONAL', '=', 'M_PERSONAL.IDCARGO_PERSONAL')
                                 ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
