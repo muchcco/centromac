@@ -109,6 +109,12 @@
                                     onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
                                     Subir Archivo de Asistencia
                                 </button>
+                                @if ($idmac == 20)
+                                    <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
+                                        onclick="btnAddAsistenciaCallao()"><i class="fa fa-upload" aria-hidden="true"></i>
+                                        Subir Archivo de Asistencia
+                                    </button>
+                                @endif
                             @endrole
 
                             <button class="btn btn-success" data-toggle="modal" data-target="#large-Modal"
@@ -286,6 +292,22 @@
             });
         }
 
+        function btnAddAsistenciaCallao() {
+
+            $.ajax({
+                type: 'post',
+                url: "{{ route('asistencia.modals.md_add_asistencia_callao') }}",
+                dataType: "json",
+                data: {
+                    "_token": "{{ csrf_token() }}"
+                },
+                success: function(data) {
+                    $("#modal_show_modal").html(data.html);
+                    $("#modal_show_modal").modal('show');
+                }
+            });
+        }
+
         function btnAgregarAsistencia() {
 
             $.ajax({
@@ -392,6 +414,54 @@
             });
 
         }
+
+        function btnStoreAccess() {
+            var file_data = $("#txt_file").prop("files")[0];
+            var formData = new FormData();
+            formData.append("txt_file", file_data); // Nombre correcto del input
+            formData.append("_token", $("input[name=_token]").val());
+
+            $.ajax({
+                type: 'POST',
+                url: "{{ route('asistencia.store_asistencia_callao') }}", // Ruta correcta
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function () {
+                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Espere... Cargando datos');
+                    $("#btnEnviarForm").prop("disabled", true);
+                },
+                success: function (data) {
+                    $("#modal_show_modal").modal('hide');
+                    if (data.success) {
+                        tabla_seccion();  // Actualiza la tabla si es necesario
+                        Toastify({
+                            text: data.message,
+                            className: "info",
+                            gravity: "bottom",
+                            style: {
+                                background: "#47B257",
+                            }
+                        }).showToast();
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            text: data.message,
+                            confirmButtonText: "Aceptar"
+                        });
+                    }
+                },
+                error: function (error) {
+                    $("#modal_show_modal").modal('hide');
+                    Swal.fire({
+                        icon: "error",
+                        text: "Hubo un error al cargar las asistencias. Intentar nuevamente.",
+                        confirmButtonText: "Aceptar"
+                    });
+                }
+            });
+        }
+
 
         var btnModalView = (dni, fecha) => {
             console.log(dni);

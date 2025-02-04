@@ -146,9 +146,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/asistencia', [AsistenciaController::class, 'asistencia'])->name('asistencia');
         Route::get('/tablas/tb_asistencia', [AsistenciaController::class, 'tb_asistencia'])->name('tablas.tb_asistencia');
         Route::post('/modals/md_add_asistencia', [AsistenciaController::class, 'md_add_asistencia'])->name('modals.md_add_asistencia');
+        Route::post('/modals/md_add_asistencia_callao', [AsistenciaController::class, 'md_add_asistencia_callao'])->name('modals.md_add_asistencia_callao');
         Route::post('/modals/md_detalle', [AsistenciaController::class, 'md_detalle'])->name('modals.md_detalle');
         Route::post('/modals/md_agregar_asistencia', [AsistenciaController::class, 'md_agregar_asistencia'])->name('modals.md_agregar_asistencia');
         Route::post('/store_asistencia', [AsistenciaController::class, 'store_asistencia'])->name('store_asistencia');
+        Route::post('/store_asistencia_callao', [AsistenciaController::class, 'store_asistencia_callao'])->name('store_asistencia_callao');
         Route::post('/store_agregar_asistencia', [AsistenciaController::class, 'store_agregar_asistencia'])->name('store_agregar_asistencia');
 
         Route::post('/dow_asistencia', [AsistenciaController::class, 'dow_asistencia'])->name('dow_asistencia');
