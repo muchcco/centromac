@@ -1387,6 +1387,7 @@ class AsistenciaController extends Controller
         $query =  DB::table('M_ASISTENCIA as MA')
                         ->select(
                             'PERS.ABREV_ENTIDAD', 
+                            'PERS.N_MODULO', 
                             'PERS.NOMBREU', 
                             'PERS.NOMBRE_CARGO', 
                             'MA.FECHA', 
@@ -1404,7 +1405,8 @@ class AsistenciaController extends Controller
                                 ME.IDENTIDAD, 
                                 DPC.NOMBRE_CARGO,
                                 MPM.FECHAINICIO,
-                                MPM.FECHAFIN
+                                MPM.FECHAFIN,
+                                MM.N_MODULO
                             FROM M_PERSONAL AS MP
                             LEFT JOIN D_PERSONAL_CARGO AS DPC ON DPC.IDCARGO_PERSONAL = MP.IDCARGO_PERSONAL
                             JOIN M_PERSONAL_MODULO AS MPM ON MPM.NUM_DOC = MP.NUM_DOC
@@ -1419,7 +1421,8 @@ class AsistenciaController extends Controller
                         ->whereYear('MA.FECHA', $request->año)
                         ->whereRaw('MA.FECHA BETWEEN PERS.FECHAINICIO AND PERS.FECHAFIN') // Validación del rango de fechas de asignación
                         ->groupBy(
-                            'PERS.ABREV_ENTIDAD', 
+                            'PERS.ABREV_ENTIDAD',
+                            'PERS.N_MODULO', 
                             'PERS.NOMBREU', 
                             'PERS.NOMBRE_CARGO', 
                             'MA.FECHA', 

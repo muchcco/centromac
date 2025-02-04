@@ -168,6 +168,7 @@
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Entidad</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">DATOS DEL COLABORADOR<br />(APELLIDOS Y NOMBRES)</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Cargo / Asesor(a)</th>
+                <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Número módulo</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">DNI</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Fecha</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Hora de <br />Ingreso</th>
@@ -194,6 +195,7 @@
                     <th style="border: 1px solid black">{{ $q->ABREV_ENTIDAD }}</th>
                     <th style="border: 1px solid black">{{ $q->NOMBREU }}</th>
                     <th style="border: 1px solid black">Asesor de Servicio</th>
+                    <th style="border: 1px solid black">{{ $q->N_MODULO }}</th>
                     <th style="border: 1px solid black">{{ $q->NUM_DOC }}</th>
                     <th style="border: 1px solid black">{{ date("d/m/Y", strtotime($q->FECHA)) }}  </th>
                     <th style="border: 1px solid black">{{ $q->HORA_1 }}</th>
