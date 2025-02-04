@@ -54,6 +54,6 @@ class Handler extends ExceptionHandler
 {
     return $request->expectsJson()
                 ? response()->json(['message' => $exception->getMessage()], 401)
-                : redirect()->away(env('REDIRECT_URL', 'http://default-login-url.com'));
+                : redirect()->away(env('REDIRECT_URL', 'http://190.187.182.55:8081/oauth/login'));
 } 
 }

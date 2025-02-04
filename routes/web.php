@@ -106,7 +106,7 @@ Auth::routes();
 
 // Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::get('login', function () {
-    return redirect()->away(env('REDIRECT_URL', 'http://default-login-url.com'));
+    return redirect()->away(env('REDIRECT_URL', 'http://190.187.182.55:8081/oauth/login'));
 })->name('login');
 Route::get('login', [AuthController::class, 'login']);
 Route::get('authenticate', [AuthController::class, 'authenticateWithToken']);
