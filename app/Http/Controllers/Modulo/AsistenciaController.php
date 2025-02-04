@@ -367,7 +367,7 @@ class AsistenciaController extends Controller
 
             try {
                 $accessDb = new PDO($dsn);
-                $mysqli = new mysqli('127.0.0.1', 'root', '', 'asistencia_callao');
+                $mysqli = new mysqli('localhost', 'root', '', 'asistencia_callao');
                 if ($mysqli->connect_error) {
                     return response()->json(['success' => false, 'message' => 'Error de conexión a MySQL: ' . $mysqli->connect_error], 500);
                 }
