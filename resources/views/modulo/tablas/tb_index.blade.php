@@ -2,7 +2,7 @@
     <thead class="tenca">
         <tr>
             <th >N°</th>
-            <th>Nombre del Módulo</th>
+            <th>Número del Módulo</th>
             <th>Entidad</th>
             <th>Fecha Inicio</th>
             <th>Fecha Fin</th>

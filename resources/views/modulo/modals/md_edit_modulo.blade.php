@@ -11,7 +11,7 @@
             <form class="form-horizontal">
                 <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
                 <div class="row mb-3">
-                    <label class="col-3 col-form-label">Nombre del Módulo</label>
+                    <label class="col-3 col-form-label">Número del Módulo</label>
                     <div class="col-9">
                         <input type="text" class="form-control" name="nombre_modulo" id="nombre_modulo" onkeyup="isMayus(this)" value="{{ $modulo->N_MODULO }}">
                     </div>
