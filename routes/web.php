@@ -104,7 +104,10 @@ Route::get('/login_verificacion/get/', [PagesController::class, 'login_verificac
 
 Auth::routes();
 
-Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
+// Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::get('login', function () {
+    return redirect()->away(env('REDIRECT_URL', 'http://default-login-url.com'));
+})->name('login');
 Route::get('login', [AuthController::class, 'login']);
 Route::get('authenticate', [AuthController::class, 'authenticateWithToken']);
 // Route::post('logout', [AuthController::class, 'logout'])->name('logout');
