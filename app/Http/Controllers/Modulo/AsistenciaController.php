@@ -63,108 +63,122 @@ class AsistenciaController extends Controller
     }
 
     public function store_agregar_asistencia(Request $request)
-{
-    // Obtener el IDMAC del usuario autenticado
-    $userIdMac = auth()->user()->idcentro_mac;
+    {
+        // Obtener el IDCENTRO_MAC del usuario autenticado
+        $userIdMac = auth()->user()->idcentro_mac;
 
-    // Verificar si la solicitud es para buscar el nombre por DNI
-    if ($request->has('DNI') && !$request->has('fecha')) {
+        // Si se busca el nombre por DNI sin fecha
+        if ($request->has('DNI') && !$request->has('fecha')) {
+            try {
+                $personal = DB::table('m_personal')
+                    ->where('NUM_DOC', $request->input('DNI'))
+                    ->where('IDMAC', $userIdMac)
+                    ->first();
+
+                if ($personal) {
+                    $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
+                    return response()->json(['success' => true, 'nombreCompleto' => $nombreCompleto]);
+                }
+                return response()->json(['success' => false, 'message' => 'DNI no encontrado o no pertenece a este centro MAC']);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Error al buscar el nombre: ' . $e->getMessage()]);
+            }
+        }
+
+        // Validar los datos de entrada para guardar la asistencia
+        $request->validate([
+            'DNI'    => 'required|string|max:15',
+            'fecha'  => 'required|date',
+            'id'     => 'required|integer',  // en este caso 'id' se usa para identificar el centro, aunque lo usamos del usuario autenticado
+            'hora1'  => 'nullable|date_format:H:i',
+            'hora2'  => 'nullable|date_format:H:i',
+            'hora3'  => 'nullable|date_format:H:i',
+            'hora4'  => 'nullable|date_format:H:i',
+        ]);
+
         try {
-            // Buscar el nombre completo en la tabla m_personal utilizando el NUM_DOC proporcionado y el IDMAC
+            // Buscar el personal en la tabla m_personal
             $personal = DB::table('m_personal')
                 ->where('NUM_DOC', $request->input('DNI'))
                 ->where('IDMAC', $userIdMac)
                 ->first();
 
-            if ($personal) {
-                $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
-                return response()->json(['success' => true, 'nombreCompleto' => $nombreCompleto]);
+            if (!$personal) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El DNI proporcionado no corresponde a ningún personal registrado en este centro MAC.'
+                ]);
             }
 
-            return response()->json(['success' => false, 'message' => 'DNI no encontrado o no pertenece a este centro MAC']);
+            // Concatenar el nombre completo del personal (opcional, para mensajes)
+            $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
+
+            // Obtener el último correlativo de m_asistencia y sumarle 1 para el siguiente
+            $lastCorrelativo = DB::table('m_asistencia')->where('num_doc', $request->input('DNI'))->where('fecha', $request->input('fecha'))->max('CORRELATIVO');
+            // Se asume que los correlativos son numéricos; si no, se deberá convertir
+            $nextCorrelativo = $lastCorrelativo ? ((int)$lastCorrelativo + 1) : 1;
+
+
+            // Preparar la fecha y extraer MES y AÑO
+            $fecha = $request->input('fecha'); // formato 'YYYY-MM-DD'
+            $mes   = date('m', strtotime($fecha)); // dos dígitos
+            $anio  = date('Y', strtotime($fecha));
+
+            // Arreglo de horas ingresadas
+            $horas = [
+                $request->input('hora1'),
+                $request->input('hora2'),
+                $request->input('hora3'),
+                $request->input('hora4')
+            ];
+
+            foreach ($horas as $hora) {
+                if (!empty($hora)) {
+                    // Combinar fecha y hora para obtener la marcación completa
+                    $punchTime = $fecha . ' ' . $hora;
+
+                    // Verificar si ya existe un registro idéntico en m_asistencia
+                    $existingRecord = DB::table('m_asistencia')
+                        ->where('IDCENTRO_MAC', $userIdMac)
+                        ->where('NUM_DOC', $request->input('DNI'))
+                        ->where('FECHA_BIOMETRICO', $punchTime)
+                        ->first();
+
+                    if ($existingRecord) {
+                        continue; // Si ya existe, omitir la inserción
+                    }
+
+                    // Insertar en m_asistencia
+                    DB::table('m_asistencia')->insert([
+                        'IDTIPO_ASISTENCIA' => 1,                         // Valor fijo (puedes modificarlo según tu lógica)
+                        'NUM_DOC'           => $request->input('DNI'),
+                        'IDCENTRO_MAC'      => $userIdMac,
+                        'MES'               => $mes,
+                        'AÑO'               => $anio,
+                        'FECHA'             => $fecha,
+                        'HORA'              => date('H:i:s', strtotime($punchTime)),
+                        'FECHA_BIOMETRICO'  => $punchTime,
+                        'NUM_BIOMETRICO'    => '',                        // Vacío o asigna según necesites
+                        'CORRELATIVO'       => $nextCorrelativo,
+                        'CORRELATIVO_DIA'   => ''                         // Vacío o asigna según necesites
+                    ]);
+
+                    $nextCorrelativo++;
+                }
+            }
+            return response()->json([
+                'success' => true,
+                'message' => 'Registro(s) guardado(s) exitosamente para ' . $nombreCompleto
+            ]);
+
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al buscar el nombre: ' . $e->getMessage()]);
-        }
-    }
-
-    // Validar los datos de entrada para guardar la asistencia
-    $request->validate([
-        'DNI' => 'required|string|max:15',
-        'fecha' => 'required|date',
-        'id' => 'required|integer',
-        'hora1' => 'nullable|date_format:H:i',
-        'hora2' => 'nullable|date_format:H:i',
-        'hora3' => 'nullable|date_format:H:i',
-        'hora4' => 'nullable|date_format:H:i',
-    ]);
-
-    try {
-        // Buscar el nombre completo en la tabla m_personal utilizando el NUM_DOC proporcionado y el IDMAC
-        $personal = DB::table('m_personal')
-            ->where('NUM_DOC', $request->input('DNI'))
-            ->where('IDMAC', $userIdMac)
-            ->first();
-
-        if (!$personal) {
             return response()->json([
                 'success' => false,
-                'message' => 'El DNI proporcionado no corresponde a ningún personal registrado en este centro MAC.'
+                'message' => 'Error al guardar el registro: ' . $e->getMessage()
             ]);
         }
-
-        // Concatenar el nombre completo del personal
-        $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
-
-        // Obtener el último correlativo y sumarle 1 para obtener el siguiente
-        $lastCorrelativo = DB::table('asistenciatest')->max('correlativo');
-        $nextCorrelativo = $lastCorrelativo ? $lastCorrelativo + 1 : 1;
-
-        // Crear el nuevo registro en la tabla asistenciatest para cada hora proporcionada
-        $horas = [$request->input('hora1'), $request->input('hora2'), $request->input('hora3'), $request->input('hora4')];
-
-        foreach ($horas as $hora) {
-            if (!empty($hora)) {
-                // Combinar la fecha y la hora en el formato datetime
-                $punchTime = $request->input('fecha') . ' ' . $hora;
-
-                // Verificar si ya existe un registro con el mismo idMAC, DNI y marcacion
-                $existingRecord = Asistenciatest::where('idMAC', $request->input('id'))
-                    ->where('DNI', $request->input('DNI'))
-                    ->where('marcacion', $punchTime)
-                    ->first();
-
-                if ($existingRecord) {
-                    continue; // Si el registro ya existe, omitirlo
-                }
-
-                // Crear un nuevo registro en la tabla asistenciatest
-                $asistenciatest = new Asistenciatest();
-                $asistenciatest->correlativo = $nextCorrelativo;
-                $asistenciatest->idMAC = $request->input('id');
-                $asistenciatest->DNI = $request->input('DNI');
-                $asistenciatest->marcacion = $punchTime;
-                $asistenciatest->save();
-
-                // Incrementar el correlativo para cada registro
-                $nextCorrelativo++;
-            }
-        }
-
-        // Ejecutar el procedimiento almacenado después de guardar los registros
-        DB::statement('CALL SP_CARGA_ASISTENCIA()');
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Registro(s) guardado(s) exitosamente para ' . $nombreCompleto
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al guardar el registro: ' . $e->getMessage()
-        ]);
     }
-}
+
 
     
     public function tb_asistencia(Request $request)

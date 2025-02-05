@@ -329,7 +329,8 @@
             const formData = new FormData(form);
             // Validar antes de enviar el formulario
             const dni = $('#DNI').val();
-            if (dni.length !== 8) {
+            const fecha = $('#fecha').val();
+            if (dni.length !== 8 || !fecha) {
                 alert('Por favor ingrese un DNI válido.');
                 return;
             }

@@ -82,7 +82,7 @@
                 }
             })
             .catch(error => console.error('Error:', error));
-        } else {
+        } else {            
             $('#nombre_completo').val('');
         }
     });
