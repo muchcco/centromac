@@ -30,7 +30,7 @@
                     }
                     $porcentaje = $diasHabiles > 0 ? ($contadorSi / $diasHabiles * 100) : 0;
                     $barClass = $porcentaje >= 95 ? 'bg-success' :
-                                ($porcentaje >= 85 ? 'bg-warning' : 'bg-danger');
+                                ($porcentaje >= 84 ? 'bg-warning' : 'bg-danger');
                 @endphp
                 <td>{{ $contadorSi }}</td>
                 <td>{{ $diasHabiles }}</td>

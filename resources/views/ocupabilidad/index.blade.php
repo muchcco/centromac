@@ -33,16 +33,16 @@
                         <div class="col-md-5 border-end">
                             <table class="table table-bordered">
                                 <tr>
-                                    <th class="text-center" style=" background: #198754">95% a 100%</th>
-                                    <td>Si cumple el % del ANS</td>
+                                    <th class="text-center" style="background: #198754">≥ 95% hasta 100%</th>
+                                    <td>Cumple el % del ANS</td>
                                 </tr>
     
                                 <tr>
-                                    <th class="text-center" style="background: #ffc107">85% a 95%</th>
-                                    <td>Esta cerca de cumplir el ANS</td>
+                                    <th class="text-center" style="background: #ffc107">> 84% hasta < 95%</th>
+                                    <td>Cerca de cumplir el ANS</td>
                                 </tr>
                                 <tr>
-                                    <th class="text-center" style="background: #dc3545">0% a 85%</th>
+                                    <th class="text-center" style="background: #dc3545">≤ 84%</th>
                                     <td>No cumple el % de ANS</td>
                                 </tr>
                             </table>

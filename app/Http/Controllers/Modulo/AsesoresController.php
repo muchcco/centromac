@@ -347,9 +347,9 @@ class AsesoresController extends Controller
             })
             ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
             ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
+            ->leftjoin('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
             ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
             ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
-            ->join('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
             ->select(
                 'MP.IDPERSONAL',
                 DB::raw("CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU"),

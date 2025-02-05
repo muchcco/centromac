@@ -3,10 +3,10 @@
         <tr>
             <th>MODULOS</th>
             <th>ENTIDAD</th>
+            <th>DIAS PUNTUALES</th>
             <th>DIAS MARCADOS</th>
-            <th>DIAS HABILES</th>
             <th>PORCENTAJE</th>
-            <th>OCUPABILIDAD</th>
+            <th>PUNTUALIDAD</th>
         </tr>
     </thead>
     <tbody>
@@ -30,7 +30,7 @@
                         }
                     }
                     $porcentaje = $diasHabiles > 0 ? ($contadorSi / $diasHabiles) * 100 : 0;
-                    $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 85 ? 'bg-warning' : 'bg-danger');
+                    $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 84 ? 'bg-warning' : 'bg-danger');
                 @endphp
                 @php
                     $contadorSi1 = 0;
@@ -55,7 +55,7 @@
                         }
                     }
                     $porcentaje = ($contadorSi > 0 && $diasHabiles > 0) ? ($contadorSi1 / $contadorSi) * 100 : 0;
-                    $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 85 ? 'bg-warning' : 'bg-danger');
+                    $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 84 ? 'bg-warning' : 'bg-danger');
                     $diasMarcados = implode(', ', $marcados) . " (SÍ Puntuales: $contadorSi1)";
                 @endphp
                 <td>{{ $contadorSi1 }}</td>
