@@ -74,17 +74,17 @@ class PersonalModuloController extends Controller
         if (!in_array($userCentroMac, $allowedCentrosMac)) {
             // Obtener el personal junto con sus nombres completos
             $personal = DB::table('m_personal')
-            ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-            ->where('IDMAC', auth()->user()->idcentro_mac)
-            // Filtrar por el centro MAC del usuario autenticado
-            ->get();
-        }else{
+                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+                ->where('IDMAC', auth()->user()->idcentro_mac)
+                // Filtrar por el centro MAC del usuario autenticado
+                ->get();
+        } else {
             // Obtener el personal junto con sus nombres completos
             $personal = DB::table('m_personal')
-            ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-            ->whereIn('IDMAC', [10, 12, 13, 14, 19])
-            // Filtrar por el centro MAC del usuario autenticado
-            ->get();
+                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+                ->whereIn('IDMAC', [10, 12, 13, 14, 19])
+                // Filtrar por el centro MAC del usuario autenticado
+                ->get();
         }
 
         // Obtener los módulos disponibles junto con la entidad asociada
@@ -94,7 +94,7 @@ class PersonalModuloController extends Controller
             ->where('m_modulo.IDCENTRO_MAC', auth()->user()->idcentro_mac) // Filtrar por el centro MAC del usuario autenticado
             ->get();
 
-       
+
         try {
             // Pasa las variables 'modulos' y 'personal' a la vista
             $view = view('personalmodulo.modals.md_add_personalModulo', compact('modulos', 'personal'))->render();
@@ -110,43 +110,54 @@ class PersonalModuloController extends Controller
             'num_doc' => 'required|string|max:20|exists:m_personal,num_doc',
             'idmodulo' => 'required|integer|exists:m_modulo,idmodulo',
             'fechainicio' => 'required|date',
-            'fechafin' => 'required|date|after_or_equal:fechainicio', // Validar que la fecha de fin sea posterior o igual a la fecha de inicio
+            'fechafin' => 'required|date|after_or_equal:fechainicio',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'data' => null,
                 'message' => $validator->errors(),
                 'status' => 422
             ], 422);
         }
 
+        // Verificar si el documento ya está registrado en cualquier módulo en el rango de fechas especificado
+        $existe = PersonalModulo::where('num_doc', $request->num_doc)
+            ->where('idmodulo', '!=', $request->idmodulo)
+            ->where(function ($query) use ($request) {
+                $query->whereBetween('fechainicio', [$request->fechainicio, $request->fechafin])
+                    ->orWhereBetween('fechafin', [$request->fechainicio, $request->fechafin]);
+            })
+            ->exists();
+
+        if ($existe) {
+            return response()->json([
+                'message' => 'El documento ya está registrado en un módulo dentro de este rango de fechas.',
+                'status' => 409
+            ], 409);
+        }
+
         try {
-            // Crear un nuevo registro de PersonalModulo
             $personalModulo = new PersonalModulo();
             $personalModulo->num_doc = $request->num_doc;
             $personalModulo->idmodulo = $request->idmodulo;
             $personalModulo->fechainicio = $request->fechainicio;
             $personalModulo->fechafin = $request->fechafin;
-            $personalModulo->status = 'fijo'; // Asignar el status 'itinerante'
-            $personalModulo->idcentro_mac = auth()->user()->idcentro_mac; // Obtener el ID del Centro MAC del usuario autenticado
+            $personalModulo->status = 'fijo';
+            $personalModulo->idcentro_mac = auth()->user()->idcentro_mac;
             $personalModulo->save();
 
             return response()->json([
-                'data' => $personalModulo,
                 'message' => 'Personal Módulo guardado exitosamente',
                 'status' => 201
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
-                'data' => null,
                 'error' => $e->getMessage(),
                 'message' => 'Error al procesar la solicitud',
                 'status' => 400
             ], 400);
         }
     }
-
 
     // Mostrar el formulario de edición
     public function edit(Request $request)
@@ -160,17 +171,17 @@ class PersonalModuloController extends Controller
             if (!in_array($userCentroMac, $allowedCentrosMac)) {
                 // Obtener el personal junto con sus nombres completos
                 $personal = DB::table('m_personal')
-                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-                ->where('IDMAC', auth()->user()->idcentro_mac)
-                // Filtrar por el centro MAC del usuario autenticado
-                ->get();
-            }else{
+                    ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+                    ->where('IDMAC', auth()->user()->idcentro_mac)
+                    // Filtrar por el centro MAC del usuario autenticado
+                    ->get();
+            } else {
                 // Obtener el personal junto con sus nombres completos
                 $personal = DB::table('m_personal')
-                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-                ->whereIn('IDMAC', [10, 12, 13, 14, 19])
-                // Filtrar por el centro MAC del usuario autenticado
-                ->get();
+                    ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+                    ->whereIn('IDMAC', [10, 12, 13, 14, 19])
+                    // Filtrar por el centro MAC del usuario autenticado
+                    ->get();
             }
 
 

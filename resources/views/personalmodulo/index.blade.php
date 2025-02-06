@@ -130,51 +130,59 @@
         }
 
         function btnStorePersonalModulo() {
-            var formData = new FormData($('#form_personal_modulo')[0]);
+            var formData = new FormData($('#form_personal_modulo')[
+            0]); // Asegúrate de que el ID del formulario es correcto.
 
-            // Verificar que los campos necesarios estén presentes
             if (!formData.get('num_doc') || !formData.get('idmodulo') || !formData.get('fechainicio') || !formData.get(
                     'fechafin')) {
-                alert("Todos los campos son obligatorios.");
+                Swal.fire({
+                    icon: 'warning',
+                    text: 'Todos los campos son obligatorios.',
+                    confirmButtonText: 'Aceptar'
+                });
                 return;
             }
 
             $.ajax({
-                type: 'post',
-                url: "{{ route('personalModulo.store_personalModulo') }}",
-                dataType: "json",
+                type: 'POST',
+                url: "{{ route('personalModulo.store_personalModulo') }}", // Asegúrate de que la ruta es correcta
                 data: formData,
                 processData: false,
                 contentType: false,
                 beforeSend: function() {
                     document.getElementById("btnEnviarForm").innerHTML =
-                        '<i class="fa fa-spinner fa-spin"></i> Espere';
+                        '<i class="fa fa-spinner fa-spin"></i> Enviando';
                     document.getElementById("btnEnviarForm").disabled = true;
                 },
                 success: function(data) {
                     $("#modal_show_modal").modal('hide');
-                    cargarPersonalModulo();
+                    cargarPersonalModulo(); // Recargar la tabla o la vista donde se muestra el personal módulo.
                     Swal.fire({
-                        icon: "success",
-                        text: "Registro agregado exitosamente",
-                        confirmButtonText: "Aceptar"
+                        icon: 'success',
+                        text: 'Personal Módulo agregado exitosamente.',
+                        confirmButtonText: 'Aceptar'
                     });
                 },
                 error: function(xhr) {
-                    // Mostrar mensajes de error provenientes de la validación
-                    if (xhr.status === 422) {
-                        var errors = xhr.responseJSON.message;
-                        var errorMessage = "";
-                        for (var key in errors) {
-                            if (errors.hasOwnProperty(key)) {
-                                errorMessage += errors[key][0] + "\n";
-                            }
-                        }
-                        alert(errorMessage);
-                    } else {
+                    document.getElementById("btnEnviarForm").innerHTML = 'Enviar';
+                    document.getElementById("btnEnviarForm").disabled = false;
+
+                    if (xhr.status === 422) { // Errores de validación
+                        let errors = xhr.responseJSON.message;
+                        let errorMessage = Object.values(errors).map((error) => error.join('<br>')).join(
+                        '<br>');
                         Swal.fire({
                             icon: 'error',
-                            text: "Error al agregar el registro",
+                            title: 'Error de validación',
+                            html: errorMessage,
+                            confirmButtonText: 'Aceptar'
+                        });
+                    } else {
+                        // Manejo de otros errores como cruce de fechas o errores del servidor
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error al agregar',
+                            text: xhr.responseJSON.message, // Mensaje personalizado desde el backend
                             confirmButtonText: 'Aceptar'
                         });
                     }
