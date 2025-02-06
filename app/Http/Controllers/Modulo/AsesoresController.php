@@ -39,10 +39,13 @@ class AsesoresController extends Controller
     public function tb_asesores(Request $request)
     {
         $query = DB::table('M_PERSONAL as MP')
-            ->leftJoin('M_PERSONAL_MODULO as MPM', function ($join) {
+            ->leftJoin(DB::raw('(
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY NUM_DOC ORDER BY FIELD(STATUS, "Itinerante", "Fijo")) as rn
+                FROM M_PERSONAL_MODULO
+                WHERE FECHAINICIO <= now() AND FECHAFIN >= now()
+            ) as MPM'), function ($join) {
                 $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
-                    ->whereDate('MPM.FECHAINICIO', '<=', now())
-                    ->whereDate('MPM.FECHAFIN', '>=', now());
+                     ->where('MPM.rn', '=', 1);
             })
             ->leftJoin('M_MODULO as MMOD', function ($join) {
                 $join->on('MMOD.IDMODULO', '=', 'MPM.IDMODULO');
@@ -53,60 +56,60 @@ class AsesoresController extends Controller
             ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
             ->join('D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
             ->join(DB::raw('(SELECT 
-                                IDPERSONAL,
-                                (
-                                    CASE WHEN TIP_CAS IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN N_CONTRATO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN NOMBRE IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN APE_PAT IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN APE_MAT IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN IDTIPO_DOC IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN NUM_DOC IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN IDMAC IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN IDENTIDAD IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN DIRECCION IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN SEXO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN FECH_NACIMIENTO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN IDDISTRITO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN TELEFONO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN CELULAR IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN CORREO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN ESTADO_CIVIL IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN DF_N_HIJOS IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN DLP_JEFE_INMEDIATO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN DLP_CARGO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN DLP_TELEFONO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN TVL_ID IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN GI_ID IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN GI_CARRERA IS NULL THEN 1 ELSE 0 END
-                                ) AS CAMPOS_NULL
-                                FROM M_PERSONAL) as CONT'), 'CONT.IDPERSONAL', '=', 'MP.IDPERSONAL')
-            ->select(
-                'MP.IDPERSONAL',
-                DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'),
-                'DPT.TIPODOC_ABREV',
-                'MP.NUM_DOC',
-                DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
-                DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
-                'MCM.NOMBRE_MAC',
-                'MP.FLAG',
-                'MP.CORREO',
-                'CONT.CAMPOS_NULL',
-                DB::raw("(
+            IDPERSONAL,
+            (
+                CASE WHEN TIP_CAS IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN N_CONTRATO IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN NOMBRE IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN APE_PAT IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN APE_MAT IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN IDTIPO_DOC IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN NUM_DOC IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN IDMAC IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN IDENTIDAD IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN DIRECCION IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN SEXO IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN FECH_NACIMIENTO IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN IDDISTRITO IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN TELEFONO IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN CELULAR IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN CORREO IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN ESTADO_CIVIL IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN DF_N_HIJOS IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN DLP_JEFE_INMEDIATO IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN DLP_CARGO IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN DLP_TELEFONO IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN TVL_ID IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN GI_ID IS NULL THEN 1 ELSE 0 END + 
+                CASE WHEN GI_CARRERA IS NULL THEN 1 ELSE 0 END
+            ) AS CAMPOS_NULL
+            FROM M_PERSONAL) as CONT'), 'CONT.IDPERSONAL', '=', 'MP.IDPERSONAL')
+                ->select(
+                    'MP.IDPERSONAL',
+                    DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'),
+                    'DPT.TIPODOC_ABREV',
+                    'MP.NUM_DOC',
+                    DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
+                    DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
+                    'MCM.NOMBRE_MAC',
+                    'MP.FLAG',
+                    'MP.CORREO',
+                    'CONT.CAMPOS_NULL',
+                    DB::raw("(
                     SELECT COUNT(*) 
                     FROM information_schema.columns
                     WHERE table_schema = 'db_centros_mac'
                     AND table_name = 'M_PERSONAL'
-                ) AS TOTAL_CAMPOS"),
-                DB::raw("(
+                    ) AS TOTAL_CAMPOS"),
+                                    DB::raw("(
                     (
-                        SELECT COUNT(*) 
-                        FROM information_schema.columns
-                        WHERE table_schema = 'db_centros_mac'
-                        AND table_name = 'M_PERSONAL'
+                    SELECT COUNT(*) 
+                    FROM information_schema.columns
+                    WHERE table_schema = 'db_centros_mac'
+                    AND table_name = 'M_PERSONAL'
                     ) - CONT.CAMPOS_NULL
-                ) AS DIFERENCIA_CAMPOS")
-            )
+                    ) AS DIFERENCIA_CAMPOS")
+                )
             ->where(function ($query) {
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
                     $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
@@ -116,9 +119,10 @@ class AsesoresController extends Controller
             ->where('MP.IDENTIDAD', '!=', 17)
             ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
             ->get();
-            
+    
         return view('personal.tablas.tb_asesores', compact('query'));
     }
+    
 
     public function md_add_asesores(Request $request)
     {
@@ -343,11 +347,12 @@ class AsesoresController extends Controller
             ->leftJoin('db_centros_mac.M_PERSONAL_MODULO as MPM', function ($join) {
                 $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
                     ->whereDate('MPM.FECHAINICIO', '<=', now())
-                    ->whereDate('MPM.FECHAFIN', '>=', now());
+                    ->whereDate('MPM.FECHAFIN', '>=', now())
+                    ->where('MPM.STATUS', '=', 'fijo'); // Agregar condición para MPM.STATUS = 'fijo'
             })
             ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
             ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
-            ->leftjoin('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
+            ->leftJoin('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
             ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
             ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
             ->select(
@@ -391,9 +396,10 @@ class AsesoresController extends Controller
             ->where('MP.IDENTIDAD', '!=', 17)
             ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
             ->get();
-
+    
         $export = Excel::download(new AsesoresExport($query), 'REPORTE DE PERSONAL ASESORES CENTROS MAC.xlsx');
-
+    
         return $export;
     }
+    
 }
