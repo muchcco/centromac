@@ -105,13 +105,15 @@
                     <div class="row">
                         <div class="col-12">
                             @role('Administrador|Especialista TIC|Especialista_TIC')
-                                <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
-                                    onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
-                                    Subir Archivo de Asistencia
-                                </button>
-                                @if ($idmac == 20)
+                                
+                                @if ($idmac == 10)
                                     <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
                                         onclick="btnAddAsistenciaCallao()"><i class="fa fa-upload" aria-hidden="true"></i>
+                                        Subir Archivo de Asistencia
+                                    </button>
+                                @else
+                                    <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
+                                        onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
                                         Subir Archivo de Asistencia
                                     </button>
                                 @endif
@@ -419,23 +421,39 @@
         function btnStoreAccess() {
             var file_data = $("#txt_file").prop("files")[0];
             var formData = new FormData();
-            formData.append("txt_file", file_data); // Nombre correcto del input
+            formData.append("txt_file", file_data);
             formData.append("_token", $("input[name=_token]").val());
+
+            // Inicia el polling para actualizar el progreso
+            var pollingInterval = setInterval(function() {
+                $.get("{{ route('asistencia.upload.progress') }}", function(data) {
+                    // Actualiza el botón o una barra de progreso con data.progress
+                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Cargando datos... ' + data.progress + '%');
+                    // Si el progreso es 100%, detén el polling
+                    if (data.progress >= 100) {
+                        clearInterval(pollingInterval);
+                    }
+                });
+            }, 1000); // consulta cada 1 segundo
 
             $.ajax({
                 type: 'POST',
-                url: "{{ route('asistencia.store_asistencia_callao') }}", // Ruta correcta
+                url: "{{ route('asistencia.store_asistencia_callao') }}",
                 data: formData,
                 processData: false,
                 contentType: false,
                 beforeSend: function () {
-                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Espere... Cargando datos');
                     $("#btnEnviarForm").prop("disabled", true);
+                    // Inicializa el botón con 0% o un mensaje inicial
+                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Espere... Cargando datos');
                 },
                 success: function (data) {
                     $("#modal_show_modal").modal('hide');
+                    $("#btnEnviarForm").prop("disabled", false);
+                    // Asegúrate de detener el polling al recibir la respuesta final
+                    clearInterval(pollingInterval);
                     if (data.success) {
-                        tabla_seccion();  // Actualiza la tabla si es necesario
+                        tabla_seccion();
                         Toastify({
                             text: data.message,
                             className: "info",
@@ -454,6 +472,8 @@
                 },
                 error: function (error) {
                     $("#modal_show_modal").modal('hide');
+                    $("#btnEnviarForm").prop("disabled", false);
+                    clearInterval(pollingInterval);
                     Swal.fire({
                         icon: "error",
                         text: "Hubo un error al cargar las asistencias. Intentar nuevamente.",
@@ -462,7 +482,6 @@
                 }
             });
         }
-
 
         var btnModalView = (dni, fecha) => {
             console.log(dni);

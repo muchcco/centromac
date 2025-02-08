@@ -176,6 +176,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/exportgroup_excel_general', [AsistenciaController::class, 'exportgroup_excel_general'])->name('exportgroup_excel_general');
         // EXPORT DATA HUANUCO
         Route::post('/migrar-datos', [AsistenciaController::class, 'migrarDatos'])->name('migrar.datos');
+
+        Route::get('/upload-progress', [AsistenciaController::class, 'getUploadProgress'])->name('upload.progress');
+
     });
 
     /********************************************************** REGISTRO DE PERSONAL *******************************************************************/

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Modulo;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Cache;
+
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Asistencia;
@@ -21,6 +23,7 @@ use App\Models\Configuracion;
 use Carbon\CarbonPeriod;
 use PDO;
 use mysqli;
+use PDOException;
 
 class AsistenciaController extends Controller
 {
@@ -375,6 +378,9 @@ class AsistenciaController extends Controller
 
     public function store_asistencia_callao(Request $request)
     {
+        // Inicializar el progreso a 0%
+        Cache::put('upload_progress', 0);
+    
         if ($request->hasFile('txt_file') && $request->file('txt_file')->isValid()) {
             $fileTmpPath = $request->file('txt_file')->getPathName();
             $dsn = "odbc:Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=$fileTmpPath;";
@@ -387,8 +393,14 @@ class AsistenciaController extends Controller
                 }
                 $mysqli->set_charset('utf8mb4');
     
+                // Actualiza el progreso al 10%
+                Cache::put('upload_progress', 10);
+    
                 $tablesQuery = $accessDb->query("SELECT Name FROM MSysObjects WHERE Type=1 AND Name NOT LIKE 'MSys%'");
                 $tables = $tablesQuery->fetchAll(PDO::FETCH_COLUMN);
+    
+                // Actualiza el progreso al 20%
+                Cache::put('upload_progress', 20);
     
                 foreach ($tables as $table) {
                     if ($table === 'Switchboard Items') {
@@ -425,13 +437,12 @@ class AsistenciaController extends Controller
                         $mysqli->query("DELETE FROM `$table`");
     
                         foreach ($rows as &$row) {
-                            // Verificar y convertir cada valor a UTF-8 si es necesario
                             array_walk_recursive($row, function (&$value) {
                                 if (!mb_check_encoding($value, 'UTF-8')) {
                                     $value = utf8_encode($value);
                                 }
                             });
-    
+        
                             $values = array_map(function ($value) use ($mysqli) {
                                 if (is_null($value)) {
                                     return 'NULL';
@@ -439,23 +450,72 @@ class AsistenciaController extends Controller
                                 $escapedValue = $mysqli->real_escape_string($value);
                                 return "'" . $escapedValue . "'";
                             }, $row);
-    
+        
                             $insertSQL = "INSERT INTO `$table` (" . implode(',', array_keys($row)) . ") VALUES (" . implode(',', $values) . ")";
                             $mysqli->query($insertSQL);
                         }
                     }
+    
+                    // Simula actualizar el progreso para cada tabla procesada
+                    // (Esto es solo un ejemplo; en un caso real, el porcentaje dependerá de tu lógica de procesamiento)
+                    $currentProgress = Cache::get('upload_progress', 0);
+                    // Incrementa el progreso en 10% por cada tabla procesada (ajusta según el número de tablas y la lógica)
+                    Cache::put('upload_progress', min($currentProgress + 10, 90));
                 }
     
-                // Verificar y convertir la respuesta JSON a UTF-8
+                $idmac_callao = $this->centro_mac()->idmac;
+    
+                    $call_centro = DB::select("INSERT INTO M_ASISTENCIA (
+                                                    IDTIPO_ASISTENCIA,
+                                                    NUM_DOC,
+                                                    IDCENTRO_MAC,
+                                                    MES,
+                                                    AÑO,
+                                                    FECHA,
+                                                    HORA,
+                                                    FECHA_BIOMETRICO,
+                                                    NUM_BIOMETRICO,
+                                                    CORRELATIVO,
+                                                    CORRELATIVO_DIA
+                                                )
+                                            SELECT 
+                                                2,
+                                                ui.ssn AS DNI,
+                                                $idmac_callao AS nom_mac,
+                                                LPAD(MONTH(chk.CHECKTIME), 2, '0') AS mes,
+                                                YEAR(chk.CHECKTIME) AS anio,
+                                                DATE(chk.CHECKTIME) AS fecha, -- Fecha.
+                                                TIME_FORMAT(chk.CHECKTIME, '%H:%i:%s') AS hora, -- Hora: HH:MM:SS.
+                                                chk.CHECKTIME AS FECHA_BIOMETRICO, -- Fecha completa.
+                                                '', -- NUM_BIOMETRICO.
+                                                '',
+                                                ''
+                                            FROM asistencia_callao.checkinout chk
+                                            JOIN asistencia_callao.userinfo ui ON ui.userid = chk.userid
+                                            WHERE ui.ssn IS NOT NULL
+                                            AND ui.ssn > 0
+                                            AND NOT EXISTS (
+                                                SELECT 2 
+                                                FROM M_ASISTENCIA ma
+                                                WHERE 
+                                                    ma.NUM_DOC = ui.ssn COLLATE utf8mb4_unicode_ci
+                                                    AND ma.IDCENTRO_MAC = $idmac_callao
+                                                    AND ma.FECHA = DATE(chk.CHECKTIME)
+                                                    AND ma.HORA = TIME_FORMAT(chk.CHECKTIME, '%H:%i:%s')
+                                            );");
+    
+                // Finalmente, actualiza el progreso al 100% cuando termine todo el procesamiento
+                Cache::put('upload_progress', 100);
+    
                 $responseData = ['success' => true, 'message' => 'Asistencias cargadas exitosamente.'];
                 array_walk_recursive($responseData, function (&$item) {
                     if (!mb_check_encoding($item, 'UTF-8')) {
                         $item = utf8_encode($item);
                     }
                 });
-    
+        
                 return response()->json($responseData);
-    
+        
             } catch (PDOException $e) {
                 return response()->json(['success' => false, 'message' => 'Error al procesar el archivo Access: ' . $e->getMessage()], 500);
             }
@@ -463,8 +523,13 @@ class AsistenciaController extends Controller
             return response()->json(['success' => false, 'message' => 'No se envió ningún archivo o hubo un error en la carga.'], 400);
         }
     }
-    
 
+    public function getUploadProgress(Request $request)
+    {
+        // Retorna el progreso actual (si no existe, se asume 0)
+        $progress = Cache::get('upload_progress', 0);
+        return response()->json(['progress' => $progress]);
+    }
 
     public function md_detalle(Request $request)
     {

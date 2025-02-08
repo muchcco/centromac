@@ -7,6 +7,9 @@
         <div class="modal-body">
             
             <form action="" class="form">                
+                <div class="alert alert-danger border-0" role="alert">
+                    <strong>Importante!</strong> Primero el archivo access debe colocar los permisos al archivo antes de subirlo.
+                </div>
                 <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
                 
                 <h5>Documentos Adjuntos - Access <span  class="bandejTool" data-tippy-content="Primero indique los permisos necesarios en el archivo acceess antes de subir la información" target="_blank"><i class="fa fa-database" aria-hidden="true"></i></span></h5>
