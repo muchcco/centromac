@@ -17,7 +17,7 @@
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td>{{ $personalModulo->num_doc }}</td>
-                <td>{{ $personalModulo->NOMBRE }} {{ $personalModulo->APE_PAT }} {{ $personalModulo->APE_MAT }}</td>
+                <td class="text-uppercase">{{ $personalModulo->NOMBRE }} {{ $personalModulo->APE_PAT }} {{ $personalModulo->APE_MAT }}</td>
                 <td>{{ $personalModulo->N_MODULO }}</td>
                 <td>{{ $personalModulo->NOMBRE_ENTIDAD }}</td>
                 <td>{{ $personalModulo->fechainicio ? $personalModulo->fechainicio : 'No hay datos' }}</td>

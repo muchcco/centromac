@@ -105,7 +105,6 @@
                     <div class="row">
                         <div class="col-12">
                             @role('Administrador|Especialista TIC|Especialista_TIC')
-                                
                                 @if ($idmac == 10)
                                     <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
                                         onclick="btnAddAsistenciaCallao()"><i class="fa fa-upload" aria-hidden="true"></i>
@@ -123,7 +122,7 @@
                                 onclick="btnAgregarAsistencia()"><i class="fa fa-plus" aria-hidden="true"></i>
                                 Agregar Asistencia Manualmente
                             </button>
-                            
+
                             <a class="btn btn-info" href="{{ route('asistencia.det_entidad', $idmac) }}"> Asistencia por
                                 entidad
                             </a>
@@ -132,7 +131,7 @@
                                     <i class="fa fa-database" aria-hidden="true"></i>
                                     Cargar Asistencia
                                 </button>
-                                
+
                                 @if ($idmac == 11)
                                     <button class="btn btn-warning" onclick="migrarDatos()" id="cargandoMigra">
                                         <i class="fa fa-sync" aria-hidden="true"></i>
@@ -169,8 +168,8 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
 
-        {{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
-        
+    {{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
+
 
 
     <!-- Plugins js -->
@@ -234,7 +233,7 @@
             document.getElementById('fecha').value = formatoFecha;
 
             // Regresa el select de entidad a su primera opción
-            $('#entidad').val("").trigger("change"); 
+            $('#entidad').val("").trigger("change");
 
             tabla_seccion(); // Refresca la tabla
         });
@@ -428,7 +427,8 @@
             var pollingInterval = setInterval(function() {
                 $.get("{{ route('asistencia.upload.progress') }}", function(data) {
                     // Actualiza el botón o una barra de progreso con data.progress
-                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Cargando datos... ' + data.progress + '%');
+                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Cargando datos... ' +
+                        data.progress + '%');
                     // Si el progreso es 100%, detén el polling
                     if (data.progress >= 100) {
                         clearInterval(pollingInterval);
@@ -442,12 +442,12 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-                beforeSend: function () {
+                beforeSend: function() {
                     $("#btnEnviarForm").prop("disabled", true);
                     // Inicializa el botón con 0% o un mensaje inicial
                     $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Espere... Cargando datos');
                 },
-                success: function (data) {
+                success: function(data) {
                     $("#modal_show_modal").modal('hide');
                     $("#btnEnviarForm").prop("disabled", false);
                     // Asegúrate de detener el polling al recibir la respuesta final
@@ -470,7 +470,7 @@
                         });
                     }
                 },
-                error: function (error) {
+                error: function(error) {
                     $("#modal_show_modal").modal('hide');
                     $("#btnEnviarForm").prop("disabled", false);
                     clearInterval(pollingInterval);
@@ -591,5 +591,7 @@
                     button.disabled = false;
                 });
         }
+
+       
     </script>
 @endsection

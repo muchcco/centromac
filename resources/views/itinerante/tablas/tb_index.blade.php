@@ -17,7 +17,7 @@
                 <td>{{ $i + 1 }}</td>
                 <td>{{ $itinerante->NOMBRE_MAC }}</td>
                 <td>{{ $itinerante->NUM_DOC }}</td>
-                <td>{{ $itinerante->NOMBRE_COMPLETO }}</td> <!-- Nombre del personal -->
+                <td class="text-uppercase">{{ $itinerante->NOMBRE_COMPLETO }}</td> <!-- Nombre del personal -->
                 <td>{{ $itinerante->N_MODULO }}</td>
                 <td>{{ $itinerante->FECHAINICIO }}</td>
                 <td>{{ $itinerante->FECHAFIN }}</td>

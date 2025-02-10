@@ -4,44 +4,70 @@
             <th class="th" width="50px">N°</th>
             <th class="th">Asesor</th>
             <th class="th">Número de Documento</th>
+            {{-- <th class="th">Modulo</th> --}}
             <th class="th">Entidad</th>
             <th class="th">Centro MAC</th>
             <th class="th">Estado</th>
-            <th class="th">Fecha y Hora de Ingreso</th>
+            <th class="th">Fecha</th>
+            <th class="th">Ingreso</th>
+            <th class="th">Receso</th>
+            <th class="th">Receso</th>
+            <th class="th">Salida</th>
             <th class="th">Acciones</th>
         </tr>
     </thead>
     <tbody>
-        @foreach ($datos as $i =>$dato)
+        @foreach ($datos as $i => $dato)
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td>
                     {{-- <a href="{{ route('asistencia.det_us', $dato->n_dni) }}">{{ $dato->nombreu }}</a> --}}
-                    {{ $dato->nombreu }}                    
+                    {{ $dato->nombreu }}
                 </td>
                 <td>{{ $dato->n_dni }}</td>
                 <td>{{ $dato->ABREV_ENTIDAD }}</td>
-                <td>{{ $dato->NOMBRE_MAC }}</td>                
+               {{--  <td>
+                    @if ($dato->mostrar == 'itinerante')
+                        {{ $dato->nombre_modulo }} (Itinerante)
+                    @elseif($dato->mostrar == 'fijo')
+                        {{ $dato->nombre_modulo }} (Fijo)
+                    @else
+                        <!-- Si no tiene el status "itinerante" o "fijo", no mostrar nada -->
+                        No disponible
+                    @endif
+                </td> --}}
+                <td>{{ $dato->NOMBRE_MAC }}</td>
                 <td>
                     @php
-                        $fechaBiometrico = $dato->fecha_biometrico;
-                        $timestamp = strtotime($fechaBiometrico);
-                        $nuevaFecha = date("H:i:s", $timestamp + 60); // 60 segundos representan un minuto
-                        $confTimestamp = strtotime($conf->NUM_SOLO);
-                        $confTimestamp += 60;
-                        $confNuevaFecha = date("H:i:s", $confTimestamp);
+                        // Obtener las horas de $dato y $conf
+                        $hora1 = $dato->HORA_1; // Hora 1 de $dato
+                        $timestampHora1 = strtotime($hora1); // Convertir a timestamp
+                        $nuevaHora1 = date('H:i:s', $timestampHora1 + 60); // Sumar 60 segundos (1 minuto)
+
+                        // Obtener la hora de la configuración (NUM_SOLO)
+                        $confTimestamp = strtotime($conf->NUM_SOLO); // Convertir NUM_SOLO a timestamp
+                        $confTimestamp += 60; // Sumar 60 segundos (1 minuto)
+                        $confNuevaHora = date('H:i:s', $confTimestamp); // Convertir el timestamp a hora con formato "H:i:s"
                     @endphp
-                
-                    @if ($nuevaFecha > $confNuevaFecha)
-                        <span class="badge badge-soft-danger px-2">TARDE </span>
+
+                    @if ($nuevaHora1 > $confNuevaHora)
+                        <span class="badge badge-soft-danger px-2">TARDE</span>
                     @else
                         <span class="badge badge-soft-success px-2">EN HORA</span>
                     @endif
                 </td>
-                
-                <td>{{ $dato->fecha_biometrico }}</td>
+
+
+                <td>{{ \Carbon\Carbon::parse($dato->fecha_asistencia)->format('d-m-Y') }}</td>
+                <td>{{ $dato->HORA_1 }}</td>
+                <td>{{ $dato->HORA_2 }}</td>
+                <td>{{ $dato->HORA_3 }}</td>
+                <td>{{ $dato->HORA_4 }}</td>
                 <td>
-                    <button class="btn btn-primary btn-sm" onclick="btnModalView('{{ $dato->n_dni }}', '{{ $dato->fecha_asistencia }}')">Ver completo (Hoy)</button>
+                    <button class="btn btn-primary btn-sm"
+                        onclick="btnModalView('{{ $dato->n_dni }}', '{{ $dato->fecha_asistencia }}')">Ver completo
+                        (Hoy)
+                    </button>
                 </td>
             </tr>
         @endforeach
@@ -49,17 +75,17 @@
 </table>
 
 <script>
-$(document).ready(function() {
+    $(document).ready(function() {
 
-    $('#table_asistencia').DataTable({
-        "responsive": true,
-        "bLengthChange": false,
-        "autoWidth": false,
-        "searching": true,
-        info: true,
-        "ordering": false,
-        "dom":
-                "<'row'" +
+            $('#table_asistencia').DataTable({
+                "responsive": true,
+                "bLengthChange": true,
+                "autoWidth": false,
+                "searching": true,
+                "pageLength": 30, // Número predeterminado de filas por página
+                info: true,
+                "ordering": false,
+            "dom": "<'row'" +
                 "<'col-sm-12 d-flex align-items-center justify-conten-start'l>" +
                 "<'col-sm-12 d-flex align-items-center justify-content-end'f>" +
                 ">" +
@@ -70,17 +96,43 @@ $(document).ready(function() {
                 "<'col-sm-12 col-md-12 d-flex align-items-center justify-content-center justify-content-md-start'i>" +
                 "<'col-sm-12 col-md-12 d-flex align-items-center justify-content-center justify-content-md-end'p>" +
                 ">",
-        language: {"url": "{{ asset('js/Spanish.json')}}"}, 
-        "columns": [
-            { "width": "" },
-            { "width": "" },
-            { "width": "" },
-            { "width": "" },
-            { "width": "" },
-            { "width": "" },
-            { "width": "" },
-            { "width": "" }
-        ]
+            language: {
+                "url": "{{ asset('js/Spanish.json') }}"
+            },
+            "columns": [{
+                    "width": ""
+                }, {
+                    "width": ""
+                }, 
+                {
+                    "width": ""
+                }, {
+                    "width": ""
+                }, {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                }
+            ]
+        });
     });
-});
 </script>

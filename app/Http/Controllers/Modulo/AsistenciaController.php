@@ -173,7 +173,6 @@ class AsistenciaController extends Controller
                 'success' => true,
                 'message' => 'Registro(s) guardado(s) exitosamente para ' . $nombreCompleto
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -183,7 +182,7 @@ class AsistenciaController extends Controller
     }
 
 
-    
+
     public function tb_asistencia(Request $request)
     {
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
@@ -209,7 +208,7 @@ class AsistenciaController extends Controller
             ->select(
                 'MA.FECHA as fecha_asistencia',
                 DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
-                DB::raw('MIN(MA.FECHA_BIOMETRICO) as fecha_biometrico'),
+                DB::raw("GROUP_CONCAT(DATE_FORMAT(HORA, '%H:%i:%s') ORDER BY HORA) AS fecha_biometrico"),
                 'MA.NUM_DOC as n_dni',
                 DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS nombreu'),
                 'ABREV_ENTIDAD',
@@ -236,6 +235,34 @@ class AsistenciaController extends Controller
             // ->where('MA.IDCENTRO_MAC', $idmac)
             ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ABREV_ENTIDAD', 'MC.NOMBRE_MAC')
             ->get();
+        foreach ($datos as $q) {
+            // Asumiendo que el valor de 'fecha_biometrico' contiene la hora en formato 'H:i:s'
+            $horas = explode(',', $q->fecha_biometrico); // Separa las horas por coma
+            $num_horas = count($horas);
+
+            // Asigna las horas con segundos
+            if ($num_horas == 1) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = null;
+                $q->HORA_3 = null;
+                $q->HORA_4 = null;
+            } elseif ($num_horas == 2) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = null;
+                $q->HORA_3 = null;
+                $q->HORA_4 = $horas[1];
+            } elseif ($num_horas == 3) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_3 = null;
+                $q->HORA_4 = $horas[2];
+            } elseif ($num_horas >= 4) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_3 = $horas[2];
+                $q->HORA_4 = $horas[3];
+            }
+        }
         // // dd($datos);
         //                     ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
         //                     ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
@@ -297,9 +324,9 @@ class AsistenciaController extends Controller
 
     public function store_asistencia(Request $request)
     {
-         // Obtener el archivo de la solicitud
+        // Obtener el archivo de la solicitud
         $file = $request->file('txt_file');
-        
+
         // Convertir el archivo a un array de líneas
         $lines = file($file->getRealPath());
 
@@ -373,18 +400,17 @@ class AsistenciaController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Asistencias cargadas exitosamente.']);
-
     }
 
     public function store_asistencia_callao(Request $request)
     {
         // Inicializar el progreso a 0%
         Cache::put('upload_progress', 0);
-    
+
         if ($request->hasFile('txt_file') && $request->file('txt_file')->isValid()) {
             $fileTmpPath = $request->file('txt_file')->getPathName();
             $dsn = "odbc:Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=$fileTmpPath;";
-    
+
             try {
                 $accessDb = new PDO($dsn);
                 $mysqli = new mysqli('localhost', 'root', '', 'asistencia_callao');
@@ -392,32 +418,32 @@ class AsistenciaController extends Controller
                     return response()->json(['success' => false, 'message' => 'Error de conexión a MySQL: ' . $mysqli->connect_error], 500);
                 }
                 $mysqli->set_charset('utf8mb4');
-    
+
                 // Actualiza el progreso al 10%
                 Cache::put('upload_progress', 10);
-    
+
                 $tablesQuery = $accessDb->query("SELECT Name FROM MSysObjects WHERE Type=1 AND Name NOT LIKE 'MSys%'");
                 $tables = $tablesQuery->fetchAll(PDO::FETCH_COLUMN);
-    
+
                 // Actualiza el progreso al 20%
                 Cache::put('upload_progress', 20);
-    
+
                 foreach ($tables as $table) {
                     if ($table === 'Switchboard Items') {
                         continue;
                     }
-    
+
                     try {
                         $dataQuery = $accessDb->query("SELECT * FROM [$table]");
                         $rows = $dataQuery->fetchAll(PDO::FETCH_ASSOC);
                     } catch (PDOException $e) {
                         continue;
                     }
-    
+
                     if (!empty($rows)) {
                         $columns = array_keys($rows[0]);
                         $tableExistsQuery = $mysqli->query("SHOW TABLES LIKE '$table'");
-    
+
                         if ($tableExistsQuery->num_rows > 0) {
                             $mysqli->query("ALTER TABLE `$table` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                             foreach ($columns as $column) {
@@ -433,16 +459,16 @@ class AsistenciaController extends Controller
                                 continue;
                             }
                         }
-    
+
                         $mysqli->query("DELETE FROM `$table`");
-    
+
                         foreach ($rows as &$row) {
                             array_walk_recursive($row, function (&$value) {
                                 if (!mb_check_encoding($value, 'UTF-8')) {
                                     $value = utf8_encode($value);
                                 }
                             });
-        
+
                             $values = array_map(function ($value) use ($mysqli) {
                                 if (is_null($value)) {
                                     return 'NULL';
@@ -450,22 +476,22 @@ class AsistenciaController extends Controller
                                 $escapedValue = $mysqli->real_escape_string($value);
                                 return "'" . $escapedValue . "'";
                             }, $row);
-        
+
                             $insertSQL = "INSERT INTO `$table` (" . implode(',', array_keys($row)) . ") VALUES (" . implode(',', $values) . ")";
                             $mysqli->query($insertSQL);
                         }
                     }
-    
+
                     // Simula actualizar el progreso para cada tabla procesada
                     // (Esto es solo un ejemplo; en un caso real, el porcentaje dependerá de tu lógica de procesamiento)
                     $currentProgress = Cache::get('upload_progress', 0);
                     // Incrementa el progreso en 10% por cada tabla procesada (ajusta según el número de tablas y la lógica)
                     Cache::put('upload_progress', min($currentProgress + 10, 90));
                 }
-    
+
                 $idmac_callao = $this->centro_mac()->idmac;
-    
-                    $call_centro = DB::select("INSERT INTO M_ASISTENCIA (
+
+                $call_centro = DB::select("INSERT INTO M_ASISTENCIA (
                                                     IDTIPO_ASISTENCIA,
                                                     NUM_DOC,
                                                     IDCENTRO_MAC,
@@ -503,19 +529,18 @@ class AsistenciaController extends Controller
                                                     AND ma.FECHA = DATE(chk.CHECKTIME)
                                                     AND ma.HORA = TIME_FORMAT(chk.CHECKTIME, '%H:%i:%s')
                                             );");
-    
+
                 // Finalmente, actualiza el progreso al 100% cuando termine todo el procesamiento
                 Cache::put('upload_progress', 100);
-    
+
                 $responseData = ['success' => true, 'message' => 'Asistencias cargadas exitosamente.'];
                 array_walk_recursive($responseData, function (&$item) {
                     if (!mb_check_encoding($item, 'UTF-8')) {
                         $item = utf8_encode($item);
                     }
                 });
-        
+
                 return response()->json($responseData);
-        
             } catch (PDOException $e) {
                 return response()->json(['success' => false, 'message' => 'Error al procesar el archivo Access: ' . $e->getMessage()], 500);
             }
@@ -534,47 +559,47 @@ class AsistenciaController extends Controller
     public function md_detalle(Request $request)
     {
         $fecha_ = $request->fecha_;
-        $query = DB::select("SELECT FECHA,
-                                NUM_DOC,
-                                GROUP_CONCAT(DATE_FORMAT(HORA, '%H:%i') ORDER BY HORA) AS HORAS
-                            FROM
-                            M_ASISTENCIA
-                            WHERE FECHA = '$fecha_'
-                            AND NUM_DOC = '$request->dni_'
-                            GROUP BY NUM_DOC;");
-
-        // dd($query);
-
-        foreach ($query as $q) {
-            $horas = explode(',', $q->HORAS);
-            $num_horas = count($horas);
-            if ($num_horas == 1) {
-                $q->HORA_1 = $horas[0];
-                $q->HORA_2 = null;
-                $q->HORA_3 = null;
-                $q->HORA_4 = null;
-            } elseif ($num_horas == 2) {
-                $q->HORA_1 = $horas[0];
-                $q->HORA_2 = null;
-                $q->HORA_3 = null;
-                $q->HORA_4 = $horas[1];
-            } elseif ($num_horas == 3) {
-                $q->HORA_1 = $horas[0];
-                $q->HORA_2 = $horas[1];
-                $q->HORA_3 = null;
-                $q->HORA_4 = $horas[2];
-            } elseif ($num_horas >= 4) {
-                $q->HORA_1 = $horas[0];
-                $q->HORA_2 = $horas[1];
-                $q->HORA_3 = $horas[2];
-                $q->HORA_4 = $horas[3];
-            }
-        }
+        $query = DB::select("
+        SELECT 
+            FECHA,
+            NUM_DOC,
+            DATE_FORMAT(HORA, '%H:%i:%s') AS HORAS,
+            MAX(IDASISTENCIA) as IDASISTENCIA  
+        FROM
+            M_ASISTENCIA
+        WHERE 
+            FECHA = '$fecha_'
+            AND NUM_DOC = '$request->dni_'
+        GROUP BY 
+            NUM_DOC, FECHA, HORA
+        ORDER BY 
+            HORA ASC");  // Ordenar las horas de menor a mayor
 
         $view = view('asistencia.modals.md_detalle', compact('query', 'fecha_'))->render();
 
         return response()->json(['html' => $view]);
     }
+
+
+    public function eliminarHora(Request $request)
+    {
+        try {
+            $idAsistencia = $request->idAsistencia;
+            $asistencia = Asistencia::findOrFail($idAsistencia);
+            $asistencia->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hora eliminada correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la hora: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     public function det_us(Request $request, $id)
     {
@@ -781,13 +806,13 @@ class AsistenciaController extends Controller
     {
 
         $mac = DB::table('M_CENTRO_MAC')
-                    ->where(function($query) {
-                        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                            $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                        }
-                    })
-                    ->orderBy('NOMBRE_MAC', 'ASC')
-                    ->get();
+            ->where(function ($query) {
+                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                    $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                }
+            })
+            ->orderBy('NOMBRE_MAC', 'ASC')
+            ->get();
 
 
         return view('asistencia.det_entidad', compact('mac'));
@@ -808,40 +833,40 @@ class AsistenciaController extends Controller
         $año = $request->input('año', Carbon::now()->year);
 
         $data = DB::table('M_PERSONAL')
-                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
-                        ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', 'M_ENTIDAD.ABREV_ENTIDAD', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
-                        ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
-                        ->where(function($query) use ($request) {
-                            $mac = $request->mac;
+            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
+            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+            ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', 'M_ENTIDAD.ABREV_ENTIDAD', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
+            ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
+            ->where(function ($query) use ($request) {
+                $mac = $request->mac;
 
-                            if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                            }else{
-                                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $mac);
-                            }
-                        })
-                        ->where('M_PERSONAL.FLAG', 1)
-                        ->orderBy('M_ENTIDAD.ABREV_ENTIDAD', 'ASC')
-                        ->get();
+                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                    $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                } else {
+                    $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $mac);
+                }
+            })
+            ->where('M_PERSONAL.FLAG', 1)
+            ->orderBy('M_ENTIDAD.ABREV_ENTIDAD', 'ASC')
+            ->get();
 
         $data_spcm = DB::table('M_PERSONAL')
-                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
-                        ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
-                        ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
-                        // ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
-                        ->where(function($query) use ($request) {
-                            $mac = $request->mac;
-                            if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                            }else{
-                                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $mac);
-                            }
-                        })
-                        ->where('M_PERSONAL.FLAG', 1)
-                        ->whereNot('M_ENTIDAD.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
-                        ->get();
+            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
+            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+            ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
+            ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
+            // ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+            ->where(function ($query) use ($request) {
+                $mac = $request->mac;
+                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                    $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                } else {
+                    $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $mac);
+                }
+            })
+            ->where('M_PERSONAL.FLAG', 1)
+            ->whereNot('M_ENTIDAD.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
+            ->get();
 
         return view('asistencia.tablas.tb_det_entidad', compact('data', 'data_spcm'));
     }
@@ -865,7 +890,7 @@ class AsistenciaController extends Controller
 
         if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
             $idmac = $this->centro_mac()->idmac;
-        }else{
+        } else {
             $idmac = $request->mac;
         }
 
@@ -934,31 +959,31 @@ class AsistenciaController extends Controller
                 ->orderBy('FECHA', 'ASC')
                 ->get();
 
-                foreach ($querys as $q) {
-                    $horas = explode(',', $q->HORAS);
-                    $num_horas = count($horas);
-                    if ($num_horas == 1) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = null;
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = null;
-                    } elseif ($num_horas == 2) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = null;
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = $horas[1];
-                    } elseif ($num_horas == 3) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = $horas[1];
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = $horas[2];
-                    } elseif ($num_horas >= 4) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = $horas[1];
-                        $q->HORA_3 = $horas[2];
-                        $q->HORA_4 = $horas[3];
-                    }
+            foreach ($querys as $q) {
+                $horas = explode(',', $q->HORAS);
+                $num_horas = count($horas);
+                if ($num_horas == 1) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = null;
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = null;
+                } elseif ($num_horas == 2) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = null;
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = $horas[1];
+                } elseif ($num_horas == 3) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = $horas[2];
+                } elseif ($num_horas >= 4) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_3 = $horas[2];
+                    $q->HORA_4 = $horas[3];
                 }
+            }
 
             // Creamos un array asociativo donde la clave es la fecha y el valor es un array con los datos correspondientes
             $query = [];
@@ -991,31 +1016,31 @@ class AsistenciaController extends Controller
                     ->get();
 
 
-                    foreach ($detalle as $d) {
-                        $horas = explode(',', $d->HORAS);
-                        $num_horas = count($horas);
-                        if ($num_horas == 1) {
-                            $d->HORA_1 = $horas[0];
-                            $d->HORA_2 = null;
-                            $d->HORA_3 = null;
-                            $d->HORA_4 = null;
-                        } elseif ($num_horas == 2) {
-                            $d->HORA_1 = $horas[0];
-                            $d->HORA_2 = null;
-                            $d->HORA_3 = null;
-                            $d->HORA_4 = $horas[1];
-                        } elseif ($num_horas == 3) {
-                            $d->HORA_1 = $horas[0];
-                            $d->HORA_2 = $horas[1];
-                            $d->HORA_3 = null;
-                            $d->HORA_4 = $horas[2];
-                        } elseif ($num_horas >= 4) {
-                            $d->HORA_1 = $horas[0];
-                            $d->HORA_2 = $horas[1];
-                            $d->HORA_3 = $horas[2];
-                            $d->HORA_4 = $horas[3];
-                        }
+                foreach ($detalle as $d) {
+                    $horas = explode(',', $d->HORAS);
+                    $num_horas = count($horas);
+                    if ($num_horas == 1) {
+                        $d->HORA_1 = $horas[0];
+                        $d->HORA_2 = null;
+                        $d->HORA_3 = null;
+                        $d->HORA_4 = null;
+                    } elseif ($num_horas == 2) {
+                        $d->HORA_1 = $horas[0];
+                        $d->HORA_2 = null;
+                        $d->HORA_3 = null;
+                        $d->HORA_4 = $horas[1];
+                    } elseif ($num_horas == 3) {
+                        $d->HORA_1 = $horas[0];
+                        $d->HORA_2 = $horas[1];
+                        $d->HORA_3 = null;
+                        $d->HORA_4 = $horas[2];
+                    } elseif ($num_horas >= 4) {
+                        $d->HORA_1 = $horas[0];
+                        $d->HORA_2 = $horas[1];
+                        $d->HORA_3 = $horas[2];
+                        $d->HORA_4 = $horas[3];
                     }
+                }
 
                 // dd($detalle);
 
@@ -1031,52 +1056,52 @@ class AsistenciaController extends Controller
         } else {
 
             $query = DB::table('M_ASISTENCIA as MA')
+                ->select(
+                    'PERS.ABREV_ENTIDAD',
+                    'PERS.N_MODULO',
+                    'PERS.NOMBREU',
+                    'PERS.NOMBRE_CARGO',
+                    'MA.FECHA',
+                    'MA.NUM_DOC',
+                    DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+                    DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
+                )
+                ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                ->joinSub(
+                    DB::table('M_PERSONAL')
                         ->select(
-                            'PERS.ABREV_ENTIDAD',
-                            'PERS.N_MODULO', 
-                            'PERS.NOMBREU',
-                            'PERS.NOMBRE_CARGO',
-                            'MA.FECHA',
-                            'MA.NUM_DOC',
-                            DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
-                            DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
+                            DB::raw('CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU'),
+                            'M_ENTIDAD.ABREV_ENTIDAD',
+                            'M_CENTRO_MAC.IDCENTRO_MAC',
+                            'M_PERSONAL.NUM_DOC',
+                            'M_ENTIDAD.IDENTIDAD',
+                            'D_PERSONAL_CARGO.NOMBRE_CARGO',
+                            'MPM.FECHAINICIO',
+                            'MPM.FECHAFIN',
+                            'M_MODULO.N_MODULO'
                         )
-                        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-                        ->joinSub(
-                            DB::table('M_PERSONAL')
-                                ->select(
-                                    DB::raw('CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU'),
-                                    'M_ENTIDAD.ABREV_ENTIDAD',
-                                    'M_CENTRO_MAC.IDCENTRO_MAC',
-                                    'M_PERSONAL.NUM_DOC',
-                                    'M_ENTIDAD.IDENTIDAD',
-                                    'D_PERSONAL_CARGO.NOMBRE_CARGO',
-                                    'MPM.FECHAINICIO',
-                                    'MPM.FECHAFIN',
-                                    'M_MODULO.N_MODULO'
-                                )
-                                ->leftJoin('D_PERSONAL_CARGO', 'D_PERSONAL_CARGO.IDCARGO_PERSONAL', '=', 'M_PERSONAL.IDCARGO_PERSONAL')
-                                ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
-                                ->join('M_PERSONAL_MODULO AS MPM', 'MPM.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
-                                ->join('M_MODULO', function ($join) {
-                                    $join->on('M_MODULO.IDMODULO', '=', 'MPM.IDMODULO')
-                                        ->on('M_MODULO.IDCENTRO_MAC', '=', 'MPM.IDCENTRO_MAC');
-                                })
-                                ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD')
-                                ->where('M_MODULO.ESTADO', 1),
-                            'PERS',
-                            'PERS.NUM_DOC',
-                            '=',
-                            'MA.NUM_DOC'
-                        )
-                        ->where('PERS.IDENTIDAD', $request->identidad)
-                        ->where('MA.IDCENTRO_MAC', $idmac)
-                        ->whereMonth('MA.FECHA', $request->mes)
-                        ->whereYear('MA.FECHA', $request->año)
-                        ->whereBetween('MA.FECHA', [DB::raw('PERS.FECHAINICIO'), DB::raw('PERS.FECHAFIN')])
-                        ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO', 'PERS.N_MODULO')
-                        ->orderBy('MA.FECHA', 'ASC')
-                        ->get();
+                        ->leftJoin('D_PERSONAL_CARGO', 'D_PERSONAL_CARGO.IDCARGO_PERSONAL', '=', 'M_PERSONAL.IDCARGO_PERSONAL')
+                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+                        ->join('M_PERSONAL_MODULO AS MPM', 'MPM.NUM_DOC', '=', 'M_PERSONAL.NUM_DOC')
+                        ->join('M_MODULO', function ($join) {
+                            $join->on('M_MODULO.IDMODULO', '=', 'MPM.IDMODULO')
+                                ->on('M_MODULO.IDCENTRO_MAC', '=', 'MPM.IDCENTRO_MAC');
+                        })
+                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD')
+                        ->where('M_MODULO.ESTADO', 1),
+                    'PERS',
+                    'PERS.NUM_DOC',
+                    '=',
+                    'MA.NUM_DOC'
+                )
+                ->where('PERS.IDENTIDAD', $request->identidad)
+                ->where('MA.IDCENTRO_MAC', $idmac)
+                ->whereMonth('MA.FECHA', $request->mes)
+                ->whereYear('MA.FECHA', $request->año)
+                ->whereBetween('MA.FECHA', [DB::raw('PERS.FECHAINICIO'), DB::raw('PERS.FECHAFIN')])
+                ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO', 'PERS.N_MODULO')
+                ->orderBy('MA.FECHA', 'ASC')
+                ->get();
 
             // $query = DB::table('M_ASISTENCIA as MA')
             //     ->select('PERS.ABREV_ENTIDAD', 'PERS.NOMBREU', 'PERS.NOMBRE_CARGO', 'MA.FECHA', 'MA.NUM_DOC', DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'))
@@ -1094,34 +1119,34 @@ class AsistenciaController extends Controller
             //     ->whereYear('MA.FECHA', $request->año)
             //     ->orderBy('FECHA', 'ASC')
             //     ->get();
-                // dd($query);
+            // dd($query);
 
-                foreach ($query as $q) {
-                    $horas = explode(',', $q->HORAS);
-                    $num_horas = count($horas);
-                    if ($num_horas == 1) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = null;
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = null;
-                    } elseif ($num_horas == 2) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = null;
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = $horas[1];
-                    } elseif ($num_horas == 3) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = $horas[1];
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = $horas[2];
-                    } elseif ($num_horas >= 4) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = $horas[1];
-                        $q->HORA_3 = $horas[2];
-                        $q->HORA_4 = $horas[3];
-                    }
+            foreach ($query as $q) {
+                $horas = explode(',', $q->HORAS);
+                $num_horas = count($horas);
+                if ($num_horas == 1) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = null;
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = null;
+                } elseif ($num_horas == 2) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = null;
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = $horas[1];
+                } elseif ($num_horas == 3) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = $horas[2];
+                } elseif ($num_horas >= 4) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_3 = $horas[2];
+                    $q->HORA_4 = $horas[3];
                 }
-        
+            }
+
 
             $datosAgrupados = '';
             $fechasArray = '';
@@ -1158,7 +1183,7 @@ class AsistenciaController extends Controller
 
         if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
             $idmac = $this->centro_mac()->idmac;
-        }else{
+        } else {
             $idmac = $request->mac;
         }
 
@@ -1231,31 +1256,31 @@ class AsistenciaController extends Controller
                 ->orderBy('MA.FECHA', 'asc')
                 ->get();
 
-                foreach ($querys as $q) {
-                    $horas = explode(',', $q->HORAS);
-                    $num_horas = count($horas);
-                    if ($num_horas == 1) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = null;
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = null;
-                    } elseif ($num_horas == 2) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = null;
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = $horas[1];
-                    } elseif ($num_horas == 3) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = $horas[1];
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = $horas[2];
-                    } elseif ($num_horas >= 4) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = $horas[1];
-                        $q->HORA_3 = $horas[2];
-                        $q->HORA_4 = $horas[3];
-                    }
+            foreach ($querys as $q) {
+                $horas = explode(',', $q->HORAS);
+                $num_horas = count($horas);
+                if ($num_horas == 1) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = null;
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = null;
+                } elseif ($num_horas == 2) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = null;
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = $horas[1];
+                } elseif ($num_horas == 3) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = $horas[2];
+                } elseif ($num_horas >= 4) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_3 = $horas[2];
+                    $q->HORA_4 = $horas[3];
                 }
+            }
 
 
             $query = [];
@@ -1281,31 +1306,31 @@ class AsistenciaController extends Controller
                     ->orderBy('M_ASISTENCIA.FECHA', 'asc')
                     ->get();
 
-                    foreach ($detalle as $d) {
-                        $horas = explode(',', $d->HORAS);
-                        $num_horas = count($horas);
-                        if ($num_horas == 1) {
-                            $d->HORA_1 = $horas[0];
-                            $d->HORA_2 = null;
-                            $d->HORA_3 = null;
-                            $d->HORA_4 = null;
-                        } elseif ($num_horas == 2) {
-                            $d->HORA_1 = $horas[0];
-                            $d->HORA_2 = null;
-                            $d->HORA_3 = null;
-                            $d->HORA_4 = $horas[1];
-                        } elseif ($num_horas == 3) {
-                            $d->HORA_1 = $horas[0];
-                            $d->HORA_2 = $horas[1];
-                            $d->HORA_3 = null;
-                            $d->HORA_4 = $horas[2];
-                        } elseif ($num_horas >= 4) {
-                            $d->HORA_1 = $horas[0];
-                            $d->HORA_2 = $horas[1];
-                            $d->HORA_3 = $horas[2];
-                            $d->HORA_4 = $horas[3];
-                        }
+                foreach ($detalle as $d) {
+                    $horas = explode(',', $d->HORAS);
+                    $num_horas = count($horas);
+                    if ($num_horas == 1) {
+                        $d->HORA_1 = $horas[0];
+                        $d->HORA_2 = null;
+                        $d->HORA_3 = null;
+                        $d->HORA_4 = null;
+                    } elseif ($num_horas == 2) {
+                        $d->HORA_1 = $horas[0];
+                        $d->HORA_2 = null;
+                        $d->HORA_3 = null;
+                        $d->HORA_4 = $horas[1];
+                    } elseif ($num_horas == 3) {
+                        $d->HORA_1 = $horas[0];
+                        $d->HORA_2 = $horas[1];
+                        $d->HORA_3 = null;
+                        $d->HORA_4 = $horas[2];
+                    } elseif ($num_horas >= 4) {
+                        $d->HORA_1 = $horas[0];
+                        $d->HORA_2 = $horas[1];
+                        $d->HORA_3 = $horas[2];
+                        $d->HORA_4 = $horas[3];
                     }
+                }
 
                 // dd($detalle);
 
@@ -1319,8 +1344,8 @@ class AsistenciaController extends Controller
         } else {
 
             $query =  DB::table('M_ASISTENCIA as MA')
-                        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-                        ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, 
+                ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, 
                                                 M_ENTIDAD.ABREV_ENTIDAD, 
                                                 M_CENTRO_MAC.IDCENTRO_MAC, 
                                                 M_PERSONAL.NUM_DOC, 
@@ -1337,25 +1362,25 @@ class AsistenciaController extends Controller
                                         JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_MODULO.IDENTIDAD
                                         
                                         ) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
-                        ->select([
-                            'PERS.ABREV_ENTIDAD',
-                            'PERS.NOMBRE_CARGO',
-                            'PERS.NOMBREU',
-                            'PERS.N_MODULO', 
-                            'MA.FECHA',
-                            'MA.NUM_DOC',
-                            DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
-                            DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
-                            'PERS.IDENTIDAD',
-                            'PERS.IDCENTRO_MAC'
-                        ])
-                        ->where('PERS.IDENTIDAD', $request->identidad)
-                        ->where('MA.IDCENTRO_MAC', $idmac)
-                        ->whereBetween(DB::raw('DATE(MA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
-                        ->whereRaw('MA.FECHA BETWEEN PERS.FECHAINICIO AND PERS.FECHAFIN') // Validación del rango de fechas de asignación
-                        ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO','PERS.N_MODULO')
-                        ->orderBy('MA.FECHA', 'asc')
-                        ->get();
+                ->select([
+                    'PERS.ABREV_ENTIDAD',
+                    'PERS.NOMBRE_CARGO',
+                    'PERS.NOMBREU',
+                    'PERS.N_MODULO',
+                    'MA.FECHA',
+                    'MA.NUM_DOC',
+                    DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+                    DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
+                    'PERS.IDENTIDAD',
+                    'PERS.IDCENTRO_MAC'
+                ])
+                ->where('PERS.IDENTIDAD', $request->identidad)
+                ->where('MA.IDCENTRO_MAC', $idmac)
+                ->whereBetween(DB::raw('DATE(MA.FECHA)'), [$request->fecha_inicio, $request->fecha_fin])
+                ->whereRaw('MA.FECHA BETWEEN PERS.FECHAINICIO AND PERS.FECHAFIN') // Validación del rango de fechas de asignación
+                ->groupBy('MA.NUM_DOC', 'MA.FECHA', 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.IDENTIDAD', 'PERS.IDCENTRO_MAC', 'PERS.NOMBRE_CARGO', 'PERS.N_MODULO')
+                ->orderBy('MA.FECHA', 'asc')
+                ->get();
 
 
             // $query =  DB::table('M_ASISTENCIA as MA')
@@ -1383,31 +1408,31 @@ class AsistenciaController extends Controller
             //     ->orderBy('MA.FECHA', 'asc')
             //     ->get();
 
-                foreach ($query as $q) {
-                    $horas = explode(',', $q->HORAS);
-                    $num_horas = count($horas);
-                    if ($num_horas == 1) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = null;
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = null;
-                    } elseif ($num_horas == 2) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = null;
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = $horas[1];
-                    } elseif ($num_horas == 3) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = $horas[1];
-                        $q->HORA_3 = null;
-                        $q->HORA_4 = $horas[2];
-                    } elseif ($num_horas >= 4) {
-                        $q->HORA_1 = $horas[0];
-                        $q->HORA_2 = $horas[1];
-                        $q->HORA_3 = $horas[2];
-                        $q->HORA_4 = $horas[3];
-                    }
+            foreach ($query as $q) {
+                $horas = explode(',', $q->HORAS);
+                $num_horas = count($horas);
+                if ($num_horas == 1) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = null;
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = null;
+                } elseif ($num_horas == 2) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = null;
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = $horas[1];
+                } elseif ($num_horas == 3) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_3 = null;
+                    $q->HORA_4 = $horas[2];
+                } elseif ($num_horas >= 4) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_3 = $horas[2];
+                    $q->HORA_4 = $horas[3];
                 }
+            }
 
             $datosAgrupados = '';
             $fechasArray = '';
@@ -1435,14 +1460,14 @@ class AsistenciaController extends Controller
 
         if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
             $idmac = $this->centro_mac()->idmac;
-        }else{
+        } else {
             $idmac = $request->mac;
         }
-        
+
         $dec_mac = Mac::where('IDCENTRO_MAC', $idmac)->first();
         $name_mac = $dec_mac->NOMBRE_MAC;
 
-        
+
 
         // DEFINIMOS EL TIPO DE DESCA
 
@@ -1468,18 +1493,18 @@ class AsistenciaController extends Controller
         // dd($identidadString);
         $identidad = $identidadString;
         $query =  DB::table('M_ASISTENCIA as MA')
-                        ->select(
-                            'PERS.ABREV_ENTIDAD', 
-                            'PERS.N_MODULO', 
-                            'PERS.NOMBREU', 
-                            'PERS.NOMBRE_CARGO', 
-                            'MA.FECHA', 
-                            'MA.NUM_DOC',
-                            DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
-                            DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
-                        )
-                        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-                        ->join(DB::raw('(
+            ->select(
+                'PERS.ABREV_ENTIDAD',
+                'PERS.N_MODULO',
+                'PERS.NOMBREU',
+                'PERS.NOMBRE_CARGO',
+                'MA.FECHA',
+                'MA.NUM_DOC',
+                DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
+                DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
+            )
+            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+            ->join(DB::raw('(
                             SELECT 
                                 CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU, 
                                 ME.ABREV_ENTIDAD, 
@@ -1498,23 +1523,23 @@ class AsistenciaController extends Controller
                             JOIN M_CENTRO_MAC AS MCM ON MCM.IDCENTRO_MAC = MM.IDCENTRO_MAC
                             
                         ) AS PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
-                        ->whereIn('PERS.IDENTIDAD', $identidadArray) // Lista de identidades
-                        ->where('MA.IDCENTRO_MAC', $idmac)
-                        ->whereMonth('MA.FECHA', $request->mes)
-                        ->whereYear('MA.FECHA', $request->año)
-                        ->whereRaw('MA.FECHA BETWEEN PERS.FECHAINICIO AND PERS.FECHAFIN') // Validación del rango de fechas de asignación
-                        ->groupBy(
-                            'PERS.ABREV_ENTIDAD',
-                            'PERS.N_MODULO', 
-                            'PERS.NOMBREU', 
-                            'PERS.NOMBRE_CARGO', 
-                            'MA.FECHA', 
-                            'MA.NUM_DOC'
-                        )
-                        ->orderBy('PERS.ABREV_ENTIDAD', 'ASC')
-                        ->orderBy('MA.FECHA', 'ASC')
-                        ->orderBy('PERS.N_MODULO', 'ASC')
-                        ->get();
+            ->whereIn('PERS.IDENTIDAD', $identidadArray) // Lista de identidades
+            ->where('MA.IDCENTRO_MAC', $idmac)
+            ->whereMonth('MA.FECHA', $request->mes)
+            ->whereYear('MA.FECHA', $request->año)
+            ->whereRaw('MA.FECHA BETWEEN PERS.FECHAINICIO AND PERS.FECHAFIN') // Validación del rango de fechas de asignación
+            ->groupBy(
+                'PERS.ABREV_ENTIDAD',
+                'PERS.N_MODULO',
+                'PERS.NOMBREU',
+                'PERS.NOMBRE_CARGO',
+                'MA.FECHA',
+                'MA.NUM_DOC'
+            )
+            ->orderBy('PERS.ABREV_ENTIDAD', 'ASC')
+            ->orderBy('MA.FECHA', 'ASC')
+            ->orderBy('PERS.N_MODULO', 'ASC')
+            ->get();
 
 
         // $query =  DB::table('M_ASISTENCIA as MA')

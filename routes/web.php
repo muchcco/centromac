@@ -155,7 +155,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/store_asistencia', [AsistenciaController::class, 'store_asistencia'])->name('store_asistencia');
         Route::post('/store_asistencia_callao', [AsistenciaController::class, 'store_asistencia_callao'])->name('store_asistencia_callao');
         Route::post('/store_agregar_asistencia', [AsistenciaController::class, 'store_agregar_asistencia'])->name('store_agregar_asistencia');
-
+        Route::post('/eliminar-hora', [AsistenciaController::class, 'eliminarHora'])->name('eliminar_hora');
         Route::post('/dow_asistencia', [AsistenciaController::class, 'dow_asistencia'])->name('dow_asistencia');
 
         //POR ENTIDAD
