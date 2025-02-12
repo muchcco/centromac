@@ -16,7 +16,6 @@
     <!-- Responsive datatable examples -->
     <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
 @endsection
-
 @section('main')
     <div class="row">
         <div class="col-sm-12">
@@ -152,14 +151,21 @@
 
 @section('script')
     <script src="{{ asset('Script/js/sweet-alert.min.js') }}"></script>
-    <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
+    {{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
+
+    {{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
+
+
 
     <!-- Plugins js -->
     <script src="{{ asset('nuevo/plugins/select2/select2.min.js') }}"></script>
+    {{-- <script src="{{ asset('nuevo/plugins/huebee/huebee.pkgd.min.js') }}"></script> --}}
     <script src="{{ asset('nuevo/plugins/timepicker/bootstrap-material-datetimepicker.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/bootstrap-touchspin/js/jquery.bootstrap-touchspin.min.js') }}"></script>
+    {{-- <script src="{{ asset('nuevo/assets/pages/jquery.forms-advanced.js') }}"></script> --}}
     <!-- Required datatable js -->
     <script src="{{ asset('nuevo/plugins/datatables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.js') }}"></script>
@@ -176,6 +182,7 @@
     <script src="{{ asset('nuevo/plugins/datatables/dataTables.responsive.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
     <script src="{{ asset('nuevo/assets/pages/jquery.datatable.init.js') }}"></script>
+
     <script>
         $(document).ready(function() {
             tabla_seccion();
@@ -308,13 +315,20 @@
         function storeAsistenciatest() {
             const form = document.getElementById('formAsistenciatest');
             const formData = new FormData(form);
+
             // Validar antes de enviar el formulario
             const dni = $('#DNI').val();
             const fecha = $('#fecha').val();
             if (dni.length !== 8 || !fecha) {
-                alert('Por favor ingrese un DNI válido.');
+                Swal.fire({
+                    icon: 'error',
+                    title: '¡Error!',
+                    text: 'Por favor ingrese un DNI válido.',
+                    confirmButtonText: 'Aceptar'
+                });
                 return;
             }
+
             fetch("{{ route('asistencia.store_agregar_asistencia') }}", {
                     method: 'POST',
                     body: formData,
@@ -325,29 +339,33 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        Toastify({
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Éxito!',
                             text: data.message,
-                            className: "info",
-                            gravity: "bottom",
-                            position: "right",
-                            style: {
-                                background: "#47B257",
-                            }
-                        }).showToast();
-                        $("#modal_show_modal").modal('hide');
+                            confirmButtonText: 'Aceptar'
+                        });
+                        tabla_seccion();
+                        $("#modal_show_modal").modal('hide'); // Cerrar el modal
                     } else {
-                        Toastify({
+                        Swal.fire({
+                            icon: 'error',
+                            title: '¡Error!',
                             text: data.message,
-                            className: "error",
-                            gravity: "bottom",
-                            position: "right",
-                            style: {
-                                background: "#D9534F",
-                            }
-                        }).showToast();
+                            confirmButtonText: 'Aceptar'
+                        });
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: '¡Error!',
+                        text: 'Hubo un error al procesar la solicitud. Por favor, inténtelo de nuevo.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                });
         }
 
         tippy(".bandejTool", {
@@ -477,6 +495,7 @@
                 success: function(data) {
                     $("#modal_show_modal").html(data.html);
                     $("#modal_show_modal").modal('show');
+
                 }
             });
         }
@@ -507,7 +526,6 @@
                             background: "#47B257",
                         }
                     }).showToast();
-
                 },
                 error: function(error) {
                     Swal.fire({
@@ -614,7 +632,7 @@
                     // Capturamos la respuesta del backend
                     var response = xhr.responseJSON;
 
-                    console.log(response); // Aquí estamos depurando la respuesta
+                    // console.log(response); // Aquí estamos depurando la respuesta
 
                     if (response && response.message) {
                         // Mostrar el mensaje de error específico desde el backend

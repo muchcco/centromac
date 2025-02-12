@@ -62,8 +62,8 @@ class AsistenciaController extends Controller
             ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idmac)
             ->get();
 
-            return view('asistencia.asistencia', compact('entidad', 'idmac', 'name_mac'));
-        }
+        return view('asistencia.asistencia', compact('entidad', 'idmac', 'name_mac'));
+    }
 
     public function store_agregar_asistencia(Request $request)
     {
@@ -73,11 +73,21 @@ class AsistenciaController extends Controller
         // Si se busca el nombre por DNI sin fecha
         if ($request->has('DNI') && !$request->has('fecha')) {
             try {
-                $personal = DB::table('m_personal')
-                    ->where('NUM_DOC', $request->input('DNI'))
-                    ->where('IDMAC', $userIdMac)
-                    ->first();
+                $allowedCentrosMac = [10, 12, 13, 14, 19];
 
+                $userCentroMac = auth()->user()->idcentro_mac;
+                if (!in_array($userCentroMac, $allowedCentrosMac)) {
+
+                    $personal = DB::table('m_personal')
+                        ->where('NUM_DOC', $request->input('DNI'))
+                        ->where('IDMAC', $userIdMac)
+                        ->first();
+                } else {
+                    $personal = DB::table('m_personal')
+                        ->where('NUM_DOC', $request->input('DNI'))
+                        ->whereIn('IDMAC', [10, 12, 13, 14, 19])
+                        ->first();
+                }
                 if ($personal) {
                     $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
                     return response()->json(['success' => true, 'nombreCompleto' => $nombreCompleto]);
@@ -100,11 +110,21 @@ class AsistenciaController extends Controller
         ]);
 
         try {
-            // Buscar el personal en la tabla m_personal
-            $personal = DB::table('m_personal')
-                ->where('NUM_DOC', $request->input('DNI'))
-                ->where('IDMAC', $userIdMac)
-                ->first();
+            $allowedCentrosMac = [10, 12, 13, 14, 19];
+
+            $userCentroMac = auth()->user()->idcentro_mac;
+            if (!in_array($userCentroMac, $allowedCentrosMac)) {
+
+                $personal = DB::table('m_personal')
+                    ->where('NUM_DOC', $request->input('DNI'))
+                    ->where('IDMAC', $userIdMac)
+                    ->first();
+            } else {
+                $personal = DB::table('m_personal')
+                    ->where('NUM_DOC', $request->input('DNI'))
+                    ->whereIn('IDMAC', [10, 12, 13, 14, 19])
+                    ->first();
+            }
 
             if (!$personal) {
                 return response()->json([
@@ -620,7 +640,15 @@ class AsistenciaController extends Controller
 
     public function md_detalle(Request $request)
     {
+        // Obtener la fecha y el DNI del request
         $fecha_ = $request->fecha_;
+        $dni_ = $request->dni_;
+
+        // Obtener el ID del centro MAC del usuario autenticado
+        $centroMac = $this->centro_mac();  // Llamar al método para obtener el centro MAC
+        $idcentroMac = $centroMac->idmac;  // Obtener el ID del centro MAC
+
+        // Consultar los datos de asistencia con el ID del centro MAC
         $query = DB::select("
         SELECT 
             FECHA,
@@ -631,17 +659,19 @@ class AsistenciaController extends Controller
             M_ASISTENCIA
         WHERE 
             FECHA = '$fecha_'
-            AND NUM_DOC = '$request->dni_'
+            AND NUM_DOC = '$dni_'
+            AND IDCENTRO_MAC = '$idcentroMac'  -- Filtrar por el centro MAC
         GROUP BY 
             NUM_DOC, FECHA, HORA
         ORDER BY 
             HORA ASC");  // Ordenar las horas de menor a mayor
 
+        // Pasar los resultados de la consulta a la vista
         $view = view('asistencia.modals.md_detalle', compact('query', 'fecha_'))->render();
 
+        // Retornar la vista con los datos de la consulta
         return response()->json(['html' => $view]);
     }
-
 
     public function eliminarHora(Request $request)
     {
