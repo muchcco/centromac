@@ -85,21 +85,8 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-header" style="background-color:#132842">
-                    <h4 class="card-title text-white">ASISTENCIA DEL CENTRO MAC -
-                        @php
-                            $us_id = auth()->user()->idcentro_mac;
-                            $user = App\Models\User::join(
-                                'M_CENTRO_MAC',
-                                'M_CENTRO_MAC.IDCENTRO_MAC',
-                                '=',
-                                'users.idcentro_mac',
-                            )
-                                ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)
-                                ->first();
+                    <h4 class="card-title text-white">ASISTENCIA DEL CENTRO MAC - {{ $name_mac }}</h4>
 
-                            echo $user->NOMBRE_MAC;
-                        @endphp
-                    </h4>
                 </div><!--end card-header-->
                 <div class="card-body bootstrap-select-1">
                     <div class="row">
@@ -131,7 +118,8 @@
                                     <i class="fa fa-database" aria-hidden="true"></i>
                                     Cargar Asistencia
                                 </button>
-
+                            
+                            
                                 @if ($idmac == 11)
                                     <button class="btn btn-warning" onclick="migrarDatos()" id="cargandoMigra">
                                         <i class="fa fa-sync" aria-hidden="true"></i>
@@ -164,21 +152,14 @@
 
 @section('script')
     <script src="{{ asset('Script/js/sweet-alert.min.js') }}"></script>
-    {{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
-    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
     <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
-
-    {{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
-
-
 
     <!-- Plugins js -->
     <script src="{{ asset('nuevo/plugins/select2/select2.min.js') }}"></script>
-    {{-- <script src="{{ asset('nuevo/plugins/huebee/huebee.pkgd.min.js') }}"></script> --}}
     <script src="{{ asset('nuevo/plugins/timepicker/bootstrap-material-datetimepicker.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/bootstrap-touchspin/js/jquery.bootstrap-touchspin.min.js') }}"></script>
-    {{-- <script src="{{ asset('nuevo/assets/pages/jquery.forms-advanced.js') }}"></script> --}}
     <!-- Required datatable js -->
     <script src="{{ asset('nuevo/plugins/datatables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.js') }}"></script>
@@ -195,7 +176,6 @@
     <script src="{{ asset('nuevo/plugins/datatables/dataTables.responsive.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
     <script src="{{ asset('nuevo/assets/pages/jquery.datatable.init.js') }}"></script>
-
     <script>
         $(document).ready(function() {
             tabla_seccion();
@@ -592,6 +572,71 @@
                 });
         }
 
-       
+        function storeModuloChanges() {
+            // Obtener los datos del formulario
+            var formData = new FormData(document.getElementById("form-modificar-modulo"));
+
+            // Enviar los datos por AJAX
+            $.ajax({
+                type: 'POST',
+                url: "{{ route('itinerante.store_itinerante') }}", // Ajustar la ruta según corresponda
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    document.getElementById("btnEnviarForm").innerHTML =
+                        '<i class="fa fa-spinner fa-spin"></i> ESPERE';
+                    document.getElementById("btnEnviarForm").disabled = true;
+                },
+                success: function(response) {
+                    if (response.status == 201) {
+                        // Mostrar el mensaje de éxito
+                        Swal.fire({
+                            icon: "success",
+                            text: response.message,
+                            confirmButtonText: "Aceptar"
+                        });
+                        tabla_seccion(); // Refresca la tabla
+
+                        // Cerrar el modal
+                        $('#modal_show_modal').modal('hide');
+                    } else {
+                        // Si hay un mensaje de error, mostrarlo
+                        document.getElementById('alerta').innerHTML =
+                            `<div class="alert alert-warning">${response.message}</div>`;
+                    }
+
+                    // Restaurar el botón después de la solicitud
+                    document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
+                    document.getElementById("btnEnviarForm").disabled = false;
+                },
+                error: function(xhr, status, error) {
+                    // Capturamos la respuesta del backend
+                    var response = xhr.responseJSON;
+
+                    console.log(response); // Aquí estamos depurando la respuesta
+
+                    if (response && response.message) {
+                        // Mostrar el mensaje de error específico desde el backend
+                        Swal.fire({
+                            icon: "error",
+                            text: response.message, // Mensaje de error del backend
+                            confirmButtonText: "Aceptar"
+                        });
+                    } else {
+                        // Si no hay mensaje específico, mostramos uno genérico
+                        Swal.fire({
+                            icon: "error",
+                            text: "Hubo un error al procesar la solicitud. Intentar nuevamente.",
+                            confirmButtonText: "Aceptar"
+                        });
+                    }
+
+                    // Restaurar el botón después de la solicitud
+                    document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
+                    document.getElementById("btnEnviarForm").disabled = false;
+                }
+            });
+        }
     </script>
 @endsection

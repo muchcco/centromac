@@ -62,8 +62,8 @@ class AsistenciaController extends Controller
             ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idmac)
             ->get();
 
-        return view('asistencia.asistencia', compact('entidad', 'idmac'));
-    }
+            return view('asistencia.asistencia', compact('entidad', 'idmac', 'name_mac'));
+        }
 
     public function store_agregar_asistencia(Request $request)
     {
@@ -181,8 +181,6 @@ class AsistenciaController extends Controller
         }
     }
 
-
-
     public function tb_asistencia(Request $request)
     {
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
@@ -199,42 +197,72 @@ class AsistenciaController extends Controller
 
         $entidad = Entidad::select('NOMBRE_ENTIDAD', 'ABREV_ENTIDAD', 'IDENTIDAD');
 
-        $datos = Asistencia::from('M_ASISTENCIA as MA')
+        $datos = DB::table('M_ASISTENCIA as MA')
             ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
             ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
-            ->leftJoinSub($entidad, 'I', function ($join) {
-                $join->on('MP.IDENTIDAD', '=', 'I.IDENTIDAD');
-            })
+            // Unir correctamente con M_PERSONAL_MODULO para obtener el módulo y entidad asignados al asesor
+            ->leftJoin('M_PERSONAL_MODULO as MPM', 'MP.NUM_DOC', '=', 'MPM.NUM_DOC')
+            ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
+            // Obtener la entidad asociada al módulo en M_MODULO
+            ->leftJoin('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
             ->select(
                 'MA.FECHA as fecha_asistencia',
                 DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
-                DB::raw("GROUP_CONCAT(DATE_FORMAT(HORA, '%H:%i:%s') ORDER BY HORA) AS fecha_biometrico"),
+                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(MA.HORA, '%H:%i:%s') ORDER BY MA.HORA) AS fecha_biometrico"),
                 'MA.NUM_DOC as n_dni',
                 DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS nombreu'),
-                'ABREV_ENTIDAD',
-                'MC.NOMBRE_MAC'
+                'ME.ABREV_ENTIDAD', // Mostrar la abreviatura de la entidad correcta
+                'MC.NOMBRE_MAC',
+                'MPM.STATUS as status_modulo',
+                'MM.N_MODULO as nombre_modulo'
             )
-            ->where(function ($que) use ($request) {
-                $fecha_I = date("Y-m-d");
-                if ($request->fecha != '') {
-                    $que->where('MA.FECHA', $request->fecha);
+            ->where(function ($query) use ($request) {
+                // Filtra por fecha
+                if ($request->fecha) {
+                    $query->where('MA.FECHA', $request->fecha);
                 } else {
-                    $que->where('MA.FECHA', $fecha_I);
+                    $query->where('MA.FECHA', date('Y-m-d'));
                 }
             })
-            ->where(function ($que) use ($request) {
-                if ($request->entidad != '') {
-                    $que->where('MP.IDENTIDAD', $request->entidad);
+            ->where(function ($query) use ($request) {
+                // Filtra por entidad si es necesario
+                if ($request->entidad) {
+                    $query->where('ME.IDENTIDAD', $request->entidad);
                 }
             })
             ->where(function ($query) {
+                // Filtra por el centro MAC del usuario
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
                     $query->where('MA.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
                 }
             })
-            // ->where('MA.IDCENTRO_MAC', $idmac)
-            ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ABREV_ENTIDAD', 'MC.NOMBRE_MAC')
+            ->where(function ($query) use ($request) {
+                // Primero tratamos de obtener los módulos itinerantes dentro del rango de fechas
+                $query->where('MPM.STATUS', 'itinerante')
+                    ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
+                    ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
+                    ->orWhere(function ($query) {
+                        // Si no tiene módulo itinerante, tomamos el módulo fijo dentro del rango de fechas
+                        $query->where('MPM.STATUS', 'fijo')
+                            ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
+                            ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
+                            ->whereNotExists(function ($query) {
+                                // Nos aseguramos de que no tenga un módulo itinerante para esa fecha
+                                $query->select(DB::raw(1))
+                                    ->from('M_PERSONAL_MODULO as MPM2')
+                                    ->whereRaw('MPM2.NUM_DOC = MPM.NUM_DOC')
+                                    ->where('MPM2.STATUS', 'itinerante')
+                                    ->whereDate('MA.FECHA', '>=', DB::raw('MPM2.FECHAINICIO'))
+                                    ->whereDate('MA.FECHA', '<=', DB::raw('MPM2.FECHAFIN'));
+                            });
+                    })
+                    // Incluir los asesores que no tienen módulo (sin itinerante ni fijo)
+                    ->orWhereNull('MPM.NUM_DOC');
+            })
+            ->orderBy('MM.N_MODULO', 'asc') // Ordenar por N_MODULO de manera ascendente
+            ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ME.ABREV_ENTIDAD', 'MC.NOMBRE_MAC', 'MPM.STATUS', 'MM.N_MODULO')
             ->get();
+
         foreach ($datos as $q) {
             // Asumiendo que el valor de 'fecha_biometrico' contiene la hora en formato 'H:i:s'
             $horas = explode(',', $q->fecha_biometrico); // Separa las horas por coma
@@ -301,6 +329,40 @@ class AsistenciaController extends Controller
         //                     ->toSql();
         // dd($datos);
         return view('asistencia.tablas.tb_asistencia', compact('datos', 'conf'));
+    }
+    public function md_moficicar_modulo(Request $request)
+    {
+        $num_doc = $request->input('num_doc');
+        $nombre_modulo = $request->input('nombre_modulo');
+        $fecha_asistencia = $request->input('fecha_asistencia');
+
+        // Obtener el nombre del asesor completo
+        $asesor = DB::table('M_PERSONAL')->where('NUM_DOC', $num_doc)->first();
+        $nombre_asesor = $asesor ? $asesor->APE_PAT . " " . $asesor->APE_MAT . ", " . $asesor->NOMBRE : '';
+
+        // Obtener la entidad del asesor desde la tabla M_PERSONAL_MODULO según el rango de fechas
+        $entidad_id = DB::table('M_PERSONAL_MODULO as MPM')
+            ->join('M_MODULO as MM', 'MPM.IDMODULO', '=', 'MM.IDMODULO')
+            ->join('M_ENTIDAD as ME', 'MM.IDENTIDAD', '=', 'ME.IDENTIDAD')
+            ->where('MPM.NUM_DOC', $num_doc)
+            ->whereDate('MPM.FECHAINICIO', '<=', $fecha_asistencia)
+            ->whereDate('MPM.FECHAFIN', '>=', $fecha_asistencia)
+            ->value('ME.IDENTIDAD');
+
+        // Obtener los módulos disponibles que están relacionados con la entidad del asesor
+        $modulos = DB::table('m_modulo')
+            ->join('m_entidad', 'm_modulo.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')
+            ->select('m_modulo.IDMODULO', 'm_modulo.N_MODULO', 'm_entidad.NOMBRE_ENTIDAD')
+            ->where('m_modulo.IDENTIDAD', $entidad_id)  // Filtrar por la entidad del asesor
+            ->where('m_modulo.IDCENTRO_MAC', auth()->user()->idcentro_mac) // Filtrar por el centro MAC del usuario autenticado
+            ->get();
+
+        $idcentro_mac = auth()->user()->idcentro_mac;
+
+        // Renderiza la vista del modal con los datos, incluyendo los módulos y el ID del centro MAC
+        $html = view('asistencia.modals.md_moficicar_modulo', compact('num_doc', 'nombre_modulo', 'fecha_asistencia', 'nombre_asesor', 'modulos', 'idcentro_mac'))->render();
+
+        return response()->json(['html' => $html]);
     }
 
     public function md_add_asistencia(Request $request)

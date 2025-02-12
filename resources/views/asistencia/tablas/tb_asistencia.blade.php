@@ -4,10 +4,9 @@
             <th class="th" width="50px">N°</th>
             <th class="th">Asesor</th>
             <th class="th">Número de Documento</th>
-            {{-- <th class="th">Modulo</th> --}}
+            <th class="th">Modulo</th>
             <th class="th">Entidad</th>
             <th class="th">Centro MAC</th>
-            <th class="th">Estado</th>
             <th class="th">Fecha</th>
             <th class="th">Ingreso</th>
             <th class="th">Receso</th>
@@ -25,8 +24,14 @@
                     {{ $dato->nombreu }}
                 </td>
                 <td>{{ $dato->n_dni }}</td>
+                <td>
+                    <a href="javascript:void(0);"
+                        onclick="abrirModalModificar('{{ $dato->n_dni }}', '{{ $dato->nombreu }}', '{{ $dato->nombre_modulo }}', '{{ $dato->fecha_asistencia }}')">
+                        {{ $dato->nombre_modulo }}
+                    </a>
+                </td>
                 <td>{{ $dato->ABREV_ENTIDAD }}</td>
-               {{--  <td>
+                {{--  <td>
                     @if ($dato->mostrar == 'itinerante')
                         {{ $dato->nombre_modulo }} (Itinerante)
                     @elseif($dato->mostrar == 'fijo')
@@ -37,27 +42,6 @@
                     @endif
                 </td> --}}
                 <td>{{ $dato->NOMBRE_MAC }}</td>
-                <td>
-                    @php
-                        // Obtener las horas de $dato y $conf
-                        $hora1 = $dato->HORA_1; // Hora 1 de $dato
-                        $timestampHora1 = strtotime($hora1); // Convertir a timestamp
-                        $nuevaHora1 = date('H:i:s', $timestampHora1 + 60); // Sumar 60 segundos (1 minuto)
-
-                        // Obtener la hora de la configuración (NUM_SOLO)
-                        $confTimestamp = strtotime($conf->NUM_SOLO); // Convertir NUM_SOLO a timestamp
-                        $confTimestamp += 60; // Sumar 60 segundos (1 minuto)
-                        $confNuevaHora = date('H:i:s', $confTimestamp); // Convertir el timestamp a hora con formato "H:i:s"
-                    @endphp
-
-                    @if ($nuevaHora1 > $confNuevaHora)
-                        <span class="badge badge-soft-danger px-2">TARDE</span>
-                    @else
-                        <span class="badge badge-soft-success px-2">EN HORA</span>
-                    @endif
-                </td>
-
-
                 <td>{{ \Carbon\Carbon::parse($dato->fecha_asistencia)->format('d-m-Y') }}</td>
                 <td>{{ $dato->HORA_1 }}</td>
                 <td>{{ $dato->HORA_2 }}</td>
@@ -77,14 +61,15 @@
 <script>
     $(document).ready(function() {
 
-            $('#table_asistencia').DataTable({
-                "responsive": true,
-                "bLengthChange": true,
-                "autoWidth": false,
-                "searching": true,
-                "pageLength": 30, // Número predeterminado de filas por página
-                info: true,
-                "ordering": false,
+        $('#table_asistencia').DataTable({
+            "responsive": true,
+            "bLengthChange": true,
+            "autoWidth": false,
+            "searching": true,
+            "pageLength": 30, // Número predeterminado de filas por página
+            info: true,
+            "ordering": true,
+
             "dom": "<'row'" +
                 "<'col-sm-12 d-flex align-items-center justify-conten-start'l>" +
                 "<'col-sm-12 d-flex align-items-center justify-content-end'f>" +
@@ -101,9 +86,10 @@
             },
             "columns": [{
                     "width": ""
-                }, {
-                    "width": ""
                 }, 
+                {
+                    "width": ""
+                },
                 {
                     "width": ""
                 }, {
@@ -135,4 +121,27 @@
             ]
         });
     });
+
+    function abrirModalModificar(num_doc, nombre_asesor, nombre_modulo, fecha_asistencia) {
+        // Enviar los datos a través de AJAX para mostrar el modal
+        $.ajax({
+            type: 'POST',
+            url: "{{ route('asistencia.modals.md_moficicar_modulo') }}", // Ruta del controlador
+            data: {
+                "_token": "{{ csrf_token() }}",
+                "num_doc": num_doc,
+                "nombre_modulo": nombre_modulo,
+                "fecha_asistencia": fecha_asistencia
+            },
+            success: function(response) {
+                // Cargar el HTML del modal con los datos recibidos
+                $("#modal_show_modal").html(response.html);
+                $("#modal_show_modal").modal('show'); // Mostrar el modal
+            },
+            error: function(xhr, status, error) {
+                // Mostrar un mensaje de error si ocurre algún problema
+                alert('Hubo un error al cargar el modal');
+            }
+        });
+    }
 </script>

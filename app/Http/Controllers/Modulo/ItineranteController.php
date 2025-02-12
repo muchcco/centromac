@@ -85,7 +85,6 @@ class ItineranteController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -104,6 +103,31 @@ class ItineranteController extends Controller
         }
 
         try {
+            // Verificar si ya existe un registro para el mismo num_doc con cruce de fechas
+            $existingRecord = PersonalModulo::where('num_doc', $request->num_doc)
+                ->where('status', 'itinerante') // Agregar la condición para que solo busque los registros con status 'itinerante'
+                ->where(function ($query) use ($request) {
+                    // Validación de cruce de fechas
+                    $query->whereBetween('fechainicio', [$request->fechainicio, $request->fechafin])
+                        ->orWhereBetween('fechafin', [$request->fechainicio, $request->fechafin])
+                        ->orWhere(function ($query2) use ($request) {
+                            $query2->where('fechainicio', '<', $request->fechafin)
+                                ->where('fechafin', '>', $request->fechainicio);
+                        });
+                })
+                ->exists();
+
+
+            if ($existingRecord) {
+                // Si existe un cruce de fechas, retornar el mensaje de error para mostrar en el modal
+                return response()->json([
+                    'data' => null,
+                    'message' => 'El número de documento ya tiene un registro en ese rango de fechas.',
+                    'status' => 422,
+                    'show_modal' => true // Asegúrate de que este valor esté siendo enviado
+                ], 422);
+            }
+
             // Crear un nuevo registro de PersonalModulo
             $personalModulo = new PersonalModulo();
             $personalModulo->num_doc = $request->num_doc;
@@ -128,8 +152,6 @@ class ItineranteController extends Controller
             ], 400);
         }
     }
-
-
     // Mostrar el formulario de edición
     public function edit(Request $request)
     {
