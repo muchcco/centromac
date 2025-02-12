@@ -140,44 +140,62 @@
             }
 
             $.ajax({
-                type: 'post',
-                url: "{{ route('personalModuloI.store_personalModuloI') }}",
-                dataType: "json",
+                type: 'POST',
+                url: "{{ route('itinerante.store_itinerante') }}", // Ajustar la ruta según corresponda
                 data: formData,
                 processData: false,
                 contentType: false,
                 beforeSend: function() {
                     document.getElementById("btnEnviarForm").innerHTML =
-                        '<i class="fa fa-spinner fa-spin"></i> Espere';
+                        '<i class="fa fa-spinner fa-spin"></i> ESPERE';
                     document.getElementById("btnEnviarForm").disabled = true;
                 },
-                success: function(data) {
-                    $("#modal_show_modal").modal('hide');
-                    cargarPersonalModulo();
-                    Swal.fire({
-                        icon: "success",
-                        text: "Registro agregado exitosamente",
-                        confirmButtonText: "Aceptar"
-                    });
-                },
-                error: function(xhr) {
-                    // Mostrar mensajes de error provenientes de la validación
-                    if (xhr.status === 422) {
-                        var errors = xhr.responseJSON.message;
-                        var errorMessage = "";
-                        for (var key in errors) {
-                            if (errors.hasOwnProperty(key)) {
-                                errorMessage += errors[key][0] + "\n";
-                            }
-                        }
-                        alert(errorMessage);
-                    } else {
+                success: function(response) {
+                    if (response.status == 201) {
+                        // Mostrar el mensaje de éxito
                         Swal.fire({
-                            icon: 'error',
-                            text: "Error al agregar el registro",
-                            confirmButtonText: 'Aceptar'
+                            icon: "success",
+                            text: response.message,
+                            confirmButtonText: "Aceptar"
+                        });
+                        cargarPersonalModulo();
+                        // Cerrar el modal
+                        $('#modal_show_modal').modal('hide');
+                    } else {
+                        // Si hay un mensaje de error, mostrarlo
+                        document.getElementById('alerta').innerHTML =
+                            `<div class="alert alert-warning">${response.message}</div>`;
+                    }
+
+                    // Restaurar el botón después de la solicitud
+                    document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
+                    document.getElementById("btnEnviarForm").disabled = false;
+                },
+                error: function(xhr, status, error) {
+                    // Capturamos la respuesta del backend
+                    var response = xhr.responseJSON;
+
+                    console.log(response); // Aquí estamos depurando la respuesta
+
+                    if (response && response.message) {
+                        // Mostrar el mensaje de error específico desde el backend
+                        Swal.fire({
+                            icon: "error",
+                            text: response.message, // Mensaje de error del backend
+                            confirmButtonText: "Aceptar"
+                        });
+                    } else {
+                        // Si no hay mensaje específico, mostramos uno genérico
+                        Swal.fire({
+                            icon: "error",
+                            text: "Hubo un error al procesar la solicitud. Intentar nuevamente.",
+                            confirmButtonText: "Aceptar"
                         });
                     }
+
+                    // Restaurar el botón después de la solicitud
+                    document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
+                    document.getElementById("btnEnviarForm").disabled = false;
                 }
             });
         }

@@ -118,8 +118,8 @@
                                     <i class="fa fa-database" aria-hidden="true"></i>
                                     Cargar Asistencia
                                 </button>
-                            
-                            
+
+
                                 @if ($idmac == 11)
                                     <button class="btn btn-warning" onclick="migrarDatos()" id="cargandoMigra">
                                         <i class="fa fa-sync" aria-hidden="true"></i>

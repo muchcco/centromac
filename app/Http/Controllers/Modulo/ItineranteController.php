@@ -70,13 +70,25 @@ class ItineranteController extends Controller
             ->select('m_modulo.IDMODULO', 'm_modulo.N_MODULO', 'm_entidad.NOMBRE_ENTIDAD')
             ->where('m_modulo.IDCENTRO_MAC', auth()->user()->idcentro_mac) // Filtrar por el centro MAC del usuario autenticado
             ->get();
+        $allowedCentrosMac = [10, 12, 13, 14, 19];
 
-        // Obtener el personal junto con sus nombres completos
-        $personal = DB::table('m_personal')
-            ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-            ->where('IDMAC', auth()->user()->idcentro_mac)
-            // Filtrar por el centro MAC del usuario autenticado
-            ->get();
+        $userCentroMac = auth()->user()->idcentro_mac;
+
+        if (!in_array($userCentroMac, $allowedCentrosMac)) {
+            // Obtener el personal junto con sus nombres completos
+            $personal = DB::table('m_personal')
+                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+                ->where('IDMAC', auth()->user()->idcentro_mac)
+                // Filtrar por el centro MAC del usuario autenticado
+                ->get();
+        } else {
+            // Obtener el personal junto con sus nombres completos
+            $personal = DB::table('m_personal')
+                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
+                ->whereIn('IDMAC', [10, 12, 13, 14, 19])
+                // Filtrar por el centro MAC del usuario autenticado
+                ->get();
+        }
         try {
             // Pasa las variables 'modulos' y 'personal' a la vista
             $view = view('personalmoduloitinerante.modals.md_add_personalModulo', compact('modulos', 'personal'))->render();
@@ -105,6 +117,7 @@ class ItineranteController extends Controller
         try {
             // Verificar si ya existe un registro para el mismo num_doc con cruce de fechas
             $existingRecord = PersonalModulo::where('num_doc', $request->num_doc)
+                ->where('idcentro_mac', auth()->user()->idcentro_mac)
                 ->where('status', 'itinerante') // Agregar la condición para que solo busque los registros con status 'itinerante'
                 ->where(function ($query) use ($request) {
                     // Validación de cruce de fechas

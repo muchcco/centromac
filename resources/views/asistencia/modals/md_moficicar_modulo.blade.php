@@ -88,6 +88,4 @@
         allowClear: true
     });
 
-    // Función para manejar el envío de los datos del formulario
-   
 </script>
