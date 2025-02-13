@@ -122,13 +122,18 @@ class PersonalModuloController extends Controller
 
         // Verificar si el documento ya está registrado en cualquier módulo en el rango de fechas especificado
         $existe = PersonalModulo::where('num_doc', $request->num_doc)
-            ->where('idmodulo', '!=', $request->idmodulo)
+            ->where('idcentro_mac', auth()->user()->idcentro_mac)
+            ->where('status', 'fijo') // Agregar la condición para que solo busque los registros con status 'fijo'
             ->where(function ($query) use ($request) {
+                // Validación de cruce de fechas
                 $query->whereBetween('fechainicio', [$request->fechainicio, $request->fechafin])
-                    ->orWhereBetween('fechafin', [$request->fechainicio, $request->fechafin]);
+                    ->orWhereBetween('fechafin', [$request->fechainicio, $request->fechafin])
+                    ->orWhere(function ($query2) use ($request) {
+                        $query2->where('fechainicio', '<', $request->fechafin)
+                            ->where('fechafin', '>', $request->fechainicio);
+                    });
             })
             ->exists();
-
         if ($existe) {
             return response()->json([
                 'message' => 'El documento ya está registrado en un módulo dentro de este rango de fechas.',
