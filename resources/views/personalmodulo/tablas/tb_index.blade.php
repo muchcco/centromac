@@ -50,7 +50,7 @@
             "autoWidth": false,
             "searching": true,
             info: true,
-            "ordering": false,
+            "ordering": true,
             language: {"url": "{{ asset('js/Spanish.json')}}"}, 
             "columns": [
                 { "width": "5px" },

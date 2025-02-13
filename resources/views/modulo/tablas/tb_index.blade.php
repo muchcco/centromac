@@ -14,8 +14,8 @@
         @foreach ($modulos as $i => $modulo)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td>{{ $modulo->N_MODULO }}</td>
-                <td>{{ $modulo->NOMBRE_ENTIDAD ? $modulo->NOMBRE_ENTIDAD  : 'no hay entidad' }}</td>
+                <td  class="text-uppercase">{{ $modulo->N_MODULO }}</td>
+                <td  class="text-uppercase">{{ $modulo->NOMBRE_ENTIDAD ? $modulo->NOMBRE_ENTIDAD  : 'no hay entidad' }}</td>
                 <td>{{ $modulo->FECHAINICIO ? $modulo->FECHAINICIO : 'No hay datos' }}</td>
                 <td>{{ $modulo->FECHAFIN ? $modulo->FECHAFIN : 'No hay datos' }}</td>
                 <td>{{ $modulo->NOMBRE_MAC }}</td>
@@ -33,11 +33,11 @@
 $(document).ready(function() {
     $('#table_modulos').DataTable({
         "responsive": true,
-        "bLengthChange": false,
+        "bLengthChange": true,
         "autoWidth": false,
         "searching": true,
         info: true,
-        "ordering": false,
+        "ordering": true,
         language: {"url": "{{ asset('js/Spanish.json')}}"}, 
         "columns": [
             { "width": "5px" },

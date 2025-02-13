@@ -17,9 +17,10 @@
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td>{{ $personalModulo->num_doc }}</td>
-                <td class="text-uppercase">{{ $personalModulo->NOMBRE }} {{ $personalModulo->APE_PAT }} {{ $personalModulo->APE_MAT }}</td>
+                <td class="text-uppercase">{{ $personalModulo->NOMBRE }} {{ $personalModulo->APE_PAT }}
+                    {{ $personalModulo->APE_MAT }}</td>
                 <td>{{ $personalModulo->N_MODULO }}</td>
-                <td>{{ $personalModulo->NOMBRE_ENTIDAD }}</td>
+                <td  class="text-uppercase">{{ $personalModulo->NOMBRE_ENTIDAD }}</td>
                 <td>{{ $personalModulo->fechainicio ? $personalModulo->fechainicio : 'No hay datos' }}</td>
                 <td>{{ $personalModulo->fechafin ? $personalModulo->fechafin : 'No hay datos' }}</td>
                 <td>{{ $personalModulo->NOMBRE_MAC }}</td>
@@ -41,3 +42,53 @@
         @endforelse
     </tbody>
 </table>
+<script>
+    $(document).ready(function() {
+        // Inicializar DataTable
+        $('#table_personal_modulo').DataTable({
+            "responsive": true,
+            "bLengthChange": true,
+            "autoWidth": false,
+            "searching": true,
+            "info": true,
+            "ordering": true,
+            "language": {
+                "url": "{{ asset('js/Spanish.json') }}" // Asegúrate de que la ruta del archivo JSON esté correcta
+            },
+            "columns": [{
+                    "width": "5%"
+                },
+                {
+                    "width": "10%"
+                },
+                {
+                    "width": "20%"
+                },
+                {
+                    "width": "15%"
+                },
+                {
+                    "width": "15%"
+                },
+                {
+                    "width": "10%"
+                },
+                {
+                    "width": "10%"
+                },
+                {
+                    "width": "10%"
+                },
+                {
+                    "width": "15%"
+                }
+            ]
+        });
+
+        // Inicializar Tippy.js para los tooltips
+        tippy(".bandejTool", {
+            allowHTML: true,
+            followCursor: true,
+        });
+    });
+</script>

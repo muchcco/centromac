@@ -19,7 +19,7 @@
         @foreach ($datos as $i => $dato)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td>
+                <td  class="text-uppercase">
                     {{-- <a href="{{ route('asistencia.det_us', $dato->n_dni) }}">{{ $dato->nombreu }}</a> --}}
                     {{ $dato->nombreu }}
                 </td>
@@ -30,7 +30,7 @@
                         {{ $dato->nombre_modulo }}
                     </a>
                 </td>
-                <td>{{ $dato->ABREV_ENTIDAD }}</td>
+                <td  class="text-uppercase">{{ $dato->ABREV_ENTIDAD }}</td>
                 {{--  <td>
                     @if ($dato->mostrar == 'itinerante')
                         {{ $dato->nombre_modulo }} (Itinerante)
