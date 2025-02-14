@@ -57,11 +57,11 @@
             @endphp
             <tr>
                 <th style="border: 1px solid black">{{ $i + 1 }}</th>
-                <th style="border: 1px solid black; text-transform: uppercase;">{{ $datos_persona->NOMBRE_ENTIDAD }}
+                <th style="border: 1px solid black;">{{ $datos_persona->NOMBRE_ENTIDAD }}
                 </th>
-                <th style="border: 1px solid black; text-transform: uppercase;">{{ $datos_persona->NOMBREU }}</th>
-                <th style="border: 1px solid black; text-transform: uppercase;">Asesor de Servicio</th>
-                <th style="border: 1px solid black; text-transform: uppercase;">{{ $datos_persona->NUM_DOC }}</th>
+                <th style="border: 1px solid black;">{{ $datos_persona->NOMBREU }}</th>
+                <th style="border: 1px solid black;">Asesor de Servicio</th>
+                <th style="border: 1px solid black;">{{ $datos_persona->NUM_DOC }}</th>
                 <th style="border: 1px solid black">{{ date('d/m/Y', strtotime($q->FECHA)) }} </th>
                 @if ($q->N_NUM_DOC > '2')
                     <th style="border: 1px solid black">

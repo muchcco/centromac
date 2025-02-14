@@ -197,19 +197,19 @@
                     $horaFinal1 = strtotime('10:00:00');
                 @endphp
                 <tr>
-                    <th style="border: 1px solid black; text-transform: uppercase;">{{ $i + 1 }}</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">{{ $q->ABREV_ENTIDAD }}</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">{{ $q->NOMBREU }}</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">Asesor de Servicio</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">{{ $q->N_MODULO }}</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">{{ $q->NUM_DOC }}</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">
+                    <th style="border: 1px solid black;">{{ $i + 1 }}</th>
+                    <th style="border: 1px solid black;">{{ $q->ABREV_ENTIDAD }}</th>
+                    <th style="border: 1px solid black;">{{ $q->NOMBREU }}</th>
+                    <th style="border: 1px solid black;">Asesor de Servicio</th>
+                    <th style="border: 1px solid black;">{{ $q->N_MODULO }}</th>
+                    <th style="border: 1px solid black;">{{ $q->NUM_DOC }}</th>
+                    <th style="border: 1px solid black;">
                         {{ date('d/m/Y', strtotime($q->FECHA)) }} </th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">{{ $q->HORA_1 }}</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">{{ $q->HORA_2 }}</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">{{ $q->HORA_3 }}</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">{{ $q->HORA_4 }}</th>
-                    <th style="border: 1px solid black; text-transform: uppercase;">
+                    <th style="border: 1px solid black;">{{ $q->HORA_1 }}</th>
+                    <th style="border: 1px solid black;">{{ $q->HORA_2 }}</th>
+                    <th style="border: 1px solid black;">{{ $q->HORA_3 }}</th>
+                    <th style="border: 1px solid black;">{{ $q->HORA_4 }}</th>
+                    <th style="border: 1px solid black;">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es');
                         $FECHA = utf8_decode(strftime('%A', strtotime($q->FECHA))); ?>
                         @if ($FECHA == 's?bado')
