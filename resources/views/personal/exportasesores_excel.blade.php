@@ -5,6 +5,7 @@
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Centro MAC</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Entidad</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Nombres y Apellidos</th>
+            <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Sexo</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Cargo / Asesor(a)</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">N° de Documento</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Celular</th>
