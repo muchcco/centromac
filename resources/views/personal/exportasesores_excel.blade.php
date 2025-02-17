@@ -40,6 +40,21 @@
                         {{ ($q->NOMBREU ?? 'Datos incompletos') === 'null' ? 'Datos incompletos' : $q->NOMBREU }}
                     </span>
                 </th>
+                <th style="border: 1px solid black">
+                    @switch($q->SEXO)
+                        @case(1)
+                            Hombre
+                        @break
+
+                        @case(2)
+                            Mujer
+                        @break
+
+                        @default
+                            <!-- Si el valor no coincide con ninguno -->
+                            --
+                    @endswitch
+                </th>
                 <th style="border: 1px solid black">{{ ($q->NOMBRE_CARGO ?? '') === 'null' ? '' : $q->NOMBRE_CARGO }}
                 </th>
                 <th style="border: 1px solid black">{{ ($q->NUM_DOC ?? '') === 'null' ? '' : $q->NUM_DOC }}</th>
