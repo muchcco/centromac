@@ -39,7 +39,7 @@ class AsesoresController extends Controller
 
     public function tb_asesores(Request $request)
     {
-        $query = DB::table('M_PERSONAL as MP')
+        $query = DB::table('M_PERSONAL as MP')->distinct()
                         ->leftJoin(DB::raw('(
                             SELECT *, ROW_NUMBER() OVER (PARTITION BY NUM_DOC ORDER BY FIELD(STATUS, "Itinerante", "Fijo")) as rn
                             FROM M_PERSONAL_MODULO
@@ -88,7 +88,7 @@ class AsesoresController extends Controller
                                 ) AS CAMPOS_NULL
                             FROM M_PERSONAL
                         ) as CONT'), 'CONT.IDPERSONAL', '=', 'MP.IDPERSONAL')
-                        ->select(
+                        ->select(                            
                             'MP.IDPERSONAL',
                             'MCM.NOMBRE_MAC as PRINCIPAL_MAC',
                             DB::raw('(SELECT COUNT(*) FROM d_personal_mac WHERE d_personal_mac.idpersonal = MP.idpersonal AND d_personal_mac.status = 1 ) AS COUNT_DPM'),
@@ -143,7 +143,7 @@ class AsesoresController extends Controller
                         })
                         ->whereIn('MP.FLAG', [1, 2])
                         ->where('MP.IDENTIDAD', '!=', 17)                        
-                        ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
+                        ->orderBy('NOMBRE_ENTIDAD', 'asc')
                         ->get();
 
     
@@ -397,9 +397,10 @@ class AsesoresController extends Controller
                         'message' => 'Asesor registrado correctamente.'
                     ], 200);
                 }else{
+                    $persona_e_m = Personal::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')->where('NUM_DOC', $request->dni)->first(); 
                     return response()->json([
                         'data' => null,
-                        'message' => "El personal esta registrado en el centro MAC ". $persona_existe->NOMBRE_MAC,
+                        'message' => "El personal esta registrado en el centro MAC ". $persona_e_m->NOMBRE_MAC,
                         'status' => 201
                     ]);
                 }                
@@ -482,7 +483,7 @@ class AsesoresController extends Controller
             DB::table('M_PERSONAL_MODULO')->insert([
                 'NUM_DOC' => $usuario->NUM_DOC,
                 'IDMODULO' => $modulo_entidad->IDMODULO,
-                'IDCENTRO_MAC' => $user->idcentro_mac,
+                'IDCENTRO_MAC' => $this->centro_mac()->idmac,
                 'FECHAINICIO' => $request->fechainicio,
                 'FECHAFIN' => $request->fechafin
             ]);
