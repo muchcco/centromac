@@ -59,6 +59,7 @@
                                 Exportar</button>
                     </div>
                 </div>
+                                
                 <div class="row">
                     <div class="col-12">
                         <div class="table-responsive">
@@ -152,81 +153,122 @@ function btnAddAsesores ()  {
 
 var btnStoreAsesor = () => {
 
-// Validaciones previas para asegurar que los campos no estén vacíos
-if ($('#nombre').val() == '' || 
-    $('#ap_pat').val() == '' || 
-    $('#ap_mat').val() == '' || 
-    $('#dni').val() == '' || 
-    $('#modulos_entidades').val() == null ||
-    $('#fechainicio').val() == '' || 
-    $('#fechafin').val() == '') {
-
-    toastr.error('Por favor complete todos los campos obligatorios.');
-    return;
-}
-
-var formData = new FormData();
-formData.append("nombre", $("#nombre").val());
-formData.append("ap_pat", $("#ap_pat").val());
-formData.append("ap_mat", $("#ap_mat").val());
-formData.append("dni", $("#dni").val());
-formData.append("modulos_entidades", $("#modulos_entidades").val());
-formData.append("fechainicio", $("#fechainicio").val());
-formData.append("fechafin", $("#fechafin").val());
-formData.append("_token", $("input[name=_token]").val());
-
-// Petición AJAX
-$.ajax({
-    type: 'post',
-    url: "{{ route('personal.store_asesores') }}",
-    dataType: "json",
-    data: formData,
-    processData: false,
-    contentType: false,
-    beforeSend: function () {
-        document.getElementById("btnEnviarForm").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE';
-        document.getElementById("btnEnviarForm").disabled = true;
-    },
-    success: function(data) { 
-        // Estructura conservada con alertas y Toastify
-        if(data.status == 201){
-            document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
-            document.getElementById("btnEnviarForm").disabled = false;
-            document.getElementById('alerta').innerHTML = `
-                <div class="alert custom-alert custom-alert-warning icon-custom-alert shadow-sm fade show d-flex justify-content-between" role="alert">
-                    <div class="media">
-                        <i class="la la-exclamation-triangle alert-icon text-warning align-self-center font-30 me-3"></i>
-                        <div class="media-body align-self-center">
-                            <h5 class="mb-1 fw-bold mt-0">Importante</h5>
-                            <span>${data.message.replace(/\n/g, "<br>")}.</span>
-                        </div>
-                    </div>
-                </div>`;
-        } else {
-            $("#modal_show_modal").modal('hide');
-            tabla_seccion(); // Actualizar la tabla
-            Toastify({
-                text: "Se guardó exitosamente el registro",
-                className: "info",
-                gravity: "bottom",
-                style: {
-                    background: "#47B257",
-                }
-            }).showToast();
-        }
-    },
-    error: function(response) {
-        document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
-        document.getElementById("btnEnviarForm").disabled = false;
-        
-        if(response.responseJSON && response.responseJSON.error) {
-            toastr.error(response.responseJSON.error);
-        } else {
-            toastr.error("Ocurrió un error inesperado. Por favor, inténtelo de nuevo.");
-        }
+    // Validaciones previas para asegurar que los campos obligatorios no estén vacíos
+    if (
+        $('#nombre').val() === '' || 
+        $('#ap_pat').val() === '' || 
+        $('#ap_mat').val() === '' || 
+        $('#dni').val() === '' || 
+        $('#modulos_entidades').val() == null ||
+        $('#fechainicio').val() === '' || 
+        $('#fechafin').val() === ''
+    ) {
+        toastr.error('Por favor complete todos los campos obligatorios.');
+        return;
     }
-});
-}
+
+    // Crear FormData y agregar los datos del formulario
+    var formData = new FormData();
+    formData.append("nombre", $("#nombre").val());
+    formData.append("ap_pat", $("#ap_pat").val());
+    formData.append("ap_mat", $("#ap_mat").val());
+    formData.append("dni", $("#dni").val());
+    formData.append("modulos_entidades", $("#modulos_entidades").val());
+    formData.append("fechainicio", $("#fechainicio").val());
+    formData.append("fechafin", $("#fechafin").val());
+    formData.append("_token", $("input[name=_token]").val());
+
+    // Petición AJAX inicial para almacenar el asesor
+    $.ajax({
+        type: 'post',
+        url: "{{ route('personal.store_asesores') }}",
+        dataType: "json",
+        data: formData,
+        processData: false,
+        contentType: false,
+        beforeSend: function () {
+            $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> ESPERE');
+            $("#btnEnviarForm").prop("disabled", true);
+        },
+        success: function(data) { 
+            if(data.status == 201) {
+                console.log(data);
+                swal.fire({
+                    title: "¿Seguro que desea agregar al personal a este Centro MAC?",
+                    text: data.message,
+                    icon: "info",
+                    showCancelButton: true,
+                    confirmButtonText: "Aceptar",
+                    cancelButtonText: "Cancelar"
+                }).then((result) => {
+                    if (result.value) {
+                        // Segunda petición AJAX para almacenar información adicional
+                        $.ajax({
+                            url: "{{ route('personal.store_asesores_more') }}",
+                            type: 'post',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function(response) {
+                                console.log(response);
+                                $("#modal_show_modal").modal('hide');
+                                tabla_seccion(); // Actualiza la tabla
+                                Toastify({
+                                    text: "Se guardó exitosamente el registro",
+                                    className: "info",
+                                    gravity: "bottom",
+                                    style: {
+                                        background: "#47B257",
+                                    }
+                                }).showToast();
+                            },
+                            error: function(error) {
+                                console.error('Error:', error);
+                                toastr.error("Error al insertar datos adicionales.");
+                            }
+                        });
+                    }
+                });
+            }else if(data.status == 206){
+                document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
+                document.getElementById("btnEnviarForm").disabled = false;
+                document.getElementById('alerta').innerHTML = `
+                    <div class="alert custom-alert custom-alert-warning icon-custom-alert shadow-sm fade show d-flex justify-content-between" role="alert">
+                        <div class="media">
+                            <i class="la la-exclamation-triangle alert-icon text-warning align-self-center font-30 me-3"></i>
+                            <div class="media-body align-self-center">
+                                <h5 class="mb-1 fw-bold mt-0">Importante</h5>
+                                <span>${data.message.replace(/\n/g, "<br>")}.</span>
+                            </div>
+                        </div>
+                    </div>`;
+            } else {
+                // Si data.status no es 201, se asume éxito en la operación inicial
+                $("#modal_show_modal").modal('hide');
+                tabla_seccion();
+                Toastify({
+                    text: "Se guardó exitosamente el registro",
+                    className: "info",
+                    gravity: "bottom",
+                    style: {
+                        background: "#47B257",
+                    }
+                }).showToast();
+            }
+        },
+        error: function(response) {
+            $("#btnEnviarForm").html('Guardar');
+            $("#btnEnviarForm").prop("disabled", false);
+            
+            if(response.responseJSON && response.responseJSON.error) {
+                toastr.error(response.responseJSON.error);
+            } else {
+                toastr.error("Ocurrió un error inesperado. Por favor, inténtelo de nuevo.");
+            }
+        }
+    });
+};
+
 
 var isNumber = (evt) =>{
   evt = (evt) ? evt : window.event;

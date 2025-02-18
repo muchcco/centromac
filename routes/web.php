@@ -192,6 +192,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/tablas/tb_asesores', [AsesoresController::class, 'tb_asesores'])->name('tablas.tb_asesores');
         Route::post('/modals/md_add_asesores', [AsesoresController::class, 'md_add_asesores'])->name('modals.md_add_asesores');
         Route::post('/store_asesores', [AsesoresController::class, 'store_asesores'])->name('store_asesores');
+        Route::post('/store_asesores_more', [AsesoresController::class, 'store_asesores_more'])->name('store_asesores_more');
         Route::post('/modals/md_edit_asesores', [AsesoresController::class, 'md_edit_asesores'])->name('modals.md_edit_asesores');
         Route::post('/update_asesores', [AsesoresController::class, 'update_asesores'])->name('update_asesores');
         Route::post('/modals/md_baja_asesores', [AsesoresController::class, 'md_baja_asesores'])->name('modals.md_baja_asesores');

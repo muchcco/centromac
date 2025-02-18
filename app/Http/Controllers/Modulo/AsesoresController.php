@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Exports\AsistenciaGroupExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AsesoresExport;
+use Carbon\Carbon;
 
 class AsesoresController extends Controller
 {
@@ -39,86 +40,112 @@ class AsesoresController extends Controller
     public function tb_asesores(Request $request)
     {
         $query = DB::table('M_PERSONAL as MP')
-            ->leftJoin(DB::raw('(
-                SELECT *, ROW_NUMBER() OVER (PARTITION BY NUM_DOC ORDER BY FIELD(STATUS, "Itinerante", "Fijo")) as rn
-                FROM M_PERSONAL_MODULO
-                WHERE FECHAINICIO <= now() AND FECHAFIN >= now()
-            ) as MPM'), function ($join) {
-                $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
-                     ->where('MPM.rn', '=', 1);
-            })
-            ->leftJoin('M_MODULO as MMOD', function ($join) {
-                $join->on('MMOD.IDMODULO', '=', 'MPM.IDMODULO');
-            })
-            ->leftJoin('M_ENTIDAD as ME', function ($join) {
-                $join->on('ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD');
-            })
-            ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
-            ->join('D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
-            ->join(DB::raw('(SELECT 
-            IDPERSONAL,
-            (
-                CASE WHEN TIP_CAS IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN N_CONTRATO IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN NOMBRE IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN APE_PAT IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN APE_MAT IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN IDTIPO_DOC IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN NUM_DOC IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN IDMAC IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN IDENTIDAD IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN DIRECCION IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN SEXO IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN FECH_NACIMIENTO IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN IDDISTRITO IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN TELEFONO IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN CELULAR IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN CORREO IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN ESTADO_CIVIL IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN DF_N_HIJOS IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN DLP_JEFE_INMEDIATO IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN DLP_CARGO IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN DLP_TELEFONO IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN TVL_ID IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN GI_ID IS NULL THEN 1 ELSE 0 END + 
-                CASE WHEN GI_CARRERA IS NULL THEN 1 ELSE 0 END
-            ) AS CAMPOS_NULL
-            FROM M_PERSONAL) as CONT'), 'CONT.IDPERSONAL', '=', 'MP.IDPERSONAL')
-                ->select(
-                    'MP.IDPERSONAL',
-                    DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'),
-                    'DPT.TIPODOC_ABREV',
-                    'MP.NUM_DOC',
-                    DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
-                    DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
-                    'MCM.NOMBRE_MAC',
-                    'MP.FLAG',
-                    'MP.CORREO',
-                    'CONT.CAMPOS_NULL',
-                    DB::raw("(
-                    SELECT COUNT(*) 
-                    FROM information_schema.columns
-                    WHERE table_schema = 'db_centros_mac'
-                    AND table_name = 'M_PERSONAL'
-                    ) AS TOTAL_CAMPOS"),
-                                    DB::raw("(
-                    (
-                    SELECT COUNT(*) 
-                    FROM information_schema.columns
-                    WHERE table_schema = 'db_centros_mac'
-                    AND table_name = 'M_PERSONAL'
-                    ) - CONT.CAMPOS_NULL
-                    ) AS DIFERENCIA_CAMPOS")
-                )
-            ->where(function ($query) {
-                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                    $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
-                }
-            })
-            ->whereIn('MP.FLAG', [1, 2])
-            ->where('MP.IDENTIDAD', '!=', 17)
-            ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
-            ->get();
+                        ->leftJoin(DB::raw('(
+                            SELECT *, ROW_NUMBER() OVER (PARTITION BY NUM_DOC ORDER BY FIELD(STATUS, "Itinerante", "Fijo")) as rn
+                            FROM M_PERSONAL_MODULO
+                            WHERE FECHAINICIO <= NOW() AND FECHAFIN >= NOW()
+                        ) as MPM'), function ($join) {
+                            $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
+                                ->where('MPM.rn', '=', 1);
+                        })
+                        ->leftJoin('M_MODULO as MMOD', function ($join) {
+                            $join->on('MMOD.IDMODULO', '=', 'MPM.IDMODULO');
+                        })
+                        ->leftJoin('M_ENTIDAD as ME', function ($join) {
+                            $join->on('ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD');
+                        })
+                        ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+                        ->join('D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
+                        ->leftJoin('d_personal_mac', 'd_personal_mac.idpersonal', '=', 'MP.idpersonal')
+                        ->join(DB::raw('(
+                            SELECT 
+                                IDPERSONAL,
+                                (
+                                    CASE WHEN TIP_CAS IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN N_CONTRATO IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN NOMBRE IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN APE_PAT IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN APE_MAT IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN IDTIPO_DOC IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN NUM_DOC IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN IDMAC IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN IDENTIDAD IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN DIRECCION IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN SEXO IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN FECH_NACIMIENTO IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN IDDISTRITO IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN TELEFONO IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN CELULAR IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN CORREO IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN ESTADO_CIVIL IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN DF_N_HIJOS IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN DLP_JEFE_INMEDIATO IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN DLP_CARGO IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN DLP_TELEFONO IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN TVL_ID IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN GI_ID IS NULL THEN 1 ELSE 0 END + 
+                                    CASE WHEN GI_CARRERA IS NULL THEN 1 ELSE 0 END
+                                ) AS CAMPOS_NULL
+                            FROM M_PERSONAL
+                        ) as CONT'), 'CONT.IDPERSONAL', '=', 'MP.IDPERSONAL')
+                        ->select(
+                            'MP.IDPERSONAL',
+                            'MCM.NOMBRE_MAC as PRINCIPAL_MAC',
+                            DB::raw('(SELECT COUNT(*) FROM d_personal_mac WHERE d_personal_mac.idpersonal = MP.idpersonal AND d_personal_mac.status = 1 ) AS COUNT_DPM'),
+                            DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'),
+                            'DPT.TIPODOC_ABREV',
+                            'MP.NUM_DOC',
+                            DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
+                            DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
+                            DB::raw('COALESCE(
+                                (
+                                    SELECT GROUP_CONCAT(DISTINCT MCM2.NOMBRE_MAC SEPARATOR ", ")
+                                    FROM d_personal_mac AS DPM
+                                    JOIN M_CENTRO_MAC AS MCM2 
+                                        ON MCM2.IDCENTRO_MAC = DPM.idcentro_mac
+                                    WHERE DPM.idpersonal = MP.idpersonal
+                                ),
+                                MCM.NOMBRE_MAC
+                            ) AS NOMBRE_MAC'),
+                            DB::raw('COALESCE(
+                                (
+                                    SELECT GROUP_CONCAT(DISTINCT MCM2.NOMBRE_MAC SEPARATOR ", ")
+                                    FROM d_personal_mac AS DPM
+                                    JOIN M_CENTRO_MAC AS MCM2 
+                                        ON MCM2.IDCENTRO_MAC = DPM.idcentro_mac
+                                    WHERE DPM.idpersonal = MP.idpersonal
+                                ),
+                                MCM.NOMBRE_MAC
+                            ) AS CENTRO_MAC'),
+                            'MP.FLAG',
+                            'MP.CORREO',
+                            'CONT.CAMPOS_NULL',
+                            DB::raw("(
+                                SELECT COUNT(*) 
+                                FROM information_schema.columns
+                                WHERE table_schema = 'db_centros_mac'
+                                AND table_name = 'M_PERSONAL'
+                            ) AS TOTAL_CAMPOS"),
+                            DB::raw("(
+                                (
+                                    SELECT COUNT(*) 
+                                    FROM information_schema.columns
+                                    WHERE table_schema = 'db_centros_mac'
+                                    AND table_name = 'M_PERSONAL'
+                                ) - CONT.CAMPOS_NULL
+                            ) AS DIFERENCIA_CAMPOS")
+                        )
+                        ->where(function ($query) {
+                            if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                                $query->where('d_personal_mac.idcentro_mac', '=', $this->centro_mac()->idmac);
+                                $query->where('d_personal_mac.status', '=', 1);
+                            }
+                        })
+                        ->whereIn('MP.FLAG', [1, 2])
+                        ->where('MP.IDENTIDAD', '!=', 17)                        
+                        ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
+                        ->get();
+
     
         return view('personal.tablas.tb_asesores', compact('query'));
     }
@@ -253,7 +280,19 @@ class AsesoresController extends Controller
 
             $personal = Personal::findOrFail($request->idpersonal);
             $personal->FLAG = $request->baja;
-            $personal->save();
+            $personal->save();               
+
+            $bajapersonal = DB::table('d_personal_mac')->where('idpersonal', $request->idpersonal)->where('idcentro_mac', $this->centro_mac()->idmac)->update([
+                'status'      => 2,
+                'updated_at'    => Carbon::now()
+            ]);
+
+            if($request->baja == 3)
+            {
+                $personal = Personal::findOrFail($request->idpersonal);
+                $personal->IDMAC = NULL;
+                $personal->save(); 
+            }
 
             return $personal;
         } catch (\Exception $e) {
@@ -293,13 +332,77 @@ class AsesoresController extends Controller
             }
 
             // Verificar existencia del personal
-            $persona_existe = Personal::where('NUM_DOC', $request->dni)->first();
-            if ($persona_existe) {
+            $persona_existe = Personal::where('NUM_DOC', $request->dni)->first();    
+            
+            $per_mac = DB::table('d_personal_mac')->where('idcentro_mac', $this->centro_mac()->idmac)->where('idpersonal', $persona_existe->IDPERSONAL)->where('status', 1)->first();
+            // dd($persona_existe->IDPERSONAL);
+            if($per_mac){
                 return response()->json([
                     'data' => null,
-                    'message' => "El personal ya fue registrado.",
-                    'status' => 201
+                    'message' => "El personal esta registrado en tu centro mac",
+                    'status' => 206
                 ]);
+            }
+
+            if ($persona_existe) {
+
+                if($persona_existe->IDMAC === NULL){
+                    $usuario = DB::table('M_PERSONAL')->where('NUM_DOC', $persona_existe->NUM_DOC)->first();
+                    if (!$usuario) {
+                        return response()->json([
+                            'data' => null,
+                            'error' => 'Usuario no encontrado.',
+                            'message' => 'Error al registrar el asesor.',
+                            'status' => 400
+                        ]);
+                    }
+
+                    $personal = Personal::findOrFail($persona_existe->IDPERSONAL);
+                    $personal->IDMAC = $this->centro_mac()->idmac;
+                    $personal->FLAG = 1;
+                    $personal->save(); 
+        
+                    // Extraer idmodulo e identidad
+                    $modulo_entidad = DB::table('M_MODULO')
+                        ->where('IDMODULO', $request->modulos_entidades)
+                        ->select('IDMODULO', 'IDENTIDAD')
+                        ->first();
+        
+                    if (!$modulo_entidad) {
+                        return response()->json(['message' => 'Módulo no encontrado.'], 400);
+                    }
+                        
+                    $us_id = auth()->user()->id;
+                        
+                    $insertedId = DB::table('d_personal_mac')->insertGetId([
+                        'idcentro_mac' => $this->centro_mac()->idmac,
+                        'idpersonal'    => $usuario->IDPERSONAL,
+                        'idus_reg'      => $us_id,
+                        'status'      => 1,
+                        'created_at'    => Carbon::now(),
+                        'updated_at'    => Carbon::now()
+                    ]);
+        
+                    // Guardar en `m_personal_modulo`
+                    DB::table('M_PERSONAL_MODULO')->insert([
+                        'NUM_DOC' => $usuario->NUM_DOC,
+                        'IDMODULO' => $modulo_entidad->IDMODULO,
+                        'IDCENTRO_MAC' => $this->centro_mac()->idmac,
+                        'FECHAINICIO' => $request->fechainicio,
+                        'FECHAFIN' => $request->fechafin
+                    ]);
+            
+                    return response()->json([
+                        'data'    => $insertedId,
+                        'message' => 'Asesor registrado correctamente.'
+                    ], 200);
+                }else{
+                    return response()->json([
+                        'data' => null,
+                        'message' => "El personal esta registrado en el centro MAC ". $persona_existe->NOMBRE_MAC,
+                        'status' => 201
+                    ]);
+                }                
             }
 
             // Obtener centro MAC del usuario
@@ -341,6 +444,64 @@ class AsesoresController extends Controller
             ]);
         }
     }
+    public function store_asesores_more(Request $request)
+    {
+        try {            
+            $usuario = DB::table('M_PERSONAL')->where('NUM_DOC', $request->dni)->first();
+            if (!$usuario) {
+                return response()->json([
+                    'data' => null,
+                    'error' => 'Usuario no encontrado.',
+                    'message' => 'Error al registrar el asesor.',
+                    'status' => 400
+                ]);
+            }
+
+            // Extraer idmodulo e identidad
+            $modulo_entidad = DB::table('M_MODULO')
+                ->where('IDMODULO', $request->modulos_entidades)
+                ->select('IDMODULO', 'IDENTIDAD')
+                ->first();
+
+            if (!$modulo_entidad) {
+                return response()->json(['message' => 'Módulo no encontrado.'], 400);
+            }
+                
+            $us_id = auth()->user()->id;
+                
+            $insertedId = DB::table('d_personal_mac')->insertGetId([
+                'idcentro_mac' => $this->centro_mac()->idmac,
+                'idpersonal'    => $usuario->IDPERSONAL,
+                'idus_reg'      => $us_id,
+                'status'      => 1,
+                'created_at'    => Carbon::now(),
+                'updated_at'    => Carbon::now()
+            ]);
+
+            // Guardar en `m_personal_modulo`
+            DB::table('M_PERSONAL_MODULO')->insert([
+                'NUM_DOC' => $usuario->NUM_DOC,
+                'IDMODULO' => $modulo_entidad->IDMODULO,
+                'IDCENTRO_MAC' => $user->idcentro_mac,
+                'FECHAINICIO' => $request->fechainicio,
+                'FECHAFIN' => $request->fechafin
+            ]);
+    
+            return response()->json([
+                'data'    => $insertedId,
+                'message' => 'Asesor registrado correctamente.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'data'    => null,
+                'error'   => $e->getMessage(),
+                'message' => 'Error al registrar el asesor.',
+                'status'  => 400
+            ]);
+        }
+    }
+    
+
     public function exportasesores_excel()
     {
         $query = DB::table('db_centros_mac.M_PERSONAL as MP')

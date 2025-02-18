@@ -42,7 +42,13 @@
                     
                     @endif
                 </td>
-                <td>{{ $que->NOMBRE_MAC }}</td>
+                <td>
+                    {{ $que->NOMBRE_MAC }} 
+                    @if ($que->COUNT_DPM > 1)
+                        <span class="bandejTool" data-tippy-content="El principal mac donde se registro el asesor fue {{ $que->PRINCIPAL_MAC }}"><svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="#f50f0f" d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg> </span> 
+                    @endif
+                    
+                </td>
                 <td>
                     <span class="{{ $que->CORREO ? '' : 'text-danger' }}">
                         {{ $que->CORREO ?? 'Datos incompletos' }}
@@ -66,9 +72,9 @@
                     <a href="http://190.187.182.55:8081/external-mac/formdata?num_doc={{ $que->NUM_DOC }}"
                         class="nobtn bandejTool" data-tippy-content="Editar personal" target="_blank"><i
                             class="las la-pen text-secondary font-16 text-success"></i></a>
-                    <button class="nobtn bandejTool" data-tippy-content="Editar Entidad"
+                    {{-- <button class="nobtn bandejTool" data-tippy-content="Editar Entidad"
                         onclick="btnCambiarEntidad('{{ $que->IDPERSONAL }}' )"><i
-                            class="las la-building text-secondary font-16 text-info"></i></button>
+                            class="las la-building text-secondary font-16 text-info"></i></button> --}}
                     <button class="nobtn bandejTool" data-tippy-content="Dar de baja"
                         onclick="btnElimnarServicio('{{ $que->IDPERSONAL }}' )"><i
                             class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
