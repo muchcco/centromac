@@ -333,18 +333,18 @@ class AsesoresController extends Controller
 
             // Verificar existencia del personal
             $persona_existe = Personal::where('NUM_DOC', $request->dni)->first();    
-            
-            $per_mac = DB::table('d_personal_mac')->where('idcentro_mac', $this->centro_mac()->idmac)->where('idpersonal', $persona_existe->IDPERSONAL)->where('status', 1)->first();
-            // dd($persona_existe->IDPERSONAL);
-            if($per_mac){
-                return response()->json([
-                    'data' => null,
-                    'message' => "El personal esta registrado en tu centro mac",
-                    'status' => 206
-                ]);
-            }
 
             if ($persona_existe) {
+
+                $per_mac = DB::table('d_personal_mac')->where('idcentro_mac', $this->centro_mac()->idmac)->where('idpersonal', $persona_existe->IDPERSONAL)->where('status', 1)->first();
+                // dd($persona_existe->IDPERSONAL);
+                if($per_mac){
+                    return response()->json([
+                        'data' => null,
+                        'message' => "El personal esta registrado en tu centro mac",
+                        'status' => 206
+                    ]);
+                }
 
                 if($persona_existe->IDMAC === NULL){
                     $usuario = DB::table('M_PERSONAL')->where('NUM_DOC', $persona_existe->NUM_DOC)->first();
