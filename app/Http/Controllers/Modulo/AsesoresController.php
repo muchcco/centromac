@@ -422,6 +422,17 @@ class AsesoresController extends Controller
             $save->IDMODULO = $modulo_entidad->IDMODULO;
             $save->save();
 
+            $us_id = auth()->user()->id;
+                        
+            $insertedId = DB::table('d_personal_mac')->insertGetId([
+                'idcentro_mac' => $this->centro_mac()->idmac,
+                'idpersonal'    => $save->IDPERSONAL,
+                'idus_reg'      => $us_id,
+                'status'      => 1,
+                'created_at'    => Carbon::now(),
+                'updated_at'    => Carbon::now()
+            ]);
+
             // Guardar en `m_personal_modulo`
             DB::table('M_PERSONAL_MODULO')->insert([
                 'NUM_DOC' => $request->dni,
