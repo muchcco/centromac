@@ -112,10 +112,14 @@ class Puntualidad1Controller extends Controller
             ->get();
 
 
-        // Obtener feriados del mes y año especificados
+        // Obtener feriados del mes y año especificados, considerando también los feriados con idcentro_mac NULL
         $feriados = DB::table('feriados')
             ->whereYear('fecha', $fecha_año)
             ->whereMonth('fecha', $fecha_mes)
+            ->where(function ($query) use ($idmac) {
+                $query->where('id_centromac', $idmac)
+                    ->orWhereNull('id_centromac');
+            })
             ->pluck('fecha')
             ->toArray();
 

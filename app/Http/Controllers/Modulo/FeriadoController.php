@@ -15,6 +15,22 @@ use Illuminate\Support\Facades\Validator;
 class FeriadoController extends Controller
 
 {
+    private function centro_mac()
+    {
+        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
+        /*================================================================================================================*/
+        $us_id = auth()->user()->idcentro_mac;
+        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+
+        $idmac = $user->IDCENTRO_MAC;
+        $name_mac = $user->NOMBRE_MAC;
+        /*================================================================================================================*/
+
+        $resp = ['idmac' => $idmac, 'name_mac' => $name_mac];
+
+        return (object) $resp;
+    }
+
     // Método para mostrar la lista inicial de feriados
     public function index()
     {
@@ -24,9 +40,22 @@ class FeriadoController extends Controller
     // Método para cargar los datos de los feriados en la tabla
     public function tb_index()
     {
-        $feriados = Feriado::all(); // Obtener todos los feriados
+        // Obtener todos los feriados
+        $feriados = Feriado::all();
+
+        // Obtener el nombre del centro MAC para cada feriado
+        foreach ($feriados as $feriado) {
+            // Obtener el nombre del centro MAC correspondiente al id_centromac
+            $centroMac = DB::table('M_CENTRO_MAC')->where('IDCENTRO_MAC', $feriado->id_centromac)->first();
+
+            // Asignar el nombre del centro MAC o un valor predeterminado si no existe
+            $feriado->nombre_centromac = $centroMac ? $centroMac->NOMBRE_MAC : 'TODOS';
+        }
+
+        // Pasar los feriados (con nombre de centro MAC) a la vista
         return view('feriados.tablas.tb_index', compact('feriados'));
     }
+
 
     // Método para mostrar el formulario de creación de feriados
     public function create()
@@ -46,7 +75,6 @@ class FeriadoController extends Controller
         $validator = Validator::make($request->all(), [
             'nombre_feriado' => 'required|string|max:255',
             'fecha_feriado' => 'required|date',
-            'id_centromac' => 'required|integer|exists:m_centro_mac,IDCENTRO_MAC', // Validación para id_centromac
         ]);
 
         if ($validator->fails()) {
@@ -58,11 +86,14 @@ class FeriadoController extends Controller
         }
 
         try {
+            // Obtener el centro MAC utilizando la función centro_mac()
+            $centroMac = $this->centro_mac();
+            $idcentroMac = $centroMac->idmac; // Obtener el ID del Centro MAC
             // Crear y guardar el nuevo feriado
             $feriado = new Feriado();
             $feriado->name = $request->nombre_feriado;
             $feriado->fecha = $request->fecha_feriado;
-            $feriado->id_centromac = $request->id_centromac;
+            $feriado->id_centromac = $idcentroMac; // Usar el idcentroMac obtenido de centro_mac()
             $feriado->save();
 
             return response()->json([
@@ -86,14 +117,14 @@ class FeriadoController extends Controller
         try {
             // Encontrar el feriado asociado con el itinerante
             $feriado = Feriado::where('id', $request->id_feriado)->first();
-    
+
             if (!$feriado) {
                 return response()->json(['error' => 'Feriado no encontrado'], 404);
             }
-    
+
             // Obtener el itinerante asociado al feriado
             $itinerante = Itinerante::where('id', $feriado->id_itinerante)->first();
-    
+
             // Renderizar la vista con los datos del feriado y el itinerante
             $view = view('feriados.modals.md_edit_feriado', compact('feriado', 'itinerante'))->render();
             return response()->json(['html' => $view]);
@@ -101,7 +132,7 @@ class FeriadoController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
+
 
     // Método para actualizar un itinerante
     public function update(Request $request)

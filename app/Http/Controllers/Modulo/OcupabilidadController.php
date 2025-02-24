@@ -50,7 +50,7 @@ class OcupabilidadController extends Controller
         if (!$request->filled('mes') || !$request->filled('año') || !is_numeric($request->mes) || !is_numeric($request->año)) {
             return response()->json(['error' => 'Por favor, proporciona un mes y un año válidos.'], 422);
         }
-
+        $idmac = $request->input('mac');
         $mes = $request->mes;
         $año = $request->año;
         $fechaInicio = Carbon::create($año, $mes, 1);
@@ -61,7 +61,13 @@ class OcupabilidadController extends Controller
 
         $diasTotales = $period->count();
 
-        $feriados = Feriado::whereBetween('fecha', [$fechaInicio, $fechaFin])->pluck('fecha')->toArray();
+        $feriados = Feriado::whereBetween('fecha', [$fechaInicio, $fechaFin])
+            ->where(function ($query) use ($idmac) {
+                $query->where('id_centromac', $idmac)
+                    ->orWhereNull('id_centromac');
+            })
+            ->pluck('fecha')
+            ->toArray();
 
         $domingos = 0;
         foreach ($period as $date) {
@@ -76,7 +82,6 @@ class OcupabilidadController extends Controller
 
         $diasHabiles = $diasTotales - $domingos - $diasFeriados;
         // Obtener el idcentromac desde el formulario (si está presente)
-        $idmac = $request->input('mac');
 
         // Verificar si no se proporcionó el idcentromac
         if (empty($idmac)) {

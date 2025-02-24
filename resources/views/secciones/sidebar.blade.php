@@ -270,7 +270,7 @@
                 @role('Administrador|Especialista TIC')
                     <li class="@if (Request::is('feriado*')) mm-active @endif">
                         <a href="{{ route('feriados.index') }}" class="@if (Request::is('feriado/index*')) active @endif">
-                            <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Feriado</span></a>
+                            <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Días no hábiles</span></a>
                     </li>
                 @endrole     
                 
