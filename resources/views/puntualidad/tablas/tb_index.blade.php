@@ -21,13 +21,12 @@
                         $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
                         $esFeriado = in_array($fechaActual, $feriados);
 
-                        if (!($esDomingo || $esFeriado)) {
                             $mostrarSi =
                                 isset($dias[$i][$modulo->idmodulo]) && $dias[$i][$modulo->idmodulo]['hora_minima'];
                             if ($mostrarSi) {
                                 $contadorSi++;
                             }
-                        }
+                        
                     }
                     $porcentaje = $diasHabiles > 0 ? ($contadorSi / $diasHabiles) * 100 : 0;
                     $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 84 ? 'bg-warning' : 'bg-danger');
@@ -40,7 +39,6 @@
                         $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
                         $esFeriado = in_array($fechaActual, $feriados);
 
-                        if (!($esDomingo || $esFeriado)) {
                             if (isset($dias[$i][$modulo->idmodulo])) {
                                 $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
                                 if ($horaMinima < '08:16') {
@@ -52,7 +50,7 @@
                             } else {
                                 $marcados[] = '-';
                             }
-                        }
+                        
                     }
                     $porcentaje = ($contadorSi > 0 && $diasHabiles > 0) ? ($contadorSi1 / $contadorSi) * 100 : 0;
                     $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 84 ? 'bg-warning' : 'bg-danger');
