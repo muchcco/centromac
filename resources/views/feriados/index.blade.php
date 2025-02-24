@@ -20,10 +20,10 @@
             <div class="page-title-box">
                 <div class="row">
                     <div class="col">
-                        <h4 class="page-title">Gestión de Feriados</h4>
+                        <h4 class="page-title">Gestión de Días no hábiles</h4>
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Inicio</a></li>
-                            <li class="breadcrumb-item active">Feriados</li>
+                            <li class="breadcrumb-item active">Días no hábiles</li>
                         </ol>
                     </div>
                 </div>
@@ -35,7 +35,7 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-header" style="background-color:#132842">
-                    <h4 class="card-title text-white">Lista de Feriados</h4>
+                    <h4 class="card-title text-white">Lista de Días no hábiles</h4>
                 </div>
 
                 <div class="card-body bootstrap-select-1">
@@ -238,12 +238,12 @@
         }
 
         function btnUpdateFeriado(id) {
+
             var formData = new FormData();
-            formData.append("nombre_feriado", $("#nombre_feriado")
-                .val()); // Recoge el nombre del feriado del campo de entrada
-            formData.append("fecha_feriado", $("#fecha_feriado").val()); // Recoge la fecha del feriado del campo de entrada
+            formData.append("name", $("#nombre_feriado").val()); // Recoge el nombre del feriado del campo de entrada
+            formData.append("fecha", $("#fecha_feriado").val()); // Recoge la fecha del feriado del campo de entrada
             formData.append("id_feriado", id); // Asegúrate de enviar el id_feriado correctamente
-            formData.append("_token", $("input[name=_token]").val());
+            formData.append("_token", $("input[name=_token]").val()); // El token CSRF
 
             $.ajax({
                 type: 'POST',
@@ -257,7 +257,8 @@
                     document.getElementById("btnEnviarForm").disabled = true;
                 },
                 success: function(response) {
-                    $("#modal_show_modal").modal('hide'); // Oculta el modal una vez la actualización es exitosa
+                    $("#modal_show_modal").modal(
+                        'hide'); // Oculta el modal una vez la actualización es exitosa
                     // Aquí deberías recargar la sección o tabla donde se muestran los feriados
 
                     cargarFeriados(); // Llama a la función para recargar la tabla de feriados
@@ -300,7 +301,8 @@
                         },
                         success: function(response) {
                             // Llama a la función para cargar de nuevo los feriados
-                            cargarFeriados(); // Asegúrate de que esta función actualiza correctamente la tabla
+                            cargarFeriados
+                                (); // Asegúrate de que esta función actualiza correctamente la tabla
                             Swal.fire({
                                 icon: "success",
                                 title: 'Eliminado!',
@@ -320,6 +322,5 @@
                 }
             });
         }
-
     </script>
 @endsection

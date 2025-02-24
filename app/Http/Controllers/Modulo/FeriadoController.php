@@ -123,10 +123,10 @@ class FeriadoController extends Controller
             }
 
             // Obtener el itinerante asociado al feriado
-            $itinerante = Itinerante::where('id', $feriado->id_itinerante)->first();
+            // $itinerante = Itinerante::where('id', $feriado->id_itinerante)->first();
 
             // Renderizar la vista con los datos del feriado y el itinerante
-            $view = view('feriados.modals.md_edit_feriado', compact('feriado', 'itinerante'))->render();
+            $view = view('feriados.modals.md_edit_feriado', compact('feriado'))->render();
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -134,17 +134,14 @@ class FeriadoController extends Controller
     }
 
 
-    // Método para actualizar un itinerante
+    // Método para actualizar un Feriado
     public function update(Request $request)
     {
         // Validar los datos recibidos en la solicitud
         $validator = Validator::make($request->all(), [
-            'idcentro_mac' => 'required|integer',
-            'num_doc' => 'required|string|max:255',
-            'idmodulo' => 'required|integer',
-            'fechainicio' => 'required|date',
-            'fechafin' => 'required|date',
-            'id_itinerante' => 'required|integer|exists:m_itinerante,ID', // Validación para id_itinerante
+            'name' => 'required|string|max:255',  // Nombre del feriado
+            'fecha' => 'required|date',           // Fecha del feriado
+            'id_feriado' => 'required|integer|exists:feriados,id',  // Asegúrate de que el ID del feriado exista
         ]);
 
         if ($validator->fails()) {
@@ -156,23 +153,22 @@ class FeriadoController extends Controller
         }
 
         try {
-            // Encontrar el itinerante a actualizar
-            $itinerante = Itinerante::find($request->id_itinerante);
-            if (!$itinerante) {
-                return response()->json(['message' => 'Itinerante no encontrado'], 404);
+            // Encontrar el feriado a actualizar
+            $feriado = Feriado::find($request->id_feriado);
+            if (!$feriado) {
+                return response()->json(['message' => 'Feriado no encontrado'], 404);
             }
 
-            // Actualizar los datos del itinerante
-            $itinerante->idcentro_mac = $request->idcentro_mac;
-            $itinerante->num_doc = $request->num_doc;
-            $itinerante->idmodulo = $request->idmodulo;
-            $itinerante->fechainicio = $request->fechainicio;
-            $itinerante->fechafin = $request->fechafin;
-            $itinerante->save();
+            // No actualizar idcentro_mac, solo los campos 'name' y 'fecha'
+            $feriado->name = $request->name;
+            $feriado->fecha = $request->fecha;
+
+            // Guardar el feriado con los nuevos valores de nombre y fecha, manteniendo idcentro_mac sin cambios
+            $feriado->save();
 
             return response()->json([
-                'data' => $itinerante,
-                'message' => 'Itinerante actualizado exitosamente',
+                'data' => $feriado,
+                'message' => 'Feriado actualizado exitosamente',
                 'status' => 200
             ], 200);
         } catch (\Exception $e) {
@@ -185,23 +181,30 @@ class FeriadoController extends Controller
         }
     }
 
-    // Método para eliminar un itinerante
+    // Método para eliminar un feriado
     public function destroy(Request $request)
     {
         // Iniciar una transacción para asegurar la integridad de la operación
         DB::beginTransaction();
 
         try {
-            // Encontrar el itinerante utilizando Eloquent para mayor seguridad
-            $itinerante = Itinerante::findOrFail($request->id);
+            // Obtener el centro MAC del usuario autenticado
+            $centroMac = $this->centro_mac();  // Llamar al método centro_mac para obtener el idcentro_mac
 
-            // Eliminar el itinerante
-            $itinerante->delete();
+            // Encontrar el feriado utilizando Eloquent para mayor seguridad
+            $feriado = Feriado::findOrFail($request->id);
+            // Verificar si el feriado pertenece al mismo centro MAC que el usuario
+            if ($feriado->id_centromac !== $centroMac->idmac) {
+                return response()->json(['error' => 'No tienes permisos para eliminar este feriado'], 403);
+            }
+
+            // Eliminar el feriado
+            $feriado->delete();
 
             // Confirmar la transacción si todo ha ido bien
             DB::commit();
 
-            return response()->json(['message' => 'Itinerante eliminado exitosamente'], 200);
+            return response()->json(['message' => 'Feriado eliminado exitosamente'], 200);
         } catch (\Exception $e) {
             // Revertir la transacción en caso de error
             DB::rollback();
