@@ -574,6 +574,8 @@ class AsistenciaController extends Controller
                 }
 
                 $idmac_callao = $this->centro_mac()->idmac;
+                $fecha_inicio = $request->fecha_inicio;
+                $fecha_fin    = $request->fecha_fin; 
 
                 $call_centro = DB::select("INSERT INTO M_ASISTENCIA (
                                                     IDTIPO_ASISTENCIA,
@@ -588,31 +590,32 @@ class AsistenciaController extends Controller
                                                     CORRELATIVO,
                                                     CORRELATIVO_DIA
                                                 )
-                                            SELECT 
-                                                2,
-                                                ui.ssn AS DNI,
-                                                $idmac_callao AS nom_mac,
-                                                LPAD(MONTH(chk.CHECKTIME), 2, '0') AS mes,
-                                                YEAR(chk.CHECKTIME) AS anio,
-                                                DATE(chk.CHECKTIME) AS fecha, -- Fecha.
-                                                TIME_FORMAT(chk.CHECKTIME, '%H:%i:%s') AS hora, -- Hora: HH:MM:SS.
-                                                chk.CHECKTIME AS FECHA_BIOMETRICO, -- Fecha completa.
-                                                '', -- NUM_BIOMETRICO.
-                                                '',
-                                                ''
-                                            FROM asistencia_callao.checkinout chk
-                                            JOIN asistencia_callao.userinfo ui ON ui.userid = chk.userid
-                                            WHERE ui.ssn IS NOT NULL
-                                            AND ui.ssn > 0
-                                            AND NOT EXISTS (
-                                                SELECT 2 
-                                                FROM M_ASISTENCIA ma
-                                                WHERE 
-                                                    ma.NUM_DOC = ui.ssn COLLATE utf8mb4_unicode_ci
-                                                    AND ma.IDCENTRO_MAC = $idmac_callao
-                                                    AND ma.FECHA = DATE(chk.CHECKTIME)
-                                                    AND ma.HORA = TIME_FORMAT(chk.CHECKTIME, '%H:%i:%s')
-                                            );");
+                                                SELECT 
+                                                    2,
+                                                    ui.ssn AS DNI,
+                                                    $idmac_callao AS nom_mac,
+                                                    LPAD(MONTH(chk.CHECKTIME), 2, '0') AS mes,
+                                                    YEAR(chk.CHECKTIME) AS anio,
+                                                    DATE(chk.CHECKTIME) AS fecha,
+                                                    TIME_FORMAT(chk.CHECKTIME, '%H:%i:%s') AS hora,
+                                                    chk.CHECKTIME AS FECHA_BIOMETRICO,
+                                                    '', -- NUM_BIOMETRICO.
+                                                    '', -- CORRELATIVO.
+                                                    ''  -- CORRELATIVO_DIA.
+                                                FROM asistencia_callao.checkinout chk
+                                                JOIN asistencia_callao.userinfo ui ON ui.userid = chk.userid
+                                                WHERE ui.ssn IS NOT NULL
+                                                AND ui.ssn > 0
+                                                AND DATE(chk.CHECKTIME) BETWEEN '$fecha_inicio' AND '$fecha_fin'
+                                                AND NOT EXISTS (
+                                                        SELECT 2 
+                                                        FROM M_ASISTENCIA ma
+                                                        WHERE 
+                                                            ma.NUM_DOC = ui.ssn COLLATE utf8mb4_unicode_ci
+                                                            AND ma.IDCENTRO_MAC = $idmac_callao
+                                                            AND ma.FECHA = DATE(chk.CHECKTIME)
+                                                            AND ma.HORA = TIME_FORMAT(chk.CHECKTIME, '%H:%i:%s')
+                                                );");
 
                 // Finalmente, actualiza el progreso al 100% cuando termine todo el procesamiento
                 Cache::put('upload_progress', 100);

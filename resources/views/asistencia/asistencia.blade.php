@@ -90,12 +90,12 @@
                 <div class="card-body bootstrap-select-1">
                     <div class="row">
                         <div class="col-12">
-                            @role('Administrador|Especialista TIC|Especialista_TIC')
+                            @role('Administrador|Especialista TIC|Especialista_TIC')                            
                                 @if ($idmac == 10)
-                                    <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
-                                        onclick="btnAddAsistenciaCallao()"><i class="fa fa-upload" aria-hidden="true"></i>
-                                        Subir Archivo de Asistencia
-                                    </button>
+                                <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
+                                    onclick="btnAddAsistenciaCallao()"><i class="fa fa-upload" aria-hidden="true"></i>
+                                    Subir Archivo de Asistencia
+                                </button>
                                 @else
                                     <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
                                         onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
@@ -419,6 +419,8 @@
             var file_data = $("#txt_file").prop("files")[0];
             var formData = new FormData();
             formData.append("txt_file", file_data);
+            formData.append("fecha_inicio", $("#fecha_inicio").val());
+            formData.append("fecha_fin", $("#fecha_fin").val());
             formData.append("_token", $("input[name=_token]").val());
 
             // Inicia el polling para actualizar el progreso
