@@ -359,8 +359,8 @@ class PcmController extends Controller
                         $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
                     }
                 })
-                ->where('MP.IDENTIDAD', 17)
-                ->whereNotIn('MCM.IDCENTRO_MAC', [5])
+                ->whereIn('MP.IDENTIDAD', [17,98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
+                ->whereIn('DPC.IDCARGO_PERSONAL', [1, 2, 3, 4, 5])
                 ->orderBy('MCM.NOMBRE_MAC', 'asc')
                 ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
                 ->get();
