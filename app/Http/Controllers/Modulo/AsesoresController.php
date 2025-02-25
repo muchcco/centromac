@@ -142,7 +142,7 @@ class AsesoresController extends Controller
                 }
             })
 
-            ->whereIn('MP.FLAG', [1, 2])
+            ->whereIn('MP.FLAG', [1, 2, 3])
             ->where('MP.IDENTIDAD', '!=', 17)
             ->orderBy('NOMBRE_ENTIDAD', 'asc')
             ->get();
