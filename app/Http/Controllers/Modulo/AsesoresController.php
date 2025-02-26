@@ -91,6 +91,7 @@ class AsesoresController extends Controller
             ->select(
                 'MP.IDPERSONAL',
                 'MCM.NOMBRE_MAC as PRINCIPAL_MAC',
+                'MP.IDMAC',
                 DB::raw('(SELECT COUNT(*) FROM d_personal_mac WHERE d_personal_mac.idpersonal = MP.idpersonal AND d_personal_mac.status = 1 ) AS COUNT_DPM'),
                 DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'),
                 'DPT.TIPODOC_ABREV',
@@ -233,6 +234,28 @@ class AsesoresController extends Controller
         return response()->json(['html' => $view]);
     }
 
+    public function md_cambio_mac(Request $request)
+    {
+        $centromac = DB::table('M_CENTRO_MAC')
+            ->orderBy('NOMBRE_MAC', 'ASC')
+            ->get();
+
+        $idmac = $request->mac;
+
+        $detalle_mac = DB::table('d_personal_mac')
+                                ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'd_personal_mac.idcentro_mac')
+                                ->where('d_personal_mac.idpersonal', $request->idpersonal)
+                                ->get();
+
+        $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
+
+        $view = view('personal.modals.md_cambio_mac', compact('centromac', 'idmac', 'personal', 'detalle_mac'))->render();
+
+        return response()->json(['html' => $view]);
+    }
+
+    
+
     public function update_entidad(Request $request)
     {
         try {
@@ -242,6 +265,46 @@ class AsesoresController extends Controller
             $personal->save();
 
             return $personal;
+        } catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
+    }
+
+    public function update_mac(Request $request)
+    {
+        try {
+
+            $personal = Personal::findOrFail($request->idpersonal);
+            $personal->IDMAC = $request->mac;
+            $personal->save();
+
+            return $personal;
+        } catch (\Exception $e) {
+            //Si existe algún error en la Transacción
+            $response_ = response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD'
+            ], 400);
+
+            return $response_;
+        }
+    }
+
+    public function delete_mac_mod(Request $request)
+    {
+        try {
+
+            $delete = DB::table('d_personal_mac')->where('id', $request->id)->delete();
+
+            return response()->json(['success' => true, 'message' => 'Registro eliminado.']);
         } catch (\Exception $e) {
             //Si existe algún error en la Transacción
             $response_ = response()->json([

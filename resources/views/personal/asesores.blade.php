@@ -395,6 +395,21 @@ function btnUpdateEntidad(idpersonal){
 
 }
 
+function btnCambiarMac(idmac, idpersonal){
+
+    $.ajax({
+        type:'post',
+        url: "{{ route('personal.modals.md_cambio_mac') }}",
+        dataType: "json",
+        data:{"_token": "{{ csrf_token() }}", idmac : idmac, idpersonal : idpersonal},
+        success:function(data){
+            $("#modal_show_modal").html(data.html);
+            $("#modal_show_modal").modal('show');
+        }
+    });
+
+}
+
 function btnModulo (idpersonal){
 
     $.ajax({

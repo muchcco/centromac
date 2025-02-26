@@ -198,7 +198,10 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/modals/md_baja_asesores', [AsesoresController::class, 'md_baja_asesores'])->name('modals.md_baja_asesores');
         Route::post('/modals/md_cambiar_entidad', [AsesoresController::class, 'md_cambiar_entidad'])->name('modals.md_cambiar_entidad');
         Route::post('/modals/md_cambiar_modulo', [AsesoresController::class, 'md_cambiar_modulo'])->name('modals.md_cambiar_modulo');
+        Route::post('/modals/md_cambio_mac', [AsesoresController::class, 'md_cambio_mac'])->name('modals.md_cambio_mac');
         Route::post('/update_entidad', [AsesoresController::class, 'update_entidad'])->name('update_entidad');
+        Route::post('/update_mac', [AsesoresController::class, 'update_mac'])->name('update_mac');
+        Route::post('/delete_mac_mod', [AsesoresController::class, 'delete_mac_mod'])->name('delete_mac_mod');
         Route::post('/update_modulo', [AsesoresController::class, 'update_modulo'])->name('update_modulo');
         Route::post('/baja_asesores', [AsesoresController::class, 'baja_asesores'])->name('baja_asesores');
 

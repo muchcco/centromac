@@ -75,6 +75,11 @@
                     {{-- <button class="nobtn bandejTool" data-tippy-content="Editar Entidad"
                         onclick="btnCambiarEntidad('{{ $que->IDPERSONAL }}' )"><i
                             class="las la-building text-secondary font-16 text-info"></i></button> --}}
+                    @role('Administrador')
+                            <button class="nobtn bandejTool" data-tippy-content="Editar Entidad"
+                                onclick="btnCambiarMac('{{ $que->IDMAC }}', '{{ $que->IDPERSONAL }}' )"><i
+                                    class="las la-sync text-secondary font-16 text-info"></i></button>
+                    @endrole
                     <button class="nobtn bandejTool" data-tippy-content="Dar de baja"
                         onclick="btnElimnarServicio('{{ $que->IDPERSONAL }}' )"><i
                             class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
