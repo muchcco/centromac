@@ -5,10 +5,11 @@
 </table>
 
 <table>
-    <tr>                        
+    <tr>
         <th style="border: 1px solid black" rowspan="3" colspan="3"></th>
         <th style="border: 1px solid black" colspan="28" rowspan="2">
-            REPORTE CONSOLIDADO DE PUNTUALIDAD DE OCUPABILIDAD DE LOS MÓDULOS DE LAS ENTIDADES PARTICIPANTES POR MES<br />
+            REPORTE CONSOLIDADO DE PUNTUALIDAD DE OCUPABILIDAD DE LOS MÓDULOS DE LAS ENTIDADES PARTICIPANTES POR
+            MES<br />
             Período evaluado Enero a diciembre {{ $fecha_año }}
         </th>
         <th style="border: 1px solid black"> Código</th>
@@ -22,7 +23,7 @@
         <th style="border: 1px solid black" colspan="2">Centro MAC</th>
         <th style="border: 1px solid rgb(0, 0, 0)" colspan="15">{{ $nombreMac }} </th>
         <th style="border: 1px solid black" colspan="2">MES:</th>
-        <th style="border: 1px solid black" colspan="12">{{ $mesNombre }}</th>        
+        <th style="border: 1px solid black" colspan="12">{{ $mesNombre }}</th>
     </tr>
 </table>
 
@@ -30,11 +31,13 @@
     <tr>
         <td rowspan="2" colspan="2" style="text-align: end; border: none;">Leyenda</td>
         <td style="border: 1px solid #2F75B5; text-align: center;">SI</td>
-        <td colspan="19" style="text-align: start !important; border: 1px solid #2F75B5;">Módulo ocupado 15 minutos antes del inicio de atención al público del Centro MAC.</td> 
+        <td colspan="19" style="text-align: start !important; border: 1px solid #2F75B5;">Módulo ocupado 15 minutos
+            antes del inicio de atención al público del Centro MAC.</td>
     </tr>
     <tr>
         <td style="color: white; border: 1px solid #2F75B5; background: #2F75B5; text-align: center;">NO</td>
-        <td colspan="19" style="text-align: start !important;border: 1px solid #2F75B5;">Módulo que no estuvo ocupado 15 minutos antes del inicio de atención al público del Centro MAC.</td>      
+        <td colspan="19" style="text-align: start !important;border: 1px solid #2F75B5;">Módulo que no estuvo ocupado
+            15 minutos antes del inicio de atención al público del Centro MAC.</td>
     </tr>
 </table>
 
@@ -46,7 +49,8 @@
             @for ($i = 1; $i <= $numeroDias; $i++)
                 <th style="color: white; border: 1px solid black; background-color: #0B22B4;">{{ $i }}</th>
             @endfor
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4;">OBSERVACIONES O COMENTARIOS</th>
+            <th style="color: white; border: 1px solid black; background-color: #0B22B4;">OBSERVACIONES O COMENTARIOS
+            </th>
         </tr>
     </thead>
 
@@ -70,11 +74,11 @@
                             style="min-width: 28px; 
                             @if (isset($dias[$i][$modulo->idmodulo]['hora_minima'])) @php
                                     $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
-                                    $horaLimite = '08:15';
+                                    $horaLimite = '08:16';
                                     $horaRegistro = new DateTime($horaMinima);
                                     $horaLimiteObj = new DateTime($horaLimite);
-                                    $esTarde = $horaRegistro > $horaLimiteObj;
-                                @endphp
+                                    $esTarde = $horaRegistro >= $horaLimiteObj; // Cambié la comparación para incluir 08:16
+                            @endphp
                                 @if (!$esTarde) 
                                     background: #FFFFFF; color: #000; /* SI */
                                 @else
@@ -85,7 +89,7 @@ background: #474747; color: #fff; /* - */
                             @if (isset($dias[$i][$modulo->idmodulo]['hora_minima']))
                                 @php
                                     $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
-                                    $esTarde = new DateTime($horaMinima) > new DateTime('08:15');
+                                    $esTarde = new DateTime($horaMinima) >= new DateTime('08:16');
                                 @endphp
                                 <span class="text-center">{{ !$esTarde ? 'SI' : 'NO' }}</span>
                             @else

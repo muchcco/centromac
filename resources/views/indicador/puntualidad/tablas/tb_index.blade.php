@@ -60,10 +60,10 @@
                             style="min-width: 28px; 
                             @if (isset($dias[$i][$modulo->idmodulo]['hora_minima'])) @php
                                     $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
-                                    $horaLimite = '08:15';
+                                    $horaLimite = '08:16';
                                     $horaRegistro = new DateTime($horaMinima);
                                     $horaLimiteObj = new DateTime($horaLimite);
-                                    $esTarde = $horaRegistro > $horaLimiteObj;
+                                    $esTarde = $horaRegistro >= $horaLimiteObj;
                                 @endphp
                                 @if (!$esTarde) 
                                     background: #FFFFFF; color: black; /* SI */
@@ -75,7 +75,7 @@ background: #474747; color: white; /* - */
                             @if (isset($dias[$i][$modulo->idmodulo]['hora_minima']))
                                 @php
                                     $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
-                                    $esTarde = new DateTime($horaMinima) > new DateTime('08:15');
+                                    $esTarde = new DateTime($horaMinima) >= new DateTime('08:16');
                                 @endphp
                                 <span class="text-center">{{ !$esTarde ? 'SI' : 'NO' }}</span>
                             @else
