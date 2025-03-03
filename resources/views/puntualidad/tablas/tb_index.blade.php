@@ -40,7 +40,7 @@
 
                     // Si Dias Marcados es 0, mostrar valores especiales
                     if ($contadorSi == 0) {
-                        $contadorSi1 = "- DIAS MARCADOS -";
+                        $contadorSi1 = "-";
                         $porcentaje = "-";
                     }
                 @endphp
