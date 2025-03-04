@@ -19,18 +19,23 @@
         @foreach ($datos as $i => $dato)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td  class="text-uppercase">
+                <td class="text-uppercase">
                     {{-- <a href="{{ route('asistencia.det_us', $dato->n_dni) }}">{{ $dato->nombreu }}</a> --}}
                     {{ $dato->nombreu }}
                 </td>
-                <td>{{ $dato->n_dni }}</td>
+                <td>
+                    <a href="javascript:void(0);"
+                        onclick="abrirModalAgregarAsistencia('{{ $dato->n_dni }}', '{{ $dato->nombreu }}', '{{ $dato->fecha_asistencia }}')">
+                        {{ $dato->n_dni }}
+                    </a>
+                </td>
                 <td>
                     <a href="javascript:void(0);"
                         onclick="abrirModalModificar('{{ $dato->n_dni }}', '{{ $dato->nombreu }}', '{{ $dato->nombre_modulo }}', '{{ $dato->fecha_asistencia }}')">
                         {{ $dato->nombre_modulo }}
                     </a>
                 </td>
-                <td  class="text-uppercase">{{ $dato->ABREV_ENTIDAD }}</td>
+                <td class="text-uppercase">{{ $dato->ABREV_ENTIDAD }}</td>
                 {{--  <td>
                     @if ($dato->mostrar == 'itinerante')
                         {{ $dato->nombre_modulo }} (Itinerante)
@@ -86,7 +91,7 @@
             },
             "columns": [{
                     "width": ""
-                }, 
+                },
                 {
                     "width": ""
                 },
@@ -141,6 +146,29 @@
             error: function(xhr, status, error) {
                 // Mostrar un mensaje de error si ocurre algún problema
                 alert('Hubo un error al cargar el modal');
+            }
+        });
+    }
+
+    function abrirModalAgregarAsistencia(dni, nombre, fecha) {
+        $.ajax({
+            type: 'POST',
+            url: "{{ route('asistencia.modals.md_add_dni_asistencia') }}",
+            data: {
+                "_token": "{{ csrf_token() }}",
+                "DNI": dni,
+                "nombre": nombre,
+                "fecha_asistencia": fecha
+            },
+            beforeSend: function() {
+                console.log("Cargando modal...");
+            },
+            success: function(response) {
+                $("#modal_show_modal").html(response.html); // Cargar el modal en el contenedor
+                $("#modal_show_modal").modal('show'); // Mostrar el modal
+            },
+            error: function(error) {
+                console.log("Error al cargar el modal", error);
             }
         });
     }

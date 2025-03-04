@@ -386,6 +386,17 @@ class AsistenciaController extends Controller
 
         return response()->json(['html' => $html]);
     }
+    public function md_add_dni_asistencia(Request $request)
+    {
+        $dni = $request->input('DNI');
+        $nombre = $request->input('nombre');
+        $fecha_asistencia = $request->input('fecha_asistencia');
+
+        // Cargar la vista del modal con los datos
+        $html = view('asistencia.modals.md_add_dni_asistencia', compact('dni', 'nombre', 'fecha_asistencia'))->render();
+
+        return response()->json(['html' => $html]);
+    }
 
     public function md_add_asistencia(Request $request)
     {
@@ -575,7 +586,7 @@ class AsistenciaController extends Controller
 
                 $idmac_callao = $this->centro_mac()->idmac;
                 $fecha_inicio = $request->fecha_inicio;
-                $fecha_fin    = $request->fecha_fin; 
+                $fecha_fin    = $request->fecha_fin;
 
                 $call_centro = DB::select("INSERT INTO M_ASISTENCIA (
                                                     IDTIPO_ASISTENCIA,
@@ -1679,7 +1690,7 @@ class AsistenciaController extends Controller
                 'MPM.STATUS as status_modulo',
                 'MM.N_MODULO as N_MODULO' // Asegurándonos de mostrar solo el módulo correspondiente al Centro MAC
             )
-           
+
             ->where(function ($query) use ($request) {
                 // Filtra por fecha (mes y año) y centro MAC
                 $idmac = $this->centro_mac()->idmac;

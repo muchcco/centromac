@@ -90,12 +90,12 @@
                 <div class="card-body bootstrap-select-1">
                     <div class="row">
                         <div class="col-12">
-                            @role('Administrador|Especialista TIC|Especialista_TIC')                            
+                            @role('Administrador|Especialista TIC|Especialista_TIC')
                                 @if ($idmac == 10)
-                                <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
-                                    onclick="btnAddAsistenciaCallao()"><i class="fa fa-upload" aria-hidden="true"></i>
-                                    Subir Archivo de Asistencia
-                                </button>
+                                    <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
+                                        onclick="btnAddAsistenciaCallao()"><i class="fa fa-upload" aria-hidden="true"></i>
+                                        Subir Archivo de Asistencia
+                                    </button>
                                 @else
                                     <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
                                         onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
