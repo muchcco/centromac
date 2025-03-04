@@ -243,9 +243,9 @@ class AsesoresController extends Controller
         $idmac = $request->mac;
 
         $detalle_mac = DB::table('d_personal_mac')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'd_personal_mac.idcentro_mac')
-            ->where('d_personal_mac.idpersonal', $request->idpersonal)
-            ->get();
+                                ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'd_personal_mac.idcentro_mac')
+                                ->where('d_personal_mac.idpersonal', $request->idpersonal)
+                                ->get();
 
         $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
 
@@ -254,7 +254,7 @@ class AsesoresController extends Controller
         return response()->json(['html' => $view]);
     }
 
-
+    
 
     public function update_entidad(Request $request)
     {
@@ -584,7 +584,7 @@ class AsesoresController extends Controller
                 $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
                     ->whereDate('MPM.FECHAINICIO', '<=', now())
                     ->whereDate('MPM.FECHAFIN', '>=', now())
-                    ->where('MPM.STATUS', '=', 'fijo');
+                    ->where('MPM.STATUS', '=', 'fijo'); // Agregar condición para MPM.STATUS = 'fijo'
             })
             ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
             ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
@@ -596,8 +596,8 @@ class AsesoresController extends Controller
                 DB::raw("CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU"),
                 'DPT.TIPODOC_ABREV',
                 'MP.NUM_DOC',
-                DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM db_centros_mac.M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
-                DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM db_centros_mac.M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
+                DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
+                DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
                 'MCM.NOMBRE_MAC',
                 'MP.FLAG',
                 'MP.CORREO',
@@ -625,48 +625,16 @@ class AsesoresController extends Controller
                 'MP.I_QUECHUA'
             )
             ->where('MP.FLAG', 1)
-            ->where('MP.IDENTIDAD', '!=', 17)
             ->where(function ($query) {
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
                     $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
                 }
             })
-            ->groupBy(
-                'MP.IDPERSONAL',
-                'MP.NUM_DOC',
-                'DPT.TIPODOC_ABREV',
-                'ME.NOMBRE_ENTIDAD',
-                'MMOD.N_MODULO',
-                'MCM.NOMBRE_MAC',
-                'MP.FLAG',
-                'MP.CORREO',
-                'MP.FECH_NACIMIENTO',
-                'MP.CELULAR',
-                'DPC.NOMBRE_CARGO',
-                'MP.SEXO',
-                'MP.PD_FECHA_INGRESO',
-                'MP.PCM_TALLA',
-                'MP.ESTADO_CIVIL',
-                'MP.DF_N_HIJOS',
-                'MP.NUMERO_MODULO',
-                'MP.IDCARGO_PERSONAL',
-                'MP.TVL_ID',
-                'MP.N_CONTRATO',
-                'MP.TIP_CAS',
-                'MP.GI_ID',
-                'MP.GI_CARRERA',
-                'MP.GI_CURSO_ESP',
-                'MP.DLP_JEFE_INMEDIATO',
-                'MP.APE_MAT',
-                'MP.DLP_CARGO',
-                'MP.DLP_TELEFONO',
-                'MP.I_INGLES',
-                'MP.I_QUECHUA'
-            )
+            ->where('MP.IDENTIDAD', '!=', 17)
             ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
             ->get();
 
-        $export = Excel::download(new AsesoresExport($query), 'REPORTE_DE_PERSONAL_ASESORES_CENTROS_MAC.xlsx');
+        $export = Excel::download(new AsesoresExport($query), 'REPORTE DE PERSONAL ASESORES CENTROS MAC.xlsx');
 
         return $export;
     }
