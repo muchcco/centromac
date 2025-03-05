@@ -93,6 +93,7 @@ class ModuloController extends Controller
             'fecha_fin' => 'required|date',
             'entidad_id' => 'required|integer|exists:m_entidad,IDENTIDAD', // Valida que entidad_id exista en la tabla m_entidad
             'id_centromac' => 'required|integer|exists:m_centro_mac,IDCENTRO_MAC', // Valida que id_centromac exista en la tabla m_centro_mac
+            'es_administrativo' => 'required|in:SI,NO', // Validación para ES_ADMINISTRATIVO
         ]);
 
         // Si la validación falla, devolver un error 422 con los mensajes de error
@@ -112,6 +113,7 @@ class ModuloController extends Controller
             $modulo->FECHAFIN = $request->fecha_fin;
             $modulo->IDENTIDAD = $request->entidad_id; // Asigna el IDENTIDAD del módulo
             $modulo->IDCENTRO_MAC = $request->id_centromac;  // Asignar el id_centromac recibido en la solicitud
+            $modulo->ES_ADMINISTRATIVO = $request->es_administrativo; // Asigna el valor de ES_ADMINISTRATIVO
             $modulo->save();
 
             // Responder con un mensaje de éxito y los datos del módulo creado
@@ -170,6 +172,7 @@ class ModuloController extends Controller
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'required|date',
             'id_modulo' => 'required|integer|exists:m_modulo,IDMODULO',
+            'es_administrativo' => 'required|in:SI,NO', // Validación para ES_ADMINISTRATIVO
         ]);
 
         try {
@@ -184,6 +187,7 @@ class ModuloController extends Controller
             $modulo->FECHAFIN = $request->fecha_fin;
             $modulo->IDENTIDAD = $request->entidad_id;
             $modulo->IDCENTRO_MAC = $idCentroMac;  // Asignar id_centromac obtenido del usuario autenticado
+            $modulo->ES_ADMINISTRATIVO = $request->es_administrativo; // Actualiza el valor de ES_ADMINISTRATIVO
             $modulo->save();
 
             return response()->json(['message' => 'Módulo actualizado exitosamente'], 200);

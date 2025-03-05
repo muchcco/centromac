@@ -154,6 +154,7 @@
             formData.append("fecha_fin", $("#fecha_fin").val());
             formData.append("entidad_id", $("#entidad_id").val());
             formData.append("id_centromac", $("#id_centromac").val());
+            formData.append("es_administrativo", $("#es_administrativo").val()); // Agregar el valor de ES_ADMINISTRATIVO
             formData.append("_token", $("input[name=_token]").val());
 
             // Solicitud AJAX para almacenar el módulo
@@ -235,6 +236,7 @@
             formData.append("fecha_fin", $("#fecha_fin").val()); // Recoge la fecha de fin
             formData.append("entidad_id", $("#entidad_id").val()); // Recoge la entidad seleccionada
             formData.append("id_modulo", id); // Asegúrate de enviar el id_modulo correctamente
+            formData.append("es_administrativo", $("#es_administrativo").val()); // Agregar el valor de ES_ADMINISTRATIVO
             formData.append("_token", $("input[name=_token]").val()); // CSRF token
 
             $.ajax({

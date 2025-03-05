@@ -7,6 +7,7 @@
             <th>Fecha Inicio</th>
             <th>Fecha Fin</th>
             <th>Centro MAC</th>
+            <th>Es Administrativo</th> <!-- Nueva columna -->
             <th>Acciones</th>
         </tr>
     </thead>
@@ -19,6 +20,7 @@
                 <td>{{ $modulo->FECHAINICIO ? $modulo->FECHAINICIO : 'No hay datos' }}</td>
                 <td>{{ $modulo->FECHAFIN ? $modulo->FECHAFIN : 'No hay datos' }}</td>
                 <td>{{ $modulo->NOMBRE_MAC }}</td>
+                <td>{{ $modulo->ES_ADMINISTRATIVO == 'SI' ? 'Sí' : 'No' }}</td> <!-- Mostrar SI o NO -->
                 <td>
                     <button class="nobtn bandejTool" data-tippy-content="Editar módulo" onclick="btnEditModulo('{{ $modulo->IDMODULO  }}')"><i class="las la-pen text-secondary font-16 text-success"></i></button>
                     <button class="nobtn bandejTool" data-tippy-content="Eliminar módulo" onclick="btnDeleteModulo('{{ $modulo->IDMODULO  }}')"><i class="las la-trash-alt text-secondary font-16 text-danger"></i></button>
@@ -46,6 +48,7 @@ $(document).ready(function() {
             { "width": "15%" },
             { "width": "15%" },
             { "width": "15%" },
+            { "width": "15%" }, <!-- Columna nueva -->
             { "width": "15%" }
         ]
     });

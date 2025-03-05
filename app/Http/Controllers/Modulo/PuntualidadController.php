@@ -131,7 +131,6 @@ class PuntualidadController extends Controller
         $dias = [];
 
         // Inicializar un array para almacenar los módulos y entidades
-        // Inicializar un array para almacenar los módulos y entidades
         $modulos = DB::table('m_modulo')
             ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
             ->where('m_modulo.idcentro_mac', $idmac) // Filtrar por el idcentro_mac recibido
@@ -139,9 +138,11 @@ class PuntualidadController extends Controller
                 $query->where('m_modulo.fechainicio', '<=', $fechaFin)
                     ->where('m_modulo.fechafin', '>=', $fechaInicio);
             })
+            ->where('m_modulo.es_administrativo', 'NO') // Filtrar por el campo es_administrativo == "NO"
             ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
             ->orderBy('m_modulo.n_modulo') // Ordena por el nombre del módulo
             ->get();
+
 
         // Obtener feriados del mes y año especificados
         $feriados = DB::table('feriados')

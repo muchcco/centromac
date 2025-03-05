@@ -109,6 +109,7 @@ class Ocupabilidad1Controller extends Controller
                 $query->where('m_modulo.fechainicio', '<=', $fecha_fin)
                     ->where('m_modulo.fechafin', '>=', $fecha_inicio);
             })
+            ->where('m_modulo.es_administrativo', 'NO') // Filtrar por el campo es_administrativo == "NO"
             ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
             ->get();
 
