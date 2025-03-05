@@ -146,7 +146,6 @@ class OcupabilidadController extends Controller
             ->orderBy('m_modulo.n_modulo') // Ordena por el nombre del módulo
             ->get();
 
-
         // Obtener feriados del mes y año especificados
         $feriados = DB::table('feriados')
             ->whereYear('fecha', $fecha_año)

@@ -257,12 +257,29 @@
                     });
                 },
                 error: function(xhr, status, error) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No se pudo actualizar.',
-                        confirmButtonText: 'Aceptar'
-                    });
+                    document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
+                    document.getElementById("btnEnviarForm").disabled = false;
+
+                    // Verificamos si el backend ha enviado el flag 'show_modal' para mostrar el modal de error
+                    if (xhr.status === 422 && xhr.responseJSON.show_modal) {
+                        let errorMessage = xhr.responseJSON.message;
+
+                        // Mostrar el mensaje de error en el modal
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: errorMessage, // Mostrar el mensaje de error que se envía desde el backend
+                            confirmButtonText: 'Aceptar'
+                        });
+                    } else {
+                        // Si no es el caso de error de validación, mostrar el error genérico
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: "Hubo un error al procesar la solicitud. Intentar nuevamente.",
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
                 }
             });
         }

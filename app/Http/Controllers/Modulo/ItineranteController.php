@@ -193,7 +193,6 @@ class ItineranteController extends Controller
         }
     }
 
-    // Actualizar un registro existente
     public function update(Request $request)
     {
         // Validar los datos de entrada
@@ -205,10 +204,10 @@ class ItineranteController extends Controller
             'id' => 'required|integer|exists:m_personal_modulo,id', // Validar que el ID exista en la tabla m_personal_modulo
         ]);
 
+        // Si la validación falla
         if ($validator->fails()) {
             return response()->json([
-                'data' => null,
-                'message' => $validator->errors(),
+                'message' => $validator->errors()->all(), // Envía todos los errores de validación
                 'status' => 422
             ], 422);
         }
@@ -216,6 +215,30 @@ class ItineranteController extends Controller
         try {
             // Buscar el registro por su ID
             $personalModulo = PersonalModulo::findOrFail($request->id);
+
+            // Verificar si ya existe un registro para el mismo num_doc con cruce de fechas (excepto el registro actual)
+            $existingRecord = PersonalModulo::where('num_doc', $request->num_doc)
+                ->where('idcentro_mac', auth()->user()->idcentro_mac)
+                ->where('status', 'itinerante') // Buscar solo los registros con status 'itinerante'
+                ->where('id', '!=', $personalModulo->id) // Asegurarse de que no sea el mismo registro que estamos actualizando
+                ->where(function ($query) use ($request) {
+                    // Validación de cruce de fechas
+                    $query->whereBetween('fechainicio', [$request->fechainicio, $request->fechafin])
+                        ->orWhereBetween('fechafin', [$request->fechainicio, $request->fechafin])
+                        ->orWhere(function ($query2) use ($request) {
+                            $query2->where('fechainicio', '<', $request->fechafin)
+                                ->where('fechafin', '>', $request->fechainicio);
+                        });
+                })
+                ->exists();
+
+            if ($existingRecord) {
+                return response()->json([
+                    'message' => 'El número de documento ya tiene un registro en ese rango de fechas.',
+                    'status' => 422,
+                    'show_modal' => true // Mostrar modal para error
+                ], 422);
+            }
 
             // Actualizar los campos
             $personalModulo->num_doc = $request->num_doc;
@@ -240,6 +263,7 @@ class ItineranteController extends Controller
             ], 400);
         }
     }
+
 
     // Eliminar un registro
     public function destroy(Request $request)
