@@ -105,8 +105,8 @@ class PcmController extends Controller
                 }
             })
             ->whereIn('MP.FLAG', [1, 2])
-            ->whereIn('MP.IDENTIDAD', [17, 100, 98])
-            ->where('DPC.IDCARGO_PERSONAL', '<>', 6)
+            ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
+            ->whereIn('DPC.IDCARGO_PERSONAL', [1, 2, 3, 4, 5])
             ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
             ->get();
 
@@ -246,16 +246,14 @@ class PcmController extends Controller
                     $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
                         ->whereDate('MPM.FECHAINICIO', '<=', now())
                         ->whereDate('MPM.FECHAFIN', '>=', now())
-                        ->where(function ($query) {
-                            // Solo aplica la condición de 'fijo' cuando IDENTIDAD no es 17
-                            $query->where('MPM.STATUS', '=', 'fijo')
-                                ->orWhere('MP.IDENTIDAD', '=', 17); // Para identidad 17 no aplicar 'fijo'
-                        });
+                        ->where('MPM.STATUS', '=', 'fijo') // Agregar condición para MPM.STATUS = 'fijo'
+                        ->where('MP.IDMAC', '=', 'MPM.IDCENTRO_MAC');
                 })
                 ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
                 ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
                 ->leftJoin('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
-                ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+                ->join('db_centros_mac.D_PERSONAL_MAC as DPM', 'DPM.IDPERSONAL', '=', 'MP.IDPERSONAL')
+                ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'DPM.IDCENTRO_MAC') // Se une con M_CENTRO_MAC
                 ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
                 ->select(
                     'MP.IDPERSONAL',
@@ -264,8 +262,7 @@ class PcmController extends Controller
                     'MP.NUM_DOC',
                     DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
                     DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
-                    'MCM.NOMBRE_MAC',
-                    'ME.ABREV_ENTIDAD',  // Asegúrate de incluir ABREV_ENTIDAD en el select
+                    'MCM.NOMBRE_MAC',  // Se obtiene el NOMBRE_MAC desde MCM
                     'MP.FLAG',
                     'MP.CORREO',
                     'MP.FECH_NACIMIENTO',
@@ -289,17 +286,16 @@ class PcmController extends Controller
                     'MP.DLP_CARGO',
                     'MP.DLP_TELEFONO',
                     'MP.I_INGLES',
-                    'MP.I_QUECHUA'
+                    'MP.I_QUECHUA',
+                    'DPM.IDCENTRO_MAC'
                 )
-
                 ->where('MP.FLAG', 1)
                 ->where(function ($query) {
                     if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                        $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
+                        $query->where('DPM.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
                     }
                 })
                 // ->where('MP.IDENTIDAD', '!=', 17)
-                ->orderBy('MCM.NOMBRE_MAC', 'asc')
                 ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
                 ->get();
         } elseif ($tipo == 3) {
@@ -308,16 +304,14 @@ class PcmController extends Controller
                     $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
                         ->whereDate('MPM.FECHAINICIO', '<=', now())
                         ->whereDate('MPM.FECHAFIN', '>=', now())
-                        ->where(function ($query) {
-                            // Solo aplica la condición de 'fijo' cuando IDENTIDAD no es 17
-                            $query->where('MPM.STATUS', '=', 'fijo')
-                                ->orWhere('MP.IDENTIDAD', '=', 17); // Para identidad 17 no aplicar 'fijo'
-                        });
+                        ->where('MPM.STATUS', '=', 'fijo') // Agregar condición para MPM.STATUS = 'fijo'
+                        ->where('MP.IDMAC', '=', 'MPM.IDCENTRO_MAC');
                 })
                 ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
                 ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
                 ->leftJoin('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
-                ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+                ->join('db_centros_mac.D_PERSONAL_MAC as DPM', 'DPM.IDPERSONAL', '=', 'MP.IDPERSONAL')
+                ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'DPM.IDCENTRO_MAC') // Se une con M_CENTRO_MAC
                 ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
                 ->select(
                     'MP.IDPERSONAL',
@@ -326,8 +320,7 @@ class PcmController extends Controller
                     'MP.NUM_DOC',
                     DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
                     DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
-                    'MCM.NOMBRE_MAC',
-                    'ME.ABREV_ENTIDAD',  // Asegúrate de incluir ABREV_ENTIDAD en el select
+                    'MCM.NOMBRE_MAC',  // Se obtiene el NOMBRE_MAC desde MCM
                     'MP.FLAG',
                     'MP.CORREO',
                     'MP.FECH_NACIMIENTO',
@@ -351,15 +344,16 @@ class PcmController extends Controller
                     'MP.DLP_CARGO',
                     'MP.DLP_TELEFONO',
                     'MP.I_INGLES',
-                    'MP.I_QUECHUA'
+                    'MP.I_QUECHUA',
+                    'DPM.IDCENTRO_MAC'
                 )
                 ->where('MP.FLAG', 1)
                 ->where(function ($query) {
                     if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                        $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
+                        $query->where('DPM.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
                     }
                 })
-                ->whereIn('MP.IDENTIDAD', [17,98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
+                ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                 ->whereIn('DPC.IDCARGO_PERSONAL', [1, 2, 3, 4, 5])
                 ->orderBy('MCM.NOMBRE_MAC', 'asc')
                 ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')

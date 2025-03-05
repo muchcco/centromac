@@ -5,7 +5,7 @@
             <th class="text-white">Asesor</th>
             <th class="text-white">Número de Documento</th>
             <th class="text-white">Entidad</th>
-            <th class="text-white">Módulo</th>
+            {{-- <th class="text-white">Módulo</th> --}}
             <th class="text-white">Centro MAC</th>
             <th class="text-white">Correo</th>
             <th class="text-white">% de progreso</th>
@@ -30,7 +30,7 @@
                 </td>
                 <td>{{ $que->TIPODOC_ABREV }} - {{ $que->NUM_DOC }}</td>
                 <td>{{ $que->NOMBRE_ENTIDAD }}</td>
-                <td>
+                {{-- <td>
                     @if ($que->N_MODULO === null)
                         <a class="nobtn bandejTool" data-tippy-content="Agregar módulo"
                             href="{{ route('personalModulo.index') }}">
@@ -41,7 +41,7 @@
                             {{ $que->N_MODULO }}
                     
                     @endif
-                </td>
+                </td> --}}
                 <td>
                     {{ $que->NOMBRE_MAC }} 
                     @if ($que->COUNT_DPM > 1)
@@ -105,9 +105,9 @@
             "columns": [{
                     "width": ""
                 },
-                {
-                    "width": ""
-                },
+                // {
+                //     "width": ""
+                // },
                 {
                     "width": ""
                 },

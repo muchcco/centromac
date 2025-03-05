@@ -879,8 +879,7 @@ class PagesController extends Controller
                             ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
                             ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 2)
-                            ->whereIn('ME.IDENTIDAD', [98, 100, 103, 17])
-                            ->where('MP.FLAG', 1)
+                            ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                             ->orderBy('MCM.NOMBRE_MAC', 'ASC')
                             ->get();
 
@@ -889,7 +888,7 @@ class PagesController extends Controller
                             ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
                             ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 1)
-                            ->whereIn('ME.IDENTIDAD', [98, 100, 103, 17])
+                            ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                             ->where('MP.FLAG', 1)
                             ->orderBy('MCM.NOMBRE_MAC', 'ASC')
                             ->get();
@@ -900,7 +899,7 @@ class PagesController extends Controller
                             ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
                             ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 3)
-                            ->whereIn('ME.IDENTIDAD', [98, 100, 103, 17])
+                            ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                             ->where('MP.FLAG', 1)
                             ->orderBy('MCM.NOMBRE_MAC', 'ASC')
                             ->get();   
@@ -910,7 +909,7 @@ class PagesController extends Controller
                             ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
                             ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 4)
-                            ->whereIn('ME.IDENTIDAD', [98, 100, 103, 17])
+                            ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                             ->where('MP.FLAG', 1)
                             ->orderBy('MCM.NOMBRE_MAC', 'ASC')
                             ->get();  
@@ -921,8 +920,8 @@ class PagesController extends Controller
                             ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
                             ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 5)
-                            ->whereIn('ME.IDENTIDAD', [98, 100, 103, 17])
-                            ->where('MP.FLAG', 1)
+                            ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
+                                ->where('MP.FLAG', 1)
                             ->orderBy('MCM.NOMBRE_MAC', 'ASC')
                             ->get();  
 
