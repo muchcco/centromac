@@ -579,17 +579,19 @@ class AsesoresController extends Controller
 
     public function exportasesores_excel()
     {
-        $query = DB::table('db_centros_mac.M_PERSONAL as MP')
+            $query = DB::table('db_centros_mac.M_PERSONAL as MP')
             ->leftJoin('db_centros_mac.M_PERSONAL_MODULO as MPM', function ($join) {
                 $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
                     ->whereDate('MPM.FECHAINICIO', '<=', now())
                     ->whereDate('MPM.FECHAFIN', '>=', now())
-                    ->where('MPM.STATUS', '=', 'fijo'); // Agregar condición para MPM.STATUS = 'fijo'
+                    ->where('MPM.STATUS', '=', 'fijo') // Agregar condición para MPM.STATUS = 'fijo'
+                    ->where('MP.IDMAC', '=', 'MPM.IDCENTRO_MAC');
             })
             ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
             ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
             ->leftJoin('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
-            ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+            ->join('db_centros_mac.D_PERSONAL_MAC as DPM', 'DPM.IDPERSONAL', '=', 'MP.IDPERSONAL')
+            ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'DPM.IDCENTRO_MAC') // Se une con M_CENTRO_MAC
             ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
             ->select(
                 'MP.IDPERSONAL',
@@ -598,7 +600,7 @@ class AsesoresController extends Controller
                 'MP.NUM_DOC',
                 DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
                 DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
-                'MCM.NOMBRE_MAC',
+                'MCM.NOMBRE_MAC',  // Se obtiene el NOMBRE_MAC desde MCM
                 'MP.FLAG',
                 'MP.CORREO',
                 'MP.FECH_NACIMIENTO',
@@ -622,17 +624,19 @@ class AsesoresController extends Controller
                 'MP.DLP_CARGO',
                 'MP.DLP_TELEFONO',
                 'MP.I_INGLES',
-                'MP.I_QUECHUA'
+                'MP.I_QUECHUA',
+                'DPM.IDCENTRO_MAC'
             )
             ->where('MP.FLAG', 1)
             ->where(function ($query) {
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                    $query->where('MP.IDMAC', '=', $this->centro_mac()->idmac);
+                    $query->where('DPM.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
                 }
             })
             ->where('MP.IDENTIDAD', '!=', 17)
             ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
             ->get();
+        
 
         $export = Excel::download(new AsesoresExport($query), 'REPORTE DE PERSONAL ASESORES CENTROS MAC.xlsx');
 
