@@ -1186,7 +1186,7 @@ class AsistenciaController extends Controller
                 )
                 ->where(function ($query) use ($request) {
                     // Filtra por fecha (mes y año) y centro MAC
-                    $idmac = $this->centro_mac()->idmac;
+                   // $idmac = $this->centro_mac()->idmac;
 
                     // Si se proporcionan fechas de inicio y fin
                     if ($request->fecha_inicio && $request->fecha_fin) {
@@ -1200,7 +1200,7 @@ class AsistenciaController extends Controller
                     }
 
                     // Aseguramos que siempre se filtre por IDCENTRO_MAC
-                    $query->where('MA.IDCENTRO_MAC', $idmac);
+                   // $query->where('MA.IDCENTRO_MAC', $idmac);
                 })
                 ->where(function ($query) use ($request, $idmac) {
                     // Filtra por entidad si es necesario
