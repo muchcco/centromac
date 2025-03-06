@@ -30,12 +30,26 @@ class ExternoController extends Controller
         setlocale(LC_TIME, 'es_PE', 'Spanish_Spain', 'Spanish');
         Carbon::setLocale('es');
 
-        $personal = Personal::select(DB::raw("CONCAT(APE_PAT, ' ', APE_MAT, ' - ', NOMBRE) AS NOMBRES"), 'FECH_NACIMIENTO', 'NOMBRE_ENTIDAD', 'FOTO_RUTA', 'SEXO')
-                                        ->join('M_ENTIDAD', 'M_PERSONAL.IDENTIDAD', '=', 'M_ENTIDAD.IDENTIDAD')
-                                        ->where('M_PERSONAL.FLAG', 1)
-                                        ->whereNotNull('M_PERSONAL.FECH_NACIMIENTO')
-                                        ->where('M_PERSONAL.IDMAC', $request->idmac)
-                                        ->get();
+        $personal = Personal::select(
+                                DB::raw("CONCAT(APE_PAT, ' ', APE_MAT, ' - ', NOMBRE) AS NOMBRES"),
+                                'FECH_NACIMIENTO',
+                                'FOTO_RUTA',
+                                'SEXO',
+                                'NUM_DOC',
+                                DB::raw("(
+                                    SELECT AP2.NOMBRE_ARCHIVO 
+                                    FROM A_PERSONAL AP2 
+                                    WHERE AP2.IDPERSONAL = M_PERSONAL.IDPERSONAL 
+                                        AND LOWER(AP2.FORMATO_DOC) IN ('jpg','jpeg','png')
+                                    LIMIT 1
+                                ) AS NOMBRE_ARCHIVO")
+                            )
+                            ->join('M_ENTIDAD', 'M_PERSONAL.IDENTIDAD', '=', 'M_ENTIDAD.IDENTIDAD')
+                            ->addSelect('M_ENTIDAD.NOMBRE_ENTIDAD')
+                            ->where('M_PERSONAL.FLAG', 1)
+                            ->whereNotNull('M_PERSONAL.FECH_NACIMIENTO')
+                            ->where('M_PERSONAL.IDMAC', $request->idmac)
+                            ->get();
 
         $fecha_actual = Carbon::now();
         

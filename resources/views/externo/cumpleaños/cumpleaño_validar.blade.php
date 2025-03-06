@@ -25,21 +25,30 @@
 
                               <div class="col-3 col-sm-3 col-md-3 cum-card">
                                 <div class="card" style="width: 18rem;">
-                                  @if ($p->FOTO_RUTA == null)
+                                  @if ($p->NOMBRE_ARCHIVO == null)
                                       @if ($p->SEXO == '1')
                                         <img src="{{ asset('imagen/user/user-h.png') }}" class="card-img-top" alt="Imagen Hombre">
-                                      @elseif ($p->SEXO == '0')
+                                      @elseif ($p->SEXO == '2')
                                         <img src="{{ asset('imagen/user/user-m.png') }}" class="card-img-top" alt="Imagen Mujer">
                                       @else
                                         <img src="..." class="card-img-top" alt="...">
                                       @endif
                                       
                                   @else
-                                      <img src="{{ asset($p->FOTO_RUTA) }}" alt="">
+                                      @php
+                                          // Obtener la URL de las fotos definida en el .env (PHOTO_URL)
+                                          $photoUrl = env('PHOTO_URL', '');
+                                          // Asegúrate de que termine con una barra
+                                          $photoUrl = rtrim($photoUrl, '/') . '/';
+                                          // Construir la URL completa: se asume que las fotos se organizan en carpetas según el número de documento
+                                          $im = $photoUrl . $p->NUM_DOC . '/' . $p->NOMBRE_ARCHIVO;
+                                      @endphp
+                                      
+                                      <img src="{{ $im }}" alt="Foto personal" class="img-cumpleaños">                                                          
                                   @endif
                                   
                                   <div class="card-body">
-                                    <h5 class="card-title">{{ $p->NOMBRES }}</h5>
+                                    <h5 class="card-title text-uppercase">{{ $p->NOMBRES }}</h5>
                                     {{-- <p class="card-text">.</p> --}}
                                   </div>
                                   <ul class="list-group list-group-flush">

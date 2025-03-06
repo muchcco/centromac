@@ -21,6 +21,10 @@
         margin-bottom: 1em;
       }
 
+      .text-uppercase{
+        text-transform: uppercase !important;
+      }
+
       .color{
         border: 1px solid black !important;
       }

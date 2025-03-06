@@ -54,6 +54,13 @@
       user-select: none;
     }
 
+    .img-cumpleaños{
+      max-width: 100%;
+      /* border: 1px solid red; */
+      display: flex;
+      justify-content: center;
+    }
+
 </style>
     
 @endsection
