@@ -252,7 +252,10 @@ class PcmController extends Controller
                 ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
                 ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
                 ->leftJoin('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
-                ->join('db_centros_mac.D_PERSONAL_MAC as DPM', 'DPM.IDPERSONAL', '=', 'MP.IDPERSONAL')
+                ->leftJoin('db_centros_mac.D_PERSONAL_MAC as DPM', function ($join) {
+                    $join->on('DPM.IDPERSONAL', '=', 'MP.IDPERSONAL')
+                        ->where('DPM.STATUS', '=', 1); // Agregar la condición de STATUS = 1
+                })
                 ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'DPM.IDCENTRO_MAC') // Se une con M_CENTRO_MAC
                 ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
                 ->select(
@@ -310,7 +313,10 @@ class PcmController extends Controller
                 ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
                 ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
                 ->leftJoin('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
-                ->join('db_centros_mac.D_PERSONAL_MAC as DPM', 'DPM.IDPERSONAL', '=', 'MP.IDPERSONAL')
+                ->leftJoin('db_centros_mac.D_PERSONAL_MAC as DPM', function ($join) {
+                    $join->on('DPM.IDPERSONAL', '=', 'MP.IDPERSONAL')
+                        ->where('DPM.STATUS', '=', 1); // Agregar la condición de STATUS = 1
+                })
                 ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'DPM.IDCENTRO_MAC') // Se une con M_CENTRO_MAC
                 ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
                 ->select(
