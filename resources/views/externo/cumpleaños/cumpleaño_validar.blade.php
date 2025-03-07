@@ -56,7 +56,7 @@
                                                 @elseif ($p->SEXO == '2')
                                                   <img src="{{ asset('imagen/user/user-m.png') }}" class="card-img-top" alt="Imagen Mujer">
                                                 @else
-                                                  <img src="..." class="card-img-top" alt="...">
+                                                  <img src="..." class="card-img-top" alt="Imagen no encontrada">
                                                 @endif
                                             @endif                                  
                                       @endif
