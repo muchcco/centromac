@@ -37,7 +37,7 @@
                                   @else
                                       @php
                                           // Obtener la URL de las fotos definida en el .env (PHOTO_URL)
-                                          $photoUrl = env('PHOTO_URL', '');
+                                          $photoUrl = $url_photo->VALOR;
                                           // Asegúrate de que termine con una barra
                                           $photoUrl = rtrim($photoUrl, '/') . '/';
                                           // Construir la URL completa: se asume que las fotos se organizan en carpetas según el número de documento
@@ -70,3 +70,9 @@
   </div>
 
 
+<script>
+$(document).ready(function() {
+  console.log("{{ $url_photo->VALOR }}");
+});
+
+</script>

@@ -26,6 +26,8 @@ class ExternoController extends Controller
 
         $mac = Mac::where('IDCENTRO_MAC', $request->idmac)->first();
 
+        $url_photo = DB::table('jwt-mac.configuration_sist')->where('PARAMETRO', 'WEB_PHOTO')->first();
+
         // Configura la configuración regional en español
         setlocale(LC_TIME, 'es_PE', 'Spanish_Spain', 'Spanish');
         Carbon::setLocale('es');
@@ -130,6 +132,6 @@ class ExternoController extends Controller
         //     echo "<br>";
         // }
 
-        return view('externo.cumpleaños.cumpleaño_validar',  compact('dat', 'mac', 'proximos_cumpleaños', 'cumpleanos_por_mes', 'meses_latino'));
+        return view('externo.cumpleaños.cumpleaño_validar',  compact('dat', 'mac', 'proximos_cumpleaños', 'cumpleanos_por_mes', 'meses_latino', 'url_photo'));
     }
 }

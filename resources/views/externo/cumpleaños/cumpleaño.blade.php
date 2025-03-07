@@ -133,9 +133,6 @@
 
 @section('ext-script')
 <script>
-$(document).ready(function() {
-  console.log("{{ env('PHOTO_URL', '') }}");
-});
 
 
 
