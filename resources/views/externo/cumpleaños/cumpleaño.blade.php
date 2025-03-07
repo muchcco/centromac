@@ -61,6 +61,11 @@
       justify-content: center;
     }
 
+    .img-cumpleaños>img{
+      /* border: 1px solid red; */
+      width: 50%;
+    }
+
 </style>
     
 @endsection

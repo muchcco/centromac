@@ -25,27 +25,43 @@
 
                               <div class="col-3 col-sm-3 col-md-3 cum-card">
                                 <div class="card" style="width: 18rem;">
-                                  @if ($p->NOMBRE_ARCHIVO == null)
-                                      @if ($p->SEXO == '1')
-                                        <img src="{{ asset('imagen/user/user-h.png') }}" class="card-img-top" alt="Imagen Hombre">
-                                      @elseif ($p->SEXO == '2')
-                                        <img src="{{ asset('imagen/user/user-m.png') }}" class="card-img-top" alt="Imagen Mujer">
+                                  <div class="img-cumpleaños">
+                                      @if ($p->NOMBRE_ARCHIVO == null)
+                                            @if ($p->SEXO == '1')
+                                              <img src="{{ asset('imagen/user/user-h.png') }}" class="card-img-top" alt="Imagen Hombre">
+                                            @elseif ($p->SEXO == '2')
+                                              <img src="{{ asset('imagen/user/user-m.png') }}" class="card-img-top" alt="Imagen Mujer">
+                                            @else
+                                              <img src="..." class="card-img-top" alt="...">
+                                            @endif
+                                            
                                       @else
-                                        <img src="..." class="card-img-top" alt="...">
+                                            @php
+                                                // Obtener la URL de las fotos definida en el .env (PHOTO_URL) que es la URL pública
+                                                $photoUrl = rtrim($url_photo->VALOR, '/') . '/';
+                                                // Construir la URL completa para la imagen
+                                                $im = $photoUrl . $p->NUM_DOC . '/' . $p->NOMBRE_ARCHIVO;
+                                                
+                                                // Construir la ruta local para verificar la existencia (usando el valor de $file_photo->VALOR)
+                                                $localFilePath = $file_photo->VALOR . '\\' . $p->NUM_DOC . '\\' . $p->NOMBRE_ARCHIVO;
+                                                $fileExists = file_exists($localFilePath);
+                                                // var_dump($localFilePath);
+                                            @endphp
+
+                                            @if($fileExists)
+                                                <img src="{{ $im }}" alt="Foto personal" class="img-cumpleaños">
+                                            @else
+                                                @if ($p->SEXO == '1')
+                                                  <img src="{{ asset('imagen/user/user-h.png') }}" class="card-img-top" alt="Imagen Hombre">
+                                                @elseif ($p->SEXO == '2')
+                                                  <img src="{{ asset('imagen/user/user-m.png') }}" class="card-img-top" alt="Imagen Mujer">
+                                                @else
+                                                  <img src="..." class="card-img-top" alt="...">
+                                                @endif
+                                            @endif                                  
                                       @endif
-                                      
-                                  @else
-                                      @php
-                                          // Obtener la URL de las fotos definida en el .env (PHOTO_URL)
-                                          $photoUrl = $url_photo->VALOR;
-                                          // Asegúrate de que termine con una barra
-                                          $photoUrl = rtrim($photoUrl, '/') . '/';
-                                          // Construir la URL completa: se asume que las fotos se organizan en carpetas según el número de documento
-                                          $im = $photoUrl . $p->NUM_DOC . '/' . $p->NOMBRE_ARCHIVO;
-                                      @endphp
-                                      
-                                      <img src="{{ $im }}" alt="Foto personal" class="img-cumpleaños">                                                          
-                                  @endif
+                                  </div>
+                                 
                                   
                                   <div class="card-body">
                                     <h5 class="card-title text-uppercase">{{ $p->NOMBRES }}</h5>
@@ -72,7 +88,7 @@
 
 <script>
 $(document).ready(function() {
-  console.log("{{ $url_photo->VALOR }}");
+  console.log("{{ $file_photo->VALOR }}");
 });
 
 </script>
