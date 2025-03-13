@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class ModuloController extends Controller
 {
-
+//PRUEBA NOOB
     private function centro_mac(){
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
