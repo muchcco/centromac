@@ -1,4 +1,4 @@
-<table class="table table-hover table-bordered table-striped" id="table_formato">
+<table class="table table-hover table-bordered table-striped" id="table_formato2">
     <thead class="tenca">
         <tr>
             <th>MODULOS</th>
@@ -14,49 +14,58 @@
             <tr>
                 <td>{{ $modulo->n_modulo }}</td>
                 <td>{{ $modulo->nombre_entidad }} - {{ $nombreMac }}</td>
-                @php
-                    $contadorSi = 0;
-                    for ($i = 1; $i <= $numeroDias; $i++) {
+                @php 
+                    $contadorSi = 0; 
+                    $contadorPuntuales = 0; // Para contar los días puntuales
+                    $porcentaje = 0;
+                @endphp
+                @for ($i = 1; $i <= $numeroDias; $i++)
+                    @php
                         $fechaActual = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->format('Y-m-d');
                         $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
                         $esFeriado = in_array($fechaActual, $feriados);
+                        $activo = $fechaActual >= $modulo->fechainicio && $fechaActual <= $modulo->fechafin;
+                    @endphp
 
-                        $mostrarSi = isset($dias[$i][$modulo->idmodulo]) && $dias[$i][$modulo->idmodulo]['hora_minima'];
-                        if ($mostrarSi) {
-                            $contadorSi++;
-                        }
-                    }
-                    $contadorSi1 = 0;
-                    for ($i = 1; $i <= $numeroDias; $i++) {
-                        if (isset($dias[$i][$modulo->idmodulo])) {
-                            $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
-                            if ($horaMinima < '08:16') {
-                                $contadorSi1++;
+                    @if ($esDomingo || $esFeriado || !$activo)
+                    @else
+                        @php
+                            $mostrarSi =
+                                isset($dias[$i][$modulo->idmodulo]) && $dias[$i][$modulo->idmodulo]['hora_minima'];
+                            if ($mostrarSi) {
+                                $contadorSi++; // Días Marcados
                             }
-                        }
-                    }
-                    $porcentaje = ($contadorSi > 0 && $diasHabiles > 0) ? ($contadorSi1 / $contadorSi) * 100 : 0;
-                    $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 84 ? 'bg-warning' : 'bg-danger');
 
-                    // Si Dias Marcados es 0, mostrar valores especiales
+                            // Calcular los días puntuales (horas antes de las 08:16)
+                            $horaMinima = isset($dias[$i][$modulo->idmodulo]) ? $dias[$i][$modulo->idmodulo]['hora_minima'] : null;
+                            if ($horaMinima && $horaMinima < '08:16') {
+                                $contadorPuntuales++; // Días Puntuales
+                            }
+
+                            // Calcular el porcentaje de puntualidad
+                            $porcentaje = $contadorSi > 0 ? ($contadorPuntuales / $contadorSi) * 100 : 0;
+                            $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 84 ? 'bg-warning' : 'bg-danger');
+                        @endphp
+                    @endif
+                @endfor
+
+                <!-- Verificar si no hay días marcados -->
+                @php
                     if ($contadorSi == 0) {
-                        $contadorSi1 = "-";
+                        $contadorPuntuales = "-";
                         $porcentaje = "-";
                     }
                 @endphp
-                <td>{{ $contadorSi1 }}</td>
-                <td>{{ $contadorSi }}</td>
-                <td>{{ is_numeric($porcentaje) ? number_format($porcentaje, 2) . '%' : $porcentaje }}</td>
+
+                <td>{{ $contadorPuntuales }}</td> <!-- Días Puntuales -->
+                <td>{{ $contadorSi }}</td> <!-- Días Marcados -->
+                <td>{{ is_numeric($porcentaje) ? number_format($porcentaje, 2) . '%' : $porcentaje }}</td> <!-- Porcentaje de Puntualidad -->
                 <td>
-                    @if (is_numeric($porcentaje))
-                        <div class="progress" style="height: 25px;">
-                            <div class="progress-bar {{ $barClass }}" role="progressbar"
-                                style="width: {{ $porcentaje }}%" aria-valuenow="{{ $porcentaje }}" aria-valuemin="0"
-                                aria-valuemax="100">{{ number_format($porcentaje, 2) }}%</div>
-                        </div>
-                    @else
-                        <span>-</span>
-                    @endif
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar {{ $barClass }}" role="progressbar"
+                            style="width: {{ $porcentaje !== '-' ? $porcentaje : 0 }}%" aria-valuenow="{{ $porcentaje }}"
+                            aria-valuemin="0" aria-valuemax="100">{{ $porcentaje !== '-' ? number_format($porcentaje, 2) . '%' : '-' }}</div>
+                    </div>
                 </td>
             </tr>
         @empty

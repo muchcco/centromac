@@ -44,41 +44,8 @@ class PuntualidadController extends Controller
 
     public function tb_index(Request $request)
     {
-
-        if (!$request->filled('mes') || !$request->filled('año') || !is_numeric($request->mes) || !is_numeric($request->año)) {
-            return response()->json(['error' => 'Por favor, proporciona un mes y un año válidos.'], 422);
-        }
         // Obtener el idcentromac desde el formulario (si está presente)
         $idmac = $request->input('mac');
-        $mes = $request->mes;
-        $año = $request->año;
-        $fechaInicio = Carbon::create($año, $mes, 1);
-        $fechaActual = Carbon::now();
-        $fechaFin = ($fechaActual->month == $mes && $fechaActual->year == $año) ? $fechaActual->startOfDay() : $fechaInicio->copy()->endOfMonth();
-
-        $period = CarbonPeriod::create($fechaInicio, $fechaFin);
-
-        $diasTotales = $period->count();
-
-        $feriados = Feriado::whereBetween('fecha', [$fechaInicio, $fechaFin])
-            ->where(function ($query) use ($idmac) {
-                $query->where('id_centromac', $idmac)
-                    ->orWhereNull('id_centromac');
-            })
-            ->pluck('fecha')
-            ->toArray();
-        $domingos = 0;
-        foreach ($period as $date) {
-            if ($date->isSunday()) {
-                $domingos++;
-            }
-        }
-
-        $diasFeriados = count(array_filter($feriados, function ($feriado) {
-            return !Carbon::parse($feriado)->isSunday();
-        }));
-
-        $diasHabiles = $diasTotales - $domingos - $diasFeriados;
 
         // Verificar si no se proporcionó el idcentromac
         if (empty($idmac)) {
@@ -92,7 +59,7 @@ class PuntualidadController extends Controller
             $idmac = 11;
         }
 
-        // Ahora, obtenemos el NOMBRE_MAC utilizando el idmac
+        // Obtener el NOMBRE_MAC utilizando el idmac
         $mac = DB::table('M_CENTRO_MAC')
             ->where('IDCENTRO_MAC', '=', $idmac) // Filtrar por el idmac
             ->select('NOMBRE_MAC') // Seleccionamos solo el campo NOMBRE_MAC
@@ -101,10 +68,10 @@ class PuntualidadController extends Controller
         // Verificar si se encontró el nombre del centro MAC
         $nombreMac = $mac ? $mac->NOMBRE_MAC : 'Nombre no disponible'; // Si $mac es null, retorna un valor predeterminado
 
-        // Ahora puedes usar $nombreMac para mostrar el nombre del centro MAC
-
+        // Obtener el mes y año desde la solicitud
         $fecha_año = $request->año ?: date('Y');
         $fecha_mes = $request->mes ?: date('m');
+
         // Crear un array con los nombres de los meses
         $meses = [
             '01' => 'Enero',
@@ -123,6 +90,7 @@ class PuntualidadController extends Controller
 
         // Convertir el número del mes a su nombre correspondiente
         $mesNombre = $meses[$fecha_mes];  // Esto convertirá el número del mes al nombre en letras
+
         // Calcular el primer y último día del mes
         $fecha_inicio = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->startOfMonth()->format('Y-m-d');
         $fecha_fin = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->endOfMonth()->format('Y-m-d');
@@ -134,9 +102,10 @@ class PuntualidadController extends Controller
         $modulos = DB::table('m_modulo')
             ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
             ->where('m_modulo.idcentro_mac', $idmac) // Filtrar por el idcentro_mac recibido
-            ->where(function ($query) use ($fechaInicio, $fechaFin) {
-                $query->where('m_modulo.fechainicio', '<=', $fechaFin)
-                    ->where('m_modulo.fechafin', '>=', $fechaInicio);
+            // Añadir condiciones para filtrar módulos que tienen actividad dentro del rango de fechas
+            ->where(function ($query) use ($fecha_inicio, $fecha_fin) {
+                $query->where('m_modulo.fechainicio', '<=', $fecha_fin)
+                    ->where('m_modulo.fechafin', '>=', $fecha_inicio);
             })
             ->where('m_modulo.es_administrativo', 'NO') // Filtrar por el campo es_administrativo == "NO"
             ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
@@ -144,10 +113,14 @@ class PuntualidadController extends Controller
             ->get();
 
 
-        // Obtener feriados del mes y año especificados
+        // Obtener feriados del mes y año especificados, considerando también los feriados con idcentro_mac NULL
         $feriados = DB::table('feriados')
             ->whereYear('fecha', $fecha_año)
             ->whereMonth('fecha', $fecha_mes)
+            ->where(function ($query) use ($idmac) {
+                $query->where('id_centromac', $idmac)
+                    ->orWhereNull('id_centromac');
+            })
             ->pluck('fecha')
             ->toArray();
 
@@ -163,7 +136,7 @@ class PuntualidadController extends Controller
             // Realizar la consulta con el idcentromac
             $resultados = DB::select("
                 WITH CTE AS (
-                   SELECT 
+                    SELECT 
                 pm.IDMODULO,
                 p.NUM_DOC, 
                 a.HORA,
@@ -224,6 +197,5 @@ class PuntualidadController extends Controller
         }
 
         // Retornar la vista con los días y sus módulos
-        return view('puntualidad.tablas.tb_index', compact('mesNombre', 'diasHabiles', 'nombreMac', 'dias', 'modulos', 'numeroDias', 'fecha_año', 'fecha_mes', 'feriados'));
-    }
-}
+        return view('puntualidad.tablas.tb_index', compact('mesNombre', 'nombreMac', 'dias', 'modulos', 'numeroDias', 'fecha_año', 'fecha_mes', 'feriados'));
+    }}

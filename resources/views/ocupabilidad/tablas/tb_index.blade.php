@@ -1,4 +1,4 @@
-<table class="table table-hover table-bordered table-striped" id="table_formato">
+<table class="table table-hover table-bordered table-striped" id="table_formato2">
     <thead class="tenca">
         <tr>
             <th>MODULOS</th>
@@ -14,21 +14,28 @@
             <tr>
                 <td>{{ $modulo->n_modulo }}</td>
                 <td>{{ $modulo->nombre_entidad }} - -{{ $nombreMac }}</td>
-                @php
-                    $contadorSi = 0;
-                    for ($i = 1; $i <= $numeroDias; $i++) {
+                @php $contadorSi = 0; @endphp
+                @for ($i = 1; $i <= $numeroDias; $i++)
+                    @php
                         $fechaActual = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->format('Y-m-d');
                         $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
                         $esFeriado = in_array($fechaActual, $feriados);
+                        $activo = $fechaActual >= $modulo->fechainicio && $fechaActual <= $modulo->fechafin;
+                    @endphp
 
-                        $mostrarSi = isset($dias[$i][$modulo->idmodulo]) && $dias[$i][$modulo->idmodulo]['hora_minima'];
-                        if ($mostrarSi) {
-                            $contadorSi++;
-                        }
-                    }
-                    $porcentaje = $diasHabiles > 0 ? ($contadorSi / $diasHabiles) * 100 : 0;
-                    $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 84 ? 'bg-warning' : 'bg-danger');
-                @endphp
+                    @if ($esDomingo || $esFeriado || !$activo)
+                    @else
+                        @php
+                            $mostrarSi =
+                                isset($dias[$i][$modulo->idmodulo]) && $dias[$i][$modulo->idmodulo]['hora_minima'];
+                            if ($mostrarSi) {
+                                $contadorSi++;
+                            }
+                            $porcentaje = $diasHabiles > 0 ? ($contadorSi / $diasHabiles) * 100 : 0;
+                            $barClass = $porcentaje >= 95 ? 'bg-success' : ($porcentaje >= 84 ? 'bg-warning' : 'bg-danger');
+                        @endphp                        
+                    @endif
+                @endfor
                 <td>{{ $contadorSi }}</td>
                 <td>{{ $diasHabiles }}</td>
                 <td>{{ number_format($porcentaje, 2) }}%</td>
@@ -47,3 +54,4 @@
         @endforelse
     </tbody>
 </table>
+
