@@ -1,0 +1,447 @@
+﻿
+/* FONTS CUSTOM ------------------
+--------------------------------*/
+
+@font-face {
+    font-family: "Montserrat";
+    src: url('fuentes/montserrat-regular-webfont.woff') format('woff'), url('montserrat-regular-webfont.woff2') format('woff2');
+}
+
+/* MAC Express ----------------------
+-----------------------------------*/
+
+body {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    font-family: "Montserrat", sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 26px;
+    color: #333;
+    background-color: #f9fafc;
+    letter-spacing: 0;
+    font-style: normal;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'pnum';
+    font-variant-numeric: proportional-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.content-wrapper {
+    margin: 0;
+    padding: 0;
+    background-image: url(svg/home-body.svg);
+    background-position: bottom center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: #f2f2f2;
+    position: relative;
+    min-height: calc(100vh - 125px) !important; /* 296px = 18.5rem*/
+}
+
+.main-header {
+    background-color: #bf0909;
+    height: 70px;
+}
+
+.navbar-reclamaciones {
+    display: flex;
+    align-items: center;
+}
+
+.contenedor-escudo-reclamaciones {
+    display: inline;
+    padding-right: 10px;
+}
+
+.escudo-reclamaciones {
+    float: left;
+    height: auto !important;
+    min-height: 30px;
+    width: 46px;
+}
+
+.contenedor-gob-pe-reclamaciones {
+    display: inline;
+}
+
+.gob-pe-reclamaciones {
+    width: 90px;
+    height: auto;
+}
+
+.separador-reclamaciones {
+    line-height: 2.75rem;
+    padding-left: 1rem;
+    margin-left: 1rem;
+    border-left: 1px solid #fff;
+}
+
+.texto-logo-reclamaciones {
+    height: 2rem;
+}
+
+.main-sidebar {
+    background-color: #3C4145 !important;
+}
+
+.main-footer {
+    display: block;
+    color: #fff;
+    background-color: #3C4145;
+    border: 0;
+}
+
+footer {
+    height: 55px;
+    background-color: #3C4145;
+    color: #fff;
+    padding: 1.5em;
+}
+
+    footer a, footer a:hover {
+        color: #FFF !important;
+    }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+.footer__icons {
+    font-size: 1.8rem;
+}
+
+.rojo-bandera {
+    color: #bf0909;
+}
+
+.plomo-titulo {
+    color: #535A5F;
+}
+
+.rojo-bandera {
+    color: #bf0909;
+}
+
+.shadow-boton {
+    background-color: white;
+    box-shadow: 3px 3px 5px rgba(50,48,58,0.22);
+    color: #6B747B;
+    font-weight: 500;
+    min-width: 180px;
+}
+
+    .shadow-boton > .fas {
+        font-size: 40px;
+        display: block;
+        padding-bottom: 10px;
+    }
+
+    .shadow-boton:hover {
+        color: #fff;
+        border-top: 3px solid #bf0909;
+    }
+
+/*@media (max-width: 1040px){
+.separador-reclamaciones {
+    display: none;
+}*/
+
+/* OVERRIDES  -------------------
+-------------------------------*/
+
+.card {
+    margin-bottom: 1em;
+    border-radius: calc(.50rem - 1px) calc(.50rem - 1px) !important;
+    border: 0 !important;
+}
+
+.card-header {
+    border-radius: calc(.50rem - 1px) calc(.50rem - 1px) 0 0 !important;
+    font-weight: bold;
+}
+
+.alert {
+    width: 100%;
+}
+
+label {
+    font-weight: 400 !important;
+}
+
+.navbar {
+    margin-bottom: 0 !important;
+}
+
+.glyphicon-pencil > span > a {
+    color: green !important;
+}
+
+.pagination > li > a, .pagination > li > span {
+    color: #bf0909 !important;
+}
+
+/* ADMIN THEME -------------
+--------------------------*/
+.skin-blue .main-header .navbar {
+    background-color: #D60A0A !important;
+}
+
+.skin-blue .main-header .logo {
+    background-color: #D60A0A !important;
+    border-right: 1px solid #fff;
+}
+
+    .skin-blue .main-header .logo:hover {
+        text-decoration: none;
+    }
+
+.content-body .breadcrumbs h2 {
+    font-family: "Montserrat", sans-serif !important;
+    padding: 2em;
+    font-size: 36px !important;
+}
+
+.panel {
+    margin-bottom: 20px !important;
+}
+
+.panel-heading {
+    color: #fff !important;
+    background-color: #E3E6E8 !important;
+}
+
+    .panel-heading span {
+        font-weight: bold !important;
+    }
+
+.panel-body {
+    padding: 35px 30px 40px !important;
+}
+
+/* BOTONES --------------------
+ ----------------------------*/
+
+.btn-rojo-oscuro {
+    color: #fff !important;
+    background-color: #D60A0A !important;
+    border-color: #D60A0A !important;
+}
+
+    .btn-rojo-oscuro:hover {
+        color: #BF0909 !important;
+        background-color: #fff !important;
+        border-color: #BF0909 !important;
+    }
+
+.btn-gris {
+    background-color: #6c757d !important;
+    border: 1px solid #6c757d !important;
+    color: #fff !important;
+}
+
+    .btn-gris:hover {
+        background-color: #fff !important;
+        border: 1px solid #6c757d !important;
+        color: #6c757d !important;
+    }
+
+/* APLICATIVO  ------------------
+-------------------------------*/
+
+/* Atenuar fondo aplicativo 
+.content-wrapper:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000;
+    opacity: .5;
+}
+
+/* -> LOGIN --------------------
+------------------------------*/
+.wrapper-frmSesion {
+    padding: 5em 0;
+}
+
+    .wrapper-frmSesion .card {
+        margin: 0 auto !important;
+        padding: 1.6em 1em;
+        width: 450px;
+    }
+
+    .wrapper-frmSesion button {
+        padding: 1.2em 1em;
+        max-width: 100%;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin: .2em 0 1em;
+    }
+
+    .wrapper-frmSesion input {
+        padding: 1.4em 1em;
+        margin-bottom: 1em;
+    }
+
+
+
+img.img-captcha {
+    max-width: 80% !important;
+    height: 80% !important;
+}
+
+img.img-refrescar {
+    padding-left: 10px;
+}
+
+input.busqueda {
+    background: #fff;
+    border-radius: 5px;
+    padding: 25px 0 25px 30px;
+    color: #72787f;
+    width: 100%;
+    height: 60px;
+    font-size: 20px;
+    border: 3px solid rgba(255,255,255,0.17);
+    line-height: 29px;
+    padding-right: 70px;
+}
+
+.card-item-servicio {
+    margin-bottom: 10px;
+    background-color: #fff;
+    /*border-radius: 1.5rem;
+    box-shadow: 2px 3px 4px #ddd;
+    border: 2px solid #337AB7;*/
+}
+
+.card-image {
+    padding: 10px;
+    text-align: center;
+    border-radius: 1.5rem;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background-color: #fFF;
+    height: 100%;
+    /*border-bottom: 2px solid #337AB7;*/
+}
+
+.card-content {
+    padding: 10px;
+}
+.btn-ServiceActive{
+
+}
+.botones-aplicativo {
+    width: 45em;
+    display: flex;
+    padding-top: 1em;
+    justify-content: space-between;
+    margin: 0 auto;
+}
+
+button.btn-registro, button.btn-consulta {
+    width: 15em;
+    height: 10em;
+    padding: 1em;
+    color: #333333;
+    background-color: #ffffff;
+    border: 0;
+    outline: none;
+    -moz-box-shadow: 3px 3px 6px #ccc;
+    -webkit-box-shadow: 3px 3px 6px #ccc;
+    box-shadow: 3px 3px 6px #ccc;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    font-family: 'montserrat', sans-serif;
+    font-size: 1.2rem;
+}
+
+a:hover button.btn-registro, a:hover button.btn-consulta {
+    border-top: 3px solid #BF0909;
+}
+
+.header__content .btn-danger {
+    background-image: linear-gradient(to top, #e1474d, #e85054, #ef585a, #f66061, #fd6868);
+    border-color: #FD6868;
+}
+
+    .header__content .btn-danger:hover {
+        border-color: #F2F2F2;
+        border-width: .0625em;
+        transition: all 0.2s linear;
+    }
+
+.btn-gris {
+    background-color: #6c757d !important;
+    border: 1px solid #6c757d !important;
+    color: #fff !important;
+}
+
+    .btn-gris:hover {
+        background-color: #fff !important;
+        border: 1px solid #6c757d !important;
+        color: #6c757d !important;
+    }
+
+.alert-secondary {
+    color: #383d41;
+    background-color: #f2f2f2 !important;
+    border-color: #d6d8db;
+}
+
+.btn-rojo {
+    color: #fff !important;
+    background-color: #D60A0A !important;
+    border-color: #D60A0A !important;
+}
+
+    .btn-rojo:hover {
+        color: #FFF !important;
+        background-color: #BF0909 !important;
+        border-color: #BF0909 !important;
+    }
+
+.btn-rojo-oscuro {
+    color: #fff !important;
+    background-color: #D60A0A !important;
+    border-color: #D60A0A !important;
+}
+
+    .btn-rojo-oscuro:hover {
+        color: #BF0909 !important;
+        background-color: #fff !important;
+        border-color: #BF0909 !important;
+    }
+
+.btn-rojo-oscuro {
+    color: #fff !important;
+    background-color: #D60A0A !important;
+    border-color: #D60A0A !important;
+}
+
+    .btn-rojo-oscuro:hover {
+        color: #BF0909 !important;
+        background-color: #fff !important;
+        border-color: #BF0909 !important;
+    }
+   
+.btn-info {
+    background-color: #0CAFD0 !important;
+    color: #fff !important;
+    border-color: #0CAFD0 !important;
+}
+
+    .btn-info:hover {
+        background-color: #098199 !important;
+        color: #fff !important;
+        border-color: #098199 !important;
+    }
