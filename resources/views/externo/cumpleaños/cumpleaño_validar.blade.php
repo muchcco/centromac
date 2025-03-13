@@ -6,7 +6,7 @@
       <form action="" enctype="multipart/form-data">
         <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" />
       <div class="card-body">
-        <button class="nobtn" onclick="Regresar()">Regresar</button>
+        <button class="nobtn" onclick="Regresar()">Regresar A.</button>
         <div class="carp">
           <div class="form-p">
             <div class="row col-sm-12 buut">
