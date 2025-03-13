@@ -58,7 +58,7 @@ class Puntualidad1Controller extends Controller
         if (empty($idmac)) {
             // Si no se encontró, asignar el valor por defecto 11
             $idmac = 11;
-        }ddfa
+        }
 
         // Obtener el NOMBRE_MAC utilizando el idmac
         $mac = DB::table('M_CENTRO_MAC')
