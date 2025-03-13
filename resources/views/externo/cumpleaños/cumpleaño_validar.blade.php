@@ -1,4 +1,4 @@
-<div class="carp">
+<div class="carp mt-4">
     <div class="card col-sm-8 col-12 col-lg-12 col-md-12">
       <div class="card-header">
         <h2>Centro MAC - {{  $mac->NOMBRE_MAC }}  <strong>(Próximos cumpleaños)</strong> para el año {{ Carbon\Carbon::now()->format('Y') }}  </h2>

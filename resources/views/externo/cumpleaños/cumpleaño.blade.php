@@ -1,6 +1,6 @@
-@extends('layouts.externo')
+@extends('layouts.externo2')
 
-@section('ext-styles')
+@section('head')
 
 <style>
     .dat-mid{
@@ -70,13 +70,13 @@
     
 @endsection
 
-@section('title')
-    MODULO DE CUMPLEAÑOS
+@section('title-head')
+    MODULO DE CUMPLEAÑOS <br />MAC
 @endsection
 
 @section('externom')
 
-<div class="container" id="bus-dato">
+<div class="container mt-4" id="bus-dato">
     <div class="carp">
       <div class="card col-sm-8 col-12 col-lg-12 col-md-12">
         <div class="card-header">
@@ -136,7 +136,7 @@
     
 @endsection
 
-@section('ext-script')
+@section('Scripts')
 <script>
 
 
