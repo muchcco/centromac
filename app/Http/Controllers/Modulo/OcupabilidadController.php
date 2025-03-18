@@ -46,35 +46,18 @@ class OcupabilidadController extends Controller
     }
     public function tb_index(Request $request)
     {
-        // Obtener el idcentromac desde el formulario (si está presente)
-        $idmac = $request->input('mac');
+        $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
 
-        // Verificar si no se proporcionó el idcentromac
-        if (empty($idmac)) {
-            // Si no se proporcionó, tomar el idcentromac del usuario autenticado
-            $idmac = auth()->user()->idcentro_mac;
-        }
-
-        // Verificar si aún no se ha asignado un idcentromac (en caso de que el usuario no esté autenticado o no tenga este campo)
-        if (empty($idmac)) {
-            // Si no se encontró, asignar el valor por defecto 11
-            $idmac = 11;
-        }
-
-        // Ahora, obtenemos el NOMBRE_MAC utilizando el idmac
         $mac = DB::table('M_CENTRO_MAC')
-            ->where('IDCENTRO_MAC', '=', $idmac) // Filtrar por el idmac
-            ->select('NOMBRE_MAC') // Seleccionamos solo el campo NOMBRE_MAC
-            ->first(); // Usamos first() porque esperamos solo un resultado
+            ->where('IDCENTRO_MAC', '=', $idmac)
+            ->select('NOMBRE_MAC')
+            ->first();
 
-        // Verificar si se encontró el nombre del centro MAC
-        $nombreMac = $mac ? $mac->NOMBRE_MAC : 'Nombre no disponible'; // Si $mac es null, retorna un valor predeterminado
-
-        // Ahora puedes usar $nombreMac para mostrar el nombre del centro MAC
+        $nombreMac = $mac ? $mac->NOMBRE_MAC : 'Nombre no disponible';
 
         $fecha_año = $request->año ?: date('Y');
         $fecha_mes = $request->mes ?: date('m');
-        // Crear un array con los nombres de los meses
+
         $meses = [
             '01' => 'Enero',
             '02' => 'Febrero',
@@ -90,33 +73,17 @@ class OcupabilidadController extends Controller
             '12' => 'Diciembre',
         ];
 
-        // Convertir el número del mes a su nombre correspondiente
-        $mesNombre = $meses[$fecha_mes];  // Esto convertirá el número del mes al nombre en letras
-        // Calcular el primer y último día del mes
-        $fecha_inicio = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->startOfMonth()->format('Y-m-d');
-        $fecha_fin = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->endOfMonth()->format('Y-m-d');
+        $mesNombre = $meses[$fecha_mes];
+        $fechaInicio = Carbon::create($fecha_año, $fecha_mes, 1)->startOfMonth();
+        $fechaActual = Carbon::now();
+        $fechaFin = ($fechaActual->month == $fecha_mes && $fechaActual->year == $fecha_año)
+            ? $fechaActual->startOfDay()
+            : $fechaInicio->copy()->endOfMonth();
 
-        // Inicializar un array para los días
-        $dias = [];
-
-        // Inicializar un array para almacenar los módulos y entidades
-        // Inicializar un array para almacenar los módulos y entidades
-        $modulos = DB::table('m_modulo')
-            ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
-            ->where('m_modulo.idcentro_mac', $idmac) // Filtrar por el idcentro_mac recibido
-            // Añadir condiciones para filtrar módulos que tienen actividad dentro del rango de fechas
-            ->where(function ($query) use ($fecha_inicio, $fecha_fin) {
-                $query->where('m_modulo.fechainicio', '<=', $fecha_fin)
-                    ->where('m_modulo.fechafin', '>=', $fecha_inicio);
-            })
-            ->where('m_modulo.es_administrativo', 'NO') // Filtrar por el campo es_administrativo == "NO"
-            ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
-            ->orderBy('m_modulo.n_modulo') // Ordena por el nombre del módulo
-            ->get();
+        $numeroDias = $fechaFin->day;
 
         $feriados = DB::table('feriados')
-            ->whereYear('fecha', $fecha_año)
-            ->whereMonth('fecha', $fecha_mes)
+            ->whereBetween('fecha', [$fechaInicio, $fechaFin])
             ->where(function ($query) use ($idmac) {
                 $query->where('id_centromac', $idmac)
                     ->orWhereNull('id_centromac');
@@ -124,9 +91,6 @@ class OcupabilidadController extends Controller
             ->pluck('fecha')
             ->toArray();
 
-        // Crear un array para los días
-        $numeroDias = Carbon::create($fecha_año, $fecha_mes, 1)->daysInMonth;
-        // Contar los domingos
         $domingos = 0;
         for ($dia = 1; $dia <= $numeroDias; $dia++) {
             $fecha = Carbon::create($fecha_año, $fecha_mes, $dia);
@@ -135,13 +99,24 @@ class OcupabilidadController extends Controller
             }
         }
 
-        // Contar los feriados que no son domingos
         $diasFeriados = count(array_filter($feriados, function ($feriado) {
             return !Carbon::parse($feriado)->isSunday();
         }));
 
-        // Calcular días hábiles
         $diasHabiles = $numeroDias - $domingos - $diasFeriados;
+
+        $modulos = DB::table('m_modulo')
+            ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
+            ->where('m_modulo.idcentro_mac', $idmac)
+            ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                $query->where('m_modulo.fechainicio', '<=', $fechaFin)
+                    ->where('m_modulo.fechafin', '>=', $fechaInicio);
+            })
+            ->where('m_modulo.es_administrativo', 'NO')
+            ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
+            ->orderBy('m_modulo.n_modulo')
+            ->get();
+
         for ($dia = 1; $dia <= $numeroDias; $dia++) {
             $fecha = sprintf('%04d-%02d-%02d', $fecha_año, $fecha_mes, $dia);
 
@@ -212,6 +187,6 @@ class OcupabilidadController extends Controller
         }
 
         // Retornar la vista con los días y sus módulos
-        return view('ocupabilidad.tablas.tb_index', compact('mesNombre','diasHabiles', 'nombreMac', 'dias', 'modulos', 'numeroDias', 'fecha_año', 'fecha_mes', 'feriados'));
+        return view('ocupabilidad.tablas.tb_index', compact('mesNombre', 'diasHabiles', 'nombreMac', 'dias', 'modulos', 'numeroDias', 'fecha_año', 'fecha_mes', 'feriados'));
     }
 }
