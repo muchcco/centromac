@@ -47,6 +47,7 @@ use App\Http\Controllers\Modulo\PersonalModuloController;
 use App\Models\Itinerante;
 use App\Http\Controllers\Modulo\VerificacionController;
 use App\Http\Controllers\Modulo\MantenimientoController;
+use App\Http\Controllers\Modulo\ReporteOcupabilidadController;
 
 
 
@@ -180,7 +181,6 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/migrar-datos', [AsistenciaController::class, 'migrarDatos'])->name('migrar.datos');
 
         Route::get('/upload-progress', [AsistenciaController::class, 'getUploadProgress'])->name('upload.progress');
-
     });
 
     /********************************************************** REGISTRO DE PERSONAL *******************************************************************/
@@ -247,7 +247,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/delete_servicio', [ServiciosController::class, 'delete_servicio'])->name('delete_servicio');
         Route::get('/export_serv_entidad', [ServiciosController::class, 'export_serv_entidad'])->name('export_serv_entidad');
     });
-    
+
     /******************************************************   MODULO Y PERSONAL ************************************************************************/
 
     // Rutas para la gestión de modulos
@@ -305,6 +305,10 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/tablas/tb_index', [OcupabilidadController::class, 'tb_index'])->name('tablas.tb_index');
     });
+    Route::get('reporte/ocupabilidad', [ReporteOcupabilidadController::class, 'index'])->name('reporte.ocupabilidad.index');
+    Route::get('reporte/ocupabilidad/tablas', [ReporteOcupabilidadController::class, 'tb_index'])->name('reporte.ocupabilidad.tablas.tb_index');
+    Route::get('reporte/ocupar/export', [ReporteOcupabilidadController::class, 'export_excel'])->name('reporte.ocupabilidad.export_excel');
+
     /******************************************************   PUNTUALIDAD ************************************************************************/
 
     Route::group(['prefix' => 'puntualidad', 'as' => 'puntualidad.'], function () {

@@ -185,7 +185,14 @@
                                     <i class="ti-control-record"></i><span>Puntualidad</span>
                                 </a>
                             </li>
-                            
+                            @role('Administrador')
+                            <li class="@if (Request::is('reporte.*')) mm-active @endif">
+                                <a href="{{ route('reporte.ocupabilidad.index') }}" class="@if (Request::is('reporte/ocupabilidad*')) active @endif">
+                                    <i class="ti-control-record"></i><span>Reporte Ocupabilidad</span>
+                                </a>
+                            </li>
+                            @endrole
+
                         </ul>
                     </li>
                     
