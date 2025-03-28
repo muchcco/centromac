@@ -55,8 +55,8 @@ class InterrupcionController extends Controller
                 ->orderBy('m_entidad.abrev_entidad')
                 ->get();
 
-            $tipos = TipoIntObs::all();
-            $responsables = User::where('idcentro_mac', $centro_mac->idmac)->select('id', 'name')->get();
+                $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
+                $responsables = User::where('idcentro_mac', $centro_mac->idmac)->select('id', 'name')->get();
 
             $view = view('interrupcion.modals.md_add_interrupcion', compact('entidades', 'tipos', 'responsables'))->render();
             return response()->json(['html' => $view]);
@@ -124,8 +124,8 @@ class InterrupcionController extends Controller
                 ->orderBy('m_entidad.abrev_entidad')
                 ->get();
 
-            $tipos = TipoIntObs::all();
-            $responsables = User::where('idcentro_mac', $centro_mac->idmac)->get();
+                $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
+                $responsables = User::where('idcentro_mac', $centro_mac->idmac)->get();
 
             $view = view('interrupcion.modals.md_edit_interrupcion', compact('interrupcion', 'entidades', 'tipos', 'responsables'))->render();
 
@@ -224,7 +224,7 @@ class InterrupcionController extends Controller
             ->orderBy('m_entidad.abrev_entidad')
             ->get();
 
-        $tipos = TipoIntObs::all();
+            $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
 
         $view = view('interrupcion.modals.md_subsanar_interrupcion', compact('interrupcion', 'tipos', 'entidades'))->render();
 

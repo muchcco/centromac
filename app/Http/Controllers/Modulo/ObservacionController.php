@@ -54,7 +54,7 @@ class ObservacionController extends Controller
             ->orderBy('m_entidad.abrev_entidad')
             ->get();
 
-        $tipos = TipoIntObs::all();
+        $tipos = TipoIntObs::where('tipo_obs', 'OBSERVACIÓN')->get();
 
         $view = view('observacion.modals.md_add_observacion', compact('entidades', 'tipos'))->render();
         return response()->json(['html' => $view]);
@@ -107,7 +107,7 @@ class ObservacionController extends Controller
             ->orderBy('m_entidad.abrev_entidad')
             ->get();
 
-        $tipos = TipoIntObs::all();
+        $tipos = TipoIntObs::where('tipo_obs', 'OBSERVACIÓN')->get();
 
         $view = view('observacion.modals.md_edit_observacion', compact('observacion', 'entidades', 'tipos'))->render();
 
@@ -182,7 +182,7 @@ class ObservacionController extends Controller
             ->orderBy('m_entidad.abrev_entidad')
             ->get();
 
-        $tipos = TipoIntObs::all();
+        $tipos = TipoIntObs::where('tipo_obs', 'OBSERVACIÓN')->get();
 
         $view = view('observacion.modals.md_subsanar_observacion', compact('observacion', 'entidades', 'tipos'))->render();
 

@@ -176,6 +176,16 @@
                             </a>
                         </li>
                     @endrole
+                    {{-- Interrupciones (solo para Coordinador, Especialista_TIC, Moderador, Administrador) --}}
+                    {{-- Tipificación de Observaciones e Interrupciones (solo para Administrador y Especialista_TIC) --}}
+                    @role('Administrador|Especialista_TIC')
+                        <li class="@if (Request::is('tipo_int_obs/index')) mm-active @endif">
+                            <a href="{{ route('tipo_int_obs.index') }}"
+                                class="@if (Request::is('tipo_int_obs/index')) active @endif">
+                                <i class="ti-control-record"></i><span>Tipificación de Observaciones</span>
+                            </a>
+                        </li>
+                    @endrole
 
                     @role('Administrador|Coordinador|Supervisor|Moderador')
                         <li class="">
