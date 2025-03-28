@@ -44,10 +44,13 @@ use App\Http\Controllers\Modulo\ModuloController;
 use App\Http\Controllers\Modulo\OcupabilidadController;
 use App\Http\Controllers\Modulo\ItineranteController;
 use App\Http\Controllers\Modulo\PersonalModuloController;
-use App\Models\Itinerante;
 use App\Http\Controllers\Modulo\VerificacionController;
 use App\Http\Controllers\Modulo\MantenimientoController;
 use App\Http\Controllers\Modulo\ReporteOcupabilidadController;
+use App\Http\Controllers\Modulo\TipoIntObsController;
+use App\Http\Controllers\Modulo\ObservacionInterrupcionController;
+use App\Http\Controllers\Modulo\InterrupcionController;
+use App\Http\Controllers\Modulo\ObservacionController;
 
 
 
@@ -286,8 +289,62 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/update_feriado', [FeriadoController::class, 'update'])->name('update_feriado');
         Route::post('/delete_feriado', [FeriadoController::class, 'destroy'])->name('delete_feriado');
     });
-    /******************************************************   ITINERANTE ************************************************************************/
+    /******************************************************   TIPO INTERRUPCIONES E OBSERVACIONES
+     *  ************************************************************************/
+    // Rutas para la gestión de observaciones e interrupciones
+    Route::group(['prefix' => 'tipo_int_obs', 'as' => 'tipo_int_obs.'], function () {
+        Route::get('/index', [TipoIntObsController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [TipoIntObsController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_tipo_obs', [TipoIntObsController::class, 'create'])->name('modals.md_add_tipo_obs');
+        Route::post('/modals/md_edit_tipo_obs', [TipoIntObsController::class, 'edit'])->name('modals.md_edit_tipo_obs');
+        Route::post('/store_tipo_obs', [TipoIntObsController::class, 'store'])->name('store_tipo_obs');
+        Route::post('/update_tipo_obs', [TipoIntObsController::class, 'update'])->name('update_tipo_obs');
+        Route::post('/delete_tipo_obs', [TipoIntObsController::class, 'destroy'])->name('delete_tipo_obs');
+        Route::post('/toggle_status', [TipoIntObsController::class, 'toggleStatus'])->name('toggle_status');
+    });
 
+    Route::prefix('interrupcion')->name('interrupcion.')->group(function () {
+        Route::get('/index', [InterrupcionController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [InterrupcionController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_interrupcion', [InterrupcionController::class, 'create'])->name('modals.md_add_interrupcion');
+        Route::post('/store', [InterrupcionController::class, 'store'])->name('store');
+        Route::post('/edit', [InterrupcionController::class, 'edit'])->name('edit');
+        Route::post('/update', [InterrupcionController::class, 'update'])->name('update');
+        Route::post('/delete', [InterrupcionController::class, 'destroy'])->name('delete');
+        Route::post('/modals/md_subsanar_interrupcion', [InterrupcionController::class, 'subsanarModal'])->name('modals.md_subsanar_interrupcion');
+        Route::post('/subsanar', [InterrupcionController::class, 'subsanarGuardar'])->name('subsanar');
+    });
+    Route::prefix('observacion')->name('observacion.')->group(function () {
+        Route::get('/index', [ObservacionController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [ObservacionController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_observacion', [ObservacionController::class, 'create'])->name('modals.md_add_observacion');
+        Route::post('/modals/md_edit_observacion', [ObservacionController::class, 'edit'])->name('modals.md_edit_observacion');
+        Route::post('/modals/md_subsanar_observacion', [ObservacionController::class, 'subsanarModal'])->name('modals.md_subsanar_observacion');
+        Route::post('/store', [ObservacionController::class, 'store'])->name('store');
+        Route::post('/update', [ObservacionController::class, 'update'])->name('update');
+        Route::post('/delete', [ObservacionController::class, 'destroy'])->name('delete');
+        Route::post('/subsanar', [ObservacionController::class, 'subsanarGuardar'])->name('subsanar');
+        Route::post('/modals/md_ver_observacion', [ObservacionController::class, 'ver'])->name('modals.md_ver_observacion');
+        Route::get('/observacion/export-excel', [ObservacionController::class, 'export_excel'])->name('export_excel');
+    });
+
+
+    /******************************************************   OBSERVACION INTERRUPCIONES ************************************************************************/
+    // Rutas para la gestión de observaciones e interrupciones
+    Route::group(['prefix' => 'observacion_interrupcion', 'as' => 'observacion_interrupcion.'], function () {
+        Route::get('/index', [ObservacionInterrupcionController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [ObservacionInterrupcionController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_observacion', [ObservacionInterrupcionController::class, 'create'])->name('modals.md_add_observacion');
+        Route::post('/modals/md_edit_observacion', [ObservacionInterrupcionController::class, 'edit'])->name('modals.md_edit_observacion');
+        Route::post('/modals/md_subsanar_observacion', [ObservacionInterrupcionController::class, 'subsanarModal'])->name('modals.md_subsanar_observacion');
+        Route::post('/subsanar', [ObservacionInterrupcionController::class, 'subsanarGuardar'])->name('subsanar_observacion');
+        Route::post('/store', [ObservacionInterrupcionController::class, 'store'])->name('store_observacion');
+        Route::post('/update', [ObservacionInterrupcionController::class, 'update'])->name('update_observacion');
+        Route::post('/delete', [ObservacionInterrupcionController::class, 'destroy'])->name('delete_observacion');
+        Route::post('/toggle_status', [ObservacionInterrupcionController::class, 'toggleStatus'])->name('toggle_status');
+        Route::post('/get-personales', [ObservacionInterrupcionController::class, 'getPersonales'])->name('get.personales');
+    });
+    /******************************************************   ITINERANTE ************************************************************************/
     // Rutas para la gestión de Itinerante
     Route::group(['prefix' => 'itinerante', 'as' => 'itinerante.'], function () {
         Route::get('/index', [ItineranteController::class, 'index'])->name('index');
