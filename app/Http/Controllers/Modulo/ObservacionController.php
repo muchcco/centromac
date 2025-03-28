@@ -34,15 +34,25 @@ class ObservacionController extends Controller
 
     public function tb_index()
     {
-        $observaciones = Observacion::with([
+        $user = auth()->user();
+
+        $query = Observacion::with([
             'entidad:identidad,nombre_entidad',
             'tipoIntObs:id_tipo_int_obs,tipo,numeracion,nom_tipo_int_obs',
             'centroMac:idcentro_mac,nombre_mac',
             'responsableUsuario:id,name'
-        ])->get();
+        ]);
+
+        // Si NO tiene el rol de Administrador o Moderador, filtramos por su centro MAC
+        if (!$user->hasRole(['Administrador', 'Moderador'])) {
+            $query->where('idcentro_mac', $user->idcentro_mac);
+        }
+
+        $observaciones = $query->get();
 
         return view('observacion.tablas.tb_index', compact('observaciones'));
     }
+
 
     public function create()
     {

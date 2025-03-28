@@ -34,15 +34,24 @@ class InterrupcionController extends Controller
 
     public function tb_index()
     {
-        $interrupciones = Interrupcion::with([
+        $user = auth()->user();
+
+        $query = Interrupcion::with([
             'entidad:identidad,nombre_entidad',
             'tipoIntObs:id_tipo_int_obs,tipo,numeracion',
             'centroMac:idcentro_mac,nombre_mac',
             'responsableUsuario:id,name'
-        ])->get();
+        ]);
+
+        if (!$user->hasRole(['Administrador', 'Moderador'])) {
+            $query->where('idcentro_mac', $user->idcentro_mac);
+        }
+
+        $interrupciones = $query->get();
 
         return view('interrupcion.tablas.tb_index', compact('interrupciones'));
     }
+
 
     public function create()
     {
@@ -55,8 +64,8 @@ class InterrupcionController extends Controller
                 ->orderBy('m_entidad.abrev_entidad')
                 ->get();
 
-                $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
-                $responsables = User::where('idcentro_mac', $centro_mac->idmac)->select('id', 'name')->get();
+            $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
+            $responsables = User::where('idcentro_mac', $centro_mac->idmac)->select('id', 'name')->get();
 
             $view = view('interrupcion.modals.md_add_interrupcion', compact('entidades', 'tipos', 'responsables'))->render();
             return response()->json(['html' => $view]);
@@ -124,8 +133,8 @@ class InterrupcionController extends Controller
                 ->orderBy('m_entidad.abrev_entidad')
                 ->get();
 
-                $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
-                $responsables = User::where('idcentro_mac', $centro_mac->idmac)->get();
+            $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
+            $responsables = User::where('idcentro_mac', $centro_mac->idmac)->get();
 
             $view = view('interrupcion.modals.md_edit_interrupcion', compact('interrupcion', 'entidades', 'tipos', 'responsables'))->render();
 
@@ -224,7 +233,7 @@ class InterrupcionController extends Controller
             ->orderBy('m_entidad.abrev_entidad')
             ->get();
 
-            $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
+        $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
 
         $view = view('interrupcion.modals.md_subsanar_interrupcion', compact('interrupcion', 'tipos', 'entidades'))->render();
 

@@ -168,7 +168,7 @@
                     @endrole
 
                     {{-- Interrupciones (solo para Coordinador, Especialista_TIC) --}}
-                    @role('Coordinador|Especialista_TIC|Moderador|Administrador')
+                    @role('Coordinador|Especialista TIC|Moderador|Administrador')
                         <li class="@if (Request::is('interrupcion*')) mm-active @endif">
                             <a href="{{ route('interrupcion.index') }}"
                                 class="@if (Request::is('interrupcion/index*')) active @endif">
@@ -178,7 +178,7 @@
                     @endrole
                     {{-- Interrupciones (solo para Coordinador, Especialista_TIC, Moderador, Administrador) --}}
                     {{-- Tipificación de Observaciones e Interrupciones (solo para Administrador y Especialista_TIC) --}}
-                    @role('Administrador|Especialista_TIC')
+                    @role('Administrador|Especialista TIC')
                         <li class="@if (Request::is('tipo_int_obs/index')) mm-active @endif">
                             <a href="{{ route('tipo_int_obs.index') }}"
                                 class="@if (Request::is('tipo_int_obs/index')) active @endif">
