@@ -157,35 +157,6 @@
                             <i class="ti-control-record"></i><span>Observaciones e Interrupciones</span>
                         </a>
                     </li>
-                    {{-- Observaciones (solo para Supervisor, Coordinador, Especialista_TIC) --}}
-                    @role('Supervisor|Coordinador|Especialista_TIC|Moderador|Administrador')
-                        <li class="@if (Request::is('observacion*')) mm-active @endif">
-                            <a href="{{ route('observacion.index') }}"
-                                class="@if (Request::is('observacion/index*')) active @endif">
-                                <i class="ti-control-record"></i><span>Observaciones</span>
-                            </a>
-                        </li>
-                    @endrole
-
-                    {{-- Interrupciones (solo para Coordinador, Especialista_TIC) --}}
-                    @role('Coordinador|Especialista TIC|Moderador|Administrador')
-                        <li class="@if (Request::is('interrupcion*')) mm-active @endif">
-                            <a href="{{ route('interrupcion.index') }}"
-                                class="@if (Request::is('interrupcion/index*')) active @endif">
-                                <i class="ti-control-record"></i><span>Interrupciones</span>
-                            </a>
-                        </li>
-                    @endrole
-                    {{-- Interrupciones (solo para Coordinador, Especialista_TIC, Moderador, Administrador) --}}
-                    {{-- Tipificación de Observaciones e Interrupciones (solo para Administrador y Especialista_TIC) --}}
-                    @role('Administrador|Especialista TIC')
-                        <li class="@if (Request::is('tipo_int_obs/index')) mm-active @endif">
-                            <a href="{{ route('tipo_int_obs.index') }}"
-                                class="@if (Request::is('tipo_int_obs/index')) active @endif">
-                                <i class="ti-control-record"></i><span>Tipificación de Observaciones</span>
-                            </a>
-                        </li>
-                    @endrole
 
                     @role('Administrador|Coordinador|Supervisor|Moderador')
                         <li class="">
@@ -289,6 +260,35 @@
                 </li>
             @endif
 
+            {{--             <hr class="hr-dashed hr-menu">
+ --}} <li class="menu-label mt-0">PILOTO</li>
+            {{-- Observaciones (solo para Supervisor, Coordinador, Especialista_TIC) --}}
+            @role('Supervisor|Coordinador|Especialista_TIC|Moderador|Administrador')
+                <li class="@if (Request::is('observacion*')) mm-active @endif">
+                    <a href="{{ route('observacion.index') }}" class="@if (Request::is('observacion/index*')) active @endif">
+                        <i class="ti-control-record"></i><span>En prueba - Observaciones</span>
+                    </a>
+                </li>
+            @endrole
+            {{-- Interrupciones (solo para Coordinador, Especialista_TIC) --}}
+            @role('Coordinador|Especialista TIC|Moderador|Administrador')
+                <li class="@if (Request::is('interrupcion*')) mm-active @endif">
+                    <a href="{{ route('interrupcion.index') }}"
+                        class="@if (Request::is('interrupcion/index*')) active @endif">
+                        <i class="ti-control-record"></i><span>En pruebas - Interrupciones</span>
+                    </a>
+                </li>
+            @endrole
+            {{-- Interrupciones (solo para Coordinador, Especialista_TIC, Moderador, Administrador) --}}
+            {{-- Tipificación de Observaciones e Interrupciones (solo para Administrador y Especialista_TIC) --}}
+            @role('Administrador|Especialista TIC')
+                <li class="@if (Request::is('tipo_int_obs/index')) mm-active @endif">
+                    <a href="{{ route('tipo_int_obs.index') }}"
+                        class="@if (Request::is('tipo_int_obs/index')) active @endif">
+                        <i class="ti-control-record"></i><span>En pruebas - Tipificación de Observaciones</span>
+                    </a>
+                </li>
+            @endrole
             <hr class="hr-dashed hr-menu">
 
             <li class="menu-label mt-0">APOYO</li>

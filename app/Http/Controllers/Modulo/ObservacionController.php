@@ -37,7 +37,7 @@ class ObservacionController extends Controller
         $user = auth()->user();
 
         $query = Observacion::with([
-            'entidad:identidad,nombre_entidad',
+            'entidad:IDENTIDAD,NOMBRE_ENTIDAD,ABREV_ENTIDAD',
             'tipoIntObs:id_tipo_int_obs,tipo,numeracion,nom_tipo_int_obs',
             'centroMac:idcentro_mac,nombre_mac',
             'responsableUsuario:id,name'
@@ -49,7 +49,7 @@ class ObservacionController extends Controller
         }
 
         $observaciones = $query->get();
-
+        //dd($observaciones);
         return view('observacion.tablas.tb_index', compact('observaciones'));
     }
 
@@ -237,6 +237,7 @@ class ObservacionController extends Controller
     {
         $observacion = Observacion::with('entidad', 'tipoIntObs', 'centroMac', 'responsableUsuario')
             ->findOrFail($request->id_observacion);
+        //dd($observacion->entidad->NOMBRE_ENTIDAD);
 
         $view = view('observacion.modals.md_ver_observacion', compact('observacion'))->render();
         return response()->json(['html' => $view]);

@@ -56,13 +56,13 @@
 
                 <!-- Acciones -->
                 <td>
-                    @role('Administrador|Especialista TIC|Monitor')
+                    @role('Administrador|Especialista TIC|Moderador')
                     <button class="nobtn bandejTool" data-tippy-content="Editar Interrupción"
                         onclick="btnEditarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
                         <i class="las la-pen text-secondary font-16 text-success"></i>
                     </button>
                     @endrole
-                    @role('Administrador|Especialista TIC|Monitor')
+                    @role('Administrador|Especialista TIC|Moderador')
                     <button class="nobtn bandejTool" data-tippy-content="Eliminar Interrupción"
                         onclick="btnEliminarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
                         <i class="las la-trash-alt text-secondary font-16 text-danger"></i>

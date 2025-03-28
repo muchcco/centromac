@@ -19,7 +19,7 @@
                 @endif
 
                 @if ($observacion->entidad)
-                    <li class="list-group-item"><strong>Entidad:</strong> {{ $observacion->entidad->nombre_entidad }}
+                    <li class="list-group-item"><strong>Entidad:</strong> {{ $observacion->entidad->NOMBRE_ENTIDAD }}
                     </li>
                 @endif
 

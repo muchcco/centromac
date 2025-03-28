@@ -29,20 +29,27 @@
                 </td>
 
                 <td>
-                    <button class="nobtn bandejTool" data-tippy-content="Editar tipo"
-                        onclick="btnEditarTipoObs('{{ $tipo->id_tipo_int_obs }}')">
-                        <i class="las la-pen text-secondary font-16 text-success"></i>
-                    </button>
+                    @role('Administrador|Moderador')
+                        <button class="nobtn bandejTool" data-tippy-content="Editar tipo"
+                            onclick="btnEditarTipoObs('{{ $tipo->id_tipo_int_obs }}')">
+                            <i class="las la-pen text-secondary font-16 text-success"></i>
+                        </button>
+                    @endrole
 
-                    <button class="nobtn bandejTool" data-tippy-content="Eliminar tipo"
-                        onclick="btnEliminarTipoObs('{{ $tipo->id_tipo_int_obs }}')">
-                        <i class="las la-trash-alt text-secondary font-16 text-danger"></i>
-                    </button>
+                    @role('Administrador|Moderador')
+                        <button class="nobtn bandejTool" data-tippy-content="Eliminar tipo"
+                            onclick="btnEliminarTipoObs('{{ $tipo->id_tipo_int_obs }}')">
+                            <i class="las la-trash-alt text-secondary font-16 text-danger"></i>
+                        </button>
+                    @endrole
 
-                    <button class="nobtn bandejTool" data-tippy-content="Cambiar estado"
-                        onclick="btnToggleStatusTipoObs('{{ $tipo->id_tipo_int_obs }}')">
-                        <i class="las la-sync text-secondary font-16 text-info"></i>
-                    </button>
+                    @role('Administrador|Moderador')
+                        <button class="nobtn bandejTool" data-tippy-content="Cambiar estado"
+                            onclick="btnToggleStatusTipoObs('{{ $tipo->id_tipo_int_obs }}')">
+                            <i class="las la-sync text-secondary font-16 text-info"></i>
+                        </button>
+                    @endrole
+
                 </td>
             </tr>
         @endforeach

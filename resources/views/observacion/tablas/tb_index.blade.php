@@ -25,7 +25,7 @@
                     {{ $observacion->tipoIntObs->nom_tipo_int_obs ?? '' }}
                 </td>
 
-                <td>{{ $observacion->entidad->nombre_entidad ?? 'No asignado' }}</td>
+                <td>{{ $observacion->entidad->ABREV_ENTIDAD ?? 'No asignado' }}</td>
 
                 <td>
                     @switch($observacion->estado)
@@ -51,16 +51,18 @@
                         onclick="btnVerObservacion('{{ $observacion->id_observacion }}')">
                         <i class="las la-eye text-primary font-16"></i>
                     </button>
+                    @role('Administrador|Especialista TIC|Moderador')
                     <button class="nobtn bandejTool" data-tippy-content="Editar Observación"
                         onclick="btnEditarObservacion('{{ $observacion->id_observacion }}')">
                         <i class="las la-pen text-secondary font-16 text-success"></i>
                     </button>
-
+                    @endrole
+                    @role('Administrador|Especialista TIC|Moderador')
                     <button class="nobtn bandejTool" data-tippy-content="Eliminar Observación"
                         onclick="btnEliminarObservacion('{{ $observacion->id_observacion }}')">
                         <i class="las la-trash-alt text-secondary font-16 text-danger"></i>
                     </button>
-
+                    @endrole
                     <button class="nobtn bandejTool" data-tippy-content="Subsanar"
                         onclick="btnSubsanarObservacion('{{ $observacion->id_observacion }}')">
                         <i class="las la-file-medical text-success font-16"></i>
