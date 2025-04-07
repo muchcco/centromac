@@ -144,7 +144,7 @@ Route::group(['middleware' => ['auth']], function () {
     /******************************************************   EXTERNO *****************************************************************************/
 
     // SE ALMACENA LOS ACCESOS A LAS PAGINAS EXTERNA QUE NO ES NECESARIO LOGGIN
-    Route::get('/externo', [PagesController::class, 'externo'])->name('externo');
+    Route::get('/externo-int', [PagesController::class, 'externoInt'])->name('externo-int');
 
     /********************************************************* ASISTENCIA  ***************************************************************/
 

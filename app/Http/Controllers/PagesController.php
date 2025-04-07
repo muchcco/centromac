@@ -823,9 +823,9 @@ class PagesController extends Controller
         return view('entidad_cola', compact('query', 'cantidadTotal', 'sumaTotalTiempo', 'estaEnTarde', 'horaProgramadaFormato'));
     }
 
-    public function externo()
+    public function externoInt()
     {
-        return view('externo');
+        return view('externo-int');
     }
 
     public function consultas_novo(Request $request)

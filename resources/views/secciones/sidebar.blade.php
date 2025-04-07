@@ -294,8 +294,8 @@
             <li class="menu-label mt-0">APOYO</li>
 
             @if ($externos->VALOR == '1')
-                <li class="@if (Request::is('externo*')) mm-active @endif">
-                    <a href="{{ route('externo') }}" class="@if (Request::is('externo*')) active @endif"> <i
+                <li class="@if (Request::is('externo-int*')) mm-active @endif">
+                    <a href="{{ route('externo-int') }}" class="@if (Request::is('externo-int*')) active @endif"> <i
                             data-feather="check-square" class="align-self-center menu-icon"></i><span>Páginas
                             externas</span></a>
                 </li>
