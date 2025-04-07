@@ -265,6 +265,7 @@ class Puntualidad1Controller extends Controller
                 $query->where('m_modulo.fechainicio', '<=', $fecha_fin)
                     ->where('m_modulo.fechafin', '>=', $fecha_inicio);
             })
+            ->where('m_modulo.es_administrativo', 'NO')
             ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
             ->orderBy('m_modulo.n_modulo', 'asc')
             ->get();
@@ -272,10 +273,14 @@ class Puntualidad1Controller extends Controller
 
         // Obtener feriados del mes y año especificados
         $feriados = DB::table('feriados')
-            ->whereYear('fecha', $fecha_año)
-            ->whereMonth('fecha', $fecha_mes)
-            ->pluck('fecha')
-            ->toArray();
+        ->whereYear('fecha', $fecha_año)
+        ->whereMonth('fecha', $fecha_mes)
+        ->where(function ($query) use ($idmac) {
+            $query->where('id_centromac', $idmac)
+                ->orWhereNull('id_centromac');
+        })
+        ->pluck('fecha')
+        ->toArray();
 
         // Crear un array para los días
         $numeroDias = Carbon::create($fecha_año, $fecha_mes, 1)->daysInMonth;
