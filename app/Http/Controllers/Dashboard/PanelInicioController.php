@@ -16,4 +16,8 @@ class PanelInicioController extends Controller
     {
         return view('dashboard.getion_interna');
     }
+    public function indicadores_ans(Request $request)
+    {
+        return view('dashboard.indicadores_ans');
+    }
 }

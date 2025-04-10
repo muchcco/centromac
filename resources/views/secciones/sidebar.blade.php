@@ -253,9 +253,17 @@
                         <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link"
                                 href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>CMAC
                                 y MAC Express (Implementación y Módulos asignados)</a></li>
-                        <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link"
-                                href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>CMAC
-                                y MAC Express (Entidades y servicios)</a></li>
+                        <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif">
+                            <a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i
+                                    class="ti-control-record"></i>CMAC
+                                y MAC Express (Entidades y servicios)
+                            </a>
+                        </li>
+                        <li class="nav-item @if (Request::is('dashboard/indicadores_ans*')) mm-active @endif">
+                            <a class="nav-link" href="{{ route('dashboard.indicadores_ans') }}">
+                                <i class="ti-control-record"></i>Indicadores ANS
+                            </a>
+                        </li>
                     </ul>
                 </li>
             @endif
@@ -295,8 +303,8 @@
 
             @if ($externos->VALOR == '1')
                 <li class="@if (Request::is('externo-int*')) mm-active @endif">
-                    <a href="{{ route('externo-int') }}" class="@if (Request::is('externo-int*')) active @endif"> <i
-                            data-feather="check-square" class="align-self-center menu-icon"></i><span>Páginas
+                    <a href="{{ route('externo-int') }}" class="@if (Request::is('externo-int*')) active @endif">
+                        <i data-feather="check-square" class="align-self-center menu-icon"></i><span>Páginas
                             externas</span></a>
                 </li>
             @endif
