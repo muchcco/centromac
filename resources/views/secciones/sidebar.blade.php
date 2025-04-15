@@ -369,9 +369,11 @@
             @role('Administrador|Especialista TIC')
                 <li class="@if (Request::is('horariomac*')) mm-active @endif">
                     <a href="{{ route('horariomac.index') }}" class="@if (Request::is('horariomac/index*')) active @endif">
-                        <i data-feather="calendar" class="align-self-center menu-icon"></i><span>Horario MAC</span></a>
+                        <i data-feather="clock" class="align-self-center menu-icon"></i><span>Horario MAC</span>
+                    </a>
                 </li>
             @endrole
+
             @role('Administrador|Especialista TIC')
                 <li class="@if (Request::is('feriado*')) mm-active @endif">
                     <a href="{{ route('feriados.index') }}" class="@if (Request::is('feriado/index*')) active @endif">
