@@ -1,4 +1,4 @@
-@extends('layouts.externo2')
+@extends('layouts.externo')
 
 @section('head')
 
@@ -107,7 +107,7 @@
                 
                 <div class="mb-3 ">
                     <div class="row col-12 dat-mid">
-                        {{-- <label for="IdTipoPersona" class="control-label">Ingresar el centro MAC y luego la entidad <span class="text-danger fw-bolder">(*)</span> </label> --}}
+                        <label for="IdTipoPersona" class="control-label">Ingresar el centro MAC y luego la entidad <span class="text-danger fw-bolder">(*)</span> </label>
                         <div class="col-sm-5">
                             <select name="idmac" id="idmac" class="form-select col-6">
                                 <option value="" isabled selected>-- Seleccione un Centro MAC --</option>

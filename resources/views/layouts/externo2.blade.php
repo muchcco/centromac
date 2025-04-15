@@ -45,9 +45,9 @@
                         <div class="collapse navbar-collapse px-0" id="exCollapsingNavbar">
                             <ul class="nav navbar-nav flex-row justify-content-between ml-auto float-right">
                                 <li class="nav-item dropdown show pt-3">
-                                    <a class="nav-link text-white p-0" data-toggle="dropdown" href="#" aria-expanded="true">
+                                    {{-- <a class="nav-link text-white p-0" data-toggle="dropdown" href="#" aria-expanded="true">
                                         <i class="fas fa-user"></i> dsadadad <i class="fas fa-caret-down"></i>
-                                    </a>
+                                    </a> --}}
                                     {{-- <div class="dropdown-menu dropdown-menu-right p-4" style="width: 300px!important;">
                                         <div class="media-body text-center">
                                             <p class="font-weight-bold">{{ session('nombreUsuario') }}</p>
@@ -94,9 +94,9 @@
                 <div class="col-sm-12 col-md-4">
                     <h6>SÍGUENOS</h6>
                     <ul class="d-flex mb-0">
-                        <li class="mr-2"><a href="https://es-la.facebook.com/PCMPERU/" target="_blank"><i class="fab fa-facebook-square footer__icons"></i></a></li>
-                        <li class="mr-2"><a href="https://twitter.com/pcmperu" target="_blank"><i class="fab fa-twitter-square footer__icons"></i></a></li>
-                        <li class="mr-2"><a href="https://www.instagram.com/pcmperu" target="_blank"><i class="fab fa-instagram footer__icons"></i></a></li>
+                        <li class="mr-2"><a href="https://www.facebook.com/CentrosMAC   " target="_blank"><i class="fab fa-facebook-square footer__icons"></i></a></li>
+                        <li class="mr-2"><a href="https://x.com/CentrosMAC" target="_blank"><i class="fab fa-twitter-square footer__icons"></i></a></li>
+                        <li class="mr-2"><a href="https://www.instagram.com/centrosMAC/" target="_blank"><i class="fab fa-instagram footer__icons"></i></a></li>
                         <li class="mr-2"><a href="https://www.youtube.com/user/Audiovisualespcm" target="_blank"><i class="fab fa-youtube-square footer__icons"></i></a></li>
                         <li><a href="https://www.flickr.com/photos/prensapcm" target="_blank"><i class="fab fa-flickr footer__icons"></i></a></li>
                     </ul>

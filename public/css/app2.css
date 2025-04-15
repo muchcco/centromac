@@ -1,3 +1,9 @@
+body{
+    padding: 0;
+    margin: 0;
+    background-color: #a8a8a8;
+}
+
 header{
     background: #BF0909;
 }
@@ -8,7 +14,7 @@ h2{
 
 .container{
     padding:1em;
-    max-width: 90%;
+    max-width: 60%;
 }
 
 .cab{

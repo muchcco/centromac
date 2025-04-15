@@ -22,9 +22,9 @@
                 <td>{{ $usuario->NOMBRE_MAC }}</td>              
                 <td>
                     @if ($usuario->flag == 1)
-                        activo
+                        <span class="badge badge-soft-success px-2">Activo</span>
                     @else
-                        Inactivo
+                        <span class="badge badge-soft-danger px-2">Inactivo</span>
                     @endif
                 </td>                
                 <td>
