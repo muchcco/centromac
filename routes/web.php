@@ -51,6 +51,7 @@ use App\Http\Controllers\Modulo\TipoIntObsController;
 use App\Http\Controllers\Modulo\ObservacionInterrupcionController;
 use App\Http\Controllers\Modulo\InterrupcionController;
 use App\Http\Controllers\Modulo\ObservacionController;
+use App\Http\Controllers\Modulo\HorarioMacController;
 
 
 
@@ -263,6 +264,28 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/update_personalModulo', [PersonalModuloController::class, 'update'])->name('update_personalModulo');
         Route::post('/delete_personalModulo', [PersonalModuloController::class, 'destroy'])->name('delete_personalModulo');
         Route::get('/get-fechas-modulo/{id}', [PersonalModuloController::class, 'getFechasModulo'])->name('getFechasModulo');
+    });
+
+    /******************************************************   HORARIO MAC ************************************************************************/
+
+    // Rutas para la gestión de horarios MAC
+    Route::group(['prefix' => 'horariomacs', 'as' => 'horariomac.'], function () {
+        // Ruta para la vista principal de horarios
+        Route::get('/index', [HorarioMacController::class, 'index'])->name('index');
+        // Ruta para cargar la tabla de horarios
+        Route::get('/tablas/tb_index', [HorarioMacController::class, 'tb_index'])->name('tablas.tb_index');
+        // Ruta para abrir el modal de agregar nuevo horario
+        Route::post('/modals/md_add_horarioMac', [HorarioMacController::class, 'create'])->name('modals.md_add_horarioMac');
+        // Ruta para abrir el modal de editar horario
+        Route::post('/modals/md_edit_horarioMac', [HorarioMacController::class, 'edit'])->name('modals.md_edit_horarioMac');
+        // Ruta para almacenar un nuevo horario
+        Route::post('/store_horarioMac', [HorarioMacController::class, 'store'])->name('store_horarioMac');
+        // Ruta para actualizar un horario
+        Route::post('/update_horarioMac', [HorarioMacController::class, 'update'])->name('update_horarioMac');
+        // Ruta para eliminar un horario
+        Route::post('/delete_horarioMac', [HorarioMacController::class, 'destroy'])->name('delete_horarioMac');
+        // Ruta para obtener las fechas asociadas a un horario de módulo
+        Route::get('/get-modulos-by-centromac/{idcentromac}', [HorarioMacController::class, 'getModulosByCentroMac'])->name('getModulosByCentroMac');
     });
 
     /******************************************************   MODULO Y PERSONAL ITINERANTE ************************************************************************/
@@ -545,7 +568,6 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/index', [PanelInicioController::class, 'index'])->name('index');
         Route::get('/getion_interna', [PanelInicioController::class, 'getion_interna'])->name('getion_interna');
         Route::get('/indicadores_ans', [PanelInicioController::class, 'indicadores_ans'])->name('indicadores_ans');
-
     });
 
 
