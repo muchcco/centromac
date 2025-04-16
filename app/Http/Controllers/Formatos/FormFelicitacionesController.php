@@ -85,8 +85,8 @@ class FormFelicitacionesController extends Controller
         // Obtención de los asesores filtrados por el status = 1 y el idmac del centro MAC actual
         $asesor = DB::table('D_PERSONAL_MAC')
             ->join('M_PERSONAL', 'D_PERSONAL_MAC.IDPERSONAL', '=', 'M_PERSONAL.IDPERSONAL')
-            ->where('D_PERSONAL_MAC.Status', 1) // Filtra por status = 1
-            // ->where('D_PERSONAL_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
+            // ->where('D_PERSONAL_MAC.Status', 1) // Filtra por status = 1
+            ->where('D_PERSONAL_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
             ->select('M_PERSONAL.IDPERSONAL', 'M_PERSONAL.NOMBRE', 'M_PERSONAL.APE_PAT', 'M_PERSONAL.APE_MAT')
             ->get();
             
