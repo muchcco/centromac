@@ -136,7 +136,7 @@
     
 @endsection
 
-@section('Scripts')
+@section('ext-script')
 <script>
 
 

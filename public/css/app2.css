@@ -1,7 +1,7 @@
 body{
     padding: 0;
     margin: 0;
-    background-color: #a8a8a8;
+    background-color: #ffffff;
 }
 
 header{
@@ -14,7 +14,7 @@ h2{
 
 .container{
     padding:1em;
-    max-width: 60%;
+    max-width: 80%;
 }
 
 .cab{
