@@ -44,11 +44,23 @@
                 <div class="card-header" style="background-color:#132842">
                     <h4 class="card-title text-white mb-0">Indicadores de ANS</h4>
                 </div>
+                <div class="alert custom-alert custom-alert-warning icon-custom-alert shadow-sm fade show d-flex justify-content-between mt-3"
+                    role="alert">
+                    <div class="media">
+                        <i class="la la-exclamation-triangle alert-icon text-warning align-self-center font-30 me-3"></i>
+                        <div class="media-body align-self-center">
+                            <h5 class="mb-1 fw-bold mt-0">Importante</h5>
+                            <span>Si el dashboard no se visualiza, <a
+                                    href="https://app.powerbi.com/view?r=eyJrIjoiNmM1Mzk5ZWYtODY1Zi00MDJhLTllM2EtYWEyZjA2Y2RhOGYyIiwidCI6IjM0YjQ4ZTRlLTI1MTktNDA2MC1hMDllLTViMDVkOTAxYTRkNyJ9"
+                                    target="_blank" class="text-decoration-underline fw-bold fs-4 text-dark">dar click
+                                    aquí</a> para abrirlo en una nueva pestaña.</span>
+                        </div>
+                    </div>
+                </div>
                 <div class="card-body">
                     <iframe
                         src="https://app.powerbi.com/view?r=eyJrIjoiNmM1Mzk5ZWYtODY1Zi00MDJhLTllM2EtYWEyZjA2Y2RhOGYyIiwidCI6IjM0YjQ4ZTRlLTI1MTktNDA2MC1hMDllLTViMDVkOTAxYTRkNyJ9"
-                        frameborder="0"
-                        class="power-bi-dash">
+                        frameborder="0" class="power-bi-dash">
                     </iframe>
                 </div>
             </div>
