@@ -44,6 +44,9 @@
                                 onclick="btnAddInterrupcion()">
                                 <i class="fa fa-plus"></i> Nueva Interrupción
                             </button>
+                            <a href="{{ route('interrupcion.export_excel') }}" class="btn btn-outline-primary">
+                                <i class="fa fa-file-excel"></i> Exportar Excel
+                            </a>
                         </div>
                     </div>
                     <div class="row">

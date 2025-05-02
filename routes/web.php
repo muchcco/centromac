@@ -336,6 +336,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/delete', [InterrupcionController::class, 'destroy'])->name('delete');
         Route::post('/modals/md_subsanar_interrupcion', [InterrupcionController::class, 'subsanarModal'])->name('modals.md_subsanar_interrupcion');
         Route::post('/subsanar', [InterrupcionController::class, 'subsanarGuardar'])->name('subsanar');
+        Route::get('/interrupcion/export-excel', [InterrupcionController::class, 'export_excel'])->name('export_excel');
     });
     Route::prefix('observacion')->name('observacion.')->group(function () {
         Route::get('/index', [ObservacionController::class, 'index'])->name('index');

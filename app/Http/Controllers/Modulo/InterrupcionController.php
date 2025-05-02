@@ -11,6 +11,9 @@ use App\Models\TipoIntObs;
 use App\Models\Personal;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\InterrupcionExport;
+
 
 class InterrupcionController extends Controller
 {
@@ -268,5 +271,20 @@ class InterrupcionController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => 400]);
         }
+    }
+
+    public function export_excel()
+    {
+        $interrupcion = Interrupcion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac'])
+            ->where('idcentro_mac', auth()->user()->idcentro_mac)
+            ->get();
+
+        $nombreMac = auth()->user()->centroMac->nombre_mac ?? 'Centro MAC';
+        $nombreMes = ucfirst(\Carbon\Carbon::now()->monthName);
+
+        return Excel::download(
+            new InterrupcionExport($interrupcion, $nombreMac, $nombreMes),
+            'Interrupciones_' . now()->format('Ymd_His') . '.xlsx'
+        );
     }
 }
