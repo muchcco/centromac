@@ -28,7 +28,7 @@ class Interrupcion extends Model
 
     public function entidad()
     {
-        return $this->belongsTo(Entidad::class, 'identidad', 'identidad');
+        return $this->belongsTo(Entidad::class, 'identidad', 'IDENTIDAD');
     }
 
     public function tipoIntObs()
