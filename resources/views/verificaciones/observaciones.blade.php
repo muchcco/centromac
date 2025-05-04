@@ -25,7 +25,8 @@
                             <ol class="breadcrumb">
                                 <li class="breadcrumb-item">
                                     <a href="{{ route('inicio') }}">
-                                        <i data-feather="home" class="align-self-center" style="height: 70%; display: block;"></i>
+                                        <i data-feather="home" class="align-self-center"
+                                            style="height: 70%; display: block;"></i>
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item">
@@ -55,7 +56,8 @@
                 <h4 class="card-title text-white">Filtro de Búsqueda</h4>
             </div><!--end card-header-->
             <div class="card-body">
-                <form action="{{ route('verificaciones.observaciones') }}" method="GET" class="d-flex justify-content-around">
+                <form action="{{ route('verificaciones.observaciones') }}" method="GET"
+                    class="d-flex justify-content-around">
                     <div class="form-group col-md-4">
                         <label for="fecha_inicio">Fecha de Inicio</label>
                         <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
@@ -67,6 +69,14 @@
                     <div class="form-group col-md-2 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary">Buscar</button>
                     </div>
+                    <!-- Botón de Exportar -->
+                    <div class="form-group col-md-2 d-flex align-items-end">
+                        <a href="{{ route('verificaciones.export', ['fecha_inicio' => request('fecha_inicio'), 'fecha_fin' => request('fecha_fin')]) }}"
+                            class="btn btn-success">
+                            <i class="fa fa-download me-2"></i> Exportar a Excel
+                        </a>
+                    </div>
+
                 </form>
             </div><!--end card-body-->
         </div><!--end card-->
@@ -75,13 +85,15 @@
             <thead>
                 <tr>
                     <td>
-                        <img src="http://www.mac.pe/wp-content/themes/bridge/images/alomac.png" alt="" class="img-fluid">
+                        <img src="http://www.mac.pe/wp-content/themes/bridge/images/alomac.png" alt=""
+                            class="img-fluid">
                     </td>
-                    <td colspan="5" class="text-center align-middle font-weight-bold h2" style="color:azure;">REGISTRO DE CHECK LIST OPERATIVO
+                    <td colspan="5" class="text-center align-middle font-weight-bold h2" style="color:azure;">REGISTRO DE
+                        CHECK LIST OPERATIVO
                     </td>
                 </tr>
                 <tr>
-                    <th class="text-center col-3">Tipo de Ejecución</th>
+                    <th class="text-center col-3">Tipo de Ejecuciónaa</th>
                     <th class="text-center col-3">Observaciones</th>
                     <th class="text-center col-2">Fecha</th>
                     <th class="text-center col-1">Hora</th>

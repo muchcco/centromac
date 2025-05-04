@@ -587,8 +587,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/verificaciones/contingencia', [VerificacionController::class, 'contingencia'])->name('verificaciones.contingencia');
     Route::get('/verificaciones/filtrar', [VerificacionController::class, 'filtrar'])->name('verificaciones.filtrar');
     Route::get('verificaciones/{fecha}', [VerificacionController::class, 'show'])->name('verificaciones.show');
-    Route::get('/verificaciones/change-apertura', [VerificacionController::class, 'changeApertura'])->name('verificaciones.changeApertura');
     Route::get('/verificaciones/get-observations', [VerificacionController::class, 'getObservations'])->name('verificaciones.getObservations');
+    Route::get('/verificaciones/observaciones/export', [VerificacionController::class, 'export'])->name('verificaciones.export');
 
 
     /******************************************************   PAGINAS DE APOYO *****************************************************************************/

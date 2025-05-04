@@ -8,6 +8,8 @@ use App\Models\Verificacion;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use App\Exports\VerificacionesExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class VerificacionController extends Controller
 {
@@ -138,7 +140,8 @@ class VerificacionController extends Controller
             'observacionesRelevo',
             'observacionesCierre',
             'centroMac'
-        )); }
+        ));
+    }
 
     public function store(Request $request)
     {
@@ -614,5 +617,90 @@ class VerificacionController extends Controller
         }
 
         return view('verificaciones.observaciones', compact('verificacionesInfo'));
+    }
+    public function export(Request $request)
+    {
+        // Validar las fechas de inicio y fin
+        $request->validate([
+            'fecha_inicio' => 'required|date',
+            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
+        ]);
+
+        // Obtener las verificaciones dentro del rango de fechas y el id_centromac
+        $verificaciones = Verificacion::whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin])
+            ->where('id_centromac', auth()->user()->idcentro_mac)
+            ->orderBy('Fecha')
+            ->get();
+        // Contar el total de registros
+        $totalRegistros = $verificaciones->count();
+        // Obtener la lista de campos
+        $campos = [
+            'ModuloDeRecepcion',
+            'OrdenadoresDeFila',
+            'SillasDeOrientadores',
+            'Ticketera',
+            'LectorDeCodBarras',
+            'ServicioDeTelefonia1800',
+            'InsumoRecepcion',
+            'SillaRuedas',
+            'TvZonaAtencion',
+            'SillasEspera',
+            'SillasAtencion',
+            'ModuloAtencion',
+            'PcAsesores',
+            'ImpresorasZonaAtencion',
+            'InsumoMateriales',
+            'ModuloOficina',
+            'SillaOficina',
+            'InsumoOficina',
+            'SistemaIluminaria',
+            'OrdenLimpieza',
+            'Senialeticas',
+            'EquipoAireAcondicionado',
+            'ServiciosHigienicos',
+            'Comedor',
+            'Internet',
+            'SistemasColas',
+            'SistemaDeCitas',
+            'SistemaAudio',
+            'SistemaVideovigilancia',
+            'CorreoElectronico',
+            'ActiveDirectory',
+            'FileServer',
+            'Antivirus'
+        ];
+
+        // Preparamos los datos para el export
+        $exportData = $verificaciones->map(function ($verificacion) use ($campos) {
+            // Ajuste para tipo de ejecución
+            $tipoEjecucion = $verificacion->AperturaCierre == 0 ? 'Apertura' : ($verificacion->AperturaCierre == 1 ? 'Relevo' : 'Cierre');
+
+            // Calcular el porcentaje de 'Sí' en los campos
+            $totalCampos = count($campos);
+            $camposSi = count(array_filter($verificacion->only($campos), function ($value) {
+                return $value == 1;
+            }));
+
+            // Aseguramos que 'SistemaDeCitas' siempre esté marcado como 1
+            if ($verificacion->SistemaDeCitas == 0) {
+                $camposSi++;
+            }
+
+            // Calculamos el porcentaje
+            $porcentajeSi = ($camposSi / $totalCampos) * 100;
+
+            // Mapear los datos de la verificación
+            return [
+                'tipoEjecucion' => $tipoEjecucion,
+                'observaciones' => $verificacion->Observaciones,
+                'fecha' => \Carbon\Carbon::parse($verificacion->Fecha)->format('d-m-Y'),
+                'hora' => \Carbon\Carbon::parse($verificacion->hora_registro)->format('H:i:s'),
+                'porcentajeSi' => round($porcentajeSi, 2),
+                'responsable' => $verificacion->user->name,
+            ];
+        });
+
+        // Exportar a Excel
+        return Excel::download(new VerificacionesExport($exportData, $request->fecha_inicio, $request->fecha_fin,$totalRegistros), 'verificaciones_' . now()->format('Ymd_His') . '.xlsx');
     }
 }
