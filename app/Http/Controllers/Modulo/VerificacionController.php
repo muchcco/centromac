@@ -673,7 +673,7 @@ class VerificacionController extends Controller
         // Preparamos los datos para el export
         $exportData = $verificaciones->map(function ($verificacion) use ($campos) {
             // Ajuste para tipo de ejecución
-            $tipoEjecucion = $verificacion->AperturaCierre == 0 ? 'Apertura' : ($verificacion->AperturaCierre == 1 ? 'Relevo' : 'Cierre');
+            $tipoEjecucion = $verificacion->AperturaCierre == 0 ? 'Check list ejecutado en Apertura	' : ($verificacion->AperturaCierre == 1 ? 'Check list ejecutado en Relevo' : 'Check list ejecutado en Cierre');
 
             // Calcular el porcentaje de 'Sí' en los campos
             $totalCampos = count($campos);
