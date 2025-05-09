@@ -138,6 +138,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/home', function () {
         return redirect('/');
     });
+    
+    
+    Route::get('/data-por-mac', [PagesController::class, 'dateForMac'])
+         ->name('api.data.mac');
 
     Route::post('modal-password', [PagesController::class, 'modalPassword'])->name('modal-password');
     Route::post('store-password', [PagesController::class, 'storePassword'])->name('store-password');

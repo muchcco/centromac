@@ -34,12 +34,140 @@ class PagesController extends Controller
 
     public function index()
     {
-        $count_asesores = Personal::where('IDMAC', $this->centro_mac_id()->idmac)->where('FLAG', 1)->whereNot('IDENTIDAD', 17)->get()->count();
+        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+            $count_asesores = Personal::where('IDMAC', $this->centro_mac_id()->idmac)->where('FLAG', 1)->whereNot('IDENTIDAD', 17)->get()->count();
+        }else{
+            $count_asesores = Personal::where('FLAG', 1)->whereNot('IDENTIDAD', 17)->get()->count();
+        }
+        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+            $count_pcm = Personal::where('IDMAC', $this->centro_mac_id()->idmac)->where('FLAG', 1)->where('IDENTIDAD', 17)->get()->count();
+        }else{
+            $count_pcm = Personal::where('IDENTIDAD', 17)->get()->count();
+        }
+        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+            $count_entidad = DB::table('M_MAC_ENTIDAD')->where('IDCENTRO_MAC', $this->centro_mac_id()->idmac)->whereNot('IDENTIDAD', 17)->get()->count();
+        }else{
+            $count_entidad = DB::table('M_MAC_ENTIDAD')->whereNot('IDENTIDAD', 17)->get()->count();
+        }
 
-        $count_entidad = DB::table('M_MAC_ENTIDAD')->where('IDCENTRO_MAC', $this->centro_mac_id()->idmac)->whereNot('IDENTIDAD', 17)->get()->count();
+        $count_mac = DB::table('M_CENTRO_MAC')->get()->count();
 
-        return view('inicio', compact('count_asesores', 'count_entidad'));
+        // 1) obtén tu conteo por departamento
+        $countsByDept = DB::table('m_centro_mac as m')
+            ->join('distrito as d','m.ubicacion','=','d.IDDISTRITO')
+            ->join('departamento as dep','d.DEPARTAMENTO_ID','=','dep.IDDEPARTAMENTO')
+            ->where('m.FLAG',1)
+            ->select('dep.NAME_DEPARTAMENTO as dept', DB::raw('COUNT(*) as cnt'))
+            ->groupBy('dep.NAME_DEPARTAMENTO')
+            ->pluck('cnt','dept');
+
+        // 2) transforma las claves (dept) a mayúsculas para que coincidan
+        $countsByDept = $countsByDept
+        ->mapWithKeys(function($cnt, $dept){
+            // strtoupper mantiene los acentos
+            return [ mb_strtoupper($dept) => $cnt ];
+        })
+        ->toArray();
+
+        // 3) tu mapa de claves a hc-key
+        $mapKeys = [
+        'AMAZONAS'      => 'PE-AMA',
+        'ÁNCASH'        => 'PE-ANC',
+        'APURÍMAC'      => 'PE-APU',
+        'AREQUIPA'      => 'PE-ARE',
+        'AYACUCHO'      => 'PE-AYA',
+        'CAJAMARCA'     => 'PE-CAJ',
+        'CALLAO'        => 'PE-CAL',
+        'CUSCO'         => 'PE-CUS',
+        'HUÁNUCO'       => 'PE-HUC',
+        'HUANCAVELICA'  => 'PE-HUV',
+        'ICA'           => 'PE-ICA',
+        'JUNÍN'         => 'PE-JUN',
+        'LA LIBERTAD'   => 'PE-LAL',
+        'LAMBAYEQUE'    => 'PE-LAM',
+        'LIMA'          => 'PE-LIM',
+        'LIMA PROVINCE' => 'PE-LMA',
+        'LORETO'        => 'PE-LOR',
+        'MADRE DE DIOS' => 'PE-MDD',
+        'MOQUEGUA'      => 'PE-MOQ',
+        'PASCO'         => 'PE-PAS',
+        'PIURA'         => 'PE-PIU',
+        'PUNO'          => 'PE-PUN',
+        'SAN MARTÍN'    => 'PE-SAM',
+        'TACNA'         => 'PE-TAC',
+        'TUMBES'        => 'PE-TUM',
+        'UCAYALI'       => 'PE-UCA',
+        ];
+
+        // 4) construye tu $mapData
+        $mapData = [];
+        foreach ($mapKeys as $deptName => $hcKey) {
+        $mapData[] = [
+            'hc-key' => $hcKey,
+            'name'   => $deptName,
+            'value'  => $countsByDept[$deptName] ?? 0,
+        ];
+        }
+
+        // 5) pasa $mapData a la vista y haz un dd para verificar
+        // dd($mapData);
+
+        return view('inicio', compact(
+            'count_asesores','count_pcm','count_entidad','count_mac','mapData'
+        ));
     }
+
+    public function mapaMac(Request $request)
+    {
+        $query = DB::table('m_centro_mac as m')
+            ->leftJoin('distrito'    . ' as d','m.ubicacion','=',   'd.IDDISTRITO')
+            ->leftJoin('provincia'   . ' as p','d.PROVINCIA_ID','=', 'p.IDPROVINCIA')
+            ->leftJoin('departamento'. ' as dep','d.DEPARTAMENTO_ID','=','dep.IDDEPARTAMENTO')
+            ->select([
+                'm.IDCENTRO_MAC AS id',
+                'm.NOMBRE_MAC    AS nombre',
+                'dep.NAME_DEPARTAMENTO AS departamento',
+                'p.NAME_PROVINCIA     AS provincia',
+                'd.NAME_DISTRITO      AS distrito',
+                'm.lat',
+                'm.lng',
+            ])
+            ->where('m.FLAG', 1);
+
+        // Filtro opcional por departamento
+        if ($request->filled('departamento')) {
+            $query->where('dep.NAME_DEPARTAMENTO', $request->departamento);
+        }
+
+        $centros = $query->get();
+
+        return response()->json($centros);
+    }
+
+    public function dateForMac(Request $request)
+    {
+        $q = DB::table('m_centro_mac as m')
+            ->join('distrito as d','m.ubicacion','=','d.IDDISTRITO')
+            ->join('provincia as p','d.PROVINCIA_ID','=','p.IDPROVINCIA')
+            ->join('departamento as dep','d.DEPARTAMENTO_ID','=','dep.IDDEPARTAMENTO')
+            ->where('m.FLAG',1)
+            ->select([
+                'm.NOMBRE_MAC',
+                'dep.NAME_DEPARTAMENTO',
+                'p.NAME_PROVINCIA',
+                'd.NAME_DISTRITO',
+                'm.FECHA_APERTURA',
+                'm.FECHA_INAGURACION',
+                'm.FLAG'
+            ]);
+
+        if ($request->filled('departamento')) {
+            $q->where('dep.NAME_DEPARTAMENTO', $request->departamento);
+        }
+
+        return response()->json($q->get());
+    }
+
 
     public function validar(Request $request)
     {
