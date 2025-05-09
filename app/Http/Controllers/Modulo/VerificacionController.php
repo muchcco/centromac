@@ -703,4 +703,53 @@ class VerificacionController extends Controller
         // Exportar a Excel
         return Excel::download(new VerificacionesExport($exportData, $request->fecha_inicio, $request->fecha_fin,$totalRegistros), 'verificaciones_' . now()->format('Ymd_His') . '.xlsx');
     }
+
+    /**** permisos especiales ****/
+    public function up_time(Request $request)
+    {
+        $fecha_d = Carbon::parse($request->fecha)->format('Y-m-d');
+
+        $hora_inicio = DB::table('m_verificacion')->whereDate('Fecha', $fecha_d)->where('AperturaCierre', 0)->first();
+        $hora_fin = DB::table('m_verificacion')->where('Fecha', $fecha_d)->where('AperturaCierre', 2)->first();
+        // dd($hora_inicio);
+
+        $view = view('verificaciones.modals.up_time', compact('hora_inicio', 'hora_fin'))->render();
+
+        return response()->json(["html" => $view]);
+    }
+
+    public function update_time(Request $request)
+    {
+        // Validación básica
+        $request->validate([
+            'id_inicio'   => 'required|integer',
+            'id_fin'      => 'required|integer',
+            'fecha_inicio'       => 'required|date',
+            'fecha_fin'       => 'required|date',
+            'hora_inicio' => 'required|date_format:H:i:s',
+            'hora_fin'    => 'required|date_format:H:i:s',
+        ]);
+        // dd($request->all());
+
+        // Formatea fecha y hora
+        $date_i = Carbon::parse($request->fecha_inicio)->format('Y-m-d');
+        $date_f = Carbon::parse($request->fecha_fin)->format('Y-m-d');
+        $fullInicio = "{$date_i} {$request->hora_inicio}";
+        $fullFin    = "{$date_f} {$request->hora_fin}";
+
+        // Actualiza Apertura
+        DB::table('m_verificacion')
+          ->where('id', $request->id_inicio)
+          ->update(['hora_registro' => $fullInicio]);
+
+        // Actualiza Cierre
+        DB::table('m_verificacion')
+          ->where('id', $request->id_fin)
+          ->update(['hora_registro' => $fullFin]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Horarios actualizados correctamente.'
+        ]);
+    }
 }

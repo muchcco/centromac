@@ -594,6 +594,11 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/verificaciones/get-observations', [VerificacionController::class, 'getObservations'])->name('verificaciones.getObservations');
     Route::get('/verificaciones/observaciones/export', [VerificacionController::class, 'export'])->name('verificaciones.export');
 
+    /** permisos especiales para check list ***/
+    Route::post('/verificaciones/modals/up_time', [VerificacionController::class, 'up_time'])->name('verificaciones.modals.up_time');
+    Route::post('/verificaciones/update_time', [VerificacionController::class, 'update_time'])
+     ->name('verificaciones.update_time');
+
 
     /******************************************************   PAGINAS DE APOYO *****************************************************************************/
 
