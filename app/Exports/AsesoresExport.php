@@ -27,6 +27,7 @@ class AsesoresExport implements FromView, WithDefaultStyles, ShouldAutoSize,   W
     protected $query;
 
     function __construct($query) {
+        libxml_use_internal_errors(true);
         $this->query = $query;
     }
     
