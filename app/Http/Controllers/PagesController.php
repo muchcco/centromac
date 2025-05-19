@@ -594,11 +594,12 @@ class PagesController extends Controller
                             ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
                             ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
                             ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idcentro_mac)
+                            ->orderBy('M_ENTIDAD.ABREV_ENTIDAD', 'ASC')
                             ->get();
 
         $options = '<option value="">-- Seleccione una entidad --</option>';
         foreach ($entidades as $ent) {
-            $options .= '<option value="' . $ent->IDENTIDAD . '">' . $ent->NOMBRE_ENTIDAD . '</option>';
+            $options .= '<option value="' . $ent->IDENTIDAD . '">'.$ent->ABREV_ENTIDAD  . ' - '. $ent->NOMBRE_ENTIDAD . '</option>';
         }        
 
         return $options;
@@ -776,11 +777,22 @@ class PagesController extends Controller
 
     public function vista(Request $request)
     {
-        $macs = Mac::get();
+        $macs = Mac::orderBy('NOMBRE_MAC', 'ASC')->get();
 
         $tip_doc = DB::table('D_PERSONAL_TIPODOC')->get();
 
         return view('vista', compact('tip_doc', 'macs'));
+    }
+
+    public function vista_md(Request $request)
+    {
+        $entidad = Entidad::where('IDENTIDAD', $request->identidad)->first();
+        $perfiles = DB::connection('mysql2')->select("SELECT * FROM servicos WHERE id IN ($entidad->NOMBRE_NOVO)");
+        $idmac = $request->idmac;
+        
+        $view = view('vista_md', compact('perfiles', 'idmac'))->render();
+
+        return response()->json(["html" => $view]);
     }
 
     public function validar_entidad(Request $request)
@@ -901,6 +913,14 @@ class PagesController extends Controller
             65 => 7,   // TRAMITES => 65
             157 => 5,  // ENTREGAS => 157 
             336 => 4,  // CERTIFICACIONES => 336
+
+            259 => 6,  // MIGRACIONES TRAMITES PERUANOS
+            260 => 4,  // MIGRACIONES ENTREGAS PERUANOS
+            740 => 4,  // MIGRACIONES ORIENTACION PERUANOS
+            839 => 4,  // MIGRACIONES ENTREGAS EXTRANJEROS
+            840 => 4,  // MIGRACIONES TRAMITES EXTRANJEROS
+            923 => 4,  // MIGRACIONES ORIENTACION EXTRANJEROS
+            1504 => 4, // MIGRACIONES RESERVA CITAS PASAPORTE
             // Agrega más IDs y duraciones según sea necesario
         ];
 

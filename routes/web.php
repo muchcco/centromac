@@ -78,6 +78,7 @@ Route::post('validar_entidad', [PagesController::class, 'validar_entidad'])->nam
 Route::get('entidad_cola.html5/{identidad}', [PagesController::class, 'entidad_cola'])->name('entidad_cola');
 
 
+Route::post('vista_md', [PagesController::class, 'vista_md'])->name('vista_md');
 /******************  RECURSOS  ********************/
 
 Route::post('buscar_dni', [PagesController::class, 'buscar_dni'])->name('buscar_dni');
