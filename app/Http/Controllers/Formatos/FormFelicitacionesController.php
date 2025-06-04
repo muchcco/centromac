@@ -174,7 +174,12 @@ class FormFelicitacionesController extends Controller
             ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
             ->get();
 
-        $asesor = Personal::where('FLAG', 1)->where('IDMAC', $this->centro_mac()->idmac)->orderBy('APE_PAT', 'ASC')->get();
+        $asesor = DB::table('D_PERSONAL_MAC')
+                    ->join('M_PERSONAL', 'D_PERSONAL_MAC.IDPERSONAL', '=', 'M_PERSONAL.IDPERSONAL')
+                    // ->where('D_PERSONAL_MAC.Status', 1) // Filtra por status = 1
+                    ->where('D_PERSONAL_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
+                    ->select('M_PERSONAL.IDPERSONAL', 'M_PERSONAL.NOMBRE', 'M_PERSONAL.APE_PAT', 'M_PERSONAL.APE_MAT')
+                    ->get();
 
         $felicitacion = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->first();
 
