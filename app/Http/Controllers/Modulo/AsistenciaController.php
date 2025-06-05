@@ -693,9 +693,18 @@ class AsistenciaController extends Controller
     {
         try {
             $idAsistencia = $request->idAsistencia;
+    
+            // Buscar y eliminar la asistencia original
             $asistencia = Asistencia::findOrFail($idAsistencia);
+            $dni = $asistencia->NUM_DOC;
+            $marcacion = $asistencia->FECHA_BIOMETRICO;
             $asistencia->delete();
-
+    
+            // Eliminar también de asistenciatest si existe un registro con mismo DNI y marcación
+            Asistenciatest::where('DNI', $dni)
+                ->where('marcacion', $marcacion)
+                ->delete();
+    
             return response()->json([
                 'success' => true,
                 'message' => 'Hora eliminada correctamente'
@@ -707,6 +716,7 @@ class AsistenciaController extends Controller
             ], 500);
         }
     }
+    
 
 
     public function det_us(Request $request, $id)
