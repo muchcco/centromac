@@ -24,6 +24,7 @@ use Carbon\CarbonPeriod;
 use PDO;
 use mysqli;
 use PDOException;
+use App\Models\AuditoriaGeneral;
 
 class AsistenciaController extends Controller
 {
@@ -67,42 +68,37 @@ class AsistenciaController extends Controller
 
     public function store_agregar_asistencia(Request $request)
     {
-        // Obtener el IDCENTRO_MAC del usuario autenticado
         $userIdMac = auth()->user()->idcentro_mac;
 
-        // Si se busca el nombre por DNI sin fecha
         if ($request->has('DNI') && !$request->has('fecha')) {
             try {
                 $allowedCentrosMac = [10, 12, 13, 14, 19];
-
                 $userCentroMac = auth()->user()->idcentro_mac;
-                if (!in_array($userCentroMac, $allowedCentrosMac)) {
 
-                    $personal = DB::table('m_personal')
-                        ->where('NUM_DOC', $request->input('DNI'))
-                        ->where('IDMAC', $userIdMac)
-                        ->first();
-                } else {
-                    $personal = DB::table('m_personal')
-                        ->where('NUM_DOC', $request->input('DNI'))
-                        ->whereIn('IDMAC', [10, 12, 13, 14, 19])
-                        ->first();
-                }
+                $personal = DB::table('m_personal')
+                    ->when(!in_array($userCentroMac, $allowedCentrosMac), function ($q) use ($userIdMac) {
+                        return $q->where('IDMAC', $userIdMac);
+                    }, function ($q) use ($allowedCentrosMac) {
+                        return $q->whereIn('IDMAC', $allowedCentrosMac);
+                    })
+                    ->where('NUM_DOC', $request->input('DNI'))
+                    ->first();
+
                 if ($personal) {
                     $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
                     return response()->json(['success' => true, 'nombreCompleto' => $nombreCompleto]);
                 }
+
                 return response()->json(['success' => false, 'message' => 'DNI no encontrado o no pertenece a este centro MAC']);
             } catch (\Exception $e) {
                 return response()->json(['success' => false, 'message' => 'Error al buscar el nombre: ' . $e->getMessage()]);
             }
         }
 
-        // Validar los datos de entrada para guardar la asistencia
         $request->validate([
             'DNI'    => 'required|string|max:15',
             'fecha'  => 'required|date',
-            'id'     => 'required|integer',  // en este caso 'id' se usa para identificar el centro, aunque lo usamos del usuario autenticado
+            'id'     => 'required|integer',
             'hora1'  => 'nullable|date_format:H:i',
             'hora2'  => 'nullable|date_format:H:i',
             'hora3'  => 'nullable|date_format:H:i',
@@ -111,20 +107,16 @@ class AsistenciaController extends Controller
 
         try {
             $allowedCentrosMac = [10, 12, 13, 14, 19];
-
             $userCentroMac = auth()->user()->idcentro_mac;
-            if (!in_array($userCentroMac, $allowedCentrosMac)) {
 
-                $personal = DB::table('m_personal')
-                    ->where('NUM_DOC', $request->input('DNI'))
-                    ->where('IDMAC', $userIdMac)
-                    ->first();
-            } else {
-                $personal = DB::table('m_personal')
-                    ->where('NUM_DOC', $request->input('DNI'))
-                    ->whereIn('IDMAC', [10, 12, 13, 14, 19])
-                    ->first();
-            }
+            $personal = DB::table('m_personal')
+                ->when(!in_array($userCentroMac, $allowedCentrosMac), function ($q) use ($userIdMac) {
+                    return $q->where('IDMAC', $userIdMac);
+                }, function ($q) use ($allowedCentrosMac) {
+                    return $q->whereIn('IDMAC', $allowedCentrosMac);
+                })
+                ->where('NUM_DOC', $request->input('DNI'))
+                ->first();
 
             if (!$personal) {
                 return response()->json([
@@ -133,21 +125,11 @@ class AsistenciaController extends Controller
                 ]);
             }
 
-            // Concatenar el nombre completo del personal (opcional, para mensajes)
             $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
-
-            // Obtener el último correlativo de m_asistencia y sumarle 1 para el siguiente
-            $lastCorrelativo = DB::table('m_asistencia')->where('num_doc', $request->input('DNI'))->where('fecha', $request->input('fecha'))->max('CORRELATIVO');
-            // Se asume que los correlativos son numéricos; si no, se deberá convertir
-            $nextCorrelativo = $lastCorrelativo ? ((int)$lastCorrelativo + 1) : 1;
-
-
-            // Preparar la fecha y extraer MES y AÑO
-            $fecha = $request->input('fecha'); // formato 'YYYY-MM-DD'
-            $mes   = date('m', strtotime($fecha)); // dos dígitos
+            $fecha = $request->input('fecha');
+            $mes   = date('m', strtotime($fecha));
             $anio  = date('Y', strtotime($fecha));
 
-            // Arreglo de horas ingresadas
             $horas = [
                 $request->input('hora1'),
                 $request->input('hora2'),
@@ -155,25 +137,27 @@ class AsistenciaController extends Controller
                 $request->input('hora4')
             ];
 
+            $lastCorrelativo = DB::table('m_asistencia')
+                ->where('num_doc', $request->input('DNI'))
+                ->where('fecha', $fecha)
+                ->max('CORRELATIVO');
+            $nextCorrelativo = $lastCorrelativo ? ((int)$lastCorrelativo + 1) : 1;
+
             foreach ($horas as $hora) {
                 if (!empty($hora)) {
-                    // Combinar fecha y hora para obtener la marcación completa
                     $punchTime = $fecha . ' ' . $hora;
 
-                    // Verificar si ya existe un registro idéntico en m_asistencia
-                    $existingRecord = DB::table('m_asistencia')
+                    $exists = DB::table('m_asistencia')
                         ->where('IDCENTRO_MAC', $userIdMac)
                         ->where('NUM_DOC', $request->input('DNI'))
                         ->where('FECHA_BIOMETRICO', $punchTime)
-                        ->first();
+                        ->exists();
 
-                    if ($existingRecord) {
-                        continue; // Si ya existe, omitir la inserción
-                    }
+                    if ($exists) continue;
 
-                    // Insertar en m_asistencia
-                    DB::table('m_asistencia')->insert([
-                        'IDTIPO_ASISTENCIA' => 1,                         // Valor fijo (puedes modificarlo según tu lógica)
+                    // Insertar y recuperar ID
+                    $idAsistencia = DB::table('m_asistencia')->insertGetId([
+                        'IDTIPO_ASISTENCIA' => 1,
                         'NUM_DOC'           => $request->input('DNI'),
                         'IDCENTRO_MAC'      => $userIdMac,
                         'MES'               => $mes,
@@ -181,14 +165,33 @@ class AsistenciaController extends Controller
                         'FECHA'             => $fecha,
                         'HORA'              => date('H:i:s', strtotime($punchTime)),
                         'FECHA_BIOMETRICO'  => $punchTime,
-                        'NUM_BIOMETRICO'    => '',                        // Vacío o asigna según necesites
+                        'NUM_BIOMETRICO'    => '',
                         'CORRELATIVO'       => $nextCorrelativo,
-                        'CORRELATIVO_DIA'   => ''                         // Vacío o asigna según necesites
+                        'CORRELATIVO_DIA'   => ''
+                    ]);
+
+                    // Guardar auditoría
+                    AuditoriaGeneral::create([
+                        'idUsuario'           => auth()->user()->id,
+                        'modelo_afectado'     => 'm_asistencia',
+                        'idRegistroAfectado'  => $idAsistencia,
+                        'accion'              => 'INSERT',
+                        'valores_anteriores'  => null,
+                        'valores_nuevos'      => json_encode([
+                            'NUM_DOC' => $request->input('DNI'),
+                            'FECHA_BIOMETRICO' => $punchTime,
+                            'IDCENTRO_MAC' => $userIdMac
+                        ]),
+                        'fecha_accion'        => now(),
+                        'ip_usuario'          => $request->ip(),
+                        'descripcion'         => 'Registro de hora manual en asistencia',
+                        'tabla_id_nombre'     => 'IDASISTENCIA'
                     ]);
 
                     $nextCorrelativo++;
                 }
             }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Registro(s) guardado(s) exitosamente para ' . $nombreCompleto
@@ -691,20 +694,47 @@ class AsistenciaController extends Controller
 
     public function eliminarHora(Request $request)
     {
+
         try {
             $idAsistencia = $request->idAsistencia;
-    
+
             // Buscar y eliminar la asistencia original
             $asistencia = Asistencia::findOrFail($idAsistencia);
             $dni = $asistencia->NUM_DOC;
             $marcacion = $asistencia->FECHA_BIOMETRICO;
+
+            // Captura antes de eliminar
+            $valoresAnteriores = $asistencia->toArray();
+
             $asistencia->delete();
-    
+
+            // Registrar en la tabla de auditoría
+            try {
+                AuditoriaGeneral::create([
+                    'idUsuario'           => auth()->user()->id,
+                    'modelo_afectado'     => 'asistencia',
+                    'idRegistroAfectado'  => $idAsistencia,
+                    'accion'              => 'DELETE',
+                    'valores_anteriores'  => json_encode($valoresAnteriores),
+                    'valores_nuevos'      => null,
+                    'fecha_accion'        => now(),
+                    'ip_usuario'          => $request->ip(),
+                    'descripcion'         => 'Eliminación de hora registrada en asistencia',
+                    'tabla_id_nombre'     => 'IDASISTENCIA'
+                ]);
+            } catch (\Exception $ex) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al guardar auditoría: ' . $ex->getMessage()
+                ]);
+            }
+
+
             // Eliminar también de asistenciatest si existe un registro con mismo DNI y marcación
             Asistenciatest::where('DNI', $dni)
                 ->where('marcacion', $marcacion)
                 ->delete();
-    
+
             return response()->json([
                 'success' => true,
                 'message' => 'Hora eliminada correctamente'
@@ -716,7 +746,8 @@ class AsistenciaController extends Controller
             ], 500);
         }
     }
-    
+
+
 
 
     public function det_us(Request $request, $id)
@@ -1196,7 +1227,7 @@ class AsistenciaController extends Controller
                 )
                 ->where(function ($query) use ($request) {
                     // Filtra por fecha (mes y año) y centro MAC
-                   // $idmac = $this->centro_mac()->idmac;
+                    // $idmac = $this->centro_mac()->idmac;
 
                     // Si se proporcionan fechas de inicio y fin
                     if ($request->fecha_inicio && $request->fecha_fin) {
@@ -1210,7 +1241,7 @@ class AsistenciaController extends Controller
                     }
 
                     // Aseguramos que siempre se filtre por IDCENTRO_MAC
-                   // $query->where('MA.IDCENTRO_MAC', $idmac);
+                    // $query->where('MA.IDCENTRO_MAC', $idmac);
                 })
                 ->where(function ($query) use ($request, $idmac) {
                     // Filtra por entidad si es necesario
