@@ -25,6 +25,7 @@ use PDO;
 use mysqli;
 use PDOException;
 use App\Models\AuditoriaGeneral;
+use Illuminate\Database\Query\JoinClause;
 
 class AsistenciaController extends Controller
 {
@@ -219,74 +220,81 @@ class AsistenciaController extends Controller
         $conf = Configuracion::where('IDCONFIGURACION', 2)->first();
 
         $entidad = Entidad::select('NOMBRE_ENTIDAD', 'ABREV_ENTIDAD', 'IDENTIDAD');
+        $fecha = $request->fecha ?? date('Y-m-d');
 
         $datos = DB::table('M_ASISTENCIA as MA')
-            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-            ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
-            ->leftJoin('M_PERSONAL_MODULO as MPM', function ($join) use ($idmac) {
-                $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
-                    ->where('MPM.STATUS', '!=', 'eliminado')  // Aseguramos que solo módulos válidos sean considerados
-                    ->where('MPM.IDCENTRO_MAC', '=', $idmac); // Filtrar por el IDCENTRO_MAC del centro actual
-            })
-            ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
-            ->leftJoin('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
-            ->select(
-                'MA.FECHA as fecha_asistencia',
-                DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
-                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(MA.HORA, '%H:%i:%s') ORDER BY MA.HORA) AS fecha_biometrico"),
-                'MA.NUM_DOC as n_dni',
-                DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS nombreu'),
-                'ME.ABREV_ENTIDAD', // Mostrar la abreviatura correcta de la entidad
-                'MC.NOMBRE_MAC',
-                'MPM.STATUS as status_modulo',
-                'MM.N_MODULO as nombre_modulo' // Asegurándonos de mostrar solo el módulo correspondiente al Centro MAC
-            )
-            ->where(function ($query) use ($request) {
-                // Filtra por fecha
-                if ($request->fecha) {
-                    $query->where('MA.FECHA', $request->fecha);
-                } else {
-                    $query->where('MA.FECHA', date('Y-m-d'));
-                }
-            })
-            ->where(function ($query) use ($request, $idmac) {
-                if (!empty($request->entidad)) {
-                    $query->where('ME.IDENTIDAD', $request->entidad);
-                }
-                $query->where('MA.IDCENTRO_MAC', '=', $idmac);
-            })
-            ->where(function ($query) {
-                // Filtra por el centro MAC del usuario
-                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                    $query->where('MA.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                }
-            })
-            ->where(function ($query) use ($request) {
-                // Primero tratamos de obtener los módulos itinerantes dentro del rango de fechas
-                $query->where('MPM.STATUS', 'itinerante')
-                    ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
-                    ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
-                    ->orWhere(function ($query) {
-                        // Si no tiene módulo itinerante, tomamos el módulo fijo dentro del rango de fechas
-                        $query->where('MPM.STATUS', 'fijo')
-                            ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
-                            ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
-                            ->whereNotExists(function ($query) {
-                                // Nos aseguramos de que no tenga un módulo itinerante para esa fecha
-                                $query->select(DB::raw(1))
-                                    ->from('M_PERSONAL_MODULO as MPM2')
-                                    ->whereRaw('MPM2.NUM_DOC = MPM.NUM_DOC')
-                                    ->where('MPM2.STATUS', 'itinerante')
-                                    ->whereDate('MA.FECHA', '>=', DB::raw('MPM2.FECHAINICIO'))
-                                    ->whereDate('MA.FECHA', '<=', DB::raw('MPM2.FECHAFIN'));
-                            });
-                    })
-                    // Incluir los asesores que no tienen módulo (sin itinerante ni fijo)
-                    ->orWhereNull('MPM.NUM_DOC');
-            })
-            ->orderBy('MM.N_MODULO', 'asc') // Ordenar por N_MODULO de manera ascendente
-            ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ME.ABREV_ENTIDAD', 'MC.NOMBRE_MAC', 'MPM.STATUS', 'MM.N_MODULO')
-            ->get();
+                        // 1) Relaciones básicas
+                        ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                        ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
+
+                        // 2) Unimos solo los módulos vigentes para la fecha
+                        ->leftJoin('M_PERSONAL_MODULO as MPM', function(JoinClause $join) use ($idmac, $fecha) {
+                            $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
+                                ->where('MPM.STATUS', '!=', 'eliminado')
+                                ->where('MPM.IDCENTRO_MAC', '=', $idmac)
+                                ->where(function($q) use ($fecha) {
+                                    $q->where('MPM.STATUS', 'itinerante')
+                                    ->where('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
+                                    ->where('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
+                                    ->orWhere(function($q2) use ($fecha) {
+                                        $q2->where('MPM.STATUS', 'fijo')
+                                            ->where('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
+                                            ->where('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
+                                            ->whereNotExists(function($q3) {
+                                                $q3->select(DB::raw(1))
+                                                ->from('M_PERSONAL_MODULO as MPM2')
+                                                ->whereRaw('MPM2.NUM_DOC = MPM.NUM_DOC')
+                                                ->where('MPM2.STATUS', 'itinerante')
+                                                ->whereColumn('MA.FECHA', '>=', 'MPM2.FECHAINICIO')
+                                                ->whereColumn('MA.FECHA', '<=', 'MPM2.FECHAFIN');
+                                            });
+                                    });
+                                });
+                        })
+
+                        // 3) Módulo asociado
+                        ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
+
+                        // 4) Entidad condicional: módulo o personal
+                        ->leftJoin('M_ENTIDAD as ME', function(JoinClause $join) {
+                            $case = <<<'SQL'
+                    CASE
+                    WHEN MPM.NUM_DOC IS NOT NULL THEN MM.IDENTIDAD
+                    ELSE MP.IDENTIDAD
+                    END
+                    SQL;
+                            $join->on(DB::raw('ME.IDENTIDAD'), '=', DB::raw($case));
+                        })
+
+                        // 5) Selección de campos
+                        ->select([
+                            'MA.FECHA as fecha_asistencia',
+                            DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
+                            DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(MA.HORA, '%H:%i:%s') ORDER BY MA.HORA) AS fecha_biometrico"),
+                            'MA.NUM_DOC as n_dni',
+                            DB::raw('UPPER(CONCAT(MP.APE_PAT," ",MP.APE_MAT,", ",MP.NOMBRE)) AS nombreu'),
+                            'ME.ABREV_ENTIDAD',
+                            'MC.NOMBRE_MAC',
+                            'MPM.STATUS as status_modulo',
+                            'MM.N_MODULO as nombre_modulo',
+                        ])
+
+                        // 6) Filtros por Centro MAC y Fecha
+                        ->where('MA.IDCENTRO_MAC', $idmac)
+                        ->whereDate('MA.FECHA', $fecha)
+
+                        // 7) Agrupamiento y ordenamiento
+                        ->groupBy(
+                            'MA.FECHA',
+                            'MP.IDPERSONAL',
+                            'MA.NUM_DOC',
+                            'ME.ABREV_ENTIDAD',
+                            'MC.NOMBRE_MAC',
+                            'MPM.STATUS',
+                            'MM.N_MODULO'
+                        )
+                        ->orderBy('MM.N_MODULO', 'asc')
+                        ->get();
 
         foreach ($datos as $q) {
             // Asumiendo que el valor de 'fecha_biometrico' contiene la hora en formato 'H:i:s'
