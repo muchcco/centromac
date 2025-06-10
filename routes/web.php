@@ -165,10 +165,13 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/store_asistencia', [AsistenciaController::class, 'store_asistencia'])->name('store_asistencia');
         Route::post('/store_asistencia_callao', [AsistenciaController::class, 'store_asistencia_callao'])->name('store_asistencia_callao');
         Route::post('/store_agregar_asistencia', [AsistenciaController::class, 'store_agregar_asistencia'])->name('store_agregar_asistencia');
+        Route::post('/store_agregar_observacion', [AsistenciaController::class, 'store_agregar_observacion'])->name('store_agregar_observacion');
         Route::post('/eliminar-hora', [AsistenciaController::class, 'eliminarHora'])->name('eliminar_hora');
+        Route::post('/eliminar-observacion', [AsistenciaController::class, 'eliminarObservacion'])->name('eliminar_observacion');
         Route::post('/dow_asistencia', [AsistenciaController::class, 'dow_asistencia'])->name('dow_asistencia');
         Route::post('/modals/md_moficicar_modulo', [AsistenciaController::class, 'md_moficicar_modulo'])->name('modals.md_moficicar_modulo');
         Route::post('/modals/md_add_dni_asistencia', [AsistenciaController::class, 'md_add_dni_asistencia'])->name('modals.md_add_dni_asistencia');
+        Route::post('/modals/md_add_comment_user', [AsistenciaController::class, 'md_add_comment_user'])->name('modals.md_add_comment_user');
 
         //POR ENTIDAD
         Route::get('/det_entidad.html/{mac}', [AsistenciaController::class, 'det_entidad'])->name('det_entidad');

@@ -223,11 +223,9 @@ class AsistenciaController extends Controller
         $fecha = $request->fecha ?? date('Y-m-d');
 
         $datos = DB::table('M_ASISTENCIA as MA')
-                        // 1) Relaciones básicas
                         ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
                         ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
-
-                        // 2) Unimos solo los módulos vigentes para la fecha
+                        
                         ->leftJoin('M_PERSONAL_MODULO as MPM', function(JoinClause $join) use ($idmac, $fecha) {
                             $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
                                 ->where('MPM.STATUS', '!=', 'eliminado')
@@ -252,10 +250,8 @@ class AsistenciaController extends Controller
                                 });
                         })
 
-                        // 3) Módulo asociado
                         ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
 
-                        // 4) Entidad condicional: módulo o personal
                         ->leftJoin('M_ENTIDAD as ME', function(JoinClause $join) {
                             $case = <<<'SQL'
                     CASE
@@ -266,9 +262,16 @@ class AsistenciaController extends Controller
                             $join->on(DB::raw('ME.IDENTIDAD'), '=', DB::raw($case));
                         })
 
-                        // 5) Selección de campos
+                        ->leftJoin('D_ASISTENCIA_OBSERVACION as DAO', function(JoinClause $join) {
+                            $join->on('DAO.NUM_DOC', '=', 'MA.NUM_DOC')
+                                 ->on('DAO.FECHA',     '=', 'MA.FECHA')
+                                 ->on('DAO.IDCENTRO_MAC','=', 'MA.IDCENTRO_MAC');
+                        })
+
                         ->select([
                             'MA.FECHA as fecha_asistencia',
+                            'MA.IDCENTRO_MAC as idmac',
+                            'MP.IDPERSONAL as idpersonal',
                             DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
                             DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(MA.HORA, '%H:%i:%s') ORDER BY MA.HORA) AS fecha_biometrico"),
                             'MA.NUM_DOC as n_dni',
@@ -277,15 +280,15 @@ class AsistenciaController extends Controller
                             'MC.NOMBRE_MAC',
                             'MPM.STATUS as status_modulo',
                             'MM.N_MODULO as nombre_modulo',
+                            DB::raw('COUNT(IF(DAO.flag = 1, DAO.id_asistencia_obv, NULL)) as contador_obs'),
                         ])
 
-                        // 6) Filtros por Centro MAC y Fecha
                         ->where('MA.IDCENTRO_MAC', $idmac)
                         ->whereDate('MA.FECHA', $fecha)
 
-                        // 7) Agrupamiento y ordenamiento
                         ->groupBy(
                             'MA.FECHA',
+                            'MA.IDCENTRO_MAC',
                             'MP.IDPERSONAL',
                             'MA.NUM_DOC',
                             'ME.ABREV_ENTIDAD',
@@ -297,7 +300,6 @@ class AsistenciaController extends Controller
                         ->get();
 
         foreach ($datos as $q) {
-            // Asumiendo que el valor de 'fecha_biometrico' contiene la hora en formato 'H:i:s'
             $horas = explode(',', $q->fecha_biometrico); // Separa las horas por coma
             $num_horas = count($horas);
 
@@ -324,42 +326,6 @@ class AsistenciaController extends Controller
                 $q->HORA_4 = $horas[3];
             }
         }
-        // // dd($datos);
-        //                     ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-        //                     ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
-        //                     ->leftJoinSub($entidad, 'I', function($join) {
-        //                         $join->on('MP.IDENTIDAD', '=', 'I.IDENTIDAD');
-        //                     })
-        //                     ->select(
-        //                         'MA.FECHA as fecha_asistencia',
-        //                         DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
-        //                         DB::raw('MIN(MA.FECHA_BIOMETRICO) as fecha_biometrico'),
-        //                         'MA.NUM_DOC as n_dni',
-        //                         DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS nombreu'),
-        //                         'ABREV_ENTIDAD',
-        //                         'MC.NOMBRE_MAC'
-        //                     )
-        //                     ->where(function($que) use ($request) {
-        //                         $fecha_I = date("Y-m-d");
-        //                         if($request->fecha != '' ){
-        //                             $que->where('MA.FECHA', $request->fecha);
-        //                         }else{
-        //                             $que->where('MA.FECHA', $fecha_I);
-        //                         }
-        //                     })
-        //                     ->where(function($que) use ($request) {
-        //                         if($request->entidad != '' ){
-        //                             $que->where('MP.IDENTIDAD', $request->entidad);
-        //                         }
-        //                     })
-        //                     ->where(function($query) {
-        //                         if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-        //                             $query->where('MA.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-        //                         }
-        //                     })
-        //                     // ->where('MA.IDCENTRO_MAC', $idmac)
-        //                     ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ABREV_ENTIDAD', 'MC.NOMBRE_MAC')
-        //                     ->toSql();
         // dd($datos);
         return view('asistencia.tablas.tb_asistencia', compact('datos', 'conf'));
     }
@@ -408,6 +374,77 @@ class AsistenciaController extends Controller
 
         return response()->json(['html' => $html]);
     }
+
+    /********** OBSERVACIONES ASISTENCIA  *************************/
+
+    public function md_add_comment_user(Request $request)
+    {
+        $personal = Personal::select(DB::raw('UPPER(CONCAT(APE_PAT," ",APE_MAT,", ",NOMBRE)) AS nombreu'))->where('IDPERSONAL', $request->IDPERSONAL)->first();
+
+        $observacion = DB::table('M_ASISTENCIA as MA')
+                        ->leftJoin('D_ASISTENCIA_OBSERVACION as DAO', function(JoinClause $join) {
+                            $join->on('DAO.NUM_DOC', '=', 'MA.NUM_DOC')
+                                ->on('DAO.FECHA',     '=', 'MA.FECHA')
+                                ->on('DAO.IDCENTRO_MAC','=', 'MA.IDCENTRO_MAC');
+                        })
+                        ->where('DAO.NUM_DOC', $request->NUM_DOC)
+                        ->where('DAO.FECHA', $request->FECHA)
+                        ->where('DAO.IDCENTRO_MAC', $request->IDCENTRO_MAC)
+                        ->where('DAO.flag' , 1)
+                        ->get();
+
+        $fecha_d = $request->FECHA;
+        $mac_d = $request->IDCENTRO_MAC;
+        $num_doc = $request->NUM_DOC;
+        
+        $html = view('asistencia.modals.md_add_comment_user', compact('personal', 'observacion', 'fecha_d', 'mac_d', 'num_doc'))->render();
+
+        return response()->json(['html' => $html]);
+    }
+
+    public function store_agregar_observacion(Request $request)
+    {
+        $request->validate([
+        'NUM_DOC'     => 'required',
+        'FECHA'       => 'required|date',
+        'OBSERVACION' => 'required|string',
+        ]);
+
+        $inserted = DB::table('D_ASISTENCIA_OBSERVACION')->insert([
+                            'num_doc'      => $request->NUM_DOC,
+                            'fecha'        => $request->FECHA,
+                            'idcentro_mac' => $this->centro_mac()->idmac,
+                            'observacion'  => $request->OBSERVACION,
+                            'us_reg'       => auth()->id(),
+                            'created_at'   => Carbon::now(),
+                            'updated_at'   => Carbon::now(),
+                        ]);  
+
+        return response()->json([
+        'success' => $inserted,
+        ], $inserted ? 201 : 500);
+    }
+
+    public function eliminarObservacion(Request $request)
+    {
+        $request->validate([
+        'id' => 'required|integer|exists:D_ASISTENCIA_OBSERVACION,id_asistencia_obv',
+        ]);
+
+        $updated = DB::table('D_ASISTENCIA_OBSERVACION')
+                        ->where('id_asistencia_obv', $request->id)
+                        ->update([
+                            'flag'       => 0,
+                            'updated_at' => Carbon::now(),
+                        ]); 
+
+        return response()->json([
+        'success' => (bool) $updated,
+        ], $updated ? 200 : 404);
+    }
+
+
+    /********** FIN OBSERVACIONES ASISTENCIA  *************************/
 
     public function md_add_asistencia(Request $request)
     {
@@ -1222,6 +1259,11 @@ class AsistenciaController extends Controller
                 })
                 ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
                 ->leftJoin('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
+                ->leftJoin('D_ASISTENCIA_OBSERVACION as DAO', function(JoinClause $join) {
+                    $join->on('DAO.NUM_DOC', '=', 'MA.NUM_DOC')
+                         ->on('DAO.FECHA',     '=', 'MA.FECHA')
+                         ->on('DAO.IDCENTRO_MAC','=', 'MA.IDCENTRO_MAC');
+                })
                 ->select(
                     'MA.FECHA as FECHA',
                     DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
@@ -1231,7 +1273,9 @@ class AsistenciaController extends Controller
                     'ME.ABREV_ENTIDAD', // Mostrar la abreviatura correcta de la entidad
                     'MC.NOMBRE_MAC',
                     'MPM.STATUS as status_modulo',
-                    'MM.N_MODULO as N_MODULO' // Asegurándonos de mostrar solo el módulo correspondiente al Centro MAC
+                    'MM.N_MODULO as N_MODULO',
+                    DB::raw("GROUP_CONCAT(DISTINCT DAO.OBSERVACION ORDER BY DAO.ID_ASISTENCIA_OBV SEPARATOR ';') AS observaciones"),
+                    DB::raw('COUNT(IF(DAO.flag = 1, DAO.id_asistencia_obv, NULL)) as contador_obs')
                 )
                 ->where(function ($query) use ($request) {
                     // Filtra por fecha (mes y año) y centro MAC
@@ -1544,6 +1588,11 @@ class AsistenciaController extends Controller
                 })
                 ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
                 ->leftJoin('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
+                ->leftJoin('D_ASISTENCIA_OBSERVACION as DAO', function(JoinClause $join) {
+                    $join->on('DAO.NUM_DOC', '=', 'MA.NUM_DOC')
+                         ->on('DAO.FECHA',     '=', 'MA.FECHA')
+                         ->on('DAO.IDCENTRO_MAC','=', 'MA.IDCENTRO_MAC');
+                })
                 ->select(
                     'MA.FECHA as FECHA',
                     DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
@@ -1553,7 +1602,9 @@ class AsistenciaController extends Controller
                     'ME.ABREV_ENTIDAD', // Mostrar la abreviatura correcta de la entidad
                     'MC.NOMBRE_MAC',
                     'MPM.STATUS as status_modulo',
-                    'MM.N_MODULO as N_MODULO' // Asegurándonos de mostrar solo el módulo correspondiente al Centro MAC
+                    'MM.N_MODULO as N_MODULO',
+                    DB::raw("GROUP_CONCAT(DISTINCT DAO.OBSERVACION ORDER BY DAO.ID_ASISTENCIA_OBV SEPARATOR ';') AS observaciones"),
+                    DB::raw('COUNT(IF(DAO.flag = 1, DAO.id_asistencia_obv, NULL)) as contador_obs')
                 )
                 ->where(function ($query) use ($request) {
                     // Filtra por fecha (mes y año) y centro MAC

@@ -19,9 +19,30 @@
         @foreach ($datos as $i => $dato)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td class="text-uppercase">
+                <td class="text-uppercase ">
                     {{-- <a href="{{ route('asistencia.det_us', $dato->n_dni) }}">{{ $dato->nombreu }}</a> --}}
-                    {{ $dato->nombreu }}
+                    <span >                        
+                        <a href="javascript:void(0);"
+                            class="d-flex justify-content-around align-items-start"
+                            data-dni="{{ $dato->n_dni }}"
+                            onclick="abrirModalAgregarObservacion(
+                                '{{ $dato->idpersonal }}',
+                                '{{ $dato->fecha_asistencia }}',
+                                '{{ $dato->n_dni }}',
+                                '{{ $dato->idmac }}'
+                            )">
+                            {{ $dato->nombreu }}
+
+                            @if($dato->contador_obs > 0)
+                                <span class="bandejTool text-dark"
+                                    data-tippy-content="Este usuario tiene ({{ $dato->contador_obs }}) observación(es)">
+                                <i class="fa fa-comment"></i>
+                                </span>
+                            @endif
+                        </a>
+
+                    </span>
+                    
                 </td>
                 <td>
                     <a href="javascript:void(0);"
@@ -65,7 +86,10 @@
 
 <script>
     $(document).ready(function() {
-
+        tippy(".bandejTool", {
+            allowHTML: true,
+            followCursor: true,
+        });
         $('#table_asistencia').DataTable({
             "responsive": true,
             "bLengthChange": true,
@@ -172,4 +196,62 @@
             }
         });
     }
+
+    function abrirModalAgregarObservacion(idpersonal, fecha, dni, mac) {
+        console.log("click modal observaciones");
+        $.ajax({
+            type: 'POST',
+            url: "{{ route('asistencia.modals.md_add_comment_user') }}",
+            data: {
+                "_token": "{{ csrf_token() }}",
+                "IDPERSONAL": idpersonal,
+                "FECHA": fecha,
+                "NUM_DOC": dni,
+                "IDCENTRO_MAC": mac
+            },
+            beforeSend: function() {
+                console.log("Cargando modal...");
+            },
+            success: function(response) {
+                $("#modal_show_modal").html(response.html); // Cargar el modal en el contenedor
+                $("#modal_show_modal").modal('show'); // Mostrar el modal
+            },
+            error: function(error) {
+                console.log("Error al cargar el modal", error);
+            }
+        });
+    }
+
+
+
+    function updateObservationIcon(dni, count) {
+        // Busca el <a> de la fila principal
+        const $link = $('#table_asistencia').find(`a[data-dni="${dni}"]`);
+        if (!$link.length) return;
+
+        // Busca el icono existente
+        let $icon = $link.find('.bandejTool');
+
+        if (count > 0) {
+            // Si ya existe, actualiza el tooltip y su contenido
+            if ($icon.length) {
+            $icon.attr('data-tippy-content', `Este usuario tiene (${count}) observación(es)`);
+            $icon.find('i').off().tippy({ content: $icon.attr('data-tippy-content') });
+            } else {
+            // Si no existe, créalo y añádelo
+            $icon = $(`
+                <span class="bandejTool text-warning"
+                    data-tippy-content="Este usuario tiene (${count}) observación(es)">
+                <i class="fa fa-comment"></i>
+                </span>
+            `);
+            $link.append($icon);
+            tippy($icon[0], { allowHTML: true, followCursor: true });
+            }
+        } else {
+            // Si no hay observaciones, elimina el icono
+            $icon.remove();
+        }
+    }
+
 </script>

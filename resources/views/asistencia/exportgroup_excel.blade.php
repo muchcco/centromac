@@ -236,6 +236,15 @@
                             Sábado
                         @else
                         @endif
+                        @if ($q->contador_obs > 0)
+                            <ul style="margin:0; padding-left:1em;">
+                                @foreach(explode(';', $q->observaciones) as $obs)
+                                @if(trim($obs) !== '')
+                                    <li>> {{ $obs }}</li>
+                                @endif
+                                @endforeach
+                            </ul>
+                        @endif
 
                     </th>
 

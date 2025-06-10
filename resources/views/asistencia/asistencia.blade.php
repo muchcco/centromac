@@ -128,6 +128,7 @@
                             @endrole
                         </div>
                     </div>
+                    <br />
                     <div class="row">
                         <div class="col-12">
                             <div class="table-responsive">
@@ -155,7 +156,7 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
 
-    {{-- <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script> --}}
+    <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
 
 
 
@@ -592,71 +593,45 @@
                 });
         }
 
-        function storeModuloChanges() {
-            // Obtener los datos del formulario
-            var formData = new FormData(document.getElementById("form-modificar-modulo"));
+        function updateObservationIcon(dni, count) {
+            // 1) Localiza el <a> de la tabla principal
+            const linkEl = document.querySelector(`#table_asistencia a[data-dni="${dni}"]`);
+            if (!linkEl) return;
 
-            // Enviar los datos por AJAX
-            $.ajax({
-                type: 'POST',
-                url: "{{ route('itinerante.store_itinerante') }}", // Ajustar la ruta según corresponda
-                data: formData,
-                processData: false,
-                contentType: false,
-                beforeSend: function() {
-                    document.getElementById("btnEnviarForm").innerHTML =
-                        '<i class="fa fa-spinner fa-spin"></i> ESPERE';
-                    document.getElementById("btnEnviarForm").disabled = true;
-                },
-                success: function(response) {
-                    if (response.status == 201) {
-                        // Mostrar el mensaje de éxito
-                        Swal.fire({
-                            icon: "success",
-                            text: response.message,
-                            confirmButtonText: "Aceptar"
-                        });
-                        tabla_seccion(); // Refresca la tabla
+            // 2) Busca (o crea) el span.bandejTool
+            let iconEl = linkEl.querySelector('.bandejTool');
+            const title = `Este usuario tiene (${count}) observación(es)`;
 
-                        // Cerrar el modal
-                        $('#modal_show_modal').modal('hide');
-                    } else {
-                        // Si hay un mensaje de error, mostrarlo
-                        document.getElementById('alerta').innerHTML =
-                            `<div class="alert alert-warning">${response.message}</div>`;
-                    }
-
-                    // Restaurar el botón después de la solicitud
-                    document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
-                    document.getElementById("btnEnviarForm").disabled = false;
-                },
-                error: function(xhr, status, error) {
-                    // Capturamos la respuesta del backend
-                    var response = xhr.responseJSON;
-
-                    // console.log(response); // Aquí estamos depurando la respuesta
-
-                    if (response && response.message) {
-                        // Mostrar el mensaje de error específico desde el backend
-                        Swal.fire({
-                            icon: "error",
-                            text: response.message, // Mensaje de error del backend
-                            confirmButtonText: "Aceptar"
-                        });
-                    } else {
-                        // Si no hay mensaje específico, mostramos uno genérico
-                        Swal.fire({
-                            icon: "error",
-                            text: "Hubo un error al procesar la solicitud. Intentar nuevamente.",
-                            confirmButtonText: "Aceptar"
-                        });
-                    }
-
-                    // Restaurar el botón después de la solicitud
-                    document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
-                    document.getElementById("btnEnviarForm").disabled = false;
+            if (count > 0) {
+                if (iconEl) {
+                // Actualiza el atributo y destruye tooltip previo
+                iconEl.setAttribute('data-tippy-content', title);
+                if (iconEl._tippy) iconEl._tippy.destroy();
+                } else {
+                // Crea el span e inserta el icono
+                iconEl = document.createElement('span');
+                iconEl.className = 'bandejTool text-warning';
+                iconEl.setAttribute('data-tippy-content', title);
+                iconEl.innerHTML = '<i class="fa fa-comment"></i>';
+                linkEl.appendChild(iconEl);
                 }
-            });
+                // Inicializa el tooltip pura y exclusivamente sobre el nodo DOM
+                tippy(iconEl, {
+                content: title,
+                allowHTML: true,
+                followCursor: true
+                });
+            } else {
+                // Cuando no queden observaciones, destruye y remueve el span
+                if (iconEl) {
+                if (iconEl._tippy) iconEl._tippy.destroy();
+                iconEl.remove();
+                }
+            }
         }
+
+
+
+
     </script>
 @endsection
