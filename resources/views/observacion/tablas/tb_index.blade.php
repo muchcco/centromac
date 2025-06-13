@@ -52,16 +52,16 @@
                         <i class="las la-eye text-primary font-16"></i>
                     </button>
                     @role('Administrador|Especialista TIC|Moderador')
-                    <button class="nobtn bandejTool" data-tippy-content="Editar Observación"
-                        onclick="btnEditarObservacion('{{ $observacion->id_observacion }}')">
-                        <i class="las la-pen text-secondary font-16 text-success"></i>
-                    </button>
+                        <button class="nobtn bandejTool" data-tippy-content="Editar Observación"
+                            onclick="btnEditarObservacion('{{ $observacion->id_observacion }}')">
+                            <i class="las la-pen text-secondary font-16 text-success"></i>
+                        </button>
                     @endrole
                     @role('Administrador|Especialista TIC|Moderador')
-                    <button class="nobtn bandejTool" data-tippy-content="Eliminar Observación"
-                        onclick="btnEliminarObservacion('{{ $observacion->id_observacion }}')">
-                        <i class="las la-trash-alt text-secondary font-16 text-danger"></i>
-                    </button>
+                        <button class="nobtn bandejTool" data-tippy-content="Eliminar Observación"
+                            onclick="btnEliminarObservacion('{{ $observacion->id_observacion }}')">
+                            <i class="las la-trash-alt text-secondary font-16 text-danger"></i>
+                        </button>
                     @endrole
                     <button class="nobtn bandejTool" data-tippy-content="Subsanar"
                         onclick="btnSubsanarObservacion('{{ $observacion->id_observacion }}')">
@@ -72,3 +72,52 @@
         @endforeach
     </tbody>
 </table>
+<script>
+    $(document).ready(function() {
+
+        $('#table_observaciones').DataTable({
+            "responsive": true,
+            "bLengthChange": true,
+            "pageLength": 20,
+            "lengthMenu": [
+                [10, 20, 40, -1],
+                [10, 20, 40, "Todos"]
+            ],
+            "autoWidth": false,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "language": {
+                "url": "{{ asset('js/Spanish.json') }}"
+            },
+            "columns": [{
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                },
+                {
+                    "width": ""
+                }
+            ]
+        });
+
+        tippy(".bandejTool", {
+            allowHTML: true,
+            followCursor: true
+        });
+
+    });
+</script>

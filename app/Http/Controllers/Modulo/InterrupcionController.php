@@ -40,8 +40,8 @@ class InterrupcionController extends Controller
         $user = auth()->user();
 
         $query = Interrupcion::with([
-            'entidad:identidad,nombre_entidad',
-            'tipoIntObs:id_tipo_int_obs,tipo,numeracion',
+            'entidad:IDENTIDAD,NOMBRE_ENTIDAD,ABREV_ENTIDAD',
+            'tipoIntObs:id_tipo_int_obs,tipo,numeracion,nom_tipo_int_obs',
             'centroMac:idcentro_mac,nombre_mac',
             'responsableUsuario:id,name'
         ]);
@@ -49,11 +49,13 @@ class InterrupcionController extends Controller
         if (!$user->hasRole(['Administrador', 'Moderador'])) {
             $query->where('idcentro_mac', $user->idcentro_mac);
         }
-
+        $query->orderBy('fecha_inicio', 'desc')
+            ->orderBy('hora_inicio',  'desc');
         $interrupciones = $query->get();
 
         return view('interrupcion.tablas.tb_index', compact('interrupciones'));
     }
+
 
 
     public function create()

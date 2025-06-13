@@ -393,6 +393,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/index', [OcupabilidadController::class, 'index'])->name('index');
 
         Route::get('/tablas/tb_index', [OcupabilidadController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::get('/tablas/sp',[OcupabilidadController::class, 'tb_index_sp'])->name('tablas.tb_index_sp');
     });
     Route::get('reporte/ocupabilidad', [ReporteOcupabilidadController::class, 'index'])->name('reporte.ocupabilidad.index');
     Route::get('reporte/ocupabilidad/tablas', [ReporteOcupabilidadController::class, 'tb_index'])->name('reporte.ocupabilidad.tablas.tb_index');
