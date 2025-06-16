@@ -152,7 +152,7 @@
             }
 
             /* decidir ruta */
-            const usaSP = (año == 2025 && parseInt(mes,10) >= 12);
+            const usaSP = (año == 2025 && parseInt(mes,10) >= 5);
             const url   = usaSP
                 ? "{{ route('ocupabilidad.tablas.tb_index_sp') }}"
                 : "{{ route('ocupabilidad.tablas.tb_index') }}";

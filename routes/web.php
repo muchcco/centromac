@@ -139,10 +139,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/home', function () {
         return redirect('/');
     });
-    
-    
+
+
     Route::get('/data-por-mac', [PagesController::class, 'dateForMac'])
-         ->name('api.data.mac');
+        ->name('api.data.mac');
 
     Route::post('modal-password', [PagesController::class, 'modalPassword'])->name('modal-password');
     Route::post('store-password', [PagesController::class, 'storePassword'])->name('store-password');
@@ -393,11 +393,14 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/index', [OcupabilidadController::class, 'index'])->name('index');
 
         Route::get('/tablas/tb_index', [OcupabilidadController::class, 'tb_index'])->name('tablas.tb_index');
-        Route::get('/tablas/sp',[OcupabilidadController::class, 'tb_index_sp'])->name('tablas.tb_index_sp');
+        Route::get('/tablas/sp', [OcupabilidadController::class, 'tb_index_sp'])->name('tablas.tb_index_sp');
     });
     Route::get('reporte/ocupabilidad', [ReporteOcupabilidadController::class, 'index'])->name('reporte.ocupabilidad.index');
     Route::get('reporte/ocupabilidad/tablas', [ReporteOcupabilidadController::class, 'tb_index'])->name('reporte.ocupabilidad.tablas.tb_index');
-    Route::get('reporte/ocupar/export', [ReporteOcupabilidadController::class, 'export_excel'])->name('reporte.ocupabilidad.export_excel');
+    Route::get('reporte/ocupabilidad/tablas_all', [ReporteOcupabilidadController::class, 'tb_index_all'])->name('reporte.ocupabilidad.tablas.tb_index_all');
+   // Route::get('reporte/ocupar/export', [ReporteOcupabilidadController::class, 'export_excel'])->name('reporte.ocupabilidad.export_excel');
+    Route::get('reporte/ocupabilidad/export', [ReporteOcupabilidadController::class, 'exportExcel'])->name('reporte.ocupabilidad.export');
+    Route::get('reporte/ocupabilidad/exportsp', [ReporteOcupabilidadController::class, 'exportExcelSP'])->name('reporte.ocupabilidad.export_sp');
 
     /******************************************************   PUNTUALIDAD ************************************************************************/
 
@@ -602,7 +605,7 @@ Route::group(['middleware' => ['auth']], function () {
     /** permisos especiales para check list ***/
     Route::post('/verificaciones/modals/up_time', [VerificacionController::class, 'up_time'])->name('verificaciones.modals.up_time');
     Route::post('/verificaciones/update_time', [VerificacionController::class, 'update_time'])
-     ->name('verificaciones.update_time');
+        ->name('verificaciones.update_time');
 
 
     /******************************************************   PAGINAS DE APOYO *****************************************************************************/
