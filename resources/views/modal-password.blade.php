@@ -9,7 +9,7 @@
             <form id="passwordForm" class="form">
                 <input type="hidden" name="_token" id="_token" value="{{ csrf_token() }}" /> 
                 <div class="alert alert-warning border-0" role="alert">
-                    <strong>Importante!</strong> <br />para el cambio de contraseña tiene que ser mínimo 10 caracteres incluyendo un número y un caracter especial como !, @, #, $, etc.
+                    <strong>Importante!</strong> <br />para el cambio de contraseña tiene que ser mínimo 10 caracteres incluyendo, una letra en mayuscula como mínimo, un número y un caracter especial como !, @, #, $, etc.
                 </div>
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Nueva Contraseña</label>
