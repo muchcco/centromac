@@ -10,6 +10,7 @@ use App\Models\Personal;
 use App\Models\User;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AsesoresExport;
+use Carbon\Carbon;
 
 class PcmController extends Controller
 {
@@ -189,8 +190,20 @@ class PcmController extends Controller
             //$per->validez = 0;
             //$per->estado = 5;
             //$per->save();
-
-            return $save;
+            $us_id = auth()->user()->id;
+            $insertedId = DB::table('d_personal_mac')->insertGetId([
+                'idcentro_mac' => $idmac,
+                'idpersonal'   => $save->IDPERSONAL,
+                'idus_reg'     => $us_id,
+                'status'        => 1,
+                'created_at'    => Carbon::now(),
+                'updated_at'    => Carbon::now()
+            ]);
+            return response()->json([
+                'data' => $save,
+                'message' => 'Personal registrado exitosamente',
+                'status' => 200
+            ]);
         } catch (\Exception $e) {
             //Si existe algún error en la Transacción
             $response_ = response()->json([
