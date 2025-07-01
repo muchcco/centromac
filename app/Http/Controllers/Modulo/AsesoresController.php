@@ -243,9 +243,9 @@ class AsesoresController extends Controller
         $idmac = $request->mac;
 
         $detalle_mac = DB::table('d_personal_mac')
-                                ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'd_personal_mac.idcentro_mac')
-                                ->where('d_personal_mac.idpersonal', $request->idpersonal)
-                                ->get();
+            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'd_personal_mac.idcentro_mac')
+            ->where('d_personal_mac.idpersonal', $request->idpersonal)
+            ->get();
 
         $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
 
@@ -254,7 +254,7 @@ class AsesoresController extends Controller
         return response()->json(['html' => $view]);
     }
 
-    
+
 
     public function update_entidad(Request $request)
     {
@@ -577,73 +577,68 @@ class AsesoresController extends Controller
     }
 
 
-    public function exportasesores_excel()
+    public function exportasesores_excel(Request $request)
     {
-            $query = DB::table('db_centros_mac.M_PERSONAL as MP')
-            ->leftJoin('db_centros_mac.M_PERSONAL_MODULO as MPM', function ($join) {
-                $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
-                    ->whereDate('MPM.FECHAINICIO', '<=', now())
-                    ->whereDate('MPM.FECHAFIN', '>=', now())
-                    ->where('MPM.STATUS', '=', 'fijo') // Agregar condición para MPM.STATUS = 'fijo'
-                    ->where('MP.IDMAC', '=', 'MPM.IDCENTRO_MAC');
+        // 1. Obtener los datos con el mismo query que tenías
+        $rows = DB::table('db_centros_mac.m_personal_modulo as MPM')
+            ->distinct()
+            ->selectRaw(
+                <<<'SQL'
+                MCM.nombre_mac         AS NOMBRE_MAC,
+                ME.nombre_entidad      AS NOMBRE_ENTIDAD,
+                CONCAT(MP.APE_PAT,' ',MP.APE_MAT,', ',MP.NOMBRE) AS NOMBREU,
+                DPT.TIPODOC_ABREV      AS TIPODOC_ABREV,
+                MP.NUM_DOC             AS NUM_DOC,
+                MP.FLAG                AS FLAG,
+                MP.CORREO              AS CORREO,
+                MP.FECH_NACIMIENTO     AS FECH_NACIMIENTO,
+                MP.CELULAR             AS CELULAR,
+                DPC.NOMBRE_CARGO       AS NOMBRE_CARGO,
+                MP.SEXO                AS SEXO,
+                MP.PD_FECHA_INGRESO    AS PD_FECHA_INGRESO,
+                MP.PCM_TALLA           AS PCM_TALLA,
+                MP.ESTADO_CIVIL        AS ESTADO_CIVIL,
+                MP.DF_N_HIJOS          AS DF_N_HIJOS,
+                MP.NUMERO_MODULO       AS NUMERO_MODULO,
+                MP.IDCARGO_PERSONAL    AS IDCARGO_PERSONAL,
+                MP.TVL_ID              AS TVL_ID,
+                MP.N_CONTRATO          AS N_CONTRATO,
+                MP.GI_ID               AS GI_ID,
+                MP.GI_CARRERA          AS GI_CARRERA,
+                MP.GI_CURSO_ESP        AS GI_CURSO_ESP,
+                MP.DLP_JEFE_INMEDIATO  AS DLP_JEFE_INMEDIATO,
+                MP.DLP_CARGO           AS DLP_CARGO,
+                MP.DLP_TELEFONO        AS DLP_TELEFONO,
+                MP.I_INGLES            AS I_INGLES,
+                MP.I_QUECHUA           AS I_QUECHUA
+            SQL
+            )
+            ->join('db_centros_mac.m_personal as MP',   'MP.num_doc',          '=', 'MPM.num_doc')
+            ->leftJoin('db_centros_mac.d_personal_cargo as DPC', 'DPC.idcargo_personal', '=', 'MP.idcargo_personal')
+            ->join('db_centros_mac.m_modulo as MMOD',   'MMOD.idmodulo',       '=', 'MPM.idmodulo')
+            ->leftJoin('db_centros_mac.m_entidad as ME', 'ME.identidad',        '=', 'MMOD.identidad')
+            ->leftJoin('db_centros_mac.d_personal_mac as DPM', function ($j) {
+                $j->on('DPM.idpersonal', '=', 'MP.idpersonal')
+                    ->whereIn('DPM.status', [1]);
             })
-            ->leftJoin('db_centros_mac.M_MODULO as MMOD', 'MMOD.IDMODULO', '=', 'MPM.IDMODULO')
-            ->leftJoin('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD')
-            ->leftJoin('db_centros_mac.D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
-            //->join('db_centros_mac.D_PERSONAL_MAC as DPM', 'DPM.IDPERSONAL', '=', 'MP.IDPERSONAL')
-            ->leftJoin('db_centros_mac.D_PERSONAL_MAC as DPM', function ($join) {
-                $join->on('DPM.IDPERSONAL', '=', 'MP.IDPERSONAL')
-                     ->where('DPM.STATUS', '=', 1); // Agregar la condición de STATUS = 1
+            ->join('db_centros_mac.m_centro_mac as MCM', 'MCM.idcentro_mac', '=', 'MPM.idcentro_mac')
+            ->join('db_centros_mac.d_personal_tipodoc as DPT', 'DPT.idtipo_doc', '=', 'MP.idtipo_doc')
+            ->whereDate('MPM.fechainicio', '<=', now())
+            ->where(function ($q) {
+                $q->whereDate('MPM.fechafin', '>=', now())
+                    ->orWhereNull('MPM.fechafin');
             })
-            ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'DPM.IDCENTRO_MAC') // Se une con M_CENTRO_MAC
-            ->join('db_centros_mac.D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
-            ->select(
-                'MP.IDPERSONAL',
-                DB::raw("CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU"),
-                'DPT.TIPODOC_ABREV',
-                'MP.NUM_DOC',
-                DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
-                DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
-                'MCM.NOMBRE_MAC',  // Se obtiene el NOMBRE_MAC desde MCM
-                'MP.FLAG',
-                'MP.CORREO',
-                'MP.FECH_NACIMIENTO',
-                'MP.CELULAR',
-                'DPC.NOMBRE_CARGO',
-                'MP.SEXO',
-                'MP.PD_FECHA_INGRESO',
-                'MP.PCM_TALLA',
-                'MP.ESTADO_CIVIL',
-                'MP.DF_N_HIJOS',
-                'MP.NUMERO_MODULO',
-                'MP.IDCARGO_PERSONAL',
-                'MP.TVL_ID',
-                'MP.N_CONTRATO',
-                'MP.TIP_CAS',
-                'MP.GI_ID',
-                'MP.GI_CARRERA',
-                'MP.GI_CURSO_ESP',
-                'MP.DLP_JEFE_INMEDIATO',
-                'MP.APE_MAT',
-                'MP.DLP_CARGO',
-                'MP.DLP_TELEFONO',
-                'MP.I_INGLES',
-                'MP.I_QUECHUA',
-                'DPM.IDCENTRO_MAC'
+            ->where('MPM.status', 'fijo')
+            ->when(
+                auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador'),
+                fn($q) => $q->where('MPM.idcentro_mac', auth()->user()->idcentro_mac)
             )
             ->where('MP.FLAG', 1)
-            ->where(function ($query) {
-                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                    $query->where('DPM.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                }
-            })
             ->where('MP.IDENTIDAD', '!=', 17)
-            ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
+            ->orderBy('ME.nombre_entidad', 'asc')
             ->get();
-        
 
-        $export = Excel::download(new AsesoresExport($query), 'REPORTE DE PERSONAL ASESORES CENTROS MAC.xlsx');
-
-        return $export;
+        // 2. Devolver Excel usando FromCollection + WithHeadings
+        return Excel::download(new AsesoresExport($rows), 'reporte_asesores.xlsx');
     }
 }

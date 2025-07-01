@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Modulo;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\PersonalModulo; // Modelo para m_personal_modulo
-use App\Models\Personal; // Modelo para m_personal
+use App\Models\PersonalModulo;
 use App\Models\Modulo;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
@@ -107,10 +106,10 @@ class PersonalModuloController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'num_doc' => 'required|string|max:20|exists:m_personal,num_doc',
-            'idmodulo' => 'required|integer|exists:m_modulo,idmodulo',
+            'num_doc'     => 'required|string|max:20|exists:m_personal,num_doc',
+            'idmodulo'    => 'required|integer|exists:m_modulo,idmodulo',
             'fechainicio' => 'required|date',
-            'fechafin' => 'required|date|after_or_equal:fechainicio',
+            'fechafin'    => 'required|date|after_or_equal:fechainicio',
         ]);
 
         if ($validator->fails()) {
@@ -120,20 +119,20 @@ class PersonalModuloController extends Controller
             ], 422);
         }
 
-        // Verificar si el documento ya está registrado en cualquier módulo en el rango de fechas especificado
+        // Validar cruce de fechas para el mismo documento en el mismo centro MAC
         $existe = PersonalModulo::where('num_doc', $request->num_doc)
             ->where('idcentro_mac', auth()->user()->idcentro_mac)
-            ->where('status', 'fijo') // Agregar la condición para que solo busque los registros con status 'fijo'
+            ->where('status', 'fijo')
             ->where(function ($query) use ($request) {
-                // Validación de cruce de fechas
                 $query->whereBetween('fechainicio', [$request->fechainicio, $request->fechafin])
                     ->orWhereBetween('fechafin', [$request->fechainicio, $request->fechafin])
-                    ->orWhere(function ($query2) use ($request) {
-                        $query2->where('fechainicio', '<', $request->fechafin)
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('fechainicio', '<', $request->fechafin)
                             ->where('fechafin', '>', $request->fechainicio);
                     });
             })
             ->exists();
+
         if ($existe) {
             return response()->json([
                 'message' => 'El documento ya está registrado en un módulo dentro de este rango de fechas.',
@@ -141,21 +140,56 @@ class PersonalModuloController extends Controller
             ], 409);
         }
 
+        DB::beginTransaction();
         try {
+            // 1. Guardar en m_personal_modulo
             $personalModulo = new PersonalModulo();
-            $personalModulo->num_doc = $request->num_doc;
-            $personalModulo->idmodulo = $request->idmodulo;
-            $personalModulo->fechainicio = $request->fechainicio;
-            $personalModulo->fechafin = $request->fechafin;
-            $personalModulo->status = 'fijo';
-            $personalModulo->idcentro_mac = auth()->user()->idcentro_mac;
+            $personalModulo->num_doc       = $request->num_doc;
+            $personalModulo->idmodulo      = $request->idmodulo;
+            $personalModulo->fechainicio   = $request->fechainicio;
+            $personalModulo->fechafin      = $request->fechafin;
+            $personalModulo->status        = 'fijo';
+            $personalModulo->idcentro_mac  = auth()->user()->idcentro_mac;
             $personalModulo->save();
 
+            // 2. Obtener idpersonal
+            $idpersonal = DB::table('m_personal')
+                ->where('num_doc', $request->num_doc)
+                ->value('idpersonal');
+
+            // 3. Buscar si ya existe en d_personal_mac
+            $registroDPM = DB::table('d_personal_mac')
+                ->select('id', 'status')
+                ->where('idpersonal', $idpersonal)
+                ->where('idcentro_mac', auth()->user()->idcentro_mac)
+                ->first();
+
+            // 4. Insertar si no existe, o actualizar si está en status 2
+            if (!$registroDPM) {
+                DB::table('d_personal_mac')->insert([
+                    'idpersonal'   => $idpersonal,
+                    'idcentro_mac' => auth()->user()->idcentro_mac,
+                    'status'       => 1,
+                    'idus_reg'     => auth()->id(),
+                    'created_at'   => Carbon::now(),
+                    'updated_at'   => Carbon::now(),
+                ]);
+            } elseif ($registroDPM->status == 2) {
+                DB::table('d_personal_mac')
+                    ->where('id', $registroDPM->id)
+                    ->update([
+                        'status'     => 1,
+                        'updated_at' => Carbon::now(),
+                    ]);
+            }
+
+            DB::commit();
             return response()->json([
                 'message' => 'Personal Módulo guardado exitosamente',
                 'status' => 201
             ], 201);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'error' => $e->getMessage(),
                 'message' => 'Error al procesar la solicitud',

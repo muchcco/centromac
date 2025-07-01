@@ -4,10 +4,10 @@
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">N°</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Centro MAC</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Entidad</th>
+                        <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">N° de Documento</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Nombres y Apellidos</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Sexo</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Cargo / Asesor(a)</th>
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">N° de Documento</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Celular</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Correo</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Fecha de Nacimiento</th>
@@ -18,7 +18,6 @@
                 MAC</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Modalidad de contrato</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">De ser CAS</th>
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">N° de modulo</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Número de contrato</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Grado</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; ">Carrera / Profesión</th>
@@ -36,6 +35,7 @@
                 <th style="border: 1px solid black">{{ ($q->NOMBRE_MAC ?? '') === 'null' ? '' : $q->NOMBRE_MAC }}</th>
                 <th style="border: 1px solid black">
                     {{ $q->NOMBRE_ENTIDAD ?? $q->ABREV_ENTIDAD ?: 'Datos incompletos' }}</th>
+                <th style="border: 1px solid black">{{ ($q->NUM_DOC ?? '') === 'null' ? '' : $q->NUM_DOC }}</th>
                 <th style="border: 1px solid black">
                     <span class="{{ $q->NOMBREU && $q->NOMBREU !== 'null' ? '' : 'text-danger' }}">
                         {{ ($q->NOMBREU ?? 'Datos incompletos') === 'null' ? 'Datos incompletos' : $q->NOMBREU }}
@@ -58,7 +58,6 @@
                 </th>
                 <th style="border: 1px solid black">{{ ($q->NOMBRE_CARGO ?? '') === 'null' ? '' : $q->NOMBRE_CARGO }}
                 </th>
-                <th style="border: 1px solid black">{{ ($q->NUM_DOC ?? '') === 'null' ? '' : $q->NUM_DOC }}</th>
                 <th style="border: 1px solid black">{{ ($q->CELULAR ?? '') === 'null' ? '' : $q->CELULAR }}</th>
                 <th style="border: 1px solid black">{{ ($q->CORREO ?? '') === 'null' ? '' : $q->CORREO }}</th>
                 <th style="border: 1px solid black">
@@ -118,7 +117,6 @@
                             --
                     @endswitch
                 </th>
-                <th style="border: 1px solid black">{{ ($q->TIP_CAS ?? '') === 'null' ? '' : $q->TIP_CAS }}</th>
                 <th style="border: 1px solid black">{{ ($q->GI_CARRERA ?? '') === 'null' ? '' : $q->N_CONTRATO }}</th>
                 <th style="border: 1px solid black">{{ ($q->GI_CARRERA ?? '') === 'null' ? '' : $q->GI_ID }}</th>
                 <th style="border: 1px solid black">{{ ($q->GI_CURSO_ESP ?? '') === 'null' ? '' : $q->GI_CARRERA }}

@@ -80,7 +80,20 @@ return [
             'strict' => true,
             'engine' => null,
         ],
-       
+        'zk' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST_ZK', '127.0.0.1'),
+            'port' => env('DB_PORT_ZK', '3306'),
+            'database' => env('DB_DATABASE_ZK', 'zk'),
+            'username' => env('DB_USERNAME_ZK', 'root'),
+            'password' => env('DB_PASSWORD_ZK', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'mysql2' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL2', config('database.connections.mysql2.url')),
