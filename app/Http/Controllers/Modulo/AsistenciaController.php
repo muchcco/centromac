@@ -1747,9 +1747,21 @@ class AsistenciaController extends Controller
 
 
         // DEFINIMOS EL TIPO DE DESCA
+        $anio = $request->input('año');
+        $mes = $request->input('mes');
 
-        $fecha_ini_desc = strftime('%d de %B del %Y', strtotime($request->fecha_inicio));
-        $fecha_fin_desc = strftime('%d de %B del %Y', strtotime($request->fecha_fin));
+        $fechaInicio = Carbon::create($anio, $mes, 1);
+
+        $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
+
+        $meses = [
+            '01' => 'enero', '02' => 'febrero', '03' => 'marzo', '04' => 'abril',
+            '05' => 'mayo', '06' => 'junio', '07' => 'julio', '08' => 'agosto',
+            '09' => 'septiembre', '10' => 'octubre', '11' => 'noviembre', '12' => 'diciembre'
+        ];
+
+        $fecha_ini_desc = $fechaInicio->format('d') . ' de ' . $meses[$mes] . ' del ' . $fechaInicio->format('Y');
+        $fecha_fin_desc = $fechaFin->format('d') . ' de ' . $meses[$mes] . ' del ' . $fechaFin->format('Y');
 
         $hora_1 = Configuracion::where('PARAMETRO', 'HORA_1')->first();
         $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
@@ -1762,120 +1774,171 @@ class AsistenciaController extends Controller
         $fecha_inicial = $fecha_ini_desc;
         $fecha_fin = $fecha_fin_desc;
         // $identidad = $request->identidad;
-        // dd($identidad);
+        // dd($fecha_ini_desc);
         $identidadArray = DB::table('M_MAC_ENTIDAD')->select('IDENTIDAD')->where('IDCENTRO_MAC', $idmac)->whereNot('IDENTIDAD', 17)->pluck('IDENTIDAD')->toArray();
 
         $identidadString = '(' . implode(', ', $identidadArray) . ')';
 
         // dd($identidadString);
         $identidad = $identidadString;
+
         $query = DB::table('M_ASISTENCIA as MA')
-            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-            ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
-            ->leftJoin('M_PERSONAL_MODULO as MPM', function ($join) use ($idmac) {
-                $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
-                    ->where('MPM.STATUS', '!=', 'eliminado')  // Aseguramos que solo módulos válidos sean considerados
-                    ->where('MPM.IDCENTRO_MAC', '=', $idmac); // Filtrar por el IDCENTRO_MAC del centro actual
-            })
-            ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
-            ->leftJoin('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
-            ->select(
-                'MA.FECHA as FECHA',
-                DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
-                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(MA.HORA, '%H:%i:%s') ORDER BY MA.HORA) AS fecha_biometrico"),
-                'MA.NUM_DOC as NUM_DOC',
-                DB::raw('UPPER(CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE)) AS NOMBREU'),
-                'ME.ABREV_ENTIDAD', // Mostrar la abreviatura correcta de la entidad
-                'MC.NOMBRE_MAC',
-                'MPM.STATUS as status_modulo',
-                'MM.N_MODULO as N_MODULO' // Asegurándonos de mostrar solo el módulo correspondiente al Centro MAC
-            )
+                ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
+                ->leftJoin('M_PERSONAL_MODULO as MPM', function ($join) use ($idmac) {
+                    $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
+                        ->where('MPM.STATUS', '!=', 'eliminado')  // Aseguramos que solo módulos válidos sean considerados
+                        ->where('MPM.IDCENTRO_MAC', '=', $idmac); // Filtrar por el IDCENTRO_MAC del centro actual
+                })
+                ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
+                ->leftJoin('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
+                ->leftJoin('D_ASISTENCIA_OBSERVACION as DAO', function(JoinClause $join) {
+                    $join->on('DAO.NUM_DOC', '=', 'MA.NUM_DOC')
+                         ->on('DAO.FECHA',     '=', 'MA.FECHA')
+                         ->on('DAO.IDCENTRO_MAC','=', 'MA.IDCENTRO_MAC');
+                })
+                ->select(
+                    'MA.FECHA as FECHA',
+                    DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
+                    DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(MA.HORA, '%H:%i:%s') ORDER BY MA.HORA) AS fecha_biometrico"),
+                    'MA.NUM_DOC as NUM_DOC',
+                    DB::raw('UPPER(CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE)) AS NOMBREU'),
+                    'ME.ABREV_ENTIDAD', // Mostrar la abreviatura correcta de la entidad
+                    'MC.NOMBRE_MAC',
+                    'MPM.STATUS as status_modulo',
+                    'MM.N_MODULO as N_MODULO',
+                    DB::raw("GROUP_CONCAT(DISTINCT DAO.OBSERVACION ORDER BY DAO.ID_ASISTENCIA_OBV SEPARATOR ';') AS observaciones"),
+                    DB::raw('COUNT(IF(DAO.flag = 1, DAO.id_asistencia_obv, NULL)) as contador_obs')
+                )
+                ->where(function ($query) use ($request) {
+                    // Filtra por fecha (mes y año) y centro MAC
+                    // $idmac = $this->centro_mac()->idmac;
 
-            ->where(function ($query) use ($request) {
-                // Filtra por fecha (mes y año) y centro MAC
-                $idmac = $this->centro_mac()->idmac;
-                $query->where('MA.IDCENTRO_MAC', $idmac)
-                    ->whereMonth('MA.FECHA', $request->mes)
-                    ->whereYear('MA.FECHA', $request->año);
-            })
-            ->where(function ($query) use ($request) {
-                // Filtra por entidad si es necesario
-                if ($request->entidad) {
-                    $query->where('ME.IDENTIDAD', $request->entidad);
-                }
-            })
-            ->where(function ($query) {
-                // Filtra por el centro MAC del usuario
-                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                    $query->where('MA.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                }
-            })
-            ->where(function ($query) use ($request) {
-                // Primero tratamos de obtener los módulos itinerantes dentro del rango de fechas
-                $query->where('MPM.STATUS', 'itinerante')
-                    ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
-                    ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
-                    ->orWhere(function ($query) {
-                        // Si no tiene módulo itinerante, tomamos el módulo fijo dentro del rango de fechas
-                        $query->where('MPM.STATUS', 'fijo')
-                            ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
-                            ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
-                            ->whereNotExists(function ($query) {
-                                // Nos aseguramos de que no tenga un módulo itinerante para esa fecha
-                                $query->select(DB::raw(1))
-                                    ->from('M_PERSONAL_MODULO as MPM2')
-                                    ->whereRaw('MPM2.NUM_DOC = MPM.NUM_DOC')
-                                    ->where('MPM2.STATUS', 'itinerante')
-                                    ->whereDate('MA.FECHA', '>=', DB::raw('MPM2.FECHAINICIO'))
-                                    ->whereDate('MA.FECHA', '<=', DB::raw('MPM2.FECHAFIN'));
-                            });
-                    })
-                    // Incluir los asesores que no tienen módulo (sin itinerante ni fijo)
-                    ->orWhereNull('MPM.NUM_DOC');
-            })
-            ->orderBy('MA.FECHA', 'asc')  // Ordenar por FECHA primero, en orden ascendente
-            ->orderBy('MM.N_MODULO', 'asc') // Luego por N_MODULO, también en orden ascendente
-            ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ME.ABREV_ENTIDAD', 'MC.NOMBRE_MAC', 'MPM.STATUS', 'MM.N_MODULO')
-            ->get();
+                    // Si se proporcionan fechas de inicio y fin
+                    if ($request->fecha_inicio && $request->fecha_fin) {
+                        $fecha_inicio = date('Y-m-d', strtotime($request->fecha_inicio));  // Convierte a formato Y-m-d
+                        $fecha_fin = date('Y-m-d', strtotime($request->fecha_fin));  // Convierte a formato Y-m-d
+                        $query->whereBetween('MA.FECHA', [$fecha_inicio, $fecha_fin]);
+                    } else {
+                        // Si no se proporcionaron fechas, filtrar por mes y año
+                        $query->whereMonth('MA.FECHA', $request->mes)
+                            ->whereYear('MA.FECHA', $request->año);
+                    }
 
-        // $query =  DB::table('M_ASISTENCIA as MA')
-        // ->select(
-        //     'PERS.ABREV_ENTIDAD', 
-        //     'PERS.NOMBREU', 
-        //     'PERS.NOMBRE_CARGO', 
-        //     'MA.FECHA', 
-        //     'MA.NUM_DOC',
-        //     DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
-        //     DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC')
-        // )
-        // ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-        // ->join(DB::raw('(
-        //     SELECT 
-        //         CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU, 
-        //         ME.ABREV_ENTIDAD, 
-        //         MCM.IDCENTRO_MAC, 
-        //         MP.NUM_DOC, 
-        //         ME.IDENTIDAD, 
-        //         DPC.NOMBRE_CARGO
-        //     FROM M_PERSONAL AS MP
-        //     LEFT JOIN D_PERSONAL_CARGO AS DPC ON DPC.IDCARGO_PERSONAL = MP.IDCARGO_PERSONAL
-        //     JOIN M_ENTIDAD AS ME ON ME.IDENTIDAD = MP.IDENTIDAD
-        //     JOIN M_CENTRO_MAC AS MCM ON MCM.IDCENTRO_MAC = MP.IDMAC
-        // ) AS PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
-        // ->whereIn('PERS.IDENTIDAD', $identidadArray) // Reemplaza con tu array de identidades
-        // ->where('MA.IDCENTRO_MAC', $idmac)
-        // ->whereMonth('MA.FECHA', $request->mes)
-        // ->whereYear('MA.FECHA', $request->año)
-        // ->groupBy(
-        //     'PERS.ABREV_ENTIDAD', 
-        //     'PERS.NOMBREU', 
-        //     'PERS.NOMBRE_CARGO', 
-        //     'MA.FECHA', 
-        //     'MA.NUM_DOC'
-        // )
-        // ->orderBy('PERS.ABREV_ENTIDAD', 'ASC')
-        // ->orderBy('MA.FECHA', 'ASC')
-        // ->get();
+                    // Aseguramos que siempre se filtre por IDCENTRO_MAC
+                    // $query->where('MA.IDCENTRO_MAC', $idmac);
+                })
+                ->where(function ($query) use ($request, $idmac) {
+                    // Filtra por entidad si es necesario
+                    //dd($request->identidad);
+                    if ($request->identidad) {
+                        $query->where('ME.IDENTIDAD', $request->identidad);
+                    }
+                    $query->where('MA.IDCENTRO_MAC', '=', $idmac);
+                })
+                ->where(function ($query) {
+                    // Filtra por el centro MAC del usuario
+                    if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                        $query->where('MA.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                    }
+                })
+                ->where(function ($query) use ($request) {
+                    // Primero tratamos de obtener los módulos itinerantes dentro del rango de fechas
+                    $query->where('MPM.STATUS', 'itinerante')
+                        ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
+                        ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
+                        ->orWhere(function ($query) {
+                            // Si no tiene módulo itinerante, tomamos el módulo fijo dentro del rango de fechas
+                            $query->where('MPM.STATUS', 'fijo')
+                                ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
+                                ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
+                                ->whereNotExists(function ($query) {
+                                    // Nos aseguramos de que no tenga un módulo itinerante para esa fecha
+                                    $query->select(DB::raw(1))
+                                        ->from('M_PERSONAL_MODULO as MPM2')
+                                        ->whereRaw('MPM2.NUM_DOC = MPM.NUM_DOC')
+                                        ->where('MPM2.STATUS', 'itinerante')
+                                        ->whereDate('MA.FECHA', '>=', DB::raw('MPM2.FECHAINICIO'))
+                                        ->whereDate('MA.FECHA', '<=', DB::raw('MPM2.FECHAFIN'));
+                                });
+                        })
+                        // Incluir los asesores que no tienen módulo (sin itinerante ni fijo)
+                        ->orWhereNull('MPM.NUM_DOC');
+                })
+                ->orderBy('MA.FECHA', 'asc')  // Ordenar por FECHA primero, en orden ascendente
+                ->orderBy('MM.N_MODULO', 'asc') // Luego por N_MODULO, también en orden ascendente
+                ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ME.ABREV_ENTIDAD', 'MC.NOMBRE_MAC', 'MPM.STATUS', 'MM.N_MODULO')
+                ->get();
+
+        // $query = DB::table('M_ASISTENCIA as MA')
+        //     ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+        //     ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
+        //     ->leftJoin('M_PERSONAL_MODULO as MPM', function ($join) use ($idmac) {
+        //         $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
+        //             ->where('MPM.STATUS', '!=', 'eliminado')  // Aseguramos que solo módulos válidos sean considerados
+        //             ->where('MPM.IDCENTRO_MAC', '=', $idmac); // Filtrar por el IDCENTRO_MAC del centro actual
+        //     })
+        //     ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
+        //     ->leftJoin('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
+        //     ->select(
+        //         'MA.FECHA as FECHA',
+        //         DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
+        //         DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(MA.HORA, '%H:%i:%s') ORDER BY MA.HORA) AS fecha_biometrico"),
+        //         'MA.NUM_DOC as NUM_DOC',
+        //         DB::raw('UPPER(CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE)) AS NOMBREU'),
+        //         'ME.ABREV_ENTIDAD', // Mostrar la abreviatura correcta de la entidad
+        //         'MC.NOMBRE_MAC',
+        //         'MPM.STATUS as status_modulo',
+        //         'MM.N_MODULO as N_MODULO' // Asegurándonos de mostrar solo el módulo correspondiente al Centro MAC
+        //     )
+
+        //     ->where(function ($query) use ($request) {
+        //         // Filtra por fecha (mes y año) y centro MAC
+        //         $idmac = $this->centro_mac()->idmac;
+        //         $query->where('MA.IDCENTRO_MAC', $idmac)
+        //             ->whereMonth('MA.FECHA', $request->mes)
+        //             ->whereYear('MA.FECHA', $request->año);
+        //     })
+        //     ->where(function ($query) use ($request) {
+        //         // Filtra por entidad si es necesario
+        //         if ($request->entidad) {
+        //             $query->where('ME.IDENTIDAD', $request->entidad);
+        //         }
+        //     })
+        //     ->where(function ($query) {
+        //         // Filtra por el centro MAC del usuario
+        //         if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+        //             $query->where('MA.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+        //         }
+        //     })
+        //     ->where(function ($query) use ($request) {
+        //         // Primero tratamos de obtener los módulos itinerantes dentro del rango de fechas
+        //         $query->where('MPM.STATUS', 'itinerante')
+        //             ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
+        //             ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
+        //             ->orWhere(function ($query) {
+        //                 // Si no tiene módulo itinerante, tomamos el módulo fijo dentro del rango de fechas
+        //                 $query->where('MPM.STATUS', 'fijo')
+        //                     ->whereDate('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
+        //                     ->whereDate('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
+        //                     ->whereNotExists(function ($query) {
+        //                         // Nos aseguramos de que no tenga un módulo itinerante para esa fecha
+        //                         $query->select(DB::raw(1))
+        //                             ->from('M_PERSONAL_MODULO as MPM2')
+        //                             ->whereRaw('MPM2.NUM_DOC = MPM.NUM_DOC')
+        //                             ->where('MPM2.STATUS', 'itinerante')
+        //                             ->whereDate('MA.FECHA', '>=', DB::raw('MPM2.FECHAINICIO'))
+        //                             ->whereDate('MA.FECHA', '<=', DB::raw('MPM2.FECHAFIN'));
+        //                     });
+        //             })
+        //             // Incluir los asesores que no tienen módulo (sin itinerante ni fijo)
+        //             ->orWhereNull('MPM.NUM_DOC');
+        //     })
+        //     ->orderBy('MA.FECHA', 'asc')  // Ordenar por FECHA primero, en orden ascendente
+        //     ->orderBy('MM.N_MODULO', 'asc') // Luego por N_MODULO, también en orden ascendente
+        //     ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ME.ABREV_ENTIDAD', 'MC.NOMBRE_MAC', 'MPM.STATUS', 'MM.N_MODULO')
+        //     ->get();
+
 
         foreach ($query as $q) {
             // Asumiendo que el valor de 'fecha_biometrico' contiene la hora en formato 'H:i:s'
