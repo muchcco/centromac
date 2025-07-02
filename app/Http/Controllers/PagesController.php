@@ -1028,6 +1028,7 @@ class PagesController extends Controller
                             ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 2)
                             ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
+                            ->where('MP.flag', 1)    
                             ->orderBy('MCM.NOMBRE_MAC', 'ASC')
                             ->get();
 
