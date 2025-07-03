@@ -285,6 +285,9 @@ class AsistenciaController extends Controller
 
             ->where('MA.IDCENTRO_MAC', $idmac)
             // ->where('ME.IDENTIDAD', $request->entidad)
+            ->when($request->filled('entidad'), function ($query) use ($request) {
+                $query->where('ME.IDENTIDAD', $request->entidad);
+            })
             ->whereDate('MA.FECHA', $fecha)
 
             ->groupBy(

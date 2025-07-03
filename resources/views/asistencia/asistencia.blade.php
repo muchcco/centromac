@@ -57,7 +57,7 @@
                             <div class="form-group">
                                 <label class="mb-3">Entidad:</label>
                                 <select name="entidad" id="entidad" class="form-control col-sm-12 select2">
-                                    <option value="0" disabled selected>-- Selecciones una opción --</option>
+                                    <option value="" selected>-- Selecciones una opción --</option>
                                     @forelse ($entidad as $ent)
                                         <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }}</option>
                                     @empty
