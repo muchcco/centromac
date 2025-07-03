@@ -253,116 +253,112 @@ class PcmController extends Controller
 
         $tipo = $request->tipo;
 
+
         if ($tipo == 1) {
             $now = now();
+            // 1) Consulta de m_personal_modulo
+            $q1 = DB::table('db_centros_mac.m_personal_modulo as MPM')
+                ->distinct()  // Asegurando que no haya filas duplicadas
+                ->selectRaw(<<<'SQL'
+                            MCM.nombre_mac         AS NOMBRE_MAC,
+                            ME.nombre_entidad      AS NOMBRE_ENTIDAD,
+                            CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU,
+                            DPT.TIPODOC_ABREV      AS TIPODOC_ABREV,
+                            MP.NUM_DOC             AS NUM_DOC,
+                            MP.FLAG                AS FLAG,
+                            MP.CORREO              AS CORREO,
+                            MP.FECH_NACIMIENTO     AS FECH_NACIMIENTO,
+                            MP.CELULAR             AS CELULAR,
+                            DPC.NOMBRE_CARGO       AS NOMBRE_CARGO,
+                            MP.SEXO                AS SEXO,
+                            MP.PD_FECHA_INGRESO    AS PD_FECHA_INGRESO,
+                            MP.PCM_TALLA           AS PCM_TALLA,
+                            MP.ESTADO_CIVIL        AS ESTADO_CIVIL,
+                            MP.DF_N_HIJOS          AS DF_N_HIJOS,
+                            MP.NUMERO_MODULO       AS NUMERO_MODULO,
+                            MP.IDCARGO_PERSONAL    AS IDCARGO_PERSONAL,
+                            MP.TVL_ID              AS TVL_ID,
+                            MP.N_CONTRATO          AS N_CONTRATO,
+                            MP.GI_ID               AS GI_ID,
+                            MP.GI_CARRERA          AS GI_CARRERA,
+                            MP.GI_CURSO_ESP        AS GI_CURSO_ESP,
+                            MP.DLP_JEFE_INMEDIATO  AS DLP_JEFE_INMEDIATO,
+                            MP.DLP_CARGO           AS DLP_CARGO,
+                            MP.DLP_TELEFONO        AS DLP_TELEFONO,
+                            MP.I_INGLES            AS I_INGLES,
+                            MP.I_QUECHUA           AS I_QUECHUA
+                        SQL)
+                ->join('db_centros_mac.m_personal as MP', 'MP.num_doc', '=', 'MPM.num_doc')
+                ->leftJoin('db_centros_mac.d_personal_cargo as DPC', 'DPC.idcargo_personal', '=', 'MP.idcargo_personal')
+                ->join('db_centros_mac.m_modulo as MMOD', 'MMOD.idmodulo', '=', 'MPM.idmodulo')
+                ->leftJoin('db_centros_mac.m_entidad as ME', 'ME.identidad', '=', 'MMOD.identidad')
+                ->leftJoin('db_centros_mac.d_personal_mac as DPM', function ($j) {
+                    $j->on('DPM.idpersonal', '=', 'MP.idpersonal')
+                        ->whereIn('DPM.status', [1]);
+                })
+                ->join('db_centros_mac.m_centro_mac as MCM', 'MCM.idcentro_mac', '=', 'MPM.idcentro_mac')
+                ->join('db_centros_mac.d_personal_tipodoc as DPT', 'DPT.idtipo_doc', '=', 'MP.idtipo_doc')
+                ->whereDate('MPM.fechainicio', '<=', now())
+                ->where(function ($q) {
+                    $q->whereDate('MPM.fechafin', '>=', now())
+                        ->orWhereNull('MPM.fechafin');
+                })
+                ->where('MPM.status', 'fijo')
+                ->when(
+                    auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador'),
+                    fn($q) => $q->where('MPM.idcentro_mac', auth()->user()->idcentro_mac)
+                )
+                ->where('MP.FLAG', 1);
 
-            if ($tipo == 1) {
-                $now = now();
+            // 2) Consulta para obtener los de IDENTIDAD = 17 en m_personal
+            $q2 = DB::table('db_centros_mac.m_personal as MP')
+                ->distinct()  // Asegurando que no haya filas duplicadas
+                ->selectRaw(<<<'SQL'
+                            MCM.nombre_mac         AS NOMBRE_MAC,
+                            ME.nombre_entidad      AS NOMBRE_ENTIDAD,
+                            CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU,
+                            DPT.TIPODOC_ABREV      AS TIPODOC_ABREV,
+                            MP.NUM_DOC             AS NUM_DOC,
+                            MP.FLAG                AS FLAG,
+                            MP.CORREO              AS CORREO,
+                            MP.FECH_NACIMIENTO     AS FECH_NACIMIENTO,
+                            MP.CELULAR             AS CELULAR,
+                            DPC.NOMBRE_CARGO       AS NOMBRE_CARGO,
+                            MP.SEXO                AS SEXO,
+                            MP.PD_FECHA_INGRESO    AS PD_FECHA_INGRESO,
+                            MP.PCM_TALLA           AS PCM_TALLA,
+                            MP.ESTADO_CIVIL        AS ESTADO_CIVIL,
+                            MP.DF_N_HIJOS          AS DF_N_HIJOS,
+                            MP.NUMERO_MODULO       AS NUMERO_MODULO,
+                            MP.IDCARGO_PERSONAL    AS IDCARGO_PERSONAL,
+                            MP.TVL_ID              AS TVL_ID,
+                            MP.N_CONTRATO          AS N_CONTRATO,
+                            MP.GI_ID               AS GI_ID,
+                            MP.GI_CARRERA          AS GI_CARRERA,
+                            MP.GI_CURSO_ESP        AS GI_CURSO_ESP,
+                            MP.DLP_JEFE_INMEDIATO  AS DLP_JEFE_INMEDIATO,
+                            MP.DLP_CARGO           AS DLP_CARGO,
+                            MP.DLP_TELEFONO        AS DLP_TELEFONO,
+                            MP.I_INGLES            AS I_INGLES,
+                            MP.I_QUECHUA           AS I_QUECHUA
+                        SQL)
+                ->join('db_centros_mac.m_centro_mac as MCM', 'MCM.idcentro_mac', '=', 'MP.IDMAC')
+                ->join('db_centros_mac.m_entidad as ME', 'ME.identidad', '=', 'MP.IDENTIDAD')
+                ->join('db_centros_mac.d_personal_tipodoc as DPT', 'DPT.idtipo_doc', '=', 'MP.IDTIPO_DOC')
+                ->leftJoin('db_centros_mac.d_personal_cargo as DPC', 'DPC.idcargo_personal', '=', 'MP.idcargo_personal')
+                ->where('MP.IDENTIDAD', 17)  // Solo tomamos los de IDENTIDAD = 17
+                ->where('MP.FLAG', 1)
+                // Aplicar el filtro de roles solo si el usuario tiene uno de los roles especificados
+                ->when(
+                    auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador'),
+                    fn($q) => $q->where('MP.IDMAC', auth()->user()->idcentro_mac)  // Aquí se aplica el filtro para el centro MAC
+                );
 
-                // 1) Consulta de m_personal_modulo
-                $q1 = DB::table('db_centros_mac.m_personal_modulo as MPM')
-                    ->distinct()  // Asegurando que no haya filas duplicadas
-                    ->selectRaw(<<<'SQL'
-            MCM.nombre_mac         AS NOMBRE_MAC,
-            ME.nombre_entidad      AS NOMBRE_ENTIDAD,
-            CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU,
-            DPT.TIPODOC_ABREV      AS TIPODOC_ABREV,
-            MP.NUM_DOC             AS NUM_DOC,
-            MP.FLAG                AS FLAG,
-            MP.CORREO              AS CORREO,
-            MP.FECH_NACIMIENTO     AS FECH_NACIMIENTO,
-            MP.CELULAR             AS CELULAR,
-            DPC.NOMBRE_CARGO       AS NOMBRE_CARGO,
-            MP.SEXO                AS SEXO,
-            MP.PD_FECHA_INGRESO    AS PD_FECHA_INGRESO,
-            MP.PCM_TALLA           AS PCM_TALLA,
-            MP.ESTADO_CIVIL        AS ESTADO_CIVIL,
-            MP.DF_N_HIJOS          AS DF_N_HIJOS,
-            MP.NUMERO_MODULO       AS NUMERO_MODULO,
-            MP.IDCARGO_PERSONAL    AS IDCARGO_PERSONAL,
-            MP.TVL_ID              AS TVL_ID,
-            MP.N_CONTRATO          AS N_CONTRATO,
-            MP.GI_ID               AS GI_ID,
-            MP.GI_CARRERA          AS GI_CARRERA,
-            MP.GI_CURSO_ESP        AS GI_CURSO_ESP,
-            MP.DLP_JEFE_INMEDIATO  AS DLP_JEFE_INMEDIATO,
-            MP.DLP_CARGO           AS DLP_CARGO,
-            MP.DLP_TELEFONO        AS DLP_TELEFONO,
-            MP.I_INGLES            AS I_INGLES,
-            MP.I_QUECHUA           AS I_QUECHUA
-        SQL)
-                    ->join('db_centros_mac.m_personal as MP', 'MP.num_doc', '=', 'MPM.num_doc')
-                    ->leftJoin('db_centros_mac.d_personal_cargo as DPC', 'DPC.idcargo_personal', '=', 'MP.idcargo_personal')
-                    ->join('db_centros_mac.m_modulo as MMOD', 'MMOD.idmodulo', '=', 'MPM.idmodulo')
-                    ->leftJoin('db_centros_mac.m_entidad as ME', 'ME.identidad', '=', 'MMOD.identidad')
-                    ->leftJoin('db_centros_mac.d_personal_mac as DPM', function ($j) {
-                        $j->on('DPM.idpersonal', '=', 'MP.idpersonal')
-                            ->whereIn('DPM.status', [1]);
-                    })
-                    ->join('db_centros_mac.m_centro_mac as MCM', 'MCM.idcentro_mac', '=', 'MPM.idcentro_mac')
-                    ->join('db_centros_mac.d_personal_tipodoc as DPT', 'DPT.idtipo_doc', '=', 'MP.idtipo_doc')
-                    ->whereDate('MPM.fechainicio', '<=', now())
-                    ->where(function ($q) {
-                        $q->whereDate('MPM.fechafin', '>=', now())
-                            ->orWhereNull('MPM.fechafin');
-                    })
-                    ->where('MPM.status', 'fijo')
-                    ->when(
-                        auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador'),
-                        fn($q) => $q->where('MPM.idcentro_mac', auth()->user()->idcentro_mac)
-                    )
-                    ->where('MP.FLAG', 1);
-
-                // 2) Consulta para obtener los de IDENTIDAD = 17 en m_personal
-                $q2 = DB::table('db_centros_mac.m_personal as MP')
-                    ->distinct()  // Asegurando que no haya filas duplicadas
-                    ->selectRaw(<<<'SQL'
-        MCM.nombre_mac         AS NOMBRE_MAC,
-        ME.nombre_entidad      AS NOMBRE_ENTIDAD,
-        CONCAT(MP.APE_PAT, ' ', MP.APE_MAT, ', ', MP.NOMBRE) AS NOMBREU,
-        DPT.TIPODOC_ABREV      AS TIPODOC_ABREV,
-        MP.NUM_DOC             AS NUM_DOC,
-        MP.FLAG                AS FLAG,
-        MP.CORREO              AS CORREO,
-        MP.FECH_NACIMIENTO     AS FECH_NACIMIENTO,
-        MP.CELULAR             AS CELULAR,
-        DPC.NOMBRE_CARGO       AS NOMBRE_CARGO,
-        MP.SEXO                AS SEXO,
-        MP.PD_FECHA_INGRESO    AS PD_FECHA_INGRESO,
-        MP.PCM_TALLA           AS PCM_TALLA,
-        MP.ESTADO_CIVIL        AS ESTADO_CIVIL,
-        MP.DF_N_HIJOS          AS DF_N_HIJOS,
-        MP.NUMERO_MODULO       AS NUMERO_MODULO,
-        MP.IDCARGO_PERSONAL    AS IDCARGO_PERSONAL,
-        MP.TVL_ID              AS TVL_ID,
-        MP.N_CONTRATO          AS N_CONTRATO,
-        MP.GI_ID               AS GI_ID,
-        MP.GI_CARRERA          AS GI_CARRERA,
-        MP.GI_CURSO_ESP        AS GI_CURSO_ESP,
-        MP.DLP_JEFE_INMEDIATO  AS DLP_JEFE_INMEDIATO,
-        MP.DLP_CARGO           AS DLP_CARGO,
-        MP.DLP_TELEFONO        AS DLP_TELEFONO,
-        MP.I_INGLES            AS I_INGLES,
-        MP.I_QUECHUA           AS I_QUECHUA
-    SQL)
-                    ->join('db_centros_mac.m_centro_mac as MCM', 'MCM.idcentro_mac', '=', 'MP.IDMAC')
-                    ->join('db_centros_mac.m_entidad as ME', 'ME.identidad', '=', 'MP.IDENTIDAD')
-                    ->join('db_centros_mac.d_personal_tipodoc as DPT', 'DPT.idtipo_doc', '=', 'MP.IDTIPO_DOC')
-                    ->leftJoin('db_centros_mac.d_personal_cargo as DPC', 'DPC.idcargo_personal', '=', 'MP.idcargo_personal')
-                    ->where('MP.IDENTIDAD', 17)  // Solo tomamos los de IDENTIDAD = 17
-                    ->where('MP.FLAG', 1)
-                    // Aplicar el filtro de roles solo si el usuario tiene uno de los roles especificados
-                    ->when(
-                        auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador'),
-                        fn($q) => $q->where('MP.IDMAC', auth()->user()->idcentro_mac)  // Aquí se aplica el filtro para el centro MAC
-                    );
-
-                // Unir las dos consultas con UNION
-                $query = $q1
-                    ->union($q2)  // Unimos las dos consultas
-                    ->orderBy('NOMBRE_ENTIDAD', 'asc')  // Ordenamos por NOMBRE_ENTIDAD
-                    ->get();
-            }
+            // Unir las dos consultas con UNION
+            $query = $q1
+                ->union($q2)  // Unimos las dos consultas
+                ->orderBy('NOMBRE_ENTIDAD', 'asc')  // Ordenamos por NOMBRE_ENTIDAD
+                ->get();
         } elseif ($tipo == 3) {
             $query = DB::table('db_centros_mac.M_PERSONAL as MP')
                 ->leftJoin('db_centros_mac.M_PERSONAL_MODULO as MPM', function ($join) {
