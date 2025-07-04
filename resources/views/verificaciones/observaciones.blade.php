@@ -71,10 +71,14 @@
                     </div>
                     <!-- Botón de Exportar -->
                     <div class="form-group col-md-2 d-flex align-items-end">
-                        <a href="{{ route('verificaciones.export', ['fecha_inicio' => request('fecha_inicio'), 'fecha_fin' => request('fecha_fin')]) }}"
-                            class="btn btn-success">
+                        <button
+                            type="button"
+                            id="btnExport"
+                            class="btn btn-success w-100"
+                            onclick="exportToExcel()"
+                            >
                             <i class="fa fa-download me-2"></i> Exportar a Excel
-                        </a>
+                        </button>
                     </div>
 
                 </form>
@@ -141,5 +145,54 @@
                 pageLength: 20,
             });
         });
+
+        async function exportToExcel() {
+            const fi = document.getElementById('fecha_inicio').value;
+            const ff = document.getElementById('fecha_fin').value;
+            if (!fi || !ff) {
+            alert('Debes seleccionar ambas fechas para exportar.');
+            return;
+            }
+
+            const btn = document.getElementById('btnExport');
+            // 1) Deshabilitar y mostrar spinner
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i> Exportando…';
+
+            // 2) Construir URL de exportación
+            const url = "{{ route('verificaciones.export') }}"
+                    + "?fecha_inicio=" + encodeURIComponent(fi)
+                    + "&fecha_fin="   + encodeURIComponent(ff);
+
+            try {
+            // 3) Traer el archivo como blob
+            const resp = await fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+            if (!resp.ok) throw new Error('Error en la descarga');
+
+            const blob = await resp.blob();
+
+            // 4) Forzar descarga
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            // Puedes extraer el nombre del fichero desde Content-Disposition si quieres
+            a.download = `verificaciones_${fi}_${ff}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(blobUrl);
+
+            } catch (e) {
+            console.error(e);
+            alert('Hubo un error al exportar. Intenta de nuevo.');
+            } finally {
+            // 5) Restaurar el botón
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa fa-download me-2"></i> Exportar a Excel';
+            }
+        }
     </script>
 @endsection
