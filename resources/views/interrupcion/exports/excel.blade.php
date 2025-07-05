@@ -130,13 +130,13 @@
                     {{ \Carbon\Carbon::parse($obs->fecha_inicio)->format('d-m-Y') }}
                 </td>
                 <td style="border: 1px solid black;">
-                    {{ \Carbon\Carbon::parse($obs->hora_inicio)->format('H:m:s') }}
+                    {{ $obs->hora_inicio }}
                 </td>
                 <td style="border: 1px solid black;">
                     {{ \Carbon\Carbon::parse($obs->fecha_fin)->format('d-m-Y') }}
                 </td>
                 <td style="border: 1px solid black;">
-                    {{ \Carbon\Carbon::parse($obs->hora_fin)->format('H:m:s') }}
+                    {{ $obs->hora_fin }}
                 </td>
                 <td style="border: 1px solid black;">{{ $obs->estado }}</td>                
             </tr>
