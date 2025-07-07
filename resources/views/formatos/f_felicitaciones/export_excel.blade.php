@@ -1,7 +1,7 @@
 <table>
     <thead>
         <tr>
-            <th colspan="10" style="text-align:center; text-size: 24px; font-weight: bold;">FORMATO LIBRO DE FELICITACIONES  CENTRO MAC - {{ $name_mac }}</th>
+            <th colspan="11" style="text-align:center; text-size: 24px; font-weight: bold;">FORMATO LIBRO DE FELICITACIONES  CENTRO MAC - {{ $name_mac }}</th>
         </tr>
     </thead>
 </table>
@@ -17,6 +17,7 @@
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; text-align:center; ">ASESOR(A)</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; text-align:center; ">CUIDADANO(A)</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; text-align:center; ">DOCUMENTO</th>
+            <th style="color: white; border: 1px solid black; background-color: #0B22B4; text-align:center; ">CORREO DEL CUIDADANO</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; text-align:center; ">DESCRIPCION</th>
             <th style="color: white; border: 1px solid black; background-color: #0B22B4; text-align:center; ">REGISTRADO POR</th>
         </tr>
@@ -32,6 +33,7 @@
                 <td style="border: 1px solid black">{{ $q->ASESOR }}</td>
                 <td style="border: 1px solid black">{{ $q->NOMBREU }}</td>
                 <td style="border: 1px solid black">{{ $q->DOCUMENTO }}</td>
+                <td style="border: 1px solid black">{{ $q->R_CORREO }}</td>
                 <td style="border: 1px solid black; width: 250px;">{{ $q->R_DESCRIPCION }}</td>
                 <td style="border: 1px solid black">{{ $q->NOM_REGISTRA}}</td>
             </tr>

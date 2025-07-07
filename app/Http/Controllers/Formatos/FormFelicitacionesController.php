@@ -300,6 +300,7 @@ class FormFelicitacionesController extends Controller
             'FLF.R_ARCHIVO_NOM',
             'FLF.AÑO',
             'FLF.CORRELATIVO_MAC',
+            'FLF.R_CORREO',
         )
             ->leftJoin('M_PERSONAL AS MP', 'MP.IDPERSONAL', '=', 'FLF.IDPERSONAL')
             ->leftJoin('M_PERSONAL AS MPR', 'MPR.IDPERSONAL', '=', 'FLF.IDPER_REGISTRA')
