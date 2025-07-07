@@ -38,6 +38,45 @@
 </div><!--end row-->
 
 <section id="eval_cambio">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header" style="background-color:#132842">
+                    <h4 class="card-title text-white">Filtro de Búsqueda</h4>
+                </div><!--end card-header-->
+                <div class="card-body bootstrap-select-1">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="mb-3">Fecha desde:</label>
+                                <input type="date" name="fecha_desde" id="fecha_desde" class="form-control"
+                                    value="">
+                            </div>
+                        </div><!-- end col -->
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="mb-3">Fecha Hasta:</label>
+                                <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control"
+                                    value="">
+                            </div>
+                        </div><!-- end col -->
+                        <div class="col-md-4">
+                            <div class="form-group" style="margin-top: 2.6em">
+                                <button type="button" class="btn btn-info" id="filtro" onclick="execute_filter()"><i
+                                        class="fa fa-search" aria-hidden="true"></i> Buscar</button>
+                                <button class="btn btn-dark" id="limpiar"><i class="fa fa-undo" aria-hidden="true"></i>
+                                    Limpiar</button>
+                                <button type="button" class="btn btn-success" id="filtro" onclick="exec_data_excel()">
+                                        <i class="fa fa-file-excel-o" aria-hidden="true"></i>
+                                        Exportar
+                                    </button>                                
+                            </div>
+                        </div><!-- end col -->
+                    </div>
+                </div><!-- end card-body -->
+            </div> <!-- end card -->
+        </div> <!-- end col -->
+    </div> <!-- end row -->
     <div class="row" id="table_evalua">
         <div class="col-lg-12">
             <div class="card">
@@ -57,11 +96,6 @@
                         <div class="col-12 ">
                             <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal" onclick="btnAddFelicitacion()"><i class="fa fa-plus" aria-hidden="true"></i>
                                 Agregar Felicitación</button> 
-
-                            <button type="button" class="btn btn-success" id="filtro" onclick="exec_data_excel()">
-                                <i class="fa fa-file-excel-o" aria-hidden="true"></i>
-                                Exportar
-                            </button>
                         </div>
                     </div>
                     
@@ -130,11 +164,14 @@ $(document).ready(function() {
     });
 });
 
-function tabla_seccion( ) {
+function tabla_seccion(fecha_desde = '', fecha_hasta = '') {
     $.ajax({
         type: 'GET',
         url: "{{ route('formatos.f_felicitaciones.tablas.tb_index') }}", // Ruta que devuelve la vista en HTML
-        data: {},
+        data: {
+                    fecha_desde: fecha_desde,
+                    fecha_hasta: fecha_hasta
+                },
         beforeSend: function () {
             document.getElementById("table_data").innerHTML = '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
         },
@@ -144,6 +181,50 @@ function tabla_seccion( ) {
     });
 }
 
+$("#limpiar").on("click", function(e) {
+    e.preventDefault();
+    $('#fecha_desde, #fecha_hasta').val('');
+    tabla_seccion();
+});
+
+
+var execute_filter = () => {
+    var fecha_desde = $('#fecha_desde').val();
+    var fecha_hasta = $('#fecha_hasta').val();
+    // var proc_data = "fecha="+fecha+"&entidad="+entidad+"$estado="+estado;
+    if (!fecha_desde || !fecha_hasta) {
+      alert('Por favor selecciona rango de fechas.');
+      return;
+    }
+    // console.log(proc_data);
+
+    $.ajax({
+        type: 'get',
+        url: "{{ route('formatos.f_felicitaciones.tablas.tb_index') }}",
+        dataType: "",
+        data: {
+            fecha_desde: fecha_desde,
+            fecha_hasta: fecha_hasta
+        },
+        beforeSend: function() {
+            document.getElementById("filtro").innerHTML =
+                '<i class="fa fa-spinner fa-spin"></i> Buscando';
+            document.getElementById("filtro").style.disabled = true;
+        },
+        success: function(data) {
+            document.getElementById("filtro").innerHTML = '<i class="fa fa-search"></i> Buscar';
+            document.getElementById("filtro").style.disabled = false;
+            tabla_seccion(fecha_desde, fecha_hasta);
+        },
+        error: function(xhr, status, error) {
+            console.log("error");
+            console.log('Error:', error);
+        }
+    });
+
+    // console.log('Fecha fecha: '+fecha,'Fecha Fin: ' +fechaFin,'Dependencia: ' +dependencia,'Estado: '+estado,'Usuario OEAS: '+us_oeas);
+    //table_asistencia(fecha, entidad, estado);
+}
 
 function btnAddFelicitacion(){
 
@@ -344,21 +425,22 @@ function btnElimnarFelicitacion(idfelicitacion){
 /****************************************************************************** EXCEL ************************************************************************/
 
 function exec_data_excel(){
+    const fecha_desde = $('#fecha_desde').val();
+    const fecha_hasta = $('#fecha_hasta').val();
 
-    // Definimos la vista dende se enviara
-    var link_up = "{{ route('formatos.f_felicitaciones.export_excel') }}";
+    if (!fecha_desde || !fecha_hasta) {
+      alert('Por favor selecciona rango de fechas.');
+      return;
+    }
 
-    // Crear la URL con las variables como parámetros de consulta
-    var href = link_up;
-
-    console.log(href);
-
-    var blank = "_blank";
-
-    window.open(href);
-
+    const base = "{{ route('formatos.f_felicitaciones.export_excel') }}";
+    
+    const href = `${base}`
+                + `?fecha_desde=${encodeURIComponent(fecha_desde)}`
+                + `&fecha_hasta=${encodeURIComponent(fecha_hasta)}`;
+    
+    window.open(href, '_blank');
 }
-
 
 </script>
 

@@ -65,8 +65,14 @@ class FormFelicitacionesController extends Controller
                     $query->where('FLF.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
                 }
             })
+            ->when($request->filled('fecha_desde') && $request->filled('fecha_hasta'), function($q) use ($request) {
+                $q->whereDate('FLF.R_FECHA', '>=', $request->fecha_desde)
+                  ->whereDate('FLF.R_FECHA', '<=', $request->fecha_hasta);
+            })
             ->orderBy('FLF.CORRELATVIO', 'desc')
             ->get();
+
+            // dd($query->count());
 
         return view('formatos.f_felicitaciones.tablas.tb_index', compact('query'));
     }
@@ -301,9 +307,19 @@ class FormFelicitacionesController extends Controller
             ->leftJoin('D_PERSONAL_TIPODOC AS DPT', 'DPT.IDTIPO_DOC', '=', 'FLF.IDTIPO_DOC')
             ->leftJoin('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'FLF.IDENTIDAD')
             ->where('FLF.FLAG', 1)
+            ->where(function ($query) {
+                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+                    $query->where('FLF.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                }
+            })
+            ->when($request->filled('fecha_desde') && $request->filled('fecha_hasta'), function($q) use ($request) {
+                $q->whereDate('FLF.R_FECHA', '>=', $request->fecha_desde)
+                  ->whereDate('FLF.R_FECHA', '<=', $request->fecha_hasta);
+            })
             ->orderBy('FLF.CORRELATVIO', 'desc')
             ->get();
 
+        // dd($query->count());
         $name_mac = $this->centro_mac()->name_mac;
 
         $export = Excel::download(new FelicitacionExport($query, $name_mac), 'FORMATO LIBRO DE FELICITACIONES  CENTRO MAC - ' . $this->centro_mac()->name_mac . '.xlsx');
