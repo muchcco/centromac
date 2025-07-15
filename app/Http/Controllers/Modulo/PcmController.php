@@ -418,9 +418,9 @@ class PcmController extends Controller
                     }
                 })
                 ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
-                ->whereIn('DPC.IDCARGO_PERSONAL', [1, 2, 3, 4, 5])
+                // ->whereIn('DPC.IDCARGO_PERSONAL', [1, 2, 3, 4, 5])
                 ->orderBy('MCM.NOMBRE_MAC', 'asc')
-                ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')
+                ->orderBy('ME.NOMBRE_ENTIDAD', 'asc')                
                 ->get();
         } elseif ($tipo == 2) {
         }
