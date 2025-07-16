@@ -48,7 +48,7 @@ class ObservacionController extends Controller
             $query->where('idcentro_mac', $user->idcentro_mac);
         }
 
-        $observaciones = $query->get();
+        $observaciones = $query->orderBy('fecha_observacion', 'desc')->get();
         //dd($observaciones);
         return view('observacion.tablas.tb_index', compact('observaciones'));
     }
@@ -246,6 +246,7 @@ class ObservacionController extends Controller
     {
         $observaciones = Observacion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac'])
             ->where('idcentro_mac', auth()->user()->idcentro_mac)
+            ->orderBy('fecha_observacion', 'desc')
             ->get();
 
         $nombreMac = auth()->user()->centroMac->nombre_mac ?? 'Centro MAC';
