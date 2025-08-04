@@ -76,10 +76,14 @@ class ItineranteController extends Controller
 
         if (!in_array($userCentroMac, $allowedCentrosMac)) {
             // Obtener el personal junto con sus nombres completos
-            $personal = DB::table('m_personal')
-                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-                ->where('IDMAC', auth()->user()->idcentro_mac)
-                // Filtrar por el centro MAC del usuario autenticado
+            $personal = DB::table('d_personal_mac as dpm')
+                ->join('m_personal as p', 'p.idpersonal', '=', 'dpm.idpersonal')
+                ->where('dpm.idcentro_mac', $userCentroMac)
+                ->where('dpm.status', 1)   // Personal asignado activamente
+                ->where('p.flag', 1)       // Personal activo
+                ->select('p.num_doc', DB::raw("CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT) AS nombre_completo"))
+                ->distinct()
+                ->orderByRaw("CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT)")
                 ->get();
         } else {
             // Obtener el personal junto con sus nombres completos
@@ -180,9 +184,18 @@ class ItineranteController extends Controller
                 ->get();
 
             // Obtener la lista de personal del centro MAC del usuario autenticado
-            $personal = DB::table('m_personal')
-                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-                ->where('IDMAC', auth()->user()->idcentro_mac)
+            $personal = DB::table('d_personal_mac as dpm')
+                ->join('m_personal as p', 'p.idpersonal', '=', 'dpm.idpersonal')
+                ->where('dpm.idcentro_mac', auth()->user()->idcentro_mac)
+                ->where('dpm.status', 1)
+                ->where('p.flag', 1)
+                ->select(
+                    'p.num_doc',
+                    'p.NOMBRE', // necesario para evitar error SQL
+                    DB::raw("CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT) AS nombre_completo")
+                )
+                ->distinct()
+                ->orderBy('p.NOMBRE', 'asc')
                 ->get();
 
             // Renderizar la vista con los datos obtenidos

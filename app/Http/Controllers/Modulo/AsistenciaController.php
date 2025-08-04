@@ -1044,7 +1044,7 @@ class AsistenciaController extends Controller
                     $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $mac);
                 }
             })
-            ->where('M_PERSONAL.FLAG', 1)
+           // ->where('M_PERSONAL.FLAG', 1)
             ->orderBy('M_ENTIDAD.ABREV_ENTIDAD', 'ASC')
             ->get();
 
