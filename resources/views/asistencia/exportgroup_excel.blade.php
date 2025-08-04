@@ -161,6 +161,8 @@
         <thead style="background: #3D61B2; color:#fff;">
             <tr style="border: 1px solid black; color: #fff;">
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">N°</th>
+                <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4;">Centro MAC
+                </th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Entidad
                 </th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">DATOS DEL
@@ -172,15 +174,19 @@
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">DNI</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Fecha</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Hora de
-                    <br />Ingreso</th>
+                    <br />Ingreso
+                </th>
                 <th colspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; "
                     class="text-center">Refrigerio</th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Hora de
-                    <br />Salida</th>
+                    <br />Salida
+                </th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Ingreso
-                    <br />programado</th>
+                    <br />programado
+                </th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Salida
-                    <br />Programada</th>
+                    <br />Programada
+                </th>
                 <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">
                     Observación</th>
             </tr>
@@ -198,6 +204,7 @@
                 @endphp
                 <tr>
                     <th style="border: 1px solid black;">{{ $i + 1 }}</th>
+                    <th style="border: 1px solid black;">{{ $q->NOMBRE_MAC }}</th>
                     <th style="border: 1px solid black;">{{ $q->ABREV_ENTIDAD }}</th>
                     <th style="border: 1px solid black;">{{ $q->NOMBREU }}</th>
                     <th style="border: 1px solid black;">Asesor de Servicio</th>
@@ -238,10 +245,10 @@
                         @endif
                         @if ($q->contador_obs > 0)
                             <ul style="margin:0; padding-left:1em;">
-                                @foreach(explode(';', $q->observaciones) as $obs)
-                                @if(trim($obs) !== '')
-                                    <li>> {{ $obs }}</li>
-                                @endif
+                                @foreach (explode(';', $q->observaciones) as $obs)
+                                    @if (trim($obs) !== '')
+                                        <li>> {{ $obs }}</li>
+                                    @endif
                                 @endforeach
                             </ul>
                         @endif
