@@ -75,7 +75,7 @@ class PersonalModuloController extends Controller
             $personal = DB::table('d_personal_mac as dpm')
                 ->join('m_personal as p', 'p.idpersonal', '=', 'dpm.idpersonal')
                 ->where('dpm.idcentro_mac', $userCentroMac)
-                ->where('dpm.status', 1)
+                //->where('dpm.status', 1)
                 ->where('p.flag', 1)
                 ->select(
                     'p.num_doc',
