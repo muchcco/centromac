@@ -284,4 +284,30 @@ class OcupabilidadController extends Controller
             'spHabiles'  => $spHabiles
         ]);
     }
+    public function tb_index_resumen(Request $request)
+    {
+        $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
+        $anio  = $request->año ?: date('Y');
+        $mes   = str_pad($request->mes ?: date('m'), 2, '0', STR_PAD_LEFT);
+
+        $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth()->toDateString();
+        $fechaFin    = Carbon::create($anio, $mes, 1)->endOfMonth()->toDateString();
+
+        $resultados = collect(
+            DB::select("CALL db_centros_mac.SP_RESUMEN_ASIST_HABILES_MODULO(?, ?, ?)", [
+                $idmac,
+                $fechaInicio,
+                $fechaFin
+            ])
+        );
+
+        $nombreMac = optional(DB::table('M_CENTRO_MAC')->where('IDCENTRO_MAC', $idmac)->first())->NOMBRE_MAC ?? 'MAC';
+
+        return view('ocupabilidad.tablas.tb_index_resumen', [
+            'nombreMac'  => $nombreMac,
+            'anio'       => $anio,
+            'mes'        => $mes,
+            'resultados' => $resultados,
+        ]);
+    }
 }

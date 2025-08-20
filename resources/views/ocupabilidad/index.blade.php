@@ -35,9 +35,18 @@
                     <div class="row">
                         <div class="col-md-5 border-end">
                             <table class="table table-bordered">
-                                <tr><th class="text-center" style="background:#198754">≥ 95 % – 100 %</th><td>Cumple ANS</td></tr>
-                                <tr><th class="text-center" style="background:#ffc107">&gt; 84 % – &lt; 95 %</th><td>Cerca de cumplir</td></tr>
-                                <tr><th class="text-center" style="background:#dc3545">≤ 84 %</th><td>No cumple ANS</td></tr>
+                                <tr>
+                                    <th class="text-center" style="background:#198754">≥ 95 % – 100 %</th>
+                                    <td>Cumple ANS</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-center" style="background:#ffc107">&gt; 84 % – &lt; 95 %</th>
+                                    <td>Cerca de cumplir</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-center" style="background:#dc3545">≤ 84 %</th>
+                                    <td>No cumple ANS</td>
+                                </tr>
                             </table>
                         </div>
                     </div>
@@ -77,8 +86,7 @@
                             <label class="mb-3">Mes:</label>
                             <select id="mes" name="mes" class="form-select">
                                 <option value="" disabled selected>-- Seleccione --</option>
-                                @foreach (['01'=>'Enero','02'=>'Febrero','03'=>'Marzo','04'=>'Abril','05'=>'Mayo','06'=>'Junio',
-                                           '07'=>'Julio','08'=>'Agosto','09'=>'Setiembre','10'=>'Octubre','11'=>'Noviembre','12'=>'Diciembre'] as $val=>$txt)
+                                @foreach (['01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril', '05' => 'Mayo', '06' => 'Junio', '07' => 'Julio', '08' => 'Agosto', '09' => 'Setiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'] as $val => $txt)
                                     <option value="{{ $val }}">{{ $txt }}</option>
                                 @endforeach
                             </select>
@@ -143,31 +151,55 @@
         /* Buscar */
         function execute_filter() {
             const mac = $('#mac').val();
-            const mes = $('#mes').val();
-            const año = $('#año').val();
+            const mes = parseInt($('#mes').val(), 10);
+            const año = parseInt($('#año').val(), 10);
 
             if (!mac || !mes || !año) {
                 alert('Seleccione MAC, Mes y Año.');
                 return;
             }
 
-            /* decidir ruta */
-            const usaSP = (año == 2025 && parseInt(mes,10) >= 1);
-            const url   = usaSP
-                ? "{{ route('ocupabilidad.tablas.tb_index_sp') }}"
-                : "{{ route('ocupabilidad.tablas.tb_index') }}";
+            let url = "{{ route('ocupabilidad.tablas.tb_index') }}"; // default: otros años
+
+            if (año === 2025) {
+                if (mes < 8) {
+                    // Enero a Julio 2025 → resumen
+                    url = "{{ route('ocupabilidad.tablas.tb_index_resumen') }}";
+                } else {
+                    // Agosto a Diciembre 2025 → tb_index_sp
+                    url = "{{ route('ocupabilidad.tablas.tb_index_sp') }}";
+                }
+            }
 
             $.ajax({
                 type: 'GET',
                 url: url,
-                data: { mac: mac, mes: mes, año: año },
-                beforeSend: () => $('#filtro').html('<i class="fa fa-spinner fa-spin"></i> Buscando').prop('disabled', true),
-                success: res => { $('#filtro').html('Buscar').prop('disabled', false); $('#table_data').html(res); },
-                error:  () => { alert('Error al filtrar.'); $('#filtro').html('Buscar').prop('disabled', false); }
+                data: {
+                    mac: mac,
+                    mes: mes,
+                    año: año
+                },
+                beforeSend: () => {
+                    $('#filtro')
+                        .html('<i class="fa fa-spinner fa-spin"></i> Buscando')
+                        .prop('disabled', true);
+                },
+                success: res => {
+                    $('#filtro').html('<i class="fa fa-search"></i> Buscar').prop('disabled', false);
+                    $('#table_data').html(res);
+                },
+                error: () => {
+                    alert('Error al filtrar.');
+                    $('#filtro').html('<i class="fa fa-search"></i> Buscar').prop('disabled', false);
+                }
             });
         }
 
         /* Limpiar */
-        const clear_filter = () => { $('#mes').val(''); $('#año').val(''); $('#table_data').empty(); };
+        const clear_filter = () => {
+            $('#mes').val('');
+            $('#año').val('');
+            $('#table_data').empty();
+        };
     </script>
 @endsection

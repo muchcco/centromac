@@ -74,19 +74,30 @@ class PuntualidadController extends Controller
 
         // Crear un array con los nombres de los meses
         $meses = [
+            '1' => 'Enero',
             '01' => 'Enero',
+            '2' => 'Febrero',
             '02' => 'Febrero',
+            '3' => 'Marzo',
             '03' => 'Marzo',
+            '4' => 'Abril',
             '04' => 'Abril',
+            '5' => 'Mayo',
             '05' => 'Mayo',
+            '6' => 'Junio',
             '06' => 'Junio',
+            '7' => 'Julio',
             '07' => 'Julio',
+            '8' => 'Agosto',
             '08' => 'Agosto',
+            '9' => 'Septiembre',
             '09' => 'Septiembre',
             '10' => 'Octubre',
             '11' => 'Noviembre',
             '12' => 'Diciembre',
         ];
+        $mesNombre = $meses[$fecha_mes];
+
 
         // Convertir el número del mes a su nombre correspondiente
         $mesNombre = $meses[$fecha_mes];  // Esto convertirá el número del mes al nombre en letras
@@ -198,4 +209,30 @@ class PuntualidadController extends Controller
 
         // Retornar la vista con los días y sus módulos
         return view('puntualidad.tablas.tb_index', compact('mesNombre', 'nombreMac', 'dias', 'modulos', 'numeroDias', 'fecha_año', 'fecha_mes', 'feriados'));
-    }}
+    }
+    public function tb_index_sp(Request $request)
+    {
+        $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
+        $anio  = $request->año ?: date('Y');
+        $mes   = str_pad($request->mes ?: date('m'), 2, '0', STR_PAD_LEFT);
+
+        $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth()->toDateString();
+        $fechaFin    = Carbon::create($anio, $mes, 1)->endOfMonth()->toDateString();
+
+        $resultados = collect(DB::select(
+            'CALL db_centros_mac.SP_RESUMEN_OCUPABILIDAD_PUNTUALIDAD_MODULO(?, ?, ?)',
+            [$idmac, $fechaInicio, $fechaFin]
+        ));
+
+        $nombreMac = optional(DB::table('M_CENTRO_MAC')
+            ->where('IDCENTRO_MAC', $idmac)
+            ->first())->NOMBRE_MAC ?? 'MAC';
+
+        return view('puntualidad.tablas.tb_index_sp', [
+            'resultados' => $resultados,
+            'anio'       => $anio,
+            'mes'        => $mes,
+            'nombreMac'  => $nombreMac,
+        ]);
+    }
+}

@@ -394,11 +394,12 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/tablas/tb_index', [OcupabilidadController::class, 'tb_index'])->name('tablas.tb_index');
         Route::get('/tablas/sp', [OcupabilidadController::class, 'tb_index_sp'])->name('tablas.tb_index_sp');
+        Route::get('/tablas/tb_index_resumen', [OcupabilidadController::class, 'tb_index_resumen'])->name('tablas.tb_index_resumen');
     });
     Route::get('reporte/ocupabilidad', [ReporteOcupabilidadController::class, 'index'])->name('reporte.ocupabilidad.index');
     Route::get('reporte/ocupabilidad/tablas', [ReporteOcupabilidadController::class, 'tb_index'])->name('reporte.ocupabilidad.tablas.tb_index');
     Route::get('reporte/ocupabilidad/tablas_all', [ReporteOcupabilidadController::class, 'tb_index_all'])->name('reporte.ocupabilidad.tablas.tb_index_all');
-   // Route::get('reporte/ocupar/export', [ReporteOcupabilidadController::class, 'export_excel'])->name('reporte.ocupabilidad.export_excel');
+    // Route::get('reporte/ocupar/export', [ReporteOcupabilidadController::class, 'export_excel'])->name('reporte.ocupabilidad.export_excel');
     Route::get('reporte/ocupabilidad/export', [ReporteOcupabilidadController::class, 'exportExcel'])->name('reporte.ocupabilidad.export');
     Route::get('reporte/ocupabilidad/exportsp', [ReporteOcupabilidadController::class, 'exportExcelSP'])->name('reporte.ocupabilidad.export_sp');
 
@@ -408,6 +409,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/index', [PuntualidadController::class, 'index'])->name('index');
 
         Route::get('/tablas/tb_index', [PuntualidadController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::get('/tablas/tb_index_sp', [PuntualidadController::class, 'tb_index_sp'])->name('tablas.tb_index_sp');
     });
 
     /******************************************************   MODULO ************************************************************************/
