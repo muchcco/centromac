@@ -193,7 +193,7 @@
             data: {
                 mac: mac,
                 mes: mes,
-                año: año
+                anio: año 
             },
             beforeSend: function() {
                 $("#filtro").html('<i class="fa fa-spinner fa-spin"></i> Buscando').prop('disabled', true);

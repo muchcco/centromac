@@ -177,7 +177,7 @@
                 data: {
                     mac: mac,
                     mes: mes,
-                    año: año
+                    año: anio
                 },
                 beforeSend: () => {
                     $('#filtro')

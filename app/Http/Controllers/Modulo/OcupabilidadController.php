@@ -287,7 +287,7 @@ class OcupabilidadController extends Controller
     public function tb_index_resumen(Request $request)
     {
         $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
-        $anio  = $request->año ?: date('Y');
+        $anio  = $request->anio ?: date('Y');
         $mes   = str_pad($request->mes ?: date('m'), 2, '0', STR_PAD_LEFT);
 
         $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth()->toDateString();
