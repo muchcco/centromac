@@ -170,10 +170,10 @@
     // Función para aplicar los filtros
     function execute_filter() {
         var mac = parseInt($('#mac').val());
-        var mes = parseInt($('#mes').val(), 10); // asegurar número
-        var anio = parseInt($('#año').val());
+        var mes = $('#mes').val();
+        var año = parseInt($('#año').val());
 
-        if (!mac || !mes || !anio) {
+        if (!mac || !mes || !año) {
             alert("Por favor, seleccione todos los campos obligatorios: MAC, Mes y Año.");
             return;
         }
@@ -181,8 +181,10 @@
         // Decidir qué ruta usar
         let url = "{{ route('puntualidad.tablas.tb_index') }}"; // por defecto la manual
 
-        if (anio === 2025 && mes < 8) { // 👈 ahora usamos "anio"
+        if (año === 2025 && mes < 8) {
             url = "{{ route('puntualidad.tablas.tb_index_sp') }}"; // SP solo para enero-julio 2025
+        } else {
+            url = "{{ route('puntualidad.tablas.tb_index') }}"; // manual para agosto-diciembre 2025 y otros años
         }
 
         $.ajax({
@@ -191,7 +193,7 @@
             data: {
                 mac: mac,
                 mes: mes,
-                anio: anio // 👈 enviar como "anio"
+                año: año
             },
             beforeSend: function() {
                 $("#filtro").html('<i class="fa fa-spinner fa-spin"></i> Buscando').prop('disabled', true);

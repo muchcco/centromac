@@ -213,7 +213,7 @@ class PuntualidadController extends Controller
     public function tb_index_sp(Request $request)
     {
         $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
-        $anio  = $request->anio ?: date('Y');
+        $anio  = $request->año ?: date('Y');
         $mes   = str_pad($request->mes ?: date('m'), 2, '0', STR_PAD_LEFT);
 
         $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth()->toDateString();
