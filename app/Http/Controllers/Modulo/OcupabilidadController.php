@@ -294,7 +294,7 @@ class OcupabilidadController extends Controller
         $fechaFin    = Carbon::create($anio, $mes, 1)->endOfMonth()->toDateString();
 
         $resultados = collect(
-            DB::select("CALL db_centros_mac.SP_RESUMEN_ASIST_HABILES_MODULO(?, ?, ?)", [
+            DB::select("CALL db_centro_mac_reporte.SP_RESUMEN_ASIST_HABILES_MODULO(?, ?, ?)", [
                 $idmac,
                 $fechaInicio,
                 $fechaFin

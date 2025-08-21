@@ -220,7 +220,7 @@ class PuntualidadController extends Controller
         $fechaFin    = Carbon::create($anio, $mes, 1)->endOfMonth()->toDateString();
 
         $resultados = collect(DB::select(
-            'CALL db_centros_mac.SP_RESUMEN_OCUPABILIDAD_PUNTUALIDAD_MODULO(?, ?, ?)',
+            'CALL db_centro_mac_reporte.SP_RESUMEN_OCUPABILIDAD_PUNTUALIDAD_MODULO(?, ?, ?)',
             [$idmac, $fechaInicio, $fechaFin]
         ));
 
