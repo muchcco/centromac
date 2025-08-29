@@ -79,8 +79,8 @@ class ItineranteController extends Controller
             $personal = DB::table('d_personal_mac as dpm')
                 ->join('m_personal as p', 'p.idpersonal', '=', 'dpm.idpersonal')
                 ->where('dpm.idcentro_mac', $userCentroMac)
-               // ->where('dpm.status', 1)   // Personal asignado activamente
-                ->where('p.flag', 1)       // Personal activo
+                // ->where('dpm.status', 1)   // Personal asignado activamente
+                ->whereIn('p.flag', [1, 2, 3])      // Personal activo
                 ->select('p.num_doc', DB::raw("CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT) AS nombre_completo"))
                 ->distinct()
                 ->orderByRaw("CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT)")
@@ -188,7 +188,7 @@ class ItineranteController extends Controller
                 ->join('m_personal as p', 'p.idpersonal', '=', 'dpm.idpersonal')
                 ->where('dpm.idcentro_mac', auth()->user()->idcentro_mac)
                 //->where('dpm.status', 1)
-                ->where('p.flag', 1)
+                ->whereIn('p.flag', [1, 2, 3])
                 ->select(
                     'p.num_doc',
                     'p.NOMBRE', // necesario para evitar error SQL

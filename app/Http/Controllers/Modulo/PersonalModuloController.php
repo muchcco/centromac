@@ -76,7 +76,7 @@ class PersonalModuloController extends Controller
                 ->join('m_personal as p', 'p.idpersonal', '=', 'dpm.idpersonal')
                 ->where('dpm.idcentro_mac', $userCentroMac)
                 //->where('dpm.status', 1)
-                ->where('p.flag', 1)
+                ->whereIn('p.flag', [1, 2, 3])
                 ->select(
                     'p.num_doc',
                     'p.NOMBRE', // requerido por el ORDER BY + DISTINCT
@@ -221,7 +221,7 @@ class PersonalModuloController extends Controller
                     ->join('m_personal as p', 'p.idpersonal', '=', 'dpm.idpersonal')
                     ->where('dpm.idcentro_mac', $userCentroMac)
                     //->where('dpm.status', 1)
-                    ->where('p.flag', 1)
+                    ->whereIn('p.flag', [1, 2, 3])
                     ->select(
                         'p.num_doc',
                         'p.NOMBRE', // requerido por el ORDER BY + DISTINCT
