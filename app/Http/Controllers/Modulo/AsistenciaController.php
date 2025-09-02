@@ -110,13 +110,14 @@ class AsistenciaController extends Controller
             $allowedCentrosMac = [10, 12, 13, 14, 19];
             $userCentroMac = auth()->user()->idcentro_mac;
 
-            $personal = DB::table('m_personal')
+            $personal = DB::table('m_personal as p')
+                ->join('d_personal_mac as dpm', 'dpm.idpersonal', '=', 'p.idpersonal')
                 ->when(!in_array($userCentroMac, $allowedCentrosMac), function ($q) use ($userIdMac) {
-                    return $q->where('IDMAC', $userIdMac);
+                    return $q->where('dpm.idcentro_mac', $userIdMac);
                 }, function ($q) use ($allowedCentrosMac) {
-                    return $q->whereIn('IDMAC', $allowedCentrosMac);
+                    return $q->whereIn('dpm.idcentro_mac', $allowedCentrosMac);
                 })
-                ->where('NUM_DOC', $request->input('DNI'))
+                ->where('p.NUM_DOC', $request->input('DNI'))
                 ->first();
 
             if (!$personal) {
