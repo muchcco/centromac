@@ -119,7 +119,7 @@ class AsistenciaController extends Controller
                 })
                 ->where('p.NUM_DOC', $request->input('DNI'))
                 ->first();
-
+                
             if (!$personal) {
                 return response()->json([
                     'success' => false,
