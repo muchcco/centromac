@@ -181,7 +181,7 @@
         // Decidir qué ruta usar
         let url = "{{ route('puntualidad.tablas.tb_index') }}"; // por defecto la manual
 
-        if (año === 2025 && mes < 8) {
+        if (año === 2025 && mes < 9) {
             url = "{{ route('puntualidad.tablas.tb_index_sp') }}"; // SP solo para enero-julio 2025
         } else {
             url = "{{ route('puntualidad.tablas.tb_index') }}"; // manual para agosto-diciembre 2025 y otros años
