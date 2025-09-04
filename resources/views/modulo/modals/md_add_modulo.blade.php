@@ -12,10 +12,12 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">¿Es Administrativo?</label>
                     <div class="col-9">
-                        <!-- Establecemos el value para que sea "SI" cuando esté marcado y "NO" cuando no esté marcado -->
-                        <input type="checkbox" class="form-check-input" id="es_administrativo" value="SI"
+                        <!-- Select para "Es Administrativo" -->
+                        <select class="form-control" name="es_administrativo" id="es_administrativo"
                             onchange="toggleModuloNumber()">
-                        <label for="es_administrativo">Sí</label>
+                            <option value="SI">Sí</option>
+                            <option value="NO" selected>No</option>
+                        </select>
                     </div>
                 </div>
 
@@ -67,25 +69,19 @@
 
 <script>
     function toggleModuloNumber() {
-        var isAdministrativo = document.getElementById("es_administrativo").checked;
+        var isAdministrativo = document.getElementById("es_administrativo").value;
         var moduloInput = document.getElementById("nombre_modulo");
-        var administrativoValueInput = document.getElementById("es_administrativo_value");
 
-        if (isAdministrativo) {
-            // Si el checkbox está marcado (es administrativo), actualizar el valor del campo oculto a "SI"
-            moduloInput.value = "Administrativo"; // Asignar "Administrativo" al campo
-            moduloInput.disabled = true; // Deshabilitar el campo
-            administrativoValueInput.value = "SI"; // Enviar "SI"
+        if (isAdministrativo === "SI") {
+            moduloInput.value = "Administrativo"; // Valor fijo
+            moduloInput.disabled = true; // Deshabilitado
         } else {
-            // Si el checkbox no está marcado (no es administrativo), actualizar el valor del campo oculto a "NO"
-            moduloInput.disabled = false; // Habilitar el campo
-            moduloInput.value = ""; // Limpiar el valor del campo
-            administrativoValueInput.value = "NO"; // Enviar "NO"
+            moduloInput.disabled = false; // Se puede editar
+            moduloInput.value = ""; // Limpio para que el usuario escriba
         }
     }
 
     $(document).ready(function() {
-        // Llamar a la función cuando el formulario se cargue para inicializar el estado correcto
         toggleModuloNumber();
     });
 </script>

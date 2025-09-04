@@ -299,7 +299,7 @@ class OcupabilidadController extends Controller
                 $fechaInicio,
                 $fechaFin
             ])
-        );
+        )->sortBy('N_MODULO')->values();  // ordena y reindexa
 
         $nombreMac = optional(DB::table('M_CENTRO_MAC')->where('IDCENTRO_MAC', $idmac)->first())->NOMBRE_MAC ?? 'MAC';
 
