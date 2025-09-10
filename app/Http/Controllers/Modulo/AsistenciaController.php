@@ -119,7 +119,7 @@ class AsistenciaController extends Controller
                 })
                 ->where('p.NUM_DOC', $request->input('DNI'))
                 ->first();
-                
+
             if (!$personal) {
                 return response()->json([
                     'success' => false,
@@ -1267,8 +1267,12 @@ class AsistenciaController extends Controller
 
                     if ($idmac != 0) {
                         $join->where('MPM.IDCENTRO_MAC', '=', $idmac);
+                    } else {
+                        // Usamos el ID del MAC de la asistencia
+                        $join->whereColumn('MPM.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC');
                     }
                 })
+
                 ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
                 ->leftJoin('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
                 ->leftJoin('D_ASISTENCIA_OBSERVACION as DAO', function (JoinClause $join) {
