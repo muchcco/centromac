@@ -270,6 +270,14 @@
 
             {{--             <hr class="hr-dashed hr-menu">
  --}} <li class="menu-label mt-0">PILOTO</li>
+            @role('Supervisor|Coordinador|Especialista_TIC|Moderador|Administrador')
+                <li class="@if (Request::is('incumplimiento*')) mm-active @endif">
+                    <a href="{{ route('incumplimiento.index') }}"
+                        class="@if (Request::is('incumplimiento/index*')) active @endif">
+                        <i class="ti-control-record"></i><span>En prueba - Incumplimientos</span>
+                    </a>
+                </li>
+            @endrole
             {{-- Observaciones (solo para Supervisor, Coordinador, Especialista_TIC) --}}
             @role('Supervisor|Coordinador|Especialista_TIC|Moderador|Administrador')
                 <li class="@if (Request::is('observacion*')) mm-active @endif">

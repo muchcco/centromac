@@ -52,8 +52,7 @@ use App\Http\Controllers\Modulo\ObservacionInterrupcionController;
 use App\Http\Controllers\Modulo\InterrupcionController;
 use App\Http\Controllers\Modulo\ObservacionController;
 use App\Http\Controllers\Modulo\HorarioMacController;
-
-
+use App\Http\Controllers\Modulo\IncumplimientoController;
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
 Route::get('validar.html5', [PagesController::class, 'validar'])->name('validar');
@@ -358,6 +357,28 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/subsanar', [ObservacionController::class, 'subsanarGuardar'])->name('subsanar');
         Route::post('/modals/md_ver_observacion', [ObservacionController::class, 'ver'])->name('modals.md_ver_observacion');
         Route::get('/observacion/export-excel', [ObservacionController::class, 'export_excel'])->name('export_excel');
+    });
+    /******************************************************   INCUMPLIMIENTOS ************************************************************************/
+    // Rutas para la gestión de incumplimientos
+    Route::prefix('incumplimiento')->name('incumplimiento.')->group(function () {
+        Route::get('/index', [IncumplimientoController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [IncumplimientoController::class, 'tb_index'])->name('tablas.tb_index');
+
+        // Modales
+        Route::post('/modals/md_add_incumplimiento', [IncumplimientoController::class, 'create'])->name('modals.md_add_incumplimiento');
+        Route::post('/modals/md_edit_incumplimiento', [IncumplimientoController::class, 'edit'])->name('modals.md_edit_incumplimiento');
+        Route::post('/modals/md_ver_incumplimiento', [IncumplimientoController::class, 'ver'])->name('modals.md_ver_incumplimiento');
+
+        // CRUD
+        Route::post('/store', [IncumplimientoController::class, 'store'])->name('store');
+        Route::post('/update', [IncumplimientoController::class, 'update'])->name('update');
+        Route::post('/delete', [IncumplimientoController::class, 'destroy'])->name('delete');
+
+        // Cierre (solo perfil Monitor)
+        Route::post('/cerrar', [IncumplimientoController::class, 'cerrarGuardar'])->name('cerrar');
+
+        // Exportación
+        Route::get('/export-excel', [IncumplimientoController::class, 'export_excel'])->name('export_excel');
     });
 
 

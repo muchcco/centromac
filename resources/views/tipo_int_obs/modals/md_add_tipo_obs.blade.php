@@ -20,6 +20,7 @@
                             <option value="" selected>--Seleccione--</option>
                             <option value="OBSERVACIÓN">OBSERVACIÓN</option>
                             <option value="INTERRUPCIÓN">INTERRUPCIÓN</option>
+                            <option value="INCUMPLIMIENTO">INCUMPLIMIENTO</option>
                         </select>
                     </div>
                 </div>
@@ -32,6 +33,7 @@
                             <option value="A">A</option>
                             <option value="B">B</option>
                             <option value="C">C</option>
+                            <option value="I">I</option>
                         </select>
                     </div>
                 </div>

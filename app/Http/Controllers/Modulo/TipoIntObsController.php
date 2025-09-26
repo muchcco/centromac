@@ -41,8 +41,8 @@ class TipoIntObsController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'tipo'             => 'required|in:A,B,C',
-            'tipo_obs'         => 'required|in:INTERRUPCIÓN,OBSERVACIÓN',
+            'tipo'             => 'required|in:A,B,C,I',
+            'tipo_obs'         => 'required|in:INTERRUPCIÓN,OBSERVACIÓN,INCUMPLIMIENTO',
             'numeracion'       => 'nullable|integer',
             'nom_tipo_int_obs' => 'required|string|max:255',
             'descripcion'      => 'nullable|string|max:255',  // Nueva validación
@@ -104,8 +104,8 @@ class TipoIntObsController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id_tipo_int_obs'  => 'required|integer|exists:m_tipo_int_obs,id_tipo_int_obs',
-            'tipo'             => 'required|in:A,B,C',
-            'tipo_obs'         => 'required|in:INTERRUPCIÓN,OBSERVACIÓN',
+            'tipo'             => 'required|in:A,B,C,I',
+            'tipo_obs'         => 'required|in:INTERRUPCIÓN,OBSERVACIÓN,INCUMPLIMIENTO',
             'numeracion'       => 'nullable|integer',
             'nom_tipo_int_obs' => 'required|string|max:255',
             'descripcion'      => 'nullable|string|max:255',  // Nueva validación

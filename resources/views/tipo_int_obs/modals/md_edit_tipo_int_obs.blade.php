@@ -20,6 +20,8 @@
                                 OBSERVACIÓN</option>
                             <option value="INTERRUPCION" {{ $tipo->tipo_obs === 'INTERRUPCIÓN' ? 'selected' : '' }}>
                                 INTERRUPCIÓN</option>
+                            <option value="INCUMPLIMIENTO" {{ $tipo->tipo_obs === 'INCUMPLIMIENTO' ? 'selected' : '' }}>
+                                INCUMPLIMIENTO</option>
                         </select>
                     </div>
                 </div>
@@ -32,6 +34,7 @@
                             <option value="A" {{ $tipo->tipo === 'A' ? 'selected' : '' }}>A</option>
                             <option value="B" {{ $tipo->tipo === 'B' ? 'selected' : '' }}>B</option>
                             <option value="C" {{ $tipo->tipo === 'C' ? 'selected' : '' }}>C</option>
+                            <option value="I" {{ $tipo->tipo === 'I' ? 'selected' : '' }}>I</option>
                         </select>
                     </div>
                 </div>
