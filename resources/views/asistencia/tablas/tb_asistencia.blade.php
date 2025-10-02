@@ -17,32 +17,35 @@
     </thead>
     <tbody>
         @foreach ($datos as $i => $dato)
-            <tr>
+            @php
+                // Contar las horas no vacías
+                $horas = array_filter(
+                    [$dato->HORA_1, $dato->HORA_2, $dato->HORA_3, $dato->HORA_4],
+                    fn($h) => !is_null($h) && trim($h) !== '',
+                );
+                $numHoras = count($horas);
+                $claseRojo = $numHoras % 2 !== 0 ? 'text-danger fw-bold' : '';
+            @endphp
+
+            <tr class="{{ $claseRojo }}">
                 <td>{{ $i + 1 }}</td>
-                <td class="text-uppercase ">
-                    {{-- <a href="{{ route('asistencia.det_us', $dato->n_dni) }}">{{ $dato->nombreu }}</a> --}}
-                    <span >                        
-                        <a href="javascript:void(0);"
-                            class="d-flex justify-content-around align-items-start"
-                            data-dni="{{ $dato->n_dni }}"
-                            onclick="abrirModalAgregarObservacion(
-                                '{{ $dato->idpersonal }}',
-                                '{{ $dato->fecha_asistencia }}',
-                                '{{ $dato->n_dni }}',
-                                '{{ $dato->idmac }}'
-                            )">
-                            {{ $dato->nombreu }}
-
-                            @if($dato->contador_obs > 0)
-                                <span class="bandejTool text-dark"
-                                    data-tippy-content="Este usuario tiene ({{ $dato->contador_obs }}) observación(es)">
+                <td class="text-uppercase">
+                    <a href="javascript:void(0);" class="d-flex justify-content-around align-items-start"
+                        data-dni="{{ $dato->n_dni }}"
+                        onclick="abrirModalAgregarObservacion(
+                        '{{ $dato->idpersonal }}',
+                        '{{ $dato->fecha_asistencia }}',
+                        '{{ $dato->n_dni }}',
+                        '{{ $dato->idmac }}'
+                    )">
+                        {{ $dato->nombreu }}
+                        @if ($dato->contador_obs > 0)
+                            <span class="bandejTool text-dark"
+                                data-tippy-content="Este usuario tiene ({{ $dato->contador_obs }}) observación(es)">
                                 <i class="fa fa-comment"></i>
-                                </span>
-                            @endif
-                        </a>
-
-                    </span>
-                    
+                            </span>
+                        @endif
+                    </a>
                 </td>
                 <td>
                     <a href="javascript:void(0);"
@@ -57,16 +60,6 @@
                     </a>
                 </td>
                 <td class="text-uppercase">{{ $dato->ABREV_ENTIDAD }}</td>
-                {{--  <td>
-                    @if ($dato->mostrar == 'itinerante')
-                        {{ $dato->nombre_modulo }} (Itinerante)
-                    @elseif($dato->mostrar == 'fijo')
-                        {{ $dato->nombre_modulo }} (Fijo)
-                    @else
-                        <!-- Si no tiene el status "itinerante" o "fijo", no mostrar nada -->
-                        No disponible
-                    @endif
-                </td> --}}
                 <td>{{ $dato->NOMBRE_MAC }}</td>
                 <td>{{ \Carbon\Carbon::parse($dato->fecha_asistencia)->format('d-m-Y') }}</td>
                 <td>{{ $dato->HORA_1 }}</td>
@@ -75,8 +68,8 @@
                 <td>{{ $dato->HORA_4 }}</td>
                 <td>
                     <button class="btn btn-primary btn-sm"
-                        onclick="btnModalView('{{ $dato->n_dni }}', '{{ $dato->fecha_asistencia }}')">Ver completo
-                        (Hoy)
+                        onclick="btnModalView('{{ $dato->n_dni }}', '{{ $dato->fecha_asistencia }}')">
+                        Ver completo (Hoy)
                     </button>
                 </td>
             </tr>
@@ -91,6 +84,7 @@
             followCursor: true,
         });
         $('#table_asistencia').DataTable({
+            destroy: true,
             "responsive": true,
             "bLengthChange": true,
             "autoWidth": false,
@@ -235,23 +229,27 @@
         if (count > 0) {
             // Si ya existe, actualiza el tooltip y su contenido
             if ($icon.length) {
-            $icon.attr('data-tippy-content', `Este usuario tiene (${count}) observación(es)`);
-            $icon.find('i').off().tippy({ content: $icon.attr('data-tippy-content') });
+                $icon.attr('data-tippy-content', `Este usuario tiene (${count}) observación(es)`);
+                $icon.find('i').off().tippy({
+                    content: $icon.attr('data-tippy-content')
+                });
             } else {
-            // Si no existe, créalo y añádelo
-            $icon = $(`
+                // Si no existe, créalo y añádelo
+                $icon = $(`
                 <span class="bandejTool text-warning"
                     data-tippy-content="Este usuario tiene (${count}) observación(es)">
                 <i class="fa fa-comment"></i>
                 </span>
             `);
-            $link.append($icon);
-            tippy($icon[0], { allowHTML: true, followCursor: true });
+                $link.append($icon);
+                tippy($icon[0], {
+                    allowHTML: true,
+                    followCursor: true
+                });
             }
         } else {
             // Si no hay observaciones, elimina el icono
             $icon.remove();
         }
     }
-
 </script>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Modulo;
 
+use App\Exports\AsistenciaDetalleExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 
@@ -29,6 +30,7 @@ use Illuminate\Database\Query\JoinClause;
 
 class AsistenciaController extends Controller
 {
+
     private function centro_mac()
     {
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
@@ -52,7 +54,9 @@ class AsistenciaController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
+            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)
+            ->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -64,7 +68,102 @@ class AsistenciaController extends Controller
             ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idmac)
             ->get();
 
-        return view('asistencia.asistencia', compact('entidad', 'idmac', 'name_mac'));
+        // SOLO Administrador o Moderador pueden ver todos los MACs
+        $macs = [];
+        if (auth()->user()->hasRole(['Administrador', 'Moderador'])) {
+            $macs = DB::table('db_centros_mac.m_centro_mac')
+                ->select('idcentro_mac as id', 'nombre_mac as nom')
+                ->orderBy('nombre_mac')
+                ->get();
+        }
+
+        return view('asistencia.asistencia', compact('entidad', 'idmac', 'name_mac', 'macs'));
+    }
+
+    public function cerrarDia(Request $request)
+    {
+        try {
+            $fecha = $request->input('fecha');
+            $idmac = $request->input('idmac');
+            $user  = auth()->user();
+
+            // Ejecutar el SP de cierre/migración
+            DB::statement("CALL guardar_resumen_asistencia_dia(?, ?)", [$fecha, $idmac]);
+
+            // Guardar en log
+            DB::table('db_centros_mac.cierre_asistencia_log')->insert([
+                'tipo_cierre'   => 'DIA',
+                'fecha'         => $fecha,
+                'anio'          => Carbon::parse($fecha)->year,
+                'mes'           => Carbon::parse($fecha)->month,
+                'idmac'         => $idmac,
+                'user_id'       => $user->id,
+                'user_nombre'   => $user->name,
+                'fecha_registro' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "El día $fecha en el MAC $idmac se cerró correctamente."
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => "Error al cerrar el día: " . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function cerrarMes(Request $request)
+    {
+        $anio = $request->input('anio');
+        $mes = $request->input('mes');
+        $idmac = $request->input('idmac');
+
+        if (!$anio || !$mes) {
+            return response()->json(['success' => false, 'message' => 'Faltan parámetros (año o mes).']);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Determinar qué MACs cerrar
+            if (auth()->user()->hasRole('Administrador')) {
+                $macs = $idmac ? [$idmac] : DB::table('m_centro_mac')->pluck('idcentro_mac')->toArray();
+            } else {
+                $macs = [auth()->user()->idcentro_mac];
+            }
+
+            foreach ($macs as $mac) {
+                // Ejecutar SP de cierre
+                DB::statement("CALL guardar_resumen_asistencia(?, ?, ?)", [$anio, $mes, $mac]);
+
+                // Insertar log
+                DB::table('cierre_asistencia_log')->insert([
+                    'tipo_cierre'    => 'MES',
+                    'fecha'          => now()->toDateString(),
+                    'anio'           => $anio,
+                    'mes'            => $mes,
+                    'idmac'          => $mac,
+                    'user_id'        => auth()->id(),
+                    'user_nombre'    => auth()->user()->name,
+                    'fecha_registro' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => "Mes {$mes}-{$anio} cerrado correctamente."]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function md_cerrar_mes()
+    {
+        $html = view('asistencia.modals.md_cerrar_mes')->render();
+        return response()->json(['html' => $html]);
     }
 
     public function store_agregar_asistencia(Request $request)
@@ -334,6 +433,111 @@ class AsistenciaController extends Controller
         // dd($datos);
         return view('asistencia.tablas.tb_asistencia', compact('datos', 'conf'));
     }
+    public function verificarCierre(Request $request)
+    {
+        $fecha = $request->input('fecha');
+        $idmac = auth()->user()->idcentro_mac;
+
+        $existe = DB::table('db_centro_mac_reporte.asistencia_resumen')
+            ->where('idmac', $idmac)
+            ->whereDate('fecha_asistencia', $fecha)
+            ->exists();
+
+        return response()->json([
+            'cerrado' => $existe
+        ]);
+    }
+    public function revertirDia(Request $request)
+    {
+        $request->validate([
+            'fecha' => 'required|date',
+            'idmac' => 'required|integer'
+        ]);
+
+        try {
+            DB::statement("CALL SP_REVERTIR_ASISTENCIA_DIA(?, ?)", [
+                $request->fecha,
+                $request->idmac
+            ]);
+
+            return response()->json([
+                'ok' => true,
+                'msg' => "Se revirtió la asistencia del {$request->fecha} en el MAC #{$request->idmac}"
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'ok' => false,
+                'msg' => "Error: " . $e->getMessage()
+            ], 500);
+        }
+    }
+    public function mdRevertir(Request $request)
+    {
+        $macs = [];
+        if (auth()->user()->hasRole(['Administrador', 'Moderador'])) {
+            $macs = DB::table('db_centros_mac.m_centro_mac')
+                ->select('idcentro_mac as id', 'NOMBRE_MAC as nom')
+                ->orderBy('NOMBRE_MAC')
+                ->get();
+        }
+
+        return response()->json([
+            'html' => view('asistencia.modals.md_revertir', compact('macs'))->render()
+        ]);
+    }
+    public function tb_asistencia_resumen(Request $request)
+    {
+        // 1. Verificar a qué MAC pertenece el usuario
+        $us_id = auth()->user()->idcentro_mac;
+        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
+            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)
+            ->first();
+
+        $idmac = $user->IDCENTRO_MAC;
+        $name_mac = $user->NOMBRE_MAC;
+
+        // 2. Tomar la fecha solicitada (o actual)
+        $fecha = $request->fecha ?? date('Y-m-d');
+
+        // 3. Consultar directamente asistencia_resumen
+        $datos = DB::table('db_centro_mac_reporte.asistencia_resumen')
+            ->where('idmac', $idmac)
+            ->whereDate('fecha_asistencia', $fecha)
+            ->orderBy('nombre_modulo', 'asc')
+            ->get();
+
+        // 4. Procesar las horas (igual que en tb_asistencia)
+        foreach ($datos as $q) {
+            $horas = explode(',', $q->fecha_biometrico); // Separa las horas por coma
+            $num_horas = count($horas);
+
+            if ($num_horas == 1) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = null;
+                $q->HORA_3 = null;
+                $q->HORA_4 = null;
+            } elseif ($num_horas == 2) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = null;
+                $q->HORA_3 = null;
+                $q->HORA_4 = $horas[1];
+            } elseif ($num_horas == 3) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_3 = null;
+                $q->HORA_4 = $horas[2];
+            } elseif ($num_horas >= 4) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_3 = $horas[2];
+                $q->HORA_4 = $horas[3];
+            }
+        }
+
+        // 5. Retornar la vista del resumen
+        return view('asistencia.tablas.tb_asistencia_resumen', compact('datos'));
+    }
+
     public function md_moficicar_modulo(Request $request)
     {
         $num_doc = $request->input('num_doc');
@@ -2103,5 +2307,40 @@ class AsistenciaController extends Controller
                 'message' => "Error al migrar desde iclock_transaction: " . $e->getMessage()
             ], 500);
         }
+    }
+    public function exportgroup_excel_resumen(Request $request)
+    {
+        $mes  = $request->mes;
+        $anio = $request->año;
+        $idmac = $request->mac;
+
+        $query = DB::table('asistencia_resumen')
+            ->when($mes, fn($q) => $q->whereMonth('fecha_asistencia', $mes))
+            ->when($anio, fn($q) => $q->whereYear('fecha_asistencia', $anio))
+            ->when($idmac, fn($q) => $q->where('idmac', $idmac))
+            ->orderBy('fecha_asistencia', 'asc')
+            ->orderBy('nombreu', 'asc')
+            ->get();
+
+        foreach ($query as $q) {
+            $horas = explode(',', $q->fecha_biometrico ?? '');
+            $q->HORA_1 = $horas[0] ?? null;
+            $q->HORA_2 = $horas[1] ?? null;
+            $q->HORA_3 = $horas[2] ?? null;
+            $q->HORA_4 = $horas[3] ?? null;
+        }
+
+        $name_mac = ($idmac == 0)
+            ? 'TODOS LOS MACs'
+            : DB::table('m_centro_mac')->where('idcentro_mac', $idmac)->value('nombre_mac');
+
+        setlocale(LC_TIME, 'es_ES', 'es_PE', 'es');
+        $fecha = \Carbon\Carbon::create(null, $mes, 1);
+        $nombreMES = $fecha->formatLocalized('%B');
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\AsistenciaResumenExport($query, $name_mac, $nombreMES),
+            'REPORTE_RESUMEN_ASISTENCIA_' . $name_mac . '_' . $nombreMES . '.xlsx'
+        );
     }
 }

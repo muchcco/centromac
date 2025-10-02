@@ -62,6 +62,47 @@
 </div>
 <script>
     $(document).ready(function() {
+        $('#fecha1').on('change', function() {
+            const selectedDate = $(this).val();
+
+            if (!selectedDate) return;
+
+            // 1. Validar que no sea fecha futura
+            const today = new Date().toISOString().split("T")[0];
+            if (selectedDate > today) {
+                $('#fechaError').text("La fecha no puede ser posterior a hoy.")
+                    .show();
+                $(this).addClass('is-invalid');
+                $('#btnEnviarAsistenciatest').prop('disabled', true);
+                return;
+            }
+
+            // 2. Verificar si el día ya está cerrado
+            $.ajax({
+                url: "{{ route('asistencia.verificar_cierre') }}",
+                type: "GET",
+                data: {
+                    fecha: selectedDate
+                },
+                success: function(resp) {
+                    if (resp.cerrado) {
+                        $('#fechaError').text(
+                                "⚠️ Este día ya fue cerrado. No se pueden agregar asistencias."
+                                )
+                            .show();
+                        $('#fecha1').addClass('is-invalid');
+                        $('#btnEnviarAsistenciatest').prop('disabled', true);
+                    } else {
+                        $('#fechaError').hide();
+                        $('#fecha1').removeClass('is-invalid');
+                        $('#btnEnviarAsistenciatest').prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    console.error("Error al verificar cierre de asistencia.");
+                }
+            });
+        });
         // Al ingresar el DNI y completar los 8 dígitos, buscar el nombre
         $('#DNI').on('input', function() {
             const dni = $(this).val();
@@ -99,7 +140,7 @@
                     $('#fechaError').show(); // Mostrar mensaje de error
                     $(this).addClass('is-invalid'); // Cambiar color del campo a rojo
                     $('#btnEnviarAsistenciatest').prop('disabled',
-                    true); // Deshabilitar el botón de guardar
+                        true); // Deshabilitar el botón de guardar
 
                     // Limpiar el valor del campo de fecha
                     $(this).val('');
@@ -108,7 +149,7 @@
                     $('#fechaError').hide(); // Ocultar mensaje de error
                     $(this).removeClass('is-invalid'); // Quitar el color rojo del campo
                     $('#btnEnviarAsistenciatest').prop('disabled',
-                    false); // Habilitar el botón de guardar
+                        false); // Habilitar el botón de guardar
                 }
             });
         });

@@ -1,7 +1,7 @@
 <table class="table table-hover table-bordered table-striped" id="table_formato2">
     <thead class="tenca">
         <tr>
-            <th>MODULO</th>
+            <th>MODULOaaa</th>
             <th>ENTIDAD</th>
             <th>DIAS MARCADOS</th>
             <th>DIAS HABILES</th>

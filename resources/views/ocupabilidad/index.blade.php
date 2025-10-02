@@ -162,7 +162,7 @@
             let url = "{{ route('ocupabilidad.tablas.tb_index') }}"; // default: otros años
 
             if (año === 2025) {
-                if (mes < 9) {
+                if (mes < 10) {
                     // Enero a Julio 2025 → resumen
                     url = "{{ route('ocupabilidad.tablas.tb_index_resumen') }}";
                 } else {

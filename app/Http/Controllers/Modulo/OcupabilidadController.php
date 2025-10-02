@@ -104,7 +104,7 @@ class OcupabilidadController extends Controller
                     ->where('m_modulo.fechafin', '>=', $fechaInicio);
             })
             ->where('m_modulo.es_administrativo', 'NO')
-            ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
+            ->select('m_modulo.idmodulo', 'm_modulo.n_modulo', 'm_modulo.identidad', 'm_entidad.nombre_entidad', 'm_modulo.fechainicio', 'm_modulo.fechafin')
             ->orderBy('m_modulo.n_modulo')
             ->get();
 
@@ -227,7 +227,8 @@ class OcupabilidadController extends Controller
                 'm_modulo.n_modulo',
                 'm_entidad.nombre_entidad',
                 'm_modulo.fechainicio',
-                'm_modulo.fechafin'
+                'm_modulo.fechafin',
+                'm_modulo.identidad'
             )
             ->orderBy('m_modulo.n_modulo')
             ->get();

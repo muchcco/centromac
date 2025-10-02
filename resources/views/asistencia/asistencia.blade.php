@@ -126,6 +126,20 @@
                                     </button>
                                 @endif
                             @endrole
+                            @role('Administrador|Supervisor')
+                                <button class="btn btn-danger" onclick="cerrarDia()" id="btnCerrarDia">
+                                    <i class="fa fa-lock"></i> Cerrar Día
+                                </button>
+
+                                <button class="btn btn-dark" onclick="abrirModalCerrarMes()" id="btnCerrarMes">
+                                    <i class="fa fa-calendar"></i> Cerrar Mes
+                                </button>
+                            @endrole
+                            @role('Administrador|Especialista TIC|Especialista_TIC')
+                                <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
+                                    <i class="fa fa-undo"></i> Revertir Día
+                                </button>
+                            @endrole
                         </div>
                     </div>
                     <br />
@@ -191,25 +205,62 @@
                 $('.select2').select2();
             });
         });
+        const listaMacs = @json($macs);
 
         function tabla_seccion(fecha = '', entidad = '', estado = '') {
             $.ajax({
                 type: 'GET',
-                url: "{{ route('asistencia.tablas.tb_asistencia') }}", // Ruta que devuelve la vista en HTML
+                url: "{{ route('asistencia.verificar_cierre') }}",
                 data: {
-                    fecha: fecha,
-                    entidad: entidad,
-                    estado: estado
+                    fecha: fecha
                 },
-                beforeSend: function() {
-                    document.getElementById("table_data").innerHTML =
-                        '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... ';
-                },
-                success: function(data) {
-                    $('#table_data').html(data); // Inserta la vista en un contenedor en tu página
+                success: function(resp) {
+                    let urlTabla = resp.cerrado ?
+                        "{{ route('asistencia.tablas.tb_asistencia_resumen') }}" :
+                        "{{ route('asistencia.tablas.tb_asistencia') }}";
+
+                    // Mostrar / ocultar botones
+                    if (resp.cerrado) {
+                        $('#btnCerrarDia').hide();
+                        $('#btnCerrarMes').hide();
+                        $('button[onclick="btnAgregarAsistencia()"]').hide();
+                        $('button[onclick="btnAddAsistencia()"]').hide();
+                        $('button[onclick="btnAddAsistenciaCallao()"]').hide();
+                    } else {
+                        $('#btnCerrarDia').show();
+                        $('#btnCerrarMes').show();
+                        $('button[onclick="btnAgregarAsistencia()"]').show();
+                        $('button[onclick="btnAddAsistencia()"]').show();
+                        $('button[onclick="btnAddAsistenciaCallao()"]').show();
+                    }
+
+                    // Cargar tabla
+                    $.ajax({
+                        type: 'GET',
+                        url: urlTabla,
+                        data: {
+                            fecha: fecha,
+                            entidad: entidad,
+                            estado: estado
+                        },
+                        beforeSend: function() {
+                            $("#table_data").html(
+                                '<i class="fa fa-spinner fa-spin"></i> ESPERE LA TABLA ESTA CARGANDO... '
+                            );
+                        },
+                        success: function(data) {
+                            $('#table_data').html(data);
+                        }
+                    });
                 }
             });
         }
+
+        $(document).ready(function() {
+            const fechaInicial = $('#fecha').val();
+            tabla_seccion(fechaInicial);
+            $('.select2').select2();
+        });
 
         $("#limpiar").on("click", function(e) {
             console.log("adsda")
@@ -693,6 +744,177 @@
                     // Restaurar el botón después de la solicitud
                     document.getElementById("btnEnviarForm").innerHTML = 'Guardar';
                     document.getElementById("btnEnviarForm").disabled = false;
+                }
+            });
+        }
+
+        function cerrarDia() {
+            const fecha = $('#fecha').val();
+            const idmac = "{{ $idmac }}"; // ya lo tienes cargado en la vista
+
+            if (!fecha || !idmac) {
+                Swal.fire('Error', 'Debe seleccionar una fecha y un MAC válido.', 'error');
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: "Se cerrará la asistencia del día " + fecha,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, cerrar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch("{{ route('asistencia.cerrar_dia') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                fecha: fecha,
+                                idmac: idmac
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire('Éxito', data.message, 'success');
+                                tabla_seccion(fecha); // refrescar tabla
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+                        })
+                        .catch(err => {
+                            Swal.fire('Error', 'Hubo un problema en el cierre.', 'error');
+                        });
+                }
+            });
+        }
+
+        function btnRevertirDia() {
+            $.post("{{ route('asistencia.modals.md_revertir') }}", {
+                _token: "{{ csrf_token() }}"
+            }, function(data) {
+                $("#modal_show_modal").html(data.html);
+                $("#modal_show_modal").modal('show');
+            }, 'json');
+        }
+
+        function storeRevertir() {
+            const idmac = $('#rev-idmac').val();
+            const fecha = $('#rev-fecha').val();
+
+            if (!idmac || !fecha) {
+                Swal.fire('Error', 'Debe seleccionar MAC y fecha.', 'error');
+                return;
+            }
+
+            $.post("{{ route('asistencia.revertir_dia') }}", {
+                    idmac: idmac,
+                    fecha: fecha,
+                    _token: "{{ csrf_token() }}"
+                })
+                .done(resp => {
+                    if (resp.ok) {
+                        Toastify({
+                            text: resp.msg,
+                            duration: 4000,
+                            gravity: "top",
+                            position: "right",
+                            style: {
+                                background: "#198754"
+                            }
+                        }).showToast();
+                        $("#modal_show_modal").modal('hide');
+                        tabla_seccion(fecha);
+                    } else {
+                        Swal.fire('Error', resp.msg, 'error');
+                    }
+                })
+                .fail(xhr => {
+                    Swal.fire('Error', xhr.responseJSON?.msg || 'Error inesperado', 'error');
+                });
+        }
+
+        function abrirModalCerrarMes() {
+            $.post("{{ route('asistencia.modals.md_cerrar_mes') }}", {
+                _token: "{{ csrf_token() }}"
+            }, function(data) {
+                $("#modal_show_modal").html(data.html);
+                $("#modal_show_modal").modal('show'); // igual que los otros
+            }, 'json');
+        }
+
+
+        function confirmarCerrarMes() {
+            const anio = $('#cerrar-anio').val();
+            const mes = $('#cerrar-mes').val();
+            const hoy = new Date();
+            let mesAnterior = hoy.getMonth(); // 0=enero, 9=octubre → devuelve mes actual -1
+            let anioAnterior = hoy.getFullYear();
+
+            if (mesAnterior === 0) {
+                mesAnterior = 12;
+                anioAnterior -= 1;
+            }
+            if (!anio || !mes) {
+                Swal.fire('Error', 'Debe seleccionar un año y un mes.', 'error');
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: "Se cerrará todo el mes " + mes + "-" + anio,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, cerrar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar loader mientras se procesa
+                    Swal.fire({
+                        title: 'Cerrando mes...',
+                        text: 'Este proceso puede tardar un momento.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch("{{ route('asistencia.cerrar_mes') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                anio,
+                                mes
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Éxito',
+                                    text: data.message,
+                                    confirmButtonText: 'Aceptar'
+                                });
+
+                                $("#modal_show_modal").modal('hide');
+                                tabla_seccion();
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+                        })
+                        .catch(err => {
+                            Swal.fire('Error', 'Hubo un problema en el cierre de mes.', 'error');
+                        });
                 }
             });
         }

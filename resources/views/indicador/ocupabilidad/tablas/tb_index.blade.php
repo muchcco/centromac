@@ -50,6 +50,11 @@
                         $fechaActual = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->format('Y-m-d');
                         $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
                         $esFeriado = in_array($fechaActual, $feriados);
+                        // Reglas manuales adicionales de feriados
+                        if ($fechaActual === '2025-09-06' && $modulo->identidad == 6) {
+                            $esFeriado = true;
+                        }
+                        
                         $activo = $fechaActual >= $modulo->fechainicio && $fechaActual <= $modulo->fechafin;
                     @endphp
 

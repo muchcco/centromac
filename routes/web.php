@@ -171,7 +171,13 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/modals/md_moficicar_modulo', [AsistenciaController::class, 'md_moficicar_modulo'])->name('modals.md_moficicar_modulo');
         Route::post('/modals/md_add_dni_asistencia', [AsistenciaController::class, 'md_add_dni_asistencia'])->name('modals.md_add_dni_asistencia');
         Route::post('/modals/md_add_comment_user', [AsistenciaController::class, 'md_add_comment_user'])->name('modals.md_add_comment_user');
-
+        Route::post('/cerrar-dia', [AsistenciaController::class, 'cerrarDia'])->name('cerrar_dia');
+        Route::get('/verificar-cierre', [AsistenciaController::class, 'verificarCierre'])->name('verificar_cierre');
+        Route::get('/tablas/tb_asistencia_resumen', [AsistenciaController::class, 'tb_asistencia_resumen'])->name('tablas.tb_asistencia_resumen');
+        Route::post('/cerrar-mes', [AsistenciaController::class, 'cerrarMes'])->name('cerrar_mes');
+        Route::post('/revertir-dia', [AsistenciaController::class, 'revertirDia'])->name('revertir_dia');
+        Route::post('/modals/md_revertir', [AsistenciaController::class, 'mdRevertir'])->name('modals.md_revertir');
+        Route::post('/modals/md_cerrar_mes', [AsistenciaController::class, 'md_cerrar_mes'])->name('modals.md_cerrar_mes');
         //POR ENTIDAD
         Route::get('/det_entidad.html/{mac}', [AsistenciaController::class, 'det_entidad'])->name('det_entidad');
         Route::get('/table/tb_det_entidad', [AsistenciaController::class, 'tb_det_entidad'])->name('tablas.tb_det_entidad');
@@ -188,6 +194,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/exportgroup_excel', [AsistenciaController::class, 'exportgroup_excel'])->name('exportgroup_excel');
         Route::get('/exportgroup_excel_pr', [AsistenciaController::class, 'exportgroup_excel_pr'])->name('exportgroup_excel_pr');
         Route::get('/exportgroup_excel_general', [AsistenciaController::class, 'exportgroup_excel_general'])->name('exportgroup_excel_general');
+        Route::get('/exportgroup_excel_resumen', [AsistenciaController::class, 'exportgroup_excel_resumen'])->name('asistencia.exportgroup_excel_resumen');
+        Route::get('/export-detalle', [AsistenciaController::class, 'exportDetalle'])->name('export_detalle');
         // EXPORT DATA HUANUCO
         Route::post('/migrar-datos', [AsistenciaController::class, 'migrarDatos'])->name('migrar.datos');
 

@@ -43,7 +43,8 @@
             @for ($i = 1; $i <= $numeroDias; $i++)
                 <th style="color: white; border: 1px solid black; background-color: #0B22B4;">{{ $i }}</th>
             @endfor
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4;">OBSERVACIONES O COMENTARIOS</th>
+            <th style="color: white; border: 1px solid black; background-color: #0B22B4;">OBSERVACIONES O COMENTARIOS
+            </th>
         </tr>
     </thead>
 
@@ -58,6 +59,11 @@
                         $fechaActual = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->format('Y-m-d');
                         $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
                         $esFeriado = in_array($fechaActual, $feriados);
+                        // Reglas manuales adicionales de feriados
+                        if ($fechaActual === '2025-09-06' && $modulo->identidad == 6) {
+                            $esFeriado = true;
+                        }
+                        
                         $activo = $fechaActual >= $modulo->fechainicio && $fechaActual <= $modulo->fechafin;
                     @endphp
 
@@ -81,7 +87,8 @@
                         </td>
                     @endif
                 @endfor
-                <td style="border: 1px solid #2F75B5">{{ $contadorSi }}</td> <!-- Mostrar el contador de "SI" en la columna de observaciones -->
+                <td style="border: 1px solid #2F75B5">{{ $contadorSi }}</td>
+                <!-- Mostrar el contador de "SI" en la columna de observaciones -->
             </tr>
         @empty
             <tr>
