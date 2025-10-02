@@ -126,7 +126,7 @@
                                     </button>
                                 @endif
                             @endrole
-                            @role('Administrador|Supervisor')
+                            @role('Administrador|Supervisor|Especialista TIC|Especialista_TIC')
                                 <button class="btn btn-danger" onclick="cerrarDia()" id="btnCerrarDia">
                                     <i class="fa fa-lock"></i> Cerrar Día
                                 </button>
@@ -135,7 +135,7 @@
                                     <i class="fa fa-calendar"></i> Cerrar Mes
                                 </button>
                             @endrole
-                            @role('Administrador|Especialista TIC|Especialista_TIC')
+                            @role('Administrador')
                                 <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
                                     <i class="fa fa-undo"></i> Revertir Día
                                 </button>
