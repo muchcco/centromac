@@ -79,18 +79,24 @@ class PersonalModuloController extends Controller
                 ->whereIn('p.flag', [1, 2, 3])
                 ->select(
                     'p.num_doc',
-                    'p.NOMBRE', // requerido por el ORDER BY + DISTINCT
-                    DB::raw("CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT) AS nombre_completo")
+                    DB::raw("MAX(CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT)) AS nombre_completo")
                 )
-                ->distinct()
-                ->orderByRaw("CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT)")
+                ->groupBy('p.num_doc')
+                ->orderBy('nombre_completo')
                 ->get();
         } else {
-            // Obtener el personal junto con sus nombres completos
-            $personal = DB::table('m_personal')
-                ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-                ->whereIn('IDMAC', [10, 12, 13, 14, 19])
-                // Filtrar por el centro MAC del usuario autenticado
+            $personal = DB::table('d_personal_mac as dpm')
+                ->join('m_personal as p', 'p.idpersonal', '=', 'dpm.idpersonal')
+                ->whereIn('dpm.idcentro_mac', [10, 12, 13, 14, 19])
+                //->where('dpm.status', 1)
+                ->whereIn('p.flag', [1, 2, 3])
+                ->whereRaw("TRIM(p.NOMBRE) <> ''") // ❌ excluye nombres en blanco
+                ->select(
+                    'p.num_doc',
+                    DB::raw("MAX(CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT)) AS nombre_completo")
+                )
+                ->groupBy('p.num_doc')
+                ->orderBy('nombre_completo')
                 ->get();
         }
 
@@ -231,14 +237,21 @@ class PersonalModuloController extends Controller
                     ->orderByRaw("CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT)")
                     ->get();
             } else {
-                // Obtener el personal junto con sus nombres completos
-                $personal = DB::table('m_personal')
-                    ->select('num_doc', DB::raw("CONCAT(NOMBRE, ' ', APE_PAT, ' ', APE_MAT) AS nombre_completo"))
-                    ->whereIn('IDMAC', [10, 12, 13, 14, 19])
-                    // Filtrar por el centro MAC del usuario autenticado
+                // Obtener el personal junto con sus nombres completos (solo centros permitidos)
+                $personal = DB::table('d_personal_mac as dpm')
+                    ->join('m_personal as p', 'p.idpersonal', '=', 'dpm.idpersonal')
+                    ->whereIn('dpm.idcentro_mac', [10, 12, 13, 14, 19])
+                    //->where('dpm.status', 1)
+                    ->whereIn('p.flag', [1, 2, 3])
+                    ->whereRaw("TRIM(p.NOMBRE) <> ''") // ❌ excluye nombres en blanco
+                    ->select(
+                        'p.num_doc',
+                        DB::raw("MAX(CONCAT(p.NOMBRE, ' ', p.APE_PAT, ' ', p.APE_MAT)) AS nombre_completo")
+                    )
+                    ->groupBy('p.num_doc')
+                    ->orderBy('nombre_completo')
                     ->get();
             }
-
 
             // Buscar el registro de PersonalModulo utilizando el ID proporcionado
             $personalModulo = PersonalModulo::findOrFail($request->id);
