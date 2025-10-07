@@ -3,7 +3,7 @@
         <tr>
             <th>N°</th>
             <th>Centro MAC</th>
-            <th>Último día cerrado</th>
+            <th>Fecha de cierre</th>
             <th>Fecha de registro</th>
             <th>Usuario que cerró</th>
             <th>Tipo de cierre</th>
@@ -14,13 +14,17 @@
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td class="text-uppercase">{{ $item->nombre_mac }}</td>
+
+                {{-- 🔹 Fecha del cierre --}}
                 <td>
-                    @if ($item->ultima_fecha_cerrada)
-                        {{ \Carbon\Carbon::parse($item->ultima_fecha_cerrada)->format('d-m-Y') }}
+                    @if ($item->fecha)
+                        {{ \Carbon\Carbon::parse($item->fecha)->format('d-m-Y') }}
                     @else
                         <span class="badge bg-secondary">Sin cierre</span>
                     @endif
                 </td>
+
+                {{-- 🔹 Fecha de registro --}}
                 <td>
                     @if ($item->fecha_registro)
                         {{ \Carbon\Carbon::parse($item->fecha_registro)->format('d-m-Y H:i') }}
@@ -28,7 +32,11 @@
                         <span class="text-muted">—</span>
                     @endif
                 </td>
-                <td>{{ $item->usuario_cerro ?? '—' }}</td>
+
+                {{-- 🔹 Usuario --}}
+                <td>{{ $item->user_nombre ?? '—' }}</td>
+
+                {{-- 🔹 Tipo de cierre --}}
                 <td>
                     @if ($item->tipo_cierre == 'MES')
                         <span class="badge bg-danger">Cierre Mensual</span>

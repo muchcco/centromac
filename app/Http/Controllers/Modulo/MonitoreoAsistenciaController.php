@@ -101,14 +101,15 @@ class MonitoreoAsistenciaController extends Controller
             ->select(
                 'm.IDCENTRO_MAC',
                 'm.NOMBRE_MAC as nombre_mac',
-                DB::raw('MAX(c.fecha) as ultima_fecha_cerrada'),
-                DB::raw('MAX(c.fecha_registro) as fecha_registro'),
-                DB::raw('MAX(c.user_nombre) as usuario_cerro'),
-                DB::raw('MAX(c.tipo_cierre) as tipo_cierre')
+                'c.fecha',
+                'c.fecha_registro',
+                'c.user_nombre',
+                'c.tipo_cierre'
             )
-            ->groupBy('m.IDCENTRO_MAC', 'm.NOMBRE_MAC')
             ->orderBy('m.NOMBRE_MAC', 'ASC')
+            ->orderBy('c.fecha', 'DESC')
             ->get();
+
 
         return view('monitoreo.asistencia.tablas.tb_index', compact('cierres', 'anio', 'mes'));
     }
