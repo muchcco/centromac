@@ -29,7 +29,7 @@
             <td rowspan="3" style="font-weight: bold; vertical-align: top; text-align: right;">
                 ESTADO
             </td>
-            <td style="border: 1px solid black;" colspan="1">Subsanado con documento</td>
+            <td style="border: 1px solid black;" colspan="1">Subsanado</td>
             <td colspan="3">
                 (Para los casos en los que se envió un oficio a la entidad involucrada y se recibió una respuesta que
                 subsanaba la observación advertida)

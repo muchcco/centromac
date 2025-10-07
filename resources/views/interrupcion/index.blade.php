@@ -120,9 +120,70 @@
                 }
             });
         }
+        // =====================================================
+        // ===============  VALIDACIÓN GLOBAL ==================
+        // =====================================================
+        function validarFechasHoras(form, estado) {
+            if (estado && estado.toUpperCase() === 'SUBSANADO') {
+                let fechaInicio = form.find('[name="fecha_inicio"]').val();
+                let horaInicio = form.find('[name="hora_inicio"]').val();
+                let fechaFin = form.find('[name="fecha_fin"]').val();
+                let horaFin = form.find('[name="hora_fin"]').val();
+
+                // 1️⃣ Verificar campos completos
+                if (!fechaFin || !horaFin) {
+                    Swal.fire({
+                        icon: "warning",
+                        text: "Debe ingresar la Fecha y Hora de Fin para un estado SUBSANADO.",
+                        confirmButtonText: "Aceptar"
+                    });
+                    return false;
+                }
+
+                // 2️⃣ Validar fechas
+                if (fechaFin < fechaInicio) {
+                    Swal.fire({
+                        icon: "warning",
+                        text: "La Fecha de Fin no puede ser anterior a la Fecha de Inicio.",
+                        confirmButtonText: "Aceptar"
+                    });
+                    return false;
+                }
+
+                // 3️⃣ Si son iguales, comparar horas
+                if (fechaFin === fechaInicio && horaFin <= horaInicio) {
+                    Swal.fire({
+                        icon: "warning",
+                        text: "La Hora de Fin debe ser mayor a la Hora de Inicio cuando las fechas son iguales.",
+                        confirmButtonText: "Aceptar"
+                    });
+                    return false;
+                }
+
+                // 4️⃣ Validación total combinada (seguridad extra)
+                const inicio = new Date(`${fechaInicio}T${horaInicio}`);
+                const fin = new Date(`${fechaFin}T${horaFin}`);
+                if (fin <= inicio) {
+                    Swal.fire({
+                        icon: "warning",
+                        text: "La Fecha y Hora de Fin deben ser posteriores a las de Inicio.",
+                        confirmButtonText: "Aceptar"
+                    });
+                    return false;
+                }
+            }
+            return true;
+        }
 
         function btnStoreInterrupcion() {
+            let form = $('#form_add_interrupcion');
+            let estado = $('#estado').val();
+
+            // ✅ Llamamos a la función de validación
+            if (!validarFechasHoras(form, estado)) return;
+
             var formData = new FormData($('#form_add_interrupcion')[0]);
+
             $.ajax({
                 type: 'POST',
                 url: "{{ route('interrupcion.store') }}",
@@ -130,8 +191,8 @@
                 processData: false,
                 contentType: false,
                 beforeSend: function() {
-                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> ESPERE').prop("disabled",
-                        true);
+                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> ESPERE')
+                        .prop("disabled", true);
                 },
                 success: function(data) {
                     $("#btnEnviarForm").html('Guardar').prop("disabled", false);
@@ -189,6 +250,12 @@
         }
 
         function btnUpdateInterrupcion() {
+            let form = $('#form_edit_interrupcion');
+            let estado = $('#estado').val();
+
+            // ✅ Llamamos a la función de validación
+            if (!validarFechasHoras(form, estado)) return;
+
             var formData = new FormData($('#form_edit_interrupcion')[0]);
 
             $.ajax({
@@ -198,8 +265,8 @@
                 processData: false,
                 contentType: false,
                 beforeSend: function() {
-                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> ESPERE').prop("disabled",
-                        true);
+                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> ESPERE')
+                        .prop("disabled", true);
                 },
                 success: function(data) {
                     $("#btnEnviarForm").html('Guardar').prop("disabled", false);

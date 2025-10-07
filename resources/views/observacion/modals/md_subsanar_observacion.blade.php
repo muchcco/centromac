@@ -82,14 +82,13 @@
                     <div class="col-9">
                         <select class="form-control" name="estado_final" id="estado_final" required>
                             <option value="">Seleccione...</option>
-                            <option value="SUBSANADO CON DOCUMENTO"
-                                {{ $observacion->estado == 'SUBSANADO CON DOCUMENTO' ? 'selected' : '' }}>SUBSANADO CON
-                                DOCUMENTO</option>
-                            <option value="SUBSANADO SIN DOCUMENTO"
+                            <option value="SUBSANADO"
+                                {{ $observacion->estado == 'SUBSANADO' ? 'selected' : '' }}>SUBSANADO</option>
+                          {{--   <option value="SUBSANADO SIN DOCUMENTO"
                                 {{ $observacion->estado == 'SUBSANADO SIN DOCUMENTO' ? 'selected' : '' }}>SUBSANADO SIN
                                 DOCUMENTO</option>
                             <option value="NO APLICA" {{ $observacion->estado == 'NO APLICA' ? 'selected' : '' }}>NO
-                                APLICA</option>
+                                APLICA</option> --}}
                         </select>
                     </div>
                 </div>

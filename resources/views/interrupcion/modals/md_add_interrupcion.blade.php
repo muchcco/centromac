@@ -105,9 +105,9 @@
                         <label class="col-3 col-form-label">Estado Final</label>
                         <div class="col-9">
                             <select class="form-control select2" name="estado_final" id="estado_final">
-                                <option value="SUBSANADO CON DOCUMENTO">Subsanado con Documento</option>
-                                <option value="SUBSANADO SIN DOCUMENTO">Subsanado sin Documento</option>
-                                <option value="NO APLICA">No Aplica</option>
+                                <option value="SUBSANADO">Subsanado</option>
+                                {{-- <option value="SUBSANADO SIN DOCUMENTO">Subsanado sin Documento</option>
+                                <option value="NO APLICA">No Aplica</option> --}}
                             </select>
                         </div>
                     </div>

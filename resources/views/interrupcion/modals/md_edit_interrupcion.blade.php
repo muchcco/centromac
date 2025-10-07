@@ -104,14 +104,14 @@
                         <label class="col-3 col-form-label">Estado Final</label>
                         <div class="col-9">
                             <select class="form-control select2" name="estado_final" id="estado_final">
-                                <option value="SUBSANADO CON DOCUMENTO"
-                                    {{ $interrupcion->estado == 'SUBSANADO CON DOCUMENTO' ? 'selected' : '' }}>
-                                    SUBSANADO CON DOCUMENTO</option>
-                                <option value="SUBSANADO SIN DOCUMENTO"
+                                <option value="SUBSANADO"
+                                    {{ $interrupcion->estado == 'SUBSANADO' ? 'selected' : '' }}>
+                                    SUBSANADO</option>
+                                {{-- <option value="SUBSANADO SIN DOCUMENTO"
                                     {{ $interrupcion->estado == 'SUBSANADO SIN DOCUMENTO' ? 'selected' : '' }}>
                                     SUBSANADO SIN DOCUMENTO</option>
                                 <option value="NO APLICA" {{ $interrupcion->estado == 'NO APLICA' ? 'selected' : '' }}>
-                                    NO APLICA</option>
+                                    NO APLICA</option> --}}
                             </select>
                         </div>
                     </div>

@@ -20,7 +20,8 @@
                     <div class="col-9">
                         <select class="form-control" disabled>
                             @foreach ($tipos as $tipo)
-                                <option {{ $interrupcion->id_tipo_int_obs == $tipo->id_tipo_int_obs ? 'selected' : '' }}>
+                                <option
+                                    {{ $interrupcion->id_tipo_int_obs == $tipo->id_tipo_int_obs ? 'selected' : '' }}>
                                     {{ $tipo->tipo }} {{ $tipo->numeracion }} - {{ $tipo->nom_tipo_int_obs }}
                                 </option>
                             @endforeach
@@ -46,7 +47,8 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Servicio Involucrado</label>
                     <div class="col-9">
-                        <input type="text" class="form-control" value="{{ $interrupcion->servicio_involucrado }}" disabled>
+                        <input type="text" class="form-control" value="{{ $interrupcion->servicio_involucrado }}"
+                            disabled>
                     </div>
                 </div>
 
@@ -58,7 +60,8 @@
                     </div>
                     <label class="col-2 col-form-label text-center">Hora Inicio</label>
                     <div class="col-3">
-                        <input type="time" class="form-control" value="{{ \Carbon\Carbon::parse($interrupcion->hora_inicio)->format('H:i') }}" disabled>
+                        <input type="time" class="form-control"
+                            value="{{ \Carbon\Carbon::parse($interrupcion->hora_inicio)->format('H:i') }}" disabled>
                     </div>
                 </div>
 
@@ -76,9 +79,11 @@
                     <div class="col-9">
                         <select class="form-control" name="estado_final" id="estado_final">
                             <option value="#">Seleccione...</option>
-                            <option value="SUBSANADO CON DOCUMENTO" {{ $interrupcion->estado == 'SUBSANADO CON DOCUMENTO' ? 'selected' : '' }}>SUBSANADO CON DOCUMENTO</option>
-                            <option value="SUBSANADO SIN DOCUMENTO" {{ $interrupcion->estado == 'SUBSANADO SIN DOCUMENTO' ? 'selected' : '' }}>SUBSANADO SIN DOCUMENTO</option>
+                            <option value="SUBSANADO"
+                                {{ $interrupcion->estado == 'SUBSANADO' ? 'selected' : '' }}>SUBSANADO</option>
+                            {{--  <option value="SUBSANADO SIN DOCUMENTO" {{ $interrupcion->estado == 'SUBSANADO SIN DOCUMENTO' ? 'selected' : '' }}>SUBSANADO SIN DOCUMENTO</option>
                             <option value="NO APLICA" {{ $interrupcion->estado == 'NO APLICA' ? 'selected' : '' }}>NO APLICA</option>
+                        --}}
                         </select>
                     </div>
                 </div>
@@ -93,11 +98,13 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Fecha Fin</label>
                     <div class="col-4">
-                        <input type="date" class="form-control" name="fecha_fin" value="{{ $interrupcion->fecha_fin }}">
+                        <input type="date" class="form-control" name="fecha_fin"
+                            value="{{ $interrupcion->fecha_fin }}">
                     </div>
                     <label class="col-2 col-form-label text-center">Hora Fin</label>
                     <div class="col-3">
-                        <input type="time" class="form-control" name="hora_fin" value="{{ \Carbon\Carbon::parse($interrupcion->hora_fin)->format('H:i') }}">
+                        <input type="time" class="form-control" name="hora_fin"
+                            value="{{ \Carbon\Carbon::parse($interrupcion->hora_fin)->format('H:i') }}">
                     </div>
                 </div>
             </form>
@@ -111,8 +118,8 @@
 </div>
 
 <script>
-    $(document).ready(function () {
-        $('#estado_final').change(function () {
+    $(document).ready(function() {
+        $('#estado_final').change(function() {
             $('#estado').val($(this).val());
         });
     });

@@ -29,18 +29,18 @@
 
                 <td>
                     @switch($observacion->estado)
-                        @case('SUBSANADO CON DOCUMENTO')
-                            <span class="badge bg-success">Subsanado con Documento</span>
+                        @case('SUBSANADO')
+                            <span class="badge bg-success">Subsanado</span>
                         @break
 
-                        @case('SUBSANADO SIN DOCUMENTO')
+ {{--                        @case('SUBSANADO SIN DOCUMENTO')
                             <span class="badge bg-success">Subsanado sin Documento</span>
                         @break
 
                         @case('NO APLICA')
                             <span class="badge bg-secondary">No Aplica</span>
                         @break
-
+ --}}
                         @default
                             <span class="badge bg-danger">{{ $observacion->estado }}</span>
                     @endswitch
