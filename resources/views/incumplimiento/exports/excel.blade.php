@@ -43,7 +43,7 @@
             <td style="border: 1px solid black;">CERRADO</td>
             <td colspan="3">(Incumplimiento que ya fue atendido o resuelto)</td>
             <td style="border: 1px solid black;">I2</td>
-            <td colspan="2">Incumplimiento a la vestimenta o protocolo</td>
+            <td colspan="2">Incidente a la vestimenta o protocolo</td>
         </tr>
 
         <tr></tr>
@@ -51,10 +51,10 @@
         <tr style="background-color: #9C0006; color: white; font-weight: bold;">
             <th style="border: 1px solid black;">N°</th>
             <th style="border: 1px solid black;">ENTIDAD</th>
-            <th style="border: 1px solid black;">TIPIFICACIÓN DEL INCUMPLIMIENTO (**)</th>
-            <th style="border: 1px solid black;">DESCRIPCIÓN DEL INCUMPLIMIENTO</th>
+            <th style="border: 1px solid black;">TIPIFICACIÓN DEL INCIDENTE (**)</th>
+            <th style="border: 1px solid black;">DESCRIPCIÓN DEL INCIDENTE</th>
             <th style="border: 1px solid black;">DESCRIPCIÓN DE LAS ACCIONES</th>
-            <th style="border: 1px solid black;">FECHA DEL INCUMPLIMIENTO</th>
+            <th style="border: 1px solid black;">FECHA DEL INCIDENTE</th>
             <th style="border: 1px solid black;">FECHA DE CIERRE</th>
             <th style="border: 1px solid black;">ESTADO</th>
             <th style="border: 1px solid black;">RESPONSABLE</th>

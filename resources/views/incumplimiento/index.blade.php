@@ -13,15 +13,73 @@
             <div class="page-title-box">
                 <div class="row">
                     <div class="col">
-                        <h4 class="page-title">Incumplimientos</h4>
+                        <h4 class="page-title">Incidentes Operativos</h4>
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
                                 <a href="{{ route('inicio') }}">
                                     <i data-feather="home" class="align-self-center"></i>
                                 </a>
                             </li>
-                            <li class="breadcrumb-item">Gestión de Incumplimientos</li>
+                            <li class="breadcrumb-item">Gestión de Incidentes Operativos</li>
                         </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ========== FILTRO DE BÚSQUEDA ========== -->
+    <div class="card mb-3">
+        <div class="card-header" style="background-color:#132842">
+            <h4 class="card-title text-white">Filtro de Búsqueda</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- CENTRO MAC -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="mb-2 fw-bold text-dark">Centro MAC:</label>
+                        @if (auth()->user()->hasRole(['Administrador']))
+                            <select id="filtro_mac" class="form-control select2">
+                                <option value="">-- Seleccione un MAC --</option>
+                                @foreach ($centros_mac as $mac)
+                                    <option value="{{ $mac->idcentro_mac }}">{{ $mac->nombre_mac }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="text" class="form-control" value="{{ $centro_mac->name_mac ?? 'No asignado' }}"
+                                readonly>
+                            <input type="hidden" id="filtro_mac" value="{{ $centro_mac->idmac }}">
+                        @endif
+                    </div>
+                </div>
+
+                <!-- FECHA INICIO -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="mb-2 fw-bold text-dark">Fecha Inicio:</label>
+                        <input type="date" id="filtro_fecha_inicio" class="form-control"
+                            value="{{ now()->startOfMonth()->format('Y-m-d') }}">
+                    </div>
+                </div>
+
+                <!-- FECHA FIN -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="mb-2 fw-bold text-dark">Fecha Fin:</label>
+                        <input type="date" id="filtro_fecha_fin" class="form-control"
+                            value="{{ now()->format('Y-m-d') }}">
+                    </div>
+                </div>
+
+                <!-- BOTONES -->
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="form-group">
+                        <button class="btn btn-primary me-1" onclick="filtrarIncumplimientos()">
+                            <i class="fa fa-search"></i> Buscar
+                        </button>
+                        <button class="btn btn-dark" onclick="limpiarFiltro()">
+                            <i class="fa fa-undo"></i> Limpiar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -32,13 +90,13 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="card">
-                <div class="card-header" style="background-color:#8B0000">
-                    <h4 class="card-title text-white">Listado de Incumplimientos</h4>
+                <div class="card-header" style="background-color:#132842">
+                    <h4 class="card-title text-white">Listado de Incidentes Operativos</h4>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
                         <button class="btn btn-danger" onclick="btnAddIncumplimiento()">
-                            <i class="fa fa-plus"></i> Nuevo Incumplimiento
+                            <i class="fa fa-plus"></i> Nuevo Incidente Operativo
                         </button>
                         <a href="{{ route('incumplimiento.export_excel') }}" class="btn btn-outline-primary">
                             <i class="fa fa-file-excel"></i> Exportar Excel
@@ -69,6 +127,7 @@
             cargarTablaIncumplimientos();
         });
 
+        // 🔄 Cargar tabla principal
         function cargarTablaIncumplimientos() {
             $.ajax({
                 type: 'GET',
@@ -79,6 +138,7 @@
             });
         }
 
+        // ➕ Agregar nuevo incidente
         function btnAddIncumplimiento() {
             $.post("{{ route('incumplimiento.modals.md_add_incumplimiento') }}", {
                 _token: "{{ csrf_token() }}"
@@ -94,6 +154,7 @@
             });
         }
 
+        // 💾 Guardar nuevo registro
         function btnStoreIncumplimiento() {
             let formData = new FormData($('#form_add_incumplimiento')[0]);
             $.ajax({
@@ -131,6 +192,7 @@
             });
         }
 
+        // ✏️ Editar incidente
         function btnEditarIncumplimiento(id) {
             $.post("{{ route('incumplimiento.modals.md_edit_incumplimiento') }}", {
                 _token: "{{ csrf_token() }}",
@@ -147,8 +209,32 @@
             });
         }
 
+        // 🔄 Actualizar registro (abrir/cerrar libremente)
         function btnUpdateIncumplimiento() {
+            // Asegurar que el valor de "estado" se actualice según el check
+            if ($('#incumplimiento_curso').length) {
+                if ($('#incumplimiento_curso').is(':checked')) {
+                    $('#estado').val('ABIERTO');
+                } else {
+                    $('#estado').val('CERRADO');
+                }
+            }
+
+            // Validar fechas antes de enviar
+            const fechaInc = $('input[name="fecha_observacion"]').val();
+            const fechaCie = $('input[name="fecha_solucion"]').val();
+
+            if (fechaCie && fechaCie < fechaInc) {
+                Swal.fire({
+                    icon: "warning",
+                    text: "⚠️ La fecha de cierre no puede ser menor que la del incidente.",
+                    confirmButtonText: "Aceptar"
+                });
+                return;
+            }
+
             let formData = new FormData($('#form_edit_incumplimiento')[0]);
+
             $.ajax({
                 type: 'POST',
                 url: "{{ route('incumplimiento.update') }}",
@@ -184,6 +270,7 @@
             });
         }
 
+        // 🗑️ Eliminar registro
         function btnEliminarIncumplimiento(id) {
             Swal.fire({
                 title: "¿Estás seguro?",
@@ -202,7 +289,7 @@
                         Swal.fire({
                             icon: "success",
                             title: "Eliminado",
-                            text: "Incumplimiento eliminado exitosamente."
+                            text: "Incidente Operativo eliminado exitosamente."
                         });
                     }).fail(() => {
                         Swal.fire({
@@ -215,6 +302,7 @@
             });
         }
 
+        // 👁️ Ver detalles
         function btnVerIncumplimiento(id) {
             $.post("{{ route('incumplimiento.modals.md_ver_incumplimiento') }}", {
                 _token: "{{ csrf_token() }}",
@@ -224,6 +312,7 @@
             });
         }
 
+        // ✅ Cerrar incumplimiento (sin restricción)
         function btnCerrarGuardar() {
             let formData = new FormData($('#form_cerrar_incumplimiento')[0]);
             $.ajax({
@@ -247,20 +336,50 @@
                         });
                     }
                 },
-                error: function(xhr) {
-                    if (xhr.status === 403) {
-                        Swal.fire({
-                            icon: "error",
-                            text: "No tienes permisos para cerrar incumplimientos."
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: "error",
-                            text: "Error al cerrar el incumplimiento."
-                        });
-                    }
+                error: function() {
+                    Swal.fire({
+                        icon: "error",
+                        text: "Error al cerrar el incumplimiento."
+                    });
                 }
             });
+        }
+        // 🔍 Aplicar filtros de búsqueda (Centro MAC + Fecha Inicio/Fin)
+        function filtrarIncumplimientos() {
+            let idmac = $('#filtro_mac').val();
+            let fechaInicio = $('#filtro_fecha_inicio').val();
+            let fechaFin = $('#filtro_fecha_fin').val();
+
+            $.ajax({
+                url: "{{ route('incumplimiento.tablas.tb_index') }}",
+                type: "GET",
+                data: {
+                    idmac: idmac,
+                    fecha_inicio: fechaInicio,
+                    fecha_fin: fechaFin
+                },
+                beforeSend: () => {
+                    $('#table_data').html('<i class="fa fa-spinner fa-spin"></i> Filtrando...');
+                },
+                success: function(data) {
+                    $('#table_data').html(data);
+                },
+                error: function() {
+                    $('#table_data').html('<div class="text-danger">Error al aplicar el filtro.</div>');
+                }
+            });
+        }
+
+        // 🔄 Limpiar filtro (vuelve al mes actual o al MAC del usuario)
+        function limpiarFiltro() {
+            $('#filtro_fecha_inicio').val('{{ now()->startOfMonth()->format('Y-m-d') }}');
+            $('#filtro_fecha_fin').val('{{ now()->format('Y-m-d') }}');
+
+            @if (auth()->user()->hasRole(['Administrador']))
+                $('#filtro_mac').val('').trigger('change');
+            @endif
+
+            filtrarIncumplimientos();
         }
     </script>
 @endsection

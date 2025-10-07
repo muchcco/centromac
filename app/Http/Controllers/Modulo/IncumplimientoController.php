@@ -10,6 +10,7 @@ use App\Models\Entidad;
 use App\Models\TipoIntObs;
 use App\Models\User;
 use App\Exports\IncumplimientosExport;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class IncumplimientoController extends Controller
@@ -17,22 +18,29 @@ class IncumplimientoController extends Controller
     private function centro_mac()
     {
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('m_centro_mac', 'm_centro_mac.idcentro_mac', '=', 'users.idcentro_mac')
-            ->where('m_centro_mac.idcentro_mac', $us_id)
+
+        $user = User::join('db_centros_mac.m_centro_mac', 'db_centros_mac.m_centro_mac.idcentro_mac', '=', 'users.idcentro_mac')
+            ->where('db_centros_mac.m_centro_mac.idcentro_mac', $us_id)
+            ->select('db_centros_mac.m_centro_mac.idcentro_mac', 'db_centros_mac.m_centro_mac.nombre_mac')
             ->first();
 
         return (object)[
-            'idmac' => $user->idcentro_mac,
-            'name_mac' => $user->nombre_mac
+            'idmac' => $user->idcentro_mac ?? null,
+            'name_mac' => $user->nombre_mac ?? 'No asignado'
         ];
     }
-
     public function index()
     {
-        return view('incumplimiento.index');
-    }
+        $centros_mac = DB::table('db_centros_mac.m_centro_mac')
+            ->select('idcentro_mac', 'nombre_mac')
+            ->orderBy('nombre_mac')
+            ->get();
 
-    public function tb_index()
+        $centro_mac = $this->centro_mac();
+
+        return view('incumplimiento.index', compact('centros_mac', 'centro_mac'));
+    }
+    public function tb_index(Request $request)
     {
         $user = auth()->user();
 
@@ -45,14 +53,23 @@ class IncumplimientoController extends Controller
             $q->where('tipo_obs', 'INCUMPLIMIENTO');
         });
 
-        if (!$user->hasRole(['Administrador', 'Moderador'])) {
+        // 🔹 Filtro por centro MAC
+        if ($request->filled('idmac')) {
+            $query->where('idcentro_mac', $request->idmac);
+        } elseif (!$user->hasRole(['Administrador'])) {
             $query->where('idcentro_mac', $user->idcentro_mac);
+        }
+
+        // 🔹 Filtro por fechas
+        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+            $query->whereBetween('fecha_observacion', [$request->fecha_inicio, $request->fecha_fin]);
         }
 
         $incumplimientos = $query->orderBy('fecha_observacion', 'desc')->get();
 
         return view('incumplimiento.tablas.tb_index', compact('incumplimientos'));
     }
+
 
     public function create()
     {
@@ -147,15 +164,29 @@ class IncumplimientoController extends Controller
             return response()->json(['message' => $validator->errors(), 'status' => 422]);
         }
 
+        $user = auth()->user();
         $incumplimiento = Observacion::findOrFail($request->id_observacion);
+
+        // 🚫 Bloqueo si está cerrado y el usuario NO es Admin o Monitor
+        if ($incumplimiento->estado === 'CERRADO' && !$user->hasRole(['Administrador', 'Monitor'])) {
+            return response()->json([
+                'status' => 403,
+                'message' => 'No puede modificar un incumplimiento cerrado.'
+            ]);
+        }
+
         $data = $request->except('archivo');
 
-        // 👇 Forzar siempre ABIERTO si no es Monitor/Admin
-        if (!auth()->user()->hasRole(['Administrador', 'Monitor'])) {
-            $data['estado'] = 'ABIERTO';
+        // 📅 Ajustar fechas según estado
+        if ($data['estado'] === 'CERRADO' && empty($data['fecha_solucion'])) {
+            $data['fecha_solucion'] = now()->toDateString();
+        }
+
+        if ($data['estado'] === 'ABIERTO') {
             $data['fecha_solucion'] = null;
         }
 
+        // 📂 Manejo del archivo adjunto
         if ($request->hasFile('archivo')) {
             $file = $request->file('archivo');
             $extension = $file->getClientOriginalExtension();
@@ -174,17 +205,31 @@ class IncumplimientoController extends Controller
         return response()->json(['message' => 'Incumplimiento actualizado exitosamente', 'status' => 200]);
     }
 
+
     public function destroy(Request $request)
     {
+        $user = auth()->user();
         $incumplimiento = Observacion::findOrFail($request->id_observacion);
 
+        // 🚫 No permitir eliminar si está cerrado y el usuario no es Admin/Monitor
+        if ($incumplimiento->estado === 'CERRADO' && !$user->hasRole(['Administrador', 'Monitor'])) {
+            return response()->json([
+                'status' => 403,
+                'message' => 'No puede eliminar un incumplimiento cerrado.'
+            ]);
+        }
+
+        // 🗑️ Eliminar archivo asociado si existe
         if ($incumplimiento->archivo && file_exists(public_path($incumplimiento->archivo))) {
             unlink(public_path($incumplimiento->archivo));
         }
 
         $incumplimiento->delete();
 
-        return response()->json(['message' => 'Incumplimiento eliminado exitosamente']);
+        return response()->json([
+            'message' => 'Incidente Operativo eliminado exitosamente',
+            'status' => 200
+        ]);
     }
 
     public function ver(Request $request)

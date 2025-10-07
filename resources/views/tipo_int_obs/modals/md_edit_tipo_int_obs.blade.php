@@ -21,7 +21,7 @@
                             <option value="INTERRUPCION" {{ $tipo->tipo_obs === 'INTERRUPCIÓN' ? 'selected' : '' }}>
                                 INTERRUPCIÓN</option>
                             <option value="INCUMPLIMIENTO" {{ $tipo->tipo_obs === 'INCUMPLIMIENTO' ? 'selected' : '' }}>
-                                INCUMPLIMIENTO</option>
+                                INCIDENTE</option>
                         </select>
                     </div>
                 </div>

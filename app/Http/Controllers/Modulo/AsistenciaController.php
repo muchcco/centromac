@@ -451,8 +451,29 @@ class AsistenciaController extends Controller
     {
         $request->validate([
             'fecha' => 'required|date',
-            'idmac' => 'required|integer'
+            'idmac' => 'required|integer',
         ]);
+
+        $user = auth()->user();
+
+        // 🔒 Validación de permisos según el rol
+        if ($user->hasRole('Especialista TIC')) {
+            // Solo puede revertir su propio MAC
+            if ($user->idcentro_mac != $request->idmac) {
+                return response()->json([
+                    'ok' => false,
+                    'msg' => 'Solo puede revertir asistencias de su propio MAC.'
+                ], 403);
+            }
+        }
+
+        // ✅ Permisos generales
+        if (!($user->hasAnyRole(['Administrador', 'Monitor', 'Especialista TIC', 'Moderador']))) {
+            return response()->json([
+                'ok' => false,
+                'msg' => 'No tiene permisos para realizar esta acción.'
+            ], 403);
+        }
 
         try {
             DB::statement("CALL SP_REVERTIR_ASISTENCIA_DIA(?, ?)", [
@@ -462,7 +483,7 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'ok' => true,
-                'msg' => "Se revirtió la asistencia del {$request->fecha} en el MAC #{$request->idmac}"
+                'msg' => "✅ Se revirtió la asistencia del {$request->fecha} en el MAC #{$request->idmac}"
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -471,14 +492,29 @@ class AsistenciaController extends Controller
             ], 500);
         }
     }
+
     public function mdRevertir(Request $request)
     {
-        $macs = [];
-        if (auth()->user()->hasRole(['Administrador', 'Moderador'])) {
+        $user = auth()->user();
+
+        // Si es Administrador o Monitor → ver todos los MACs
+        if ($user->hasRole(['Administrador', 'Monitor'])) {
             $macs = DB::table('db_centros_mac.m_centro_mac')
-                ->select('idcentro_mac as id', 'NOMBRE_MAC as nom')
+                ->select('IDCENTRO_MAC as id', 'NOMBRE_MAC as nom')
                 ->orderBy('NOMBRE_MAC')
                 ->get();
+        }
+        // Si es Especialista_TIC → solo su propio MAC
+        elseif ($user->hasRole('Especialista TIC|Especialista_TIC')) {
+            $macs = DB::table('db_centros_mac.m_centro_mac')
+                ->select('IDCENTRO_MAC as id', 'NOMBRE_MAC as nom')
+                ->where('IDCENTRO_MAC', $user->idcentro_mac)
+                ->get();
+        } else {
+            // Otros roles no deberían poder abrir este modal
+            return response()->json([
+                'html' => "<div class='p-3 text-center text-danger'>No tiene permisos para esta acción.</div>"
+            ]);
         }
 
         return response()->json([

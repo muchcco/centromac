@@ -6,7 +6,7 @@
         </div>
         <div class="modal-body">
             <div id="alerta"></div>
-            <h5>Datos del Tipo de Observación</h5>
+            <h5>Datos del Tipificación</h5>
 
             <form id="form_add_tipo_obs" class="form-horizontal">
                 @csrf
@@ -20,7 +20,7 @@
                             <option value="" selected>--Seleccione--</option>
                             <option value="OBSERVACIÓN">OBSERVACIÓN</option>
                             <option value="INTERRUPCIÓN">INTERRUPCIÓN</option>
-                            <option value="INCUMPLIMIENTO">INCUMPLIMIENTO</option>
+                            <option value="INCUMPLIMIENTO">INCIDENTE OPERTATIVO</option>
                         </select>
                     </div>
                 </div>

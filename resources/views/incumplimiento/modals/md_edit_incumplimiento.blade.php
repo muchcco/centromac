@@ -5,17 +5,23 @@
         border: 1px solid #8B0000 !important;
         font-weight: bold;
     }
+
+    .text-error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 4px;
+    }
 </style>
 
 <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
         <div class="modal-header">
-            <h4 class="modal-title">Editar Incumplimiento</h4>
+            <h4 class="modal-title">Editar Incidente</h4>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
             <div id="alerta"></div>
-            <h5>Datos del Incumplimiento</h5>
+            <h5>Datos del Incidente</h5>
 
             <form id="form_edit_incumplimiento" class="form-horizontal">
                 @csrf
@@ -68,7 +74,7 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Archivo / Sustento</label>
                     <div class="col-9">
-                        <input type="file" class="form-control" name="archivo">
+                        <input type="file" class="form-control" name="archivo" accept=".pdf,image/*">
                         @if ($incumplimiento->archivo)
                             <div class="mt-2">
                                 <a href="{{ asset($incumplimiento->archivo) }}" target="_blank">
@@ -87,54 +93,42 @@
                     </div>
                 </div>
 
-                <!-- Fecha Incumplimiento -->
+                <!-- Fecha Incidente -->
                 <div class="row mb-3">
-                    <label class="col-3 col-form-label">Fecha Incumplimiento</label>
+                    <label class="col-3 col-form-label">Fecha Incidente</label>
                     <div class="col-9">
                         <input type="date" class="form-control" name="fecha_observacion"
                             value="{{ $incumplimiento->fecha_observacion }}">
                     </div>
                 </div>
 
-                <!-- Estado -->
-                @role('Administrador|Monitor')
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label">¿Incumplimiento en curso?</label>
-                        <div class="col-9">
-                            <input type="checkbox" id="incumplimiento_curso"
-                                {{ $incumplimiento->estado == 'ABIERTO' ? 'checked' : '' }}>
-                            <span id="estado_label">{{ $incumplimiento->estado }}</span>
-                        </div>
+                <!-- Estado y cierre (libre para todos) -->
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label">¿Incidente en curso?</label>
+                    <div class="col-9">
+                        <input type="checkbox" id="incumplimiento_curso"
+                            {{ $incumplimiento->estado == 'ABIERTO' ? 'checked' : '' }}>
+                        <span id="estado_label" class="ms-2">{{ $incumplimiento->estado }}</span>
                     </div>
+                </div>
 
-                    <!-- Fecha cierre -->
-                    <div id="campos_cierre" style="{{ $incumplimiento->estado == 'CERRADO' ? '' : 'display:none;' }}">
-                        <div class="row mb-3">
-                            <label class="col-3 col-form-label">Fecha Cierre</label>
-                            <div class="col-9">
-                                <input type="date" class="form-control" name="fecha_solucion"
-                                    value="{{ $incumplimiento->fecha_solucion }}">
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label">Estado</label>
+                <!-- Fecha cierre -->
+                <div id="campos_cierre" style="{{ $incumplimiento->estado == 'CERRADO' ? '' : 'display:none;' }}">
+                    <div class="row mb-1">
+                        <label class="col-3 col-form-label">Fecha Cierre</label>
                         <div class="col-9">
-                            <span class="badge {{ $incumplimiento->estado == 'ABIERTO' ? 'bg-success' : 'bg-danger' }}">
-                                {{ $incumplimiento->estado }}
-                            </span>
-                            <small class="text-muted">(solo Monitor o Administrador pueden cerrarlo)</small>
+                            <input type="date" class="form-control" name="fecha_solucion"
+                                value="{{ $incumplimiento->fecha_solucion }}">
+                            <small id="error_fecha_cierre" class="text-error" style="display:none;"></small>
                         </div>
                     </div>
-                @endrole
+                </div>
             </form>
         </div>
 
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
-            <button type="button" class="btn btn-outline-success" id="btnEnviarForm"
-                onclick="btnUpdateIncumplimiento()">Guardar</button>
+            <button type="button" class="btn btn-outline-success" id="btnEnviarForm">Guardar</button>
         </div>
     </div>
 </div>
@@ -157,10 +151,35 @@
                 $('#estado_label').text('CERRADO');
                 $('#campos_cierre').show();
             }
+            $('#error_fecha_cierre').hide();
         }
 
         $('#incumplimiento_curso').change(toggleCamposCierre);
-
         toggleCamposCierre(); // Inicial
+
+        // Validación estética al guardar
+        $('#btnEnviarForm').on('click', function() {
+            const fechaIncidente = new Date($('input[name="fecha_observacion"]').val());
+            const fechaCierre = new Date($('input[name="fecha_solucion"]').val());
+            const estado = $('#estado').val();
+            const errorMsg = $('#error_fecha_cierre');
+
+            errorMsg.hide();
+
+            if (estado === 'CERRADO') {
+                if (!fechaCierre || isNaN(fechaCierre)) {
+                    errorMsg.text('Debe ingresar la fecha de cierre.').show();
+                    return;
+                }
+                if (fechaCierre < fechaIncidente) {
+                    errorMsg.text(
+                            '⚠️ La fecha de cierre no puede ser menor que la fecha del incidente.')
+                        .show();
+                    return;
+                }
+            }
+
+            btnUpdateIncumplimiento();
+        });
     });
 </script>

@@ -5,17 +5,24 @@
         border: 1px solid #8B0000 !important;
         font-weight: bold;
     }
+
+    .text-error {
+        color: #dc3545;
+        /* rojo Bootstrap */
+        font-size: 0.875rem;
+        margin-top: 4px;
+    }
 </style>
 
 <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
         <div class="modal-header">
-            <h4 class="modal-title">Registrar Nuevo Incumplimiento</h4>
+            <h4 class="modal-title">Registrar Nuevo Incidente Operativo</h4>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
             <div id="alerta"></div>
-            <h5>Datos del Incumplimiento</h5>
+            <h5>Datos del Incidente</h5>
 
             <form id="form_add_incumplimiento" class="form-horizontal">
                 @csrf
@@ -79,47 +86,37 @@
 
                 <!-- Fecha -->
                 <div class="row mb-3">
-                    <label class="col-3 col-form-label">Fecha Incumplimiento</label>
+                    <label class="col-3 col-form-label">Fecha Incidente</label>
                     <div class="col-9">
                         <input type="date" class="form-control" name="fecha_observacion" required>
                     </div>
                 </div>
 
-                <!-- Estado (solo administradores y monitores pueden cerrar) -->
-                @role('Administrador|Monitor')
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label">¿Incumplimiento en curso?</label>
-                        <div class="col-9">
-                            <input type="checkbox" id="incumplimiento_curso" checked>
-                            <span id="estado_label" class="ms-2">ABIERTO</span>
-                        </div>
+                <!-- Estado -->
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label">Incidente en curso?</label>
+                    <div class="col-9">
+                        <input type="checkbox" id="incumplimiento_curso" checked>
+                        <span id="estado_label" class="ms-2">ABIERTO</span>
                     </div>
+                </div>
 
-                    <!-- Fecha cierre -->
-                    <div id="campos_cierre" style="display: none;">
-                        <div class="row mb-3">
-                            <label class="col-3 col-form-label">Fecha Cierre</label>
-                            <div class="col-9">
-                                <input type="date" class="form-control" name="fecha_solucion">
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label">Estado</label>
+                <!-- Fecha cierre -->
+                <div id="campos_cierre" style="display: none;">
+                    <div class="row mb-1">
+                        <label class="col-3 col-form-label">Fecha Cierre</label>
                         <div class="col-9">
-                            <span class="badge bg-success">ABIERTO</span>
-                            <small class="text-muted">(solo Monitor o Administrador pueden cerrarlo)</small>
+                            <input type="date" class="form-control" name="fecha_solucion">
+                            <small id="error_fecha_cierre" class="text-error" style="display:none;"></small>
                         </div>
                     </div>
-                @endrole
+                </div>
             </form>
         </div>
 
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
-            <button type="button" class="btn btn-outline-success" id="btnEnviarForm"
-                onclick="btnStoreIncumplimiento()">Guardar</button>
+            <button type="button" class="btn btn-outline-success" id="btnEnviarForm">Guardar</button>
         </div>
     </div>
 </div>
@@ -132,6 +129,7 @@
             allowClear: true
         });
 
+        // Control estado
         function toggleCamposCierre() {
             if ($('#incumplimiento_curso').is(':checked')) {
                 $('#estado').val('ABIERTO');
@@ -142,10 +140,36 @@
                 $('#estado_label').text('CERRADO');
                 $('#campos_cierre').show();
             }
+            $('#error_fecha_cierre').hide(); // limpiar errores si cambia estado
         }
 
         $('#incumplimiento_curso').change(toggleCamposCierre);
+        toggleCamposCierre(); // inicial
 
-        toggleCamposCierre(); // Inicial
+        // Validación visual elegante
+        $('#btnEnviarForm').on('click', function(e) {
+            const fechaIncidente = new Date($('input[name="fecha_observacion"]').val());
+            const fechaCierre = new Date($('input[name="fecha_solucion"]').val());
+            const estado = $('#estado').val();
+            const errorMsg = $('#error_fecha_cierre');
+
+            errorMsg.hide(); // limpiar mensaje previo
+
+            if (estado === 'CERRADO') {
+                if (!fechaCierre || isNaN(fechaCierre)) {
+                    errorMsg.text('Debe ingresar la fecha de cierre.').show();
+                    return;
+                }
+                if (fechaCierre < fechaIncidente) {
+                    errorMsg.text(
+                            '⚠️ La fecha de cierre no puede ser menor que la fecha del incidente.')
+                        .show();
+                    return;
+                }
+            }
+
+            // Envía el formulario una sola vez
+            btnStoreIncumplimiento();
+        });
     });
 </script>

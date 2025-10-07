@@ -90,6 +90,6 @@ class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSi
 
     public function title(): string
     {
-        return 'Incumplimientos ' . $this->nombreMac;
+        return 'Incidentes ' . $this->nombreMac;
     }
 }

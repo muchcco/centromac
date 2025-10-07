@@ -130,16 +130,31 @@
                                 <button class="btn btn-danger" onclick="cerrarDia()" id="btnCerrarDia">
                                     <i class="fa fa-lock"></i> Cerrar Día
                                 </button>
+                            @endrole
 
+                            @role('Administrador')
                                 <button class="btn btn-dark" onclick="abrirModalCerrarMes()" id="btnCerrarMes">
                                     <i class="fa fa-calendar"></i> Cerrar Mes
                                 </button>
                             @endrole
-                            @role('Administrador')
-                                <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
-                                    <i class="fa fa-undo"></i> Revertir Día
-                                </button>
+                            @php
+                                $mesActual = date('Y-m'); // mes actual fijo (ejemplo: 2025-10)
+                            @endphp
+
+                            @role('Administrador|Monitor|Monitoreo|Especialista TIC')
+                                @if (auth()->user()->hasAnyRole(['Administrador', 'Monitor', 'Monitoreo']))
+                                    {{-- ✅ Admin, Monitor y Monitoreo: siempre pueden revertir --}}
+                                    <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
+                                        <i class="fa fa-undo"></i> Revertir Día
+                                    </button>
+                                @elseif (auth()->user()->hasRole('Especialista TIC') && date('Y-m') === $mesActual)
+                                    {{-- ⚙️ Especialista TIC: solo puede revertir durante el mes actual --}}
+                                    <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
+                                        <i class="fa fa-undo"></i> Revertir Día
+                                    </button>
+                                @endif
                             @endrole
+
                         </div>
                     </div>
                     <br />

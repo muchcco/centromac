@@ -3,7 +3,7 @@
         <tr>
             <th>N°</th>
             <th>Centro MAC</th>
-            <th>Fecha Incumplimiento</th>
+            <th>Fecha Incidente</th>
             <th>Tipificación</th>
             <th>Entidad</th>
             <th>Estado</th>
@@ -36,20 +36,32 @@
                 </td>
 
                 <td>
+                    <!-- Ver siempre disponible -->
                     <button class="nobtn bandejTool" data-tippy-content="Ver Detalles"
                         onclick="btnVerIncumplimiento('{{ $incumplimiento->id_observacion }}')">
                         <i class="las la-eye text-primary font-16"></i>
                     </button>
-                    @role('Administrador|Especialista TIC|Moderador')
+
+                    @if (
+                        $incumplimiento->estado === 'CERRADO' &&
+                            !auth()->user()->hasRole(['Administrador', 'Monitor']))
+                        <!-- Cerrado para usuarios comunes -->
+                        <button class="nobtn bandejTool" data-tippy-content="Incumplimiento Cerrado" disabled>
+                            <i class="las la-lock text-secondary font-16"></i>
+                        </button>
+                    @else
+                        <!-- Editar -->
                         <button class="nobtn bandejTool" data-tippy-content="Editar Incumplimiento"
                             onclick="btnEditarIncumplimiento('{{ $incumplimiento->id_observacion }}')">
                             <i class="las la-pen text-success font-16"></i>
                         </button>
+
+                        <!-- Eliminar -->
                         <button class="nobtn bandejTool" data-tippy-content="Eliminar Incumplimiento"
                             onclick="btnEliminarIncumplimiento('{{ $incumplimiento->id_observacion }}')">
                             <i class="las la-trash-alt text-danger font-16"></i>
                         </button>
-                    @endrole
+                    @endif
                 </td>
             </tr>
         @endforeach

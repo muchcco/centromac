@@ -274,7 +274,7 @@
                 <li class="@if (Request::is('incumplimiento*')) mm-active @endif">
                     <a href="{{ route('incumplimiento.index') }}"
                         class="@if (Request::is('incumplimiento/index*')) active @endif">
-                        <i class="ti-control-record"></i><span>En prueba - Incumplimientos</span>
+                        <i class="ti-control-record"></i><span>Incidentes Operativos</span>
                     </a>
                 </li>
             @endrole
@@ -301,7 +301,7 @@
                 <li class="@if (Request::is('tipo_int_obs/index')) mm-active @endif">
                     <a href="{{ route('tipo_int_obs.index') }}"
                         class="@if (Request::is('tipo_int_obs/index')) active @endif">
-                        <i class="ti-control-record"></i><span>En pruebas - Tipificación de Observaciones</span>
+                        <i class="ti-control-record"></i><span>Tipificación</span>
                     </a>
                 </li>
             @endrole
@@ -426,7 +426,31 @@
                             class="align-self-center menu-icon"></i><span>Servicios por MAC</span></a>
                 </li>
             @endif
+            @role('Administrador|Monitor|Supervisor|Especialista_TIC|Especialista TIC')
+                <hr class="hr-dashed hr-menu">
+
+                <!-- Nueva sección MONITOREO -->
+                <li class="menu-label mt-0">MONITOREO</li>
+
+                <li class="@if (Request::is('monitoreo/asistencia*')) mm-active @endif">
+                    <a href="{{ route('monitoreo.asistencia.index') }}"
+                        class="@if (Request::is('monitoreo/asistencia*')) active @endif">
+                        <i data-feather="activity" class="align-self-center menu-icon"></i>
+                        <span>Monitoreo de Asistencia</span>
+                    </a>
+                </li>
+                <!-- Pivot de Cierres -->
+                <li class="@if (Request::is('monitoreo/asistencia/pivot*')) mm-active @endif">
+                    <a href="{{ route('monitoreo.asistencia.pivot') }}"
+                        class="@if (Request::is('monitoreo/asistencia/pivot*')) active @endif">
+                        <i data-feather="grid" class="align-self-center menu-icon"></i>
+                        <span>Pivot de Cierres</span>
+                    </a>
+                </li>
+            @endrole
+
         </ul>
+
     </div>
 </div>
 <!-- end left-sidenav-->

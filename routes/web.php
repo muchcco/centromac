@@ -53,6 +53,7 @@ use App\Http\Controllers\Modulo\InterrupcionController;
 use App\Http\Controllers\Modulo\ObservacionController;
 use App\Http\Controllers\Modulo\HorarioMacController;
 use App\Http\Controllers\Modulo\IncumplimientoController;
+use App\Http\Controllers\Modulo\MonitoreoAsistenciaController;
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
 Route::get('validar.html5', [PagesController::class, 'validar'])->name('validar');
@@ -637,6 +638,16 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/verificaciones/modals/up_time', [VerificacionController::class, 'up_time'])->name('verificaciones.modals.up_time');
     Route::post('/verificaciones/update_time', [VerificacionController::class, 'update_time'])
         ->name('verificaciones.update_time');
+    // ===========================================================
+    // MONITOREO DE ASISTENCIA
+    // ===========================================================
+    Route::prefix('monitoreo/asistencia')->name('monitoreo.asistencia.')->group(function () {
+        Route::get('/', [MonitoreoAsistenciaController::class, 'index'])->name('index');
+        Route::get('/tabla', [MonitoreoAsistenciaController::class, 'tabla'])->name('tabla');
+        Route::get('/detalle/{idmac}', [MonitoreoAsistenciaController::class, 'detalle'])->name('detalle');
+        Route::get('/pivot', [MonitoreoAsistenciaController::class, 'pivot_index'])->name('pivot');
+        Route::get('/pivot/tabla', [MonitoreoAsistenciaController::class, 'tb_pivot'])->name('tb_pivot');
+    });
 
 
     /******************************************************   PAGINAS DE APOYO *****************************************************************************/

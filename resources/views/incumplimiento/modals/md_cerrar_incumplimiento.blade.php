@@ -1,7 +1,7 @@
 <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
         <div class="modal-header bg-dark text-white">
-            <h4 class="modal-title">Cerrar Incumplimiento</h4>
+            <h4 class="modal-title">Cerrar Incidente</h4>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
@@ -56,7 +56,7 @@
 
                 <!-- Fecha Incumplimiento -->
                 <div class="row mb-3">
-                    <label class="col-3 col-form-label">Fecha Incumplimiento</label>
+                    <label class="col-3 col-form-label">Fecha Incidente</label>
                     <div class="col-9">
                         <input type="date" class="form-control" value="{{ $incumplimiento->fecha_observacion }}"
                             disabled>
