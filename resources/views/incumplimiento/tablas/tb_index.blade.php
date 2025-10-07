@@ -44,9 +44,9 @@
 
                     @if (
                         $incumplimiento->estado === 'CERRADO' &&
-                            !auth()->user()->hasRole(['Administrador', 'Monitor']))
+                            !auth()->user()->hasRole(['Administrador', 'Monitor', 'Especialista TIC']))
                         <!-- Cerrado para usuarios comunes -->
-                        <button class="nobtn bandejTool" data-tippy-content="Incidente Operativo Cerrado" disabled>
+                        <button class="nobtn bandejTool" data-tippy-content="Incidente Operativo, Cerrado" disabled>
                             <i class="las la-lock text-secondary font-16"></i>
                         </button>
                     @else
