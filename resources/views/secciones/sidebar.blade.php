@@ -270,7 +270,7 @@
 
             {{--             <hr class="hr-dashed hr-menu">
  --}} <li class="menu-label mt-0">PILOTO</li>
-            @role('Supervisor|Coordinador|Especialista_TIC|Moderador|Administrador')
+            @role('Supervisor|Coordinador|Especialista TIC|Moderador|Administrador')
                 <li class="@if (Request::is('incumplimiento*')) mm-active @endif">
                     <a href="{{ route('incumplimiento.index') }}"
                         class="@if (Request::is('incumplimiento/index*')) active @endif">
