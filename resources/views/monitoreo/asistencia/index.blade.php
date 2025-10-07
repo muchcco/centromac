@@ -29,7 +29,7 @@
 
     <!-- FILTROS -->
     <div class="card mb-3">
-        <div class="card-header" style="background-color:#8B0000">
+        <div class="card-header" style="background-color:#132842">
             <h4 class="card-title text-white">Filtro de búsqueda</h4>
         </div>
         <div class="card-body">
@@ -111,7 +111,7 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="card">
-                <div class="card-header" style="background-color:#8B0000">
+                <div class="card-header" style="background-color:#132842">
                     <h4 class="card-title text-white">Cierres de Asistencia por Centro MAC</h4>
                 </div>
                 <div class="card-body">

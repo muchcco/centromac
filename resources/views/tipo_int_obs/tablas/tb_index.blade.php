@@ -5,7 +5,7 @@
             <th>Tipo de Registro</th> <!-- tipo_obs -->
             <th>Tipo</th> <!-- A, B o C -->
             <th>Numeración</th>
-            <th>Nombre del Tipo de Observación</th>
+            <th>Nombre del Tipificación</th>
             <th>Estado</th> <!-- Nueva columna para status -->
             <th>Acciones</th>
         </tr>

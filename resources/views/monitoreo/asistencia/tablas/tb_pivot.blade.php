@@ -1,5 +1,5 @@
 <table class="table table-bordered table-striped text-center align-middle">
-    <thead style="background-color:#8B0000; color:white;">
+    <thead style="background-color:#132842; color:white;">
         <tr>
             <th>Centro MAC</th>
             @for ($d = 1; $d <= $diasMes; $d++)

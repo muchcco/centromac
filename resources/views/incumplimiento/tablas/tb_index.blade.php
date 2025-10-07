@@ -46,18 +46,18 @@
                         $incumplimiento->estado === 'CERRADO' &&
                             !auth()->user()->hasRole(['Administrador', 'Monitor']))
                         <!-- Cerrado para usuarios comunes -->
-                        <button class="nobtn bandejTool" data-tippy-content="Incumplimiento Cerrado" disabled>
+                        <button class="nobtn bandejTool" data-tippy-content="Incidente Operativo Cerrado" disabled>
                             <i class="las la-lock text-secondary font-16"></i>
                         </button>
                     @else
                         <!-- Editar -->
-                        <button class="nobtn bandejTool" data-tippy-content="Editar Incumplimiento"
+                        <button class="nobtn bandejTool" data-tippy-content="Editar Incidente Operativo"
                             onclick="btnEditarIncumplimiento('{{ $incumplimiento->id_observacion }}')">
                             <i class="las la-pen text-success font-16"></i>
                         </button>
 
                         <!-- Eliminar -->
-                        <button class="nobtn bandejTool" data-tippy-content="Eliminar Incumplimiento"
+                        <button class="nobtn bandejTool" data-tippy-content="Eliminar Incidente Operativo"
                             onclick="btnEliminarIncumplimiento('{{ $incumplimiento->id_observacion }}')">
                             <i class="las la-trash-alt text-danger font-16"></i>
                         </button>
