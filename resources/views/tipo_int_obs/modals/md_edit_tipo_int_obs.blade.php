@@ -1,12 +1,12 @@
 <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
         <div class="modal-header">
-            <h4 class="modal-title">Editar Tipo de Observación Interna</h4>
+            <h4 class="modal-title">Editar Tipificación</h4>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
             <div id="alerta"></div>
-            <h5>Editar datos del tipo de observación</h5>
+            <h5>Editar Tipificación</h5>
             <form class="form-horizontal">
                 @csrf
 
@@ -21,7 +21,7 @@
                             <option value="INTERRUPCION" {{ $tipo->tipo_obs === 'INTERRUPCIÓN' ? 'selected' : '' }}>
                                 INTERRUPCIÓN</option>
                             <option value="INCUMPLIMIENTO" {{ $tipo->tipo_obs === 'INCUMPLIMIENTO' ? 'selected' : '' }}>
-                                INCIDENTE</option>
+                                INCIDENTE OPERTATIVO</option>
                         </select>
                     </div>
                 </div>

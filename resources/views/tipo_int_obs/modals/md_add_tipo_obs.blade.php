@@ -1,7 +1,7 @@
 <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
         <div class="modal-header">
-            <h4 class="modal-title">Añadir nuevo Tipo de Observación Interna</h4>
+            <h4 class="modal-title">Añadir nueva Tipificacion</h4>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -54,9 +54,9 @@
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <label class="col-3 col-form-label">descripcion</label>
+                    <label class="col-3 col-form-label">Descripcion</label>
                     <div class="col-9">
-                        <textarea class="form-control" id="descripcion" name="descripcion" rows="5" placeholder="Escribe una descripción"></textarea>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="5" placeholder="Escribe una descripción(Opcional)"></textarea>
                     </div>
                 </div>
             </form>

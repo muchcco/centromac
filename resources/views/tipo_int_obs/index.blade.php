@@ -13,7 +13,7 @@
             <div class="page-title-box">
                 <div class="row">
                     <div class="col">
-                        <h4 class="page-title">Tipos de Observaciones Internas</h4>
+                        <h4 class="page-title">Tipificaciones</h4>
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
                                 <a href="{{ route('inicio') }}">
@@ -22,7 +22,7 @@
                                 </a>
                             </li>
                             <li class="breadcrumb-item">
-                                <a href="javascript:void(0);" style="color: #7081b9;">Observaciones</a>
+                                <a href="javascript:void(0);" style="color: #7081b9;">Tipificaciones</a>
                             </li>
                         </ol>
                     </div>
@@ -36,7 +36,7 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-header" style="background-color:#132842">
-                    <h4 class="card-title text-white">Listado de Tipos de Observaciones</h4>
+                    <h4 class="card-title text-white">Listado de Tipificaciones</h4>
                 </div>
                 <div class="card-body">
                     <div class="row">
