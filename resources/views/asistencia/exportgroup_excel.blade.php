@@ -1,10 +1,9 @@
 @if ($identidad == '17')
 
-
     @foreach ($datosAgrupados as $grupo)
         <table>
             <tr>
-                <th style="border: 1px solid black; background: #D9E1F2;" colspan="7">
+                <th style="border: 1px solid black; background: #D9E1F2;" colspan="6">
                     {{ $grupo['encabezado']->NOMBREU }}
                 </th>
             </tr>
@@ -14,95 +13,77 @@
                 <td style="border: 1px solid black">Ingreso</td>
                 <td style="border: 1px solid black">Salida</td>
                 <td style="border: 1px solid black">Ingreso programado</td>
-                <td style="border: 1px solid black">Salida Programada</td>
-                <td style="border: 1px solid black">Observación</td>
+                <td style="border: 1px solid black">Salida programada</td>
             </tr>
-            @foreach ($fechasArray as $fecha)
-                <tr>
-                    <td style="border: 1px solid black; text-align: left !important;">
-                        <?php
-                        $nombreDia = utf8_encode(strftime('%A', strtotime($fecha)));
-                        echo $nombreDia;
-                        ?>
-                    </td>
-                    <td style="border: 1px solid black">
-                        {{ date('d/m/Y', strtotime($fecha)) }}
-                    </td>
-                    @php
-                        // Busca el detalle correspondiente a la fecha y al número de documento
-                        $detalle = collect($grupo['detalle'])->first(function ($item) use ($fecha) {
-                            return $item->FECHA == $fecha;
-                        });
-                    @endphp
 
-                    <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es');
-                    $FECHA = utf8_decode(strftime('%A', strtotime($fecha))); ?>
-                    @if ($detalle)
+            @foreach ($fechasArray as $fecha)
+                @php
+                    // Buscar el detalle correspondiente a la fecha actual
+                    $detalle = collect($grupo['detalle'])->first(function ($item) use ($fecha) {
+                        $fechaItem = \Carbon\Carbon::parse($item->FECHA)->toDateString();
+                        $fechaComparar = \Carbon\Carbon::parse($fecha)->toDateString();
+                        return $fechaItem === $fechaComparar;
+                    });
+
+                    setlocale(LC_TIME, 'es_PE', 'es_ES', 'es');
+                    $nombreDia = utf8_encode(strftime('%A', strtotime($fecha)));
+                    $FECHA = utf8_decode(strftime('%A', strtotime($fecha)));
+                @endphp
+
+                <tr>
+                    <td style="border: 1px solid black; text-align: left !important;">{{ $nombreDia }}</td>
+                    <td style="border: 1px solid black">{{ date('d/m/Y', strtotime($fecha)) }}</td>
+
+                    {{-- ======= INGRESO ======= --}}
+                    @if ($detalle && $detalle->HORA_1)
                         @php
                             $horaEntrada = $detalle->HORA_1;
                             $timestamp = strtotime($horaEntrada);
-                            $nuevaFecha = date('H:i:s', $timestamp + 5 * 60); //  5 minutos representan 300 segundos
-                            if ($FECHA == 's?bado') {
+                            if ($FECHA == 'sábado') {
                                 $confTimestamp = strtotime($hora_1->VALOR);
                             } else {
                                 $confTimestamp = strtotime($hora_3->VALOR);
                             }
-                            $confTimestamp += 5 * 60; // Aumentar 5 minutos
+                            $confTimestamp += 5 * 60; // tolerancia de 5 minutos
                             $confNuevaFecha = date('H:i:s', $confTimestamp);
                         @endphp
+
                         @if ($detalle->HORA_1 > $confNuevaFecha)
-                            <td style="border: 1px solid black; color:#ca0606;">
-                                {{ $detalle->HORA_1 }}
-                            </td>
+                            <td style="border: 1px solid black; color:#ca0606;">{{ $detalle->HORA_1 }}</td>
                         @else
-                            <td style="border: 1px solid black">
-                                {{ $detalle->HORA_1 }}
-                            </td>
+                            <td style="border: 1px solid black">{{ $detalle->HORA_1 }}</td>
                         @endif
                     @else
-                        <td style="border: 1px solid black">
-                            --
-                        </td>
+                        <td style="border: 1px solid black">--</td>
                     @endif
 
-                    @if ($detalle)
-                        @if ($FECHA == 's?bado')
+                    {{-- ======= SALIDA ======= --}}
+                    @if ($detalle && $detalle->N_NUM_DOC > 1 && $detalle->HORA_4)
+                        @if ($FECHA == 'sábado')
                             @if ($detalle->HORA_4 < $hora_5->SUM_SOLO)
-                                <td style="border: 1px solid black; color:#ca0606;">
-                                    {{ $detalle->HORA_4 }}
-                                </td>
+                                <td style="border: 1px solid black; color:#ca0606;">{{ $detalle->HORA_4 }}</td>
                             @else
-                                <td style="border: 1px solid black">
-                                    {{ $detalle->HORA_4 }}
-                                </td>
+                                <td style="border: 1px solid black">{{ $detalle->HORA_4 }}</td>
                             @endif
                         @else
                             @if ($detalle->HORA_4 < $hora_4->SUM_SOLO)
-                                <td style="border: 1px solid black;color:#ca0606;">
-                                    {{ $detalle->HORA_4 }}
-                                </td>
+                                <td style="border: 1px solid black; color:#ca0606;">{{ $detalle->HORA_4 }}</td>
                             @else
-                                <td style="border: 1px solid black">
-                                    {{ $detalle->HORA_4 }}
-                                </td>
+                                <td style="border: 1px solid black">{{ $detalle->HORA_4 }}</td>
                             @endif
                         @endif
                     @else
-                        <td style="border: 1px solid black">
-                            --
-                        </td>
+                        <td style="border: 1px solid black">--</td>
                     @endif
+
+                    {{-- ======= PROGRAMACIÓN ======= --}}
                     @if ($FECHA == 'domingo')
-                        <td colspan="2" style="background: #FFFF00; border: 1px solid black">
-                            Descanso Semanal
-                        </td>
-                    @elseif($FECHA == 's?bado' && (!$detalle || (!isset($detalle->hora1) && !isset($detalle->hora2))))
-                        <td colspan="2" style="background: #FFFF00; border: 1px solid black">
-                            Descanso Semanal
-                        </td>
+                        <td colspan="2" style="background: #FFFF00; border: 1px solid black">Descanso Semanal</td>
+                    @elseif($FECHA == 'sábado' && (!$detalle || (!isset($detalle->HORA_1) && !isset($detalle->HORA_4))))
+                        <td colspan="2" style="background: #FFFF00; border: 1px solid black">Descanso Semanal</td>
                     @else
                         <td style="border: 1px solid black">
-                            @if ($FECHA == 's?bado')
+                            @if ($FECHA == 'sábado')
                                 {{ $hora_3->VALOR }}
                             @elseif($FECHA == 'domingo')
                                 --
@@ -111,7 +92,7 @@
                             @endif
                         </td>
                         <td style="border: 1px solid black">
-                            @if ($FECHA == 's?bado')
+                            @if ($FECHA == 'sábado')
                                 {{ $hora_5->VALOR }}
                             @elseif($FECHA == 'domingo')
                                 --
@@ -120,15 +101,12 @@
                             @endif
                         </td>
                     @endif
-
-                    <td style="border: 1px solid black">
-                        <!-- Agrega aquí la lógica para obtener la Observación -->
-                    </td>
                 </tr>
             @endforeach
         </table>
     @endforeach
 @else
+    {{-- Resto de tu bloque tal cual --}}
     <table>
         <tr>
             <th style="border: 1px solid black" rowspan="3" colspan="2"></th>
@@ -148,13 +126,11 @@
                 <th style="border: 1px solid black" colspan="7">{{ $nombreMES }}</th>
             @elseif($tipo_desc == '2')
                 <th style="border: 1px solid black" colspan="2">FECHA:</th>
-                <th style="border: 1px solid black" colspan="7"> De: {{ $fecha_inicial }} Hasta:
+                <th style="border: 1px solid black" colspan="7">De: {{ $fecha_inicial }} Hasta:
                     {{ $fecha_fin }}</th>
             @endif
-
         </tr>
     </table>
-
 
 
     <table class="table table-bor" style="border: 1px solid black">

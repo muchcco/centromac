@@ -124,20 +124,29 @@
         // ===============  VALIDACIÓN GLOBAL ==================
         // =====================================================
         function validarFechasHoras(form, estado) {
-            if (estado && estado.toUpperCase() === 'SUBSANADO') {
-                let fechaInicio = form.find('[name="fecha_inicio"]').val();
-                let horaInicio = form.find('[name="hora_inicio"]').val();
-                let fechaFin = form.find('[name="fecha_fin"]').val();
-                let horaFin = form.find('[name="hora_fin"]').val();
+            if (estado && estado.toUpperCase() === 'CERRADO') {
+                // ✅ Detecta valores aunque los campos no existan o estén deshabilitados
+                let fechaInicio = form.find('[name="fecha_inicio"]').val() || form.find('input[type="date"]:disabled')
+                .val() || '';
+                let horaInicio = form.find('[name="hora_inicio"]').val() || form.find('input[type="time"]:disabled')
+                .val() || '';
+                let fechaFin = form.find('[name="fecha_fin"]').val() || '';
+                let horaFin = form.find('[name="hora_fin"]').val() || '';
 
                 // 1️⃣ Verificar campos completos
                 if (!fechaFin || !horaFin) {
                     Swal.fire({
                         icon: "warning",
-                        text: "Debe ingresar la Fecha y Hora de Fin para un estado SUBSANADO.",
+                        text: "Debe ingresar la Fecha y Hora de Fin para un estado CERRADO.",
                         confirmButtonText: "Aceptar"
                     });
                     return false;
+                }
+
+                // ⚠️ Si no hay inicio (subsanar), solo valida existencia de fin
+                if (!fechaInicio || !horaInicio) {
+                    // no hay inicio => no comparar, solo verificar que fin no esté vacío
+                    return true;
                 }
 
                 // 2️⃣ Validar fechas
@@ -160,9 +169,19 @@
                     return false;
                 }
 
-                // 4️⃣ Validación total combinada (seguridad extra)
+                // 4️⃣ Validación total combinada
                 const inicio = new Date(`${fechaInicio}T${horaInicio}`);
                 const fin = new Date(`${fechaFin}T${horaFin}`);
+
+                if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+                    Swal.fire({
+                        icon: "warning",
+                        text: "Las fechas u horas no son válidas.",
+                        confirmButtonText: "Aceptar"
+                    });
+                    return false;
+                }
+
                 if (fin <= inicio) {
                     Swal.fire({
                         icon: "warning",
@@ -348,9 +367,20 @@
             });
         }
 
-
         function btnSubsanarGuardar() {
-            let formData = new FormData($('#form_subsanar_interrupcion')[0]);
+            let form = $('#form_subsanar_interrupcion');
+
+            // 🔍 Buscar el campo de estado (en cualquiera de sus variantes)
+            let estado = form.find('[name="estado"]').val() ||
+                form.find('[name="estado_final"]').val() ||
+                form.find('#estado').val() ||
+                form.find('#estado_final').val() ||
+                ''; // si no hay campo, queda vacío
+
+            // ✅ Validar fechas y horas antes de enviar
+            if (!validarFechasHoras(form, estado)) return;
+
+            let formData = new FormData(form[0]);
 
             $.ajax({
                 url: "{{ route('interrupcion.subsanar') }}",
@@ -359,8 +389,9 @@
                 processData: false,
                 contentType: false,
                 beforeSend: function() {
-                    $('#btnEnviarForm').html('<i class="fa fa-spinner fa-spin"></i> Guardando...').prop(
-                        'disabled', true);
+                    $('#btnEnviarForm')
+                        .html('<i class="fa fa-spinner fa-spin"></i> Guardando...')
+                        .prop('disabled', true);
                 },
                 success: function(data) {
                     $('#btnEnviarForm').html('Guardar').prop('disabled', false);
@@ -369,7 +400,7 @@
                         cargarTablaInterrupciones();
                         Swal.fire({
                             icon: 'success',
-                            text: 'Interrupción subsanada correctamente',
+                            text: 'Interrupción cerrado correctamente',
                             confirmButtonText: 'Aceptar'
                         });
                     } else {

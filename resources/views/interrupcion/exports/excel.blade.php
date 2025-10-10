@@ -29,7 +29,7 @@
             <td rowspan="3" style="font-weight: bold; vertical-align: top; text-align: right;">
                 ESTADO
             </td>
-            <td style="border: 1px solid black;" colspan="1">Subsanado</td>
+            <td style="border: 1px solid black;" colspan="1">CERRADO</td>
             <td colspan="3">
                 (Para los casos en los que se envió un oficio a la entidad involucrada y se recibió una respuesta que
                 subsanaba la observación advertida)
@@ -41,16 +41,16 @@
             <td colspan="2">Interrupciones vinculadas al software</td>
         </tr>
         <tr>
-            <td style="border: 1px solid black;">Subsanado sin documento</td>
+            {{-- <td style="border: 1px solid black;">Subsanado sin documento</td>
             <td colspan="3">
                 (Para los casos en los que no fue necesario el envío de un oficio a la entidad involucrada y la
                 observación se levantó a través de una o más gestiones)
-            </td>
+            </td> --}}
             <td style="border: 1px solid black;">A1</td>
             <td colspan="2">Falla de configuración (internet, drivers, etc.)</td>
         </tr>
         <tr>
-            <td style="border: 1px solid black;">No subsanado</td>
+            <td style="border: 1px solid black;">ABIERTO</td>
             <td colspan="3">
                 (Para los casos donde la observación advertida no se ha solucionado a pesar de realizar gestiones
                 internas y/o enviar documentos a la entidad involucrada)

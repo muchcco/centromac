@@ -38,23 +38,29 @@
                 <!-- Servicio Involucrado -->
                 <td class="text-uppercase">{{ $interrupcion->servicio_involucrado }}</td>
 
-                <!-- Estado -->
                 <td>
-                    @switch($interrupcion->estado)
-                        @case('SUBSANADO')
-                            <span class="badge bg-success">Subsanado</span>
+                    @switch(strtoupper($interrupcion->estado))
+                        @case('ABIERTO')
+                            <span class="badge bg-success">ABIERTO</span>
                         @break
 
-                       {{--  @case('SUBSANADO SIN DOCUMENTO')
-                            <span class="badge bg-success">Subsanado sin Documento</span>
+                        @case('CERRADO')
+                            <span class="badge bg-danger">CERRADO</span>
                         @break
 
-                        @case('NO APLICA')
-                            <span class="badge bg-success">No Aplica</span>
-                        @break --}}
+                        {{-- Si más adelante reactivas estos casos, igual deben ir en mayúsculas --}}
+                        {{-- 
+                            @case('SUBSANADO SIN DOCUMENTO')
+                                <span class="badge bg-success">SUBSANADO SIN DOCUMENTO</span>
+                            @break
+
+                            @case('NO APLICA')
+                                <span class="badge bg-secondary">NO APLICA</span>
+                            @break 
+                            --}}
 
                         @default
-                            <span class="badge bg-danger">{{ $interrupcion->estado }}</span>
+                            <span class="badge bg-warning text-dark">{{ strtoupper($interrupcion->estado) }}</span>
                     @endswitch
                 </td>
 

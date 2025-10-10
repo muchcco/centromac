@@ -138,23 +138,36 @@ class MonitoreoAsistenciaController extends Controller
         $usuario = auth()->user();
         $idmacUsuario = $usuario->idcentro_mac;
 
-        // Roles con acceso total
+        // Obtener lista de MACs visibles según rol
         if ($usuario->hasRole('Administrador|Monitor')) {
             $macs = DB::table('db_centros_mac.m_centro_mac')
                 ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
                 ->orderBy('NOMBRE_MAC')
                 ->get();
+
+            // Todos los feriados (nacionales o locales)
+            $feriados = DB::table('db_centros_mac.feriados')
+                ->select('id', 'name', 'fecha', 'id_centromac')
+                ->orderBy('fecha')
+                ->get();
         } else {
-            // Solo su MAC
             $macs = DB::table('db_centros_mac.m_centro_mac')
                 ->where('IDCENTRO_MAC', $idmacUsuario)
                 ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
                 ->get();
+
+            // Solo feriados nacionales o locales
+            $feriados = DB::table('db_centros_mac.feriados')
+                ->select('id', 'name', 'fecha', 'id_centromac')
+                ->whereNull('id_centromac')
+                ->orWhere('id_centromac', $idmacUsuario)
+                ->orderBy('fecha')
+                ->get();
         }
 
-        return view('monitoreo.asistencia.pivot_index', compact('macs'));
+        // Pasamos a la vista
+        return view('monitoreo.asistencia.pivot_index', compact('macs', 'feriados'));
     }
-
 
     public function tb_pivot(Request $request)
     {
@@ -167,7 +180,7 @@ class MonitoreoAsistenciaController extends Controller
 
         $diasMes = Carbon::createFromDate($anio, $mes, 1)->daysInMonth;
 
-        // Base: lista de MACs según rol
+        // 1️⃣ MACS SEGÚN ROL
         $macsQuery = DB::table('db_centros_mac.m_centro_mac')
             ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
             ->orderBy('NOMBRE_MAC');
@@ -182,14 +195,26 @@ class MonitoreoAsistenciaController extends Controller
 
         $macs = $macsQuery->get();
 
-        // Traer cierres
+        // 2️⃣ CIERRES DE ASISTENCIA
         $cierres = DB::table('db_centros_mac.cierre_asistencia_log')
             ->where('anio', $anio)
             ->where('mes', $mes)
             ->select('idmac', 'fecha', 'tipo_cierre')
             ->get();
 
-        // Estructura del pivot
+        // 3️⃣ FERIADOS NACIONALES Y POR MAC
+        $feriados = DB::table('db_centros_mac.feriados')
+            ->select('fecha', 'id_centromac', 'name')
+            ->whereYear('fecha', $anio)
+            ->where(function ($q) use ($idmac) {
+                $q->whereNull('id_centromac'); // nacionales
+                if ($idmac) {
+                    $q->orWhere('id_centromac', $idmac); // locales
+                }
+            })
+            ->get();
+
+        // 4️⃣ CONSTRUCCIÓN DEL PIVOT
         $pivotData = [];
         foreach ($macs as $mac) {
             $fila = [
@@ -199,12 +224,38 @@ class MonitoreoAsistenciaController extends Controller
 
             for ($d = 1; $d <= $diasMes; $d++) {
                 $fecha = Carbon::createFromDate($anio, $mes, $d)->toDateString();
+                $carbonFecha = Carbon::parse($fecha);
+                $nombreDia = strtolower($carbonFecha->locale('es')->dayName);
+
+                $esDomingo = $nombreDia === 'domingo';
+                $esFeriado = $feriados->contains(function ($f) use ($fecha, $mac) {
+                    return $f->fecha == $fecha && (is_null($f->id_centromac) || $f->id_centromac == $mac->IDCENTRO_MAC);
+                });
+
+                // ⚠️ SI ES DOMINGO O FERIADO → NO MOSTRAR ✅ NI ❌
+                if ($esDomingo || $esFeriado) {
+                    $titulo = $esFeriado
+                        ? ($feriados->firstWhere('fecha', $fecha)->name ?? 'Feriado')
+                        : 'Domingo';
+
+                    if ($esDomingo) {
+                        $estado = "<div class='celda-domingo' title='{$titulo}'>   </div>";
+                    } else {
+                        $estado = "<div class='celda-feriado' title='{$titulo}'>   </div>";
+                    }
+
+                    $fila['dias'][$d] = $estado;
+                    continue; // ⛔ Salta al siguiente día
+                }
+
+                // Buscar cierre solo si no es domingo ni feriado
                 $cierre = $cierres->first(function ($c) use ($mac, $fecha) {
                     return $c->idmac == $mac->IDCENTRO_MAC && $c->fecha == $fecha;
                 });
 
+                // Estado visual normal
                 if ($fecha > now()->toDateString()) {
-                    $estado = '<span class="text-secondary">–</span>'; // futuro
+                    $estado = '<span class="text-secondary">–</span>';
                 } elseif ($cierre) {
                     $estado = '<span class="text-success fw-bold">✅</span>';
                 } else {
@@ -217,6 +268,7 @@ class MonitoreoAsistenciaController extends Controller
             $pivotData[] = $fila;
         }
 
+        // 5️⃣ RETORNAR VISTA
         return view('monitoreo.asistencia.tablas.tb_pivot', compact('pivotData', 'anio', 'mes', 'diasMes'));
     }
 }

@@ -84,9 +84,9 @@
                     <label class="col-3 col-form-label">¿Interrupción en curso?</label>
                     <div class="col-9">
                         <input type="checkbox" id="interrupcion_curso"
-                            {{ $interrupcion->estado == 'NO SUBSANADO' ? 'checked' : '' }}>
+                            {{ $interrupcion->estado == 'ABIERTO' ? 'checked' : '' }}>
                         <span
-                            id="estado_interrupcion">{{ $interrupcion->estado == 'NO SUBSANADO' ? 'Sí' : 'No' }}</span>
+                            id="estado_interrupcion">{{ $interrupcion->estado == 'ABIERTO' ? 'Sí' : 'No' }}</span>
                     </div>
                 </div>
 
@@ -99,14 +99,14 @@
                 </div>
 
                 <!-- Campos finales -->
-                <div id="campos_fin" style="{{ $interrupcion->estado == 'NO SUBSANADO' ? 'display:none;' : '' }}">
+                <div id="campos_fin" style="{{ $interrupcion->estado == 'ABIERTO' ? 'display:none;' : '' }}">
                     <div class="row mb-3">
                         <label class="col-3 col-form-label">Estado Final</label>
                         <div class="col-9">
                             <select class="form-control select2" name="estado_final" id="estado_final">
-                                <option value="SUBSANADO"
-                                    {{ $interrupcion->estado == 'SUBSANADO' ? 'selected' : '' }}>
-                                    SUBSANADO</option>
+                                <option value="CERRADO"
+                                    {{ $interrupcion->estado == 'CERRADO' ? 'selected' : '' }}>
+                                    CERRADO</option>
                                 {{-- <option value="SUBSANADO SIN DOCUMENTO"
                                     {{ $interrupcion->estado == 'SUBSANADO SIN DOCUMENTO' ? 'selected' : '' }}>
                                     SUBSANADO SIN DOCUMENTO</option>
@@ -158,7 +158,7 @@
         function toggleCamposFin() {
             if ($('#interrupcion_curso').is(':checked')) {
                 $('#estado_interrupcion').text('Sí');
-                $('#estado').val('NO SUBSANADO');
+                $('#estado').val('ABIERTO');
                 $('#campos_fin').hide();
             } else {
                 $('#estado_interrupcion').text('No');

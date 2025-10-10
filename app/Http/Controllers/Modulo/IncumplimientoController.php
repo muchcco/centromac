@@ -202,7 +202,7 @@ class IncumplimientoController extends Controller
 
         $incumplimiento->update($data);
 
-        return response()->json(['message' => 'Incumplimiento actualizado exitosamente', 'status' => 200]);
+        return response()->json(['message' => 'Incidente Operativo actualizado exitosamente', 'status' => 200]);
     }
 
 

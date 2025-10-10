@@ -105,7 +105,7 @@ class InterrupcionController extends Controller
             $centro_mac = $this->centro_mac();
             $data = $request->all();
 
-            if ($request->estado === 'NO SUBSANADO') {
+            if ($request->estado === 'ABIERTO') {
                 $data['fecha_fin'] = null;
                 $data['hora_fin'] = null;
                 $data['accion_correctiva'] = null;
@@ -175,7 +175,7 @@ class InterrupcionController extends Controller
             $interrupcion = Interrupcion::find($request->id_interrupcion);
             $data = $request->all();
 
-            if ($request->estado === 'NO SUBSANADO') {
+            if ($request->estado === 'ABIERTO') {
                 $data['fecha_fin'] = null;
                 $data['hora_fin'] = null;
                 $data['accion_correctiva'] = null;
@@ -269,7 +269,7 @@ class InterrupcionController extends Controller
                 'hora_fin'          => $request->hora_fin,
             ]);
 
-            return response()->json(['message' => 'Interrupción subsanada correctamente', 'status' => 200]);
+            return response()->json(['message' => 'Interrupción cerrado correctamente', 'status' => 200]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => 400]);
         }

@@ -1349,153 +1349,59 @@ class AsistenciaController extends Controller
 
         if ($identidad == '17') {
 
-            // Obtener datos del encabezado
+            // Obtener datos del encabezado (asesores con identidad 17)
             $nom_ = Personal::from('M_PERSONAL as MP')
                 ->leftJoin('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
-                ->select('DPC.NOMBRE_CARGO', DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'), 'MP.NUM_DOC', 'MP.IDENTIDAD')
+                ->select(
+                    'DPC.NOMBRE_CARGO',
+                    DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'),
+                    'MP.NUM_DOC',
+                    'MP.IDENTIDAD'
+                )
                 ->where('MP.IDENTIDAD', 17)
                 ->where('MP.IDMAC', $this->centro_mac()->idmac)
                 ->get();
 
-            $array_numdoc = $nom_->pluck('NUM_DOC')->unique()->toArray();
-
-            // Obtener datos del detalle
-
-            // Obtén el primer y último día del mes
+            // Primer y último día del mes
             $primerDia = Carbon::createFromDate($request->año, $request->mes, 1)->startOfDay();
             $ultimoDia = $primerDia->copy()->endOfMonth();
 
-            // Obtén el rango de fechas entre el primer y último día del mes
+            // Rango de fechas entre primer y último día del mes
             $fechas = CarbonPeriod::create($primerDia, $ultimoDia);
-
-            // Convierte las fechas a un array
             $fechasArray = [];
             foreach ($fechas as $fecha) {
                 $fechasArray[] = $fecha->toDateString();
             }
 
-            // Realiza la consulta para obtener datos agrupados por fecha y número de documento
-            $querys = DB::table('M_ASISTENCIA as MA')
-                ->rightJoin('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-                ->rightJoin(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE) AS NOMBREU, M_ENTIDAD.ABREV_ENTIDAD, M_CENTRO_MAC.IDCENTRO_MAC, M_PERSONAL.NUM_DOC, M_ENTIDAD.IDENTIDAD, D_PERSONAL_CARGO.NOMBRE_CARGO
-                                    FROM M_PERSONAL
-                                    LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
-                                    JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
-                                    JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
-                ->select([
-                    'PERS.ABREV_ENTIDAD',
-                    'PERS.NOMBRE_CARGO',
-                    'PERS.NOMBREU',
-                    DB::raw('DATE(MA.FECHA) AS FECHA'), // Utilizamos DATE para obtener solo la fecha sin la hora
-                    'MA.NUM_DOC',
-                    DB::raw('GROUP_CONCAT(DATE_FORMAT(MA.HORA, "%H:%i:%s") ORDER BY MA.HORA) AS HORAS'),
-                    DB::raw('COUNT(MA.NUM_DOC) AS N_NUM_DOC'),
-                    'PERS.IDENTIDAD', // Agregado para cumplir con GROUP BY
-                    'PERS.IDCENTRO_MAC' // Agregado para cumplir con GROUP BY
-                ])
-                ->whereIn(DB::raw('DATE(MA.FECHA)'), $fechasArray) // Filtra por el rango de fechas
-                ->where('PERS.IDENTIDAD', $identidad)
-                ->where('PERS.IDCENTRO_MAC', $idmac)
-                ->whereMonth('MA.FECHA', $request->mes)
-                ->whereYear('MA.FECHA', $request->año)
-                ->groupBy('MA.NUM_DOC', DB::raw('DATE(MA.FECHA)'), 'PERS.NOMBREU', 'PERS.ABREV_ENTIDAD', 'PERS.NOMBRE_CARGO')
-                ->orderBy('FECHA', 'ASC')
-                ->get();
-
-            foreach ($querys as $q) {
-                $horas = explode(',', $q->HORAS);
-                $num_horas = count($horas);
-                if ($num_horas == 1) {
-                    $q->HORA_1 = $horas[0];
-                    $q->HORA_2 = null;
-                    $q->HORA_3 = null;
-                    $q->HORA_4 = null;
-                } elseif ($num_horas == 2) {
-                    $q->HORA_1 = $horas[0];
-                    $q->HORA_2 = null;
-                    $q->HORA_3 = null;
-                    $q->HORA_4 = $horas[1];
-                } elseif ($num_horas == 3) {
-                    $q->HORA_1 = $horas[0];
-                    $q->HORA_2 = $horas[1];
-                    $q->HORA_3 = null;
-                    $q->HORA_4 = $horas[2];
-                } elseif ($num_horas >= 4) {
-                    $q->HORA_1 = $horas[0];
-                    $q->HORA_2 = $horas[1];
-                    $q->HORA_3 = $horas[2];
-                    $q->HORA_4 = $horas[3];
-                }
-            }
-
-            // Creamos un array asociativo donde la clave es la fecha y el valor es un array con los datos correspondientes
-            $query = [];
-            foreach ($fechasArray as $fecha) {
-                $query[$fecha] = $querys->filter(function ($row) use ($fecha) {
-                    return $row->FECHA == $fecha;
-                })->toArray();
-            }
-
-            // Ahora, $query contiene todos los días del mes con datos o sin datos
-
-            // dd($fechasArray);
-
-            // Agrupar por NUM_DOC
+            // Array para almacenar cada asesor con su detalle
             $datosAgrupados = [];
 
             foreach ($nom_ as $encabezado) {
-                // dd($encabezado);
+                // Consulta principal: obtiene la primera y última marcación por día
                 $detalle = Asistencia::select([
-                    'M_ASISTENCIA.FECHA',
+                    DB::raw('DATE(M_ASISTENCIA.FECHA) AS FECHA'),
                     'M_ASISTENCIA.NUM_DOC',
-                    DB::raw('GROUP_CONCAT(DATE_FORMAT(HORA, "%H:%i:%s") ORDER BY HORA) AS HORAS'),
+                    DB::raw('MIN(TIME(M_ASISTENCIA.HORA)) AS HORA_1'), // ✅ menor hora del día (primer marcaje)
+                    DB::raw('MAX(TIME(M_ASISTENCIA.HORA)) AS HORA_4'), // ✅ mayor hora del día (último marcaje)
                     DB::raw('COUNT(M_ASISTENCIA.NUM_DOC) AS N_NUM_DOC'),
                 ])
-                    ->where('IDCENTRO_MAC', $this->centro_mac()->idmac)
-                    ->whereMonth('M_ASISTENCIA.FECHA', $request->mes) // Mes específico
-                    ->whereYear('M_ASISTENCIA.FECHA', $request->año)   // Año específico
-                    ->groupBy('M_ASISTENCIA.NUM_DOC', 'M_ASISTENCIA.FECHA')
-                    ->orderBy('M_ASISTENCIA.FECHA', 'asc')
+                    ->where('M_ASISTENCIA.IDCENTRO_MAC', $this->centro_mac()->idmac)
+                    ->where('M_ASISTENCIA.NUM_DOC', $encabezado->NUM_DOC)
+                    ->whereMonth('M_ASISTENCIA.FECHA', $request->mes)
+                    ->whereYear('M_ASISTENCIA.FECHA', $request->año)
+                    ->groupBy('M_ASISTENCIA.NUM_DOC', DB::raw('DATE(M_ASISTENCIA.FECHA)'))
+                    ->orderByRaw('DATE(M_ASISTENCIA.FECHA) ASC') // compatible con ONLY_FULL_GROUP_BY
                     ->get();
 
-
-                foreach ($detalle as $d) {
-                    $horas = explode(',', $d->fecha_biometrico);
-                    $num_horas = count($horas);
-                    if ($num_horas == 1) {
-                        $d->HORA_1 = $horas[0];
-                        $d->HORA_2 = null;
-                        $d->HORA_3 = null;
-                        $d->HORA_4 = null;
-                    } elseif ($num_horas == 2) {
-                        $d->HORA_1 = $horas[0];
-                        $d->HORA_2 = null;
-                        $d->HORA_3 = null;
-                        $d->HORA_4 = $horas[1];
-                    } elseif ($num_horas == 3) {
-                        $d->HORA_1 = $horas[0];
-                        $d->HORA_2 = $horas[1];
-                        $d->HORA_3 = null;
-                        $d->HORA_4 = $horas[2];
-                    } elseif ($num_horas >= 4) {
-                        $d->HORA_1 = $horas[0];
-                        $d->HORA_2 = $horas[1];
-                        $d->HORA_3 = $horas[2];
-                        $d->HORA_4 = $horas[3];
-                    }
-                }
-
-                // dd($detalle);
-
-                $datosAgrupados[] = ['encabezado' => $encabezado, 'detalle' => $detalle];
+                // Agregar encabezado + detalle al arreglo principal
+                $datosAgrupados[] = [
+                    'encabezado' => $encabezado,
+                    'detalle' => $detalle
+                ];
             }
 
-            // dd($datosAgrupados);
-
-
-            // Ahora, $datosAgrupados es un array asociativo donde cada elemento tiene la información del encabezado junto con su detalle correspondiente
-
-
+            // Vaciar query general
+            $query = [];
         } else {
 
             $query = DB::table('M_ASISTENCIA as MA')

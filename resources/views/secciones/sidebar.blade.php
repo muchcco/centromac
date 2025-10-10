@@ -291,7 +291,7 @@
                 <li class="@if (Request::is('interrupcion*')) mm-active @endif">
                     <a href="{{ route('interrupcion.index') }}"
                         class="@if (Request::is('interrupcion/index*')) active @endif">
-                        <i class="ti-control-record"></i><span>En pruebas - Interrupciones</span>
+                        <i class="ti-control-record"></i><span>Interrupciones</span>
                     </a>
                 </li>
             @endrole

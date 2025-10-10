@@ -22,7 +22,7 @@
 
                 <input type="hidden" name="responsable" value="{{ auth()->user()->id }}">
                 <input type="hidden" name="idcentro_mac" value="{{ auth()->user()->idcentro_mac }}">
-                <input type="hidden" name="estado" id="estado" value="NO SUBSANADO">
+                <input type="hidden" name="estado" id="estado" value="ABIERTO">
 
                 <!-- Tipificación -->
                 <div class="row mb-3">
@@ -79,7 +79,7 @@
                     <label class="col-3 col-form-label">¿Interrupción en curso?</label>
                     <div class="col-9">
                         <input type="checkbox" id="interrupcion_curso" checked>
-                        <span id="estado_interrupcion">NO SUBSANADO</span>
+                        <span id="estado_interrupcion">ABIERTO</span>
                     </div>
                 </div>
 
@@ -105,7 +105,7 @@
                         <label class="col-3 col-form-label">Estado Final</label>
                         <div class="col-9">
                             <select class="form-control select2" name="estado_final" id="estado_final">
-                                <option value="SUBSANADO">Subsanado</option>
+                                <option value="CERRADO">CERRADO</option>
                                 {{-- <option value="SUBSANADO SIN DOCUMENTO">Subsanado sin Documento</option>
                                 <option value="NO APLICA">No Aplica</option> --}}
                             </select>
@@ -150,8 +150,8 @@
 
         function toggleCamposFin() {
             if ($('#interrupcion_curso').is(':checked')) {
-                $('#estado_interrupcion').text('NO SUBSANADO');
-                $('#estado').val('NO SUBSANADO');
+                $('#estado_interrupcion').text('ABIERTO');
+                $('#estado').val('ABIERTO');
                 $('#campos_fin').hide();
             } else {
                 $('#estado_interrupcion').text($('#estado_final option:selected').text());

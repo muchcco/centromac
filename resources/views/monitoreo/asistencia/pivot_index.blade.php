@@ -2,6 +2,18 @@
 
 @section('style')
     <link href="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
+    <style>
+        /* Estilo visual para domingos y feriados */
+        .feriado-row {
+            background-color: #000 !important;
+            color: #fff !important;
+            font-weight: bold;
+        }
+
+        .feriado-row:hover {
+            background-color: #1c1c1c !important;
+        }
+    </style>
 @endsection
 
 @section('main')
@@ -112,6 +124,13 @@
 
 @section('script')
     <script>
+        // 🔹 Pasamos los feriados desde PHP a JS (fechas + nombre)
+        const feriados = @json(
+            $feriados->map(fn($f) => [
+                    'fecha' => $f->fecha,
+                    'nombre' => $f->name,
+                ]));
+
         $(document).ready(() => cargarPivot());
 
         function cargarPivot() {
@@ -127,7 +146,43 @@
                     mes
                 },
                 beforeSend: () => $('#table_pivot').html('<i class="fa fa-spinner fa-spin"></i> Cargando...'),
-                success: data => $('#table_pivot').html(data),
+                success: data => {
+                    $('#table_pivot').html(data);
+
+                    // 🔸 Aplicamos formato a domingos y feriados
+                    $('#table_pivot table tbody tr').each(function() {
+                        const fechaTexto = $(this).find('td:first').text().trim();
+                        if (!fechaTexto) return;
+
+                        // Formato esperado dd/mm/yyyy → convertimos a yyyy-mm-dd
+                        const partes = fechaTexto.split('/');
+                        if (partes.length !== 3) return;
+                        const fechaISO =
+                            `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+
+                        const fechaObj = new Date(fechaISO);
+                        const nombreDia = fechaObj.toLocaleDateString('es-PE', {
+                            weekday: 'long'
+                        }).toLowerCase();
+
+                        const feriadoObj = feriados.find(f => f.fecha === fechaISO);
+
+                        if (nombreDia === 'domingo' || feriadoObj) {
+                            $(this).addClass('feriado-row');
+
+                            // Tooltip con nombre del feriado (si aplica)
+                            if (feriadoObj) {
+                                $(this).attr('title', feriadoObj.nombre);
+                                $(this).tooltip({
+                                    placement: 'top',
+                                    trigger: 'hover'
+                                });
+                            } else {
+                                $(this).attr('title', 'Domingo');
+                            }
+                        }
+                    });
+                },
                 error: () => $('#table_pivot').html('<div class="alert alert-danger">Error al cargar datos.</div>')
             });
         }
