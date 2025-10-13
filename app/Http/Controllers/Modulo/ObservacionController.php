@@ -55,22 +55,26 @@ class ObservacionController extends Controller
 
         $query = Observacion::with([
             'entidad:IDENTIDAD,NOMBRE_ENTIDAD,ABREV_ENTIDAD',
-            'tipoIntObs:id_tipo_int_obs,tipo,numeracion,nom_tipo_int_obs',
+            'tipoIntObs:id_tipo_int_obs,tipo,numeracion,nom_tipo_int_obs,tipo_obs',
             'centroMac:idcentro_mac,nombre_mac',
             'responsableUsuario:id,name'
         ]);
 
-        // 🔹 Filtro por MAC (según rol)
+        // ✅ Filtrar solo tipo de observación
+        $query->whereHas('tipoIntObs', function ($q) {
+            $q->where('tipo_obs', 'OBSERVACIÓN');
+        });
+
+        // 🔹 Filtro por MAC
         if ($idmac) {
             $query->where('idcentro_mac', $idmac);
         } else {
-            // Si NO es Administrador o Monitor → limitar a su propio MAC
             if (!$user->hasAnyRole(['Administrador', 'Monitor'])) {
                 $query->where('idcentro_mac', $user->idcentro_mac);
             }
         }
 
-        // 🔹 Filtro por rango de fechas
+        // 🔹 Filtro por fechas
         if ($fecha_inicio && $fecha_fin) {
             $query->whereBetween('fecha_observacion', [$fecha_inicio, $fecha_fin]);
         }
