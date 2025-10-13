@@ -6,6 +6,7 @@
             <th>Fecha Incidente</th>
             <th>Tipificación</th>
             <th>Entidad</th>
+            <th>Descripción</th>
             <th>Estado</th>
             <th>Acciones</th>
         </tr>
@@ -26,6 +27,10 @@
                 </td>
 
                 <td>{{ $incumplimiento->entidad->ABREV_ENTIDAD ?? 'No asignado' }}</td>
+                
+                <td class="text-wrap" style="max-width: 300px;">
+                    {{ Str::limit($incumplimiento->descripcion ?? 'Sin descripción', 100, '...') }}
+                </td>
 
                 <td>
                     @if ($incumplimiento->estado === 'CERRADO')
@@ -44,7 +49,7 @@
 
                     @if (
                         $incumplimiento->estado === 'CERRADO' &&
-                            !auth()->user()->hasRole(['Administrador', 'Monitor', 'Especialista TIC','Supervisor']))
+                            !auth()->user()->hasRole(['Administrador', 'Monitor', 'Especialista TIC', 'Supervisor']))
                         <!-- Cerrado para usuarios comunes -->
                         <button class="nobtn bandejTool" data-tippy-content="Incidente Operativo, Cerrado" disabled>
                             <i class="las la-lock text-secondary font-16"></i>

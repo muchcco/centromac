@@ -6,6 +6,7 @@
             <th>Fecha Observación</th>
             <th>Tipificación</th>
             <th>Entidad</th>
+            <th>Descripción</th>
             <th>Estado</th>
             <th>Acciones</th>
         </tr>
@@ -26,7 +27,9 @@
                 </td>
 
                 <td>{{ $observacion->entidad->ABREV_ENTIDAD ?? 'No asignado' }}</td>
-
+                <td class="text-wrap" style="max-width: 300px;">
+                    {{ Str::limit($observacion->descripcion ?? 'Sin descripción', 100, '...') }}
+                </td>
                 <td>
                     @switch($observacion->estado)
                         @case('SUBSANADO')
@@ -52,7 +55,7 @@
                         onclick="btnVerObservacion('{{ $observacion->id_observacion }}')">
                         <i class="las la-eye text-primary font-16"></i>
                     </button>
-                    
+
                     @role('Administrador')
                         <button class="nobtn bandejTool" data-tippy-content="Editar Observación"
                             onclick="btnEditarObservacion('{{ $observacion->id_observacion }}')">
