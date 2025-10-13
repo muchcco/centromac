@@ -95,7 +95,7 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <button class="btn btn-danger" onclick="btnAddIncumplimiento()">
+                        <button class="btn btn-success" onclick="btnAddIncumplimiento()">
                             <i class="fa fa-plus"></i> Nuevo Incidente Operativo
                         </button>
                         <a href="{{ route('incumplimiento.export_excel') }}" class="btn btn-outline-primary">

@@ -54,6 +54,7 @@ use App\Http\Controllers\Modulo\ObservacionController;
 use App\Http\Controllers\Modulo\HorarioMacController;
 use App\Http\Controllers\Modulo\IncumplimientoController;
 use App\Http\Controllers\Modulo\MonitoreoAsistenciaController;
+use App\Http\Controllers\Modulo\ActualizacionesController;
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
 Route::get('validar.html5', [PagesController::class, 'validar'])->name('validar');
@@ -648,8 +649,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/pivot', [MonitoreoAsistenciaController::class, 'pivot_index'])->name('pivot');
         Route::get('/pivot/tabla', [MonitoreoAsistenciaController::class, 'tb_pivot'])->name('tb_pivot');
     });
+    /******************************************************   ACTUALIZACIONES GITHUB ************************************************************************/
 
-
+    Route::prefix('actualizaciones')->name('actualizaciones.')->group(function () {
+        Route::get('/index', [ActualizacionesController::class, 'index'])->name('index');
+    });
     /******************************************************   PAGINAS DE APOYO *****************************************************************************/
 
     // SE ALMACENA LOS ACCESOS A LAS PAGINAS EXTERNA QUE NO ES NECESARIO LOGGIN

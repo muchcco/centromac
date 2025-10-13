@@ -281,11 +281,19 @@
             {{-- Observaciones (solo para Supervisor, Coordinador, Especialista_TIC) --}}
             @role('Supervisor|Coordinador|Especialista_TIC|Moderador|Administrador')
                 <li class="@if (Request::is('observacion*')) mm-active @endif">
-                    <a href="{{ route('observacion.index') }}" class="@if (Request::is('observacion/index*')) active @endif">
-                        <i class="ti-control-record"></i><span>En prueba - Observaciones</span>
+                    <a href="{{ route('observacion.index') }}"
+                        class="@if (Request::is('observacion/index*')) active @endif d-flex align-items-center justify-content-between">
+                        <div>
+                            <i class="ti-control-record"></i>
+                            <span>Observaciones</span>
+                        </div>
+                        <span class="badge bg-warning text-dark ms-2" style="font-size: 10px;">
+                            EN DESUSO
+                        </span>
                     </a>
                 </li>
             @endrole
+
             {{-- Interrupciones (solo para Coordinador, Especialista_TIC) --}}
             @role('Coordinador|Especialista TIC|Moderador|Administrador')
                 <li class="@if (Request::is('interrupcion*')) mm-active @endif">
@@ -448,7 +456,20 @@
                     </a>
                 </li>
             @endrole
+            {{-- @role('Administrador|Especialista_TIC|Supervisor|Coordinador')
+                <hr class="hr-dashed hr-menu">
 
+                <!-- NUEVA SECCIÓN -->
+                <li class="menu-label mt-0">ACTUALIZACIONES</li>
+
+                <li class="@if (Request::is('actualizaciones*')) mm-active @endif">
+                    <a href="{{ route('actualizaciones.index') }}"
+                        class="@if (Request::is('actualizaciones/index*')) active @endif">
+                        <i data-feather="git-commit" class="align-self-center menu-icon"></i>
+                        <span>Cambios del GitHub</span>
+                    </a>
+                </li>
+            @endrole --}}
         </ul>
 
     </div>

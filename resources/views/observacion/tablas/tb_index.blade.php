@@ -33,7 +33,7 @@
                             <span class="badge bg-success">Subsanado</span>
                         @break
 
- {{--                        @case('SUBSANADO SIN DOCUMENTO')
+                        {{--                        @case('SUBSANADO SIN DOCUMENTO')
                             <span class="badge bg-success">Subsanado sin Documento</span>
                         @break
 
@@ -41,6 +41,7 @@
                             <span class="badge bg-secondary">No Aplica</span>
                         @break
  --}}
+
                         @default
                             <span class="badge bg-danger">{{ $observacion->estado }}</span>
                     @endswitch
@@ -51,22 +52,22 @@
                         onclick="btnVerObservacion('{{ $observacion->id_observacion }}')">
                         <i class="las la-eye text-primary font-16"></i>
                     </button>
-                    @role('Administrador|Especialista TIC|Moderador')
+                    
+                    @role('Administrador')
                         <button class="nobtn bandejTool" data-tippy-content="Editar Observación"
                             onclick="btnEditarObservacion('{{ $observacion->id_observacion }}')">
                             <i class="las la-pen text-secondary font-16 text-success"></i>
                         </button>
-                    @endrole
-                    @role('Administrador|Especialista TIC|Moderador')
                         <button class="nobtn bandejTool" data-tippy-content="Eliminar Observación"
                             onclick="btnEliminarObservacion('{{ $observacion->id_observacion }}')">
                             <i class="las la-trash-alt text-secondary font-16 text-danger"></i>
                         </button>
+                        <button class="nobtn bandejTool" data-tippy-content="Subsanar"
+                            onclick="btnSubsanarObservacion('{{ $observacion->id_observacion }}')">
+                            <i class="las la-file-medical text-success font-16"></i>
+                        </button>
                     @endrole
-                    <button class="nobtn bandejTool" data-tippy-content="Subsanar"
-                        onclick="btnSubsanarObservacion('{{ $observacion->id_observacion }}')">
-                        <i class="las la-file-medical text-success font-16"></i>
-                    </button>
+
                 </td>
             </tr>
         @endforeach

@@ -136,7 +136,7 @@ class TipoIntObsController extends Controller
 
             return response()->json([
                 'data'    => $tipo,
-                'message' => 'Tipo de observación actualizado exitosamente',
+                'message' => 'La tipificación se ha actualizado exitosamente',
                 'status'  => 200
             ], 200);
         } catch (\Exception $e) {

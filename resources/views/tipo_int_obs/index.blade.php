@@ -213,7 +213,7 @@
                         cargarTipoObs(); // Actualizar la tabla
                         Swal.fire({
                             icon: "success",
-                            text: "Tipo de Observación agregado exitosamente",
+                            text: "La tipificación agregado exitosamente",
                             confirmButtonText: "Aceptar"
                         });
                         $('#modal_show_modal').modal('hide');
@@ -228,7 +228,7 @@
                     document.getElementById("btnEnviarForm").disabled = false;
                     Swal.fire({
                         icon: "error",
-                        text: "Error al agregar el Tipo de Observación",
+                        text: "Error al agregar la tipificación",
                         confirmButtonText: "Aceptar"
                     });
                 }
@@ -294,7 +294,7 @@
                 error: function(xhr, status, error) {
                     Swal.fire({
                         icon: "error",
-                        text: "No se pudo cargar la información del Tipo de Observación",
+                        text: "No se pudo cargar la información de la tipificación",
                         confirmButtonText: "Aceptar"
                     });
                 }
@@ -330,7 +330,7 @@
                     tablaTipoObs(); // Recargar la tabla
                     Swal.fire({
                         icon: 'success',
-                        title: 'Tipo de Observación Actualizado',
+                        title: 'Tipo de Incidencia Actualizado',
                         text: 'El tipo ha sido actualizado correctamente.',
                         confirmButtonText: 'Aceptar'
                     });
@@ -339,7 +339,7 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'No se pudo actualizar el Tipo de Observación. ' + xhr.responseJSON
+                        text: 'No se pudo actualizar el Tipo de Incidencia. ' + xhr.responseJSON
                             .message,
                         confirmButtonText: 'Aceptar'
                     });
@@ -372,7 +372,7 @@
                         Swal.fire({
                             icon: "success",
                             title: 'Eliminado!',
-                            text: "El tipo de observación ha sido eliminado con éxito.",
+                            text: "La tipificación ha sido eliminado con éxito.",
                             confirmButtonText: "Aceptar"
                         });
                     },
@@ -380,7 +380,7 @@
                         Swal.fire({
                             icon: "error",
                             title: 'Error',
-                            text: "No se pudo eliminar el tipo de observación.",
+                            text: "No se pudo eliminar la tipificación.",
                             confirmButtonText: "Aceptar"
                         });
                     }

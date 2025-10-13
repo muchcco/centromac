@@ -10,6 +10,7 @@ use App\Models\Entidad;
 use App\Models\TipoIntObs;
 use App\Models\User;
 use App\Exports\ObservacionesExport;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ObservacionController extends Controller
@@ -29,12 +30,28 @@ class ObservacionController extends Controller
 
     public function index()
     {
-        return view('observacion.index');
+        $user = auth()->user();
+
+        // Listado completo de MAC (solo para admins y monitores)
+        $centros_mac = DB::table('m_centro_mac')
+            ->select('idcentro_mac as IDCENTRO_MAC', 'nombre_mac as NOMBRE_MAC')
+            ->orderBy('nombre_mac')
+            ->get();
+
+        // Obtener el nombre del MAC del usuario actual
+        $nombre_mac_usuario = DB::table('m_centro_mac')
+            ->where('idcentro_mac', $user->idcentro_mac)
+            ->value('nombre_mac');
+
+        return view('observacion.index', compact('centros_mac', 'nombre_mac_usuario'));
     }
 
-    public function tb_index()
+    public function tb_index(Request $request)
     {
         $user = auth()->user();
+        $idmac = $request->idmac;
+        $fecha_inicio = $request->fecha_inicio;
+        $fecha_fin = $request->fecha_fin;
 
         $query = Observacion::with([
             'entidad:IDENTIDAD,NOMBRE_ENTIDAD,ABREV_ENTIDAD',
@@ -43,16 +60,25 @@ class ObservacionController extends Controller
             'responsableUsuario:id,name'
         ]);
 
-        // Si NO tiene el rol de Administrador o Moderador, filtramos por su centro MAC
-        if (!$user->hasRole(['Administrador', 'Moderador'])) {
-            $query->where('idcentro_mac', $user->idcentro_mac);
+        // 🔹 Filtro por MAC (según rol)
+        if ($idmac) {
+            $query->where('idcentro_mac', $idmac);
+        } else {
+            // Si NO es Administrador o Monitor → limitar a su propio MAC
+            if (!$user->hasAnyRole(['Administrador', 'Monitor'])) {
+                $query->where('idcentro_mac', $user->idcentro_mac);
+            }
+        }
+
+        // 🔹 Filtro por rango de fechas
+        if ($fecha_inicio && $fecha_fin) {
+            $query->whereBetween('fecha_observacion', [$fecha_inicio, $fecha_fin]);
         }
 
         $observaciones = $query->orderBy('fecha_observacion', 'desc')->get();
-        //dd($observaciones);
+
         return view('observacion.tablas.tb_index', compact('observaciones'));
     }
-
 
     public function create()
     {
@@ -242,14 +268,35 @@ class ObservacionController extends Controller
         $view = view('observacion.modals.md_ver_observacion', compact('observacion'))->render();
         return response()->json(['html' => $view]);
     }
-    public function export_excel()
+    public function export_excel(Request $request)
     {
-        $observaciones = Observacion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac'])
-            ->where('idcentro_mac', auth()->user()->idcentro_mac)
-            ->orderBy('fecha_observacion', 'desc')
-            ->get();
+        $user = auth()->user();
+        $idmac = $request->idmac;
+        $fecha_inicio = $request->fecha_inicio;
+        $fecha_fin = $request->fecha_fin;
 
-        $nombreMac = auth()->user()->centroMac->nombre_mac ?? 'Centro MAC';
+        $query = Observacion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac']);
+
+        // 🔹 Filtro por MAC
+        if ($idmac) {
+            $query->where('idcentro_mac', $idmac);
+        } else {
+            if (!$user->hasAnyRole(['Administrador', 'Monitor'])) {
+                $query->where('idcentro_mac', $user->idcentro_mac);
+            }
+        }
+
+        // 🔹 Filtro por rango de fechas
+        if ($fecha_inicio && $fecha_fin) {
+            $query->whereBetween('fecha_observacion', [$fecha_inicio, $fecha_fin]);
+        }
+
+        $observaciones = $query->orderBy('fecha_observacion', 'desc')->get();
+
+        $nombreMac = $idmac
+            ? DB::table('m_centro_mac')->where('idcentro_mac', $idmac)->value('nombre_mac')
+            : ($user->centroMac->nombre_mac ?? 'Centro MAC');
+
         $nombreMes = ucfirst(\Carbon\Carbon::now()->monthName);
 
         return Excel::download(
