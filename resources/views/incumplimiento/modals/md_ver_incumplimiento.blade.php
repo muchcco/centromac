@@ -68,7 +68,7 @@
                     </li>
                 @endif
 
-                @if (auth()->user()->hasRole(['Administrador', 'Monitor']))
+                @if (auth()->user()->hasRole(['Administrador', 'Monitor','Moderador']))
                     @if ($incumplimiento->created_at)
                         <li class="list-group-item">
                             <strong>Fecha de Registro:</strong>
