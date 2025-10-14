@@ -41,7 +41,8 @@
                 @endif
 
                 <li class="list-group-item">
-                    <strong>Fecha Incumplimiento:</strong> {{ $incumplimiento->fecha_observacion }}
+                    <strong>Fecha Incumplimiento:</strong>
+                    {{ \Carbon\Carbon::parse($incumplimiento->fecha_observacion)->format('d/m/Y') }}
                 </li>
 
                 <li class="list-group-item">
@@ -55,10 +56,26 @@
 
                 @if ($incumplimiento->fecha_solucion)
                     <li class="list-group-item">
-                        <strong>Fecha Cierre:</strong> {{ $incumplimiento->fecha_solucion }}
+
+                        <strong>Fecha Cierre:</strong>
+                        {{ \Carbon\Carbon::parse($incumplimiento->fecha_solucion)->format('d/m/Y') }}
+
+                    </li>
+                @endif
+                @if ($incumplimiento->responsableUsuario)
+                    <li class="list-group-item">
+                        <strong>Responsable:</strong> {{ strtoupper($incumplimiento->responsableUsuario->name) }}
                     </li>
                 @endif
 
+                @if (auth()->user()->hasRole(['Administrador', 'Monitor']))
+                    @if ($incumplimiento->created_at)
+                        <li class="list-group-item">
+                            <strong>Fecha de Registro:</strong>
+                            {{ \Carbon\Carbon::parse($incumplimiento->created_at)->format('d/m/Y H:i:s') }}
+                        </li>
+                    @endif
+                @endif
                 @if ($incumplimiento->archivo)
                     <li class="list-group-item">
                         <strong>Archivo Adjunto:</strong>
