@@ -56,7 +56,7 @@ class IncumplimientoController extends Controller
         // 🔹 Filtro por centro MAC
         if ($request->filled('idmac')) {
             $query->where('idcentro_mac', $request->idmac);
-        } elseif (!$user->hasRole(['Administrador'])) {
+        } elseif (!$user->hasRole(['Administrador|Moderador'])) {
             $query->where('idcentro_mac', $user->idcentro_mac);
         }
 
