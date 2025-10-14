@@ -38,7 +38,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="mb-2 fw-bold text-dark">Centro MAC:</label>
-                        @role('Administrador|Monitor')
+                        @role('Administrador|Moderador')
                             <select id="filtro_mac" class="form-control select2" style="width: 100%">
                                 <option value="">-- Todos los MAC --</option>
                                 @foreach ($centros_mac as $mac)

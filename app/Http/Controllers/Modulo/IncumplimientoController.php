@@ -109,7 +109,7 @@ class IncumplimientoController extends Controller
         $data = $request->except('archivo');
 
         // 👇 Forzar siempre ABIERTO si no es Monitor o Administrador
-        if (!auth()->user()->hasRole(['Administrador', 'Monitor'])) {
+        if (!auth()->user()->hasRole(['Administrador', 'Monitor','Moderador'])) {
             $data['estado'] = 'ABIERTO';
             $data['fecha_solucion'] = null;
         }
@@ -168,7 +168,7 @@ class IncumplimientoController extends Controller
         $incumplimiento = Observacion::findOrFail($request->id_observacion);
 
         // 🚫 Bloqueo si está cerrado y el usuario NO es Admin o Monitor
-        if ($incumplimiento->estado === 'CERRADO' && !$user->hasRole(['Administrador', 'Monitor'])) {
+        if ($incumplimiento->estado === 'CERRADO' && !$user->hasRole(['Administrador', 'Monitor','Moderador'])) {
             return response()->json([
                 'status' => 403,
                 'message' => 'No puede modificar un incumplimiento cerrado.'
@@ -212,7 +212,7 @@ class IncumplimientoController extends Controller
         $incumplimiento = Observacion::findOrFail($request->id_observacion);
 
         // 🚫 No permitir eliminar si está cerrado y el usuario no es Admin/Monitor
-        if ($incumplimiento->estado === 'CERRADO' && !$user->hasRole(['Administrador', 'Monitor'])) {
+        if ($incumplimiento->estado === 'CERRADO' && !$user->hasRole(['Administrador', 'Monitor','Moderador'])) {
             return response()->json([
                 'status' => 403,
                 'message' => 'No puede eliminar un incumplimiento cerrado.'
@@ -263,7 +263,7 @@ class IncumplimientoController extends Controller
     public function cerrarGuardar(Request $request)
     {
         // 🔐 Solo MONITOR puede cerrar
-        if (!auth()->user()->hasRole(['Monitor', 'Administrador'])) {
+        if (!auth()->user()->hasRole(['Monitor', 'Administrador','Moderador'])) {
             return response()->json([
                 'status' => 403,
                 'message' => 'No tiene permisos para cerrar incumplimientos.'

@@ -39,7 +39,7 @@ class MonitoreoAsistenciaController extends Controller
          * Los demás (Especialista TIC, Orientador, Asesor, Supervisor, Coordinador)
          * solo ven su propio MAC.
          */
-        if ($usuario->hasRole('Administrador|Monitor')) {
+        if ($usuario->hasRole('Administrador|Monitor|Moderador')) {
             $macs = DB::table('db_centros_mac.m_centro_mac')
                 ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
                 ->orderBy('NOMBRE_MAC', 'ASC')
@@ -87,7 +87,7 @@ class MonitoreoAsistenciaController extends Controller
          * - Administrador y Monitor: pueden ver todos los MAC y filtrar.
          * - Otros roles (Especialista TIC, Asesor, etc.): solo su centro MAC.
          */
-        if ($usuario->hasRole('Administrador|Monitor')) {
+        if ($usuario->hasRole('Administrador|Monitor|Moderador')) {
             if ($request->filled('idmac')) {
                 $query->where('m.IDCENTRO_MAC', $request->idmac);
             }
@@ -139,7 +139,7 @@ class MonitoreoAsistenciaController extends Controller
         $idmacUsuario = $usuario->idcentro_mac;
 
         // Obtener lista de MACs visibles según rol
-        if ($usuario->hasRole('Administrador|Monitor')) {
+        if ($usuario->hasRole('Administrador|Monitor|Moderador')) {
             $macs = DB::table('db_centros_mac.m_centro_mac')
                 ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
                 ->orderBy('NOMBRE_MAC')
@@ -185,7 +185,7 @@ class MonitoreoAsistenciaController extends Controller
             ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
             ->orderBy('NOMBRE_MAC');
 
-        if ($usuario->hasRole('Administrador|Monitor')) {
+        if ($usuario->hasRole('Administrador|Monitor|Moderador')) {
             if ($idmac) {
                 $macsQuery->where('IDCENTRO_MAC', $idmac);
             }

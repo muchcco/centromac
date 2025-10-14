@@ -498,7 +498,7 @@ class AsistenciaController extends Controller
         $user = auth()->user();
 
         // Si es Administrador o Monitor → ver todos los MACs
-        if ($user->hasRole(['Administrador', 'Monitor'])) {
+        if ($user->hasRole(['Administrador', 'Monitor','Moderador'])) {
             $macs = DB::table('db_centros_mac.m_centro_mac')
                 ->select('IDCENTRO_MAC as id', 'NOMBRE_MAC as nom')
                 ->orderBy('NOMBRE_MAC')

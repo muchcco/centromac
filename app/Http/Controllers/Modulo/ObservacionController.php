@@ -69,7 +69,7 @@ class ObservacionController extends Controller
         if ($idmac) {
             $query->where('idcentro_mac', $idmac);
         } else {
-            if (!$user->hasAnyRole(['Administrador', 'Monitor'])) {
+            if (!$user->hasAnyRole(['Administrador', 'Monitor','Moderador'])) {
                 $query->where('idcentro_mac', $user->idcentro_mac);
             }
         }
@@ -285,7 +285,7 @@ class ObservacionController extends Controller
         if ($idmac) {
             $query->where('idcentro_mac', $idmac);
         } else {
-            if (!$user->hasAnyRole(['Administrador', 'Monitor'])) {
+            if (!$user->hasAnyRole(['Administrador', 'Monitor'.'Moderador'])) {
                 $query->where('idcentro_mac', $user->idcentro_mac);
             }
         }
