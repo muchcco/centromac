@@ -434,7 +434,7 @@
                             class="align-self-center menu-icon"></i><span>Servicios por MAC</span></a>
                 </li>
             @endif
-            @role('Administrador|Monitor|Supervisor|Especialista_TIC|Especialista TIC')
+            @role('Administrador|Moderador|Supervisor|Especialista_TIC|Especialista TIC')
                 <hr class="hr-dashed hr-menu">
 
                 <!-- Nueva sección MONITOREO -->

@@ -212,7 +212,7 @@ class IncumplimientoController extends Controller
         $incumplimiento = Observacion::findOrFail($request->id_observacion);
 
         // 🚫 No permitir eliminar si está cerrado y el usuario no es Admin/Monitor
-        if ($incumplimiento->estado === 'CERRADO' && !$user->hasRole(['Administrador', 'Monitor','Moderador','Supervisor'])) {
+        if ($incumplimiento->estado === 'CERRADO' && !$user->hasRole(['Administrador', 'Monitor','Moderador','supervisor'])) {
             return response()->json([
                 'status' => 403,
                 'message' => 'No puede eliminar un incumplimiento cerrado.'
