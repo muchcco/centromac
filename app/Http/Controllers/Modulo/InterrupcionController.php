@@ -32,12 +32,29 @@ class InterrupcionController extends Controller
 
     public function index()
     {
-        return view('interrupcion.index');
+        $user = auth()->user();
+
+        // Listado completo de MAC (solo para admins y moderadores)
+        $centros_mac = DB::table('m_centro_mac')
+            ->select('idcentro_mac as IDCENTRO_MAC', 'nombre_mac as NOMBRE_MAC')
+            ->orderBy('nombre_mac')
+            ->get();
+
+        // Nombre del MAC del usuario actual
+        $nombre_mac_usuario = DB::table('m_centro_mac')
+            ->where('idcentro_mac', $user->idcentro_mac)
+            ->value('nombre_mac');
+
+        return view('interrupcion.index', compact('centros_mac', 'nombre_mac_usuario'));
     }
 
-    public function tb_index()
+
+    public function tb_index(Request $request)
     {
         $user = auth()->user();
+        $idmac = $request->idmac;
+        $fecha_inicio = $request->fecha_inicio;
+        $fecha_fin = $request->fecha_fin;
 
         $query = Interrupcion::with([
             'entidad:IDENTIDAD,NOMBRE_ENTIDAD,ABREV_ENTIDAD',
@@ -46,17 +63,26 @@ class InterrupcionController extends Controller
             'responsableUsuario:id,name'
         ]);
 
-        if (!$user->hasRole(['Administrador', 'Moderador'])) {
-            $query->where('idcentro_mac', $user->idcentro_mac);
+        // 🔹 Filtro por MAC
+        if ($idmac) {
+            $query->where('idcentro_mac', $idmac);
+        } else {
+            if (!$user->hasAnyRole(['Administrador', 'Monitor', 'Moderador'])) {
+                $query->where('idcentro_mac', $user->idcentro_mac);
+            }
         }
-        $query->orderBy('fecha_inicio', 'desc')
-            ->orderBy('hora_inicio',  'desc');
-        $interrupciones = $query->get();
+
+        // 🔹 Filtro por fechas
+        if ($fecha_inicio && $fecha_fin) {
+            $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
+        }
+
+        $interrupciones = $query->orderBy('fecha_inicio', 'desc')
+            ->orderBy('hora_inicio', 'desc')
+            ->get();
 
         return view('interrupcion.tablas.tb_index', compact('interrupciones'));
     }
-
-
 
     public function create()
     {
@@ -69,7 +95,11 @@ class InterrupcionController extends Controller
                 ->orderBy('m_entidad.abrev_entidad')
                 ->get();
 
-            $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
+            $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')
+                ->orderBy('tipo', 'asc')
+                ->orderBy('numeracion', 'asc')
+                ->orderBy('nom_tipo_int_obs', 'asc')
+                ->get();
             $responsables = User::where('idcentro_mac', $centro_mac->idmac)->select('id', 'name')->get();
 
             $view = view('interrupcion.modals.md_add_interrupcion', compact('entidades', 'tipos', 'responsables'))->render();
@@ -89,7 +119,6 @@ class InterrupcionController extends Controller
             'servicio_involucrado'  => 'required|string|max:255',
             'descripcion'           => 'required|string',
             'descripcion_accion'    => 'nullable|string',
-            'accion_correctiva'     => 'nullable|string',
             'fecha_inicio'          => 'required|date',
             'hora_inicio'           => 'required|date_format:H:i',
             'fecha_fin'             => 'nullable|date',
@@ -103,12 +132,11 @@ class InterrupcionController extends Controller
 
         try {
             $centro_mac = $this->centro_mac();
-            $data = $request->all();
+            $data = $request->except('accion_correctiva'); // ✅ se ignora completamente
 
             if ($request->estado === 'ABIERTO') {
                 $data['fecha_fin'] = null;
                 $data['hora_fin'] = null;
-                $data['accion_correctiva'] = null;
             }
 
             $data['idcentro_mac'] = $centro_mac->idmac;
@@ -138,7 +166,11 @@ class InterrupcionController extends Controller
                 ->orderBy('m_entidad.abrev_entidad')
                 ->get();
 
-            $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
+            $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')
+                ->orderBy('tipo', 'asc')
+                ->orderBy('numeracion', 'asc')
+                ->orderBy('nom_tipo_int_obs', 'asc')
+                ->get();
             $responsables = User::where('idcentro_mac', $centro_mac->idmac)->get();
 
             $view = view('interrupcion.modals.md_edit_interrupcion', compact('interrupcion', 'entidades', 'tipos', 'responsables'))->render();
@@ -157,7 +189,6 @@ class InterrupcionController extends Controller
             'id_tipo_int_obs' => 'required|integer|exists:m_tipo_int_obs,id_tipo_int_obs',
             'descripcion'     => 'required|string',
             'descripcion_accion' => 'nullable|string',
-            'accion_correctiva'  => 'nullable|string',
             'fecha_inicio'       => 'required|date',
             'hora_inicio'        => 'required|date_format:H:i',
             'fecha_fin'          => 'nullable|date',
@@ -173,12 +204,11 @@ class InterrupcionController extends Controller
 
         try {
             $interrupcion = Interrupcion::find($request->id_interrupcion);
-            $data = $request->all();
+            $data = $request->except('accion_correctiva'); // ✅ ignorado
 
             if ($request->estado === 'ABIERTO') {
                 $data['fecha_fin'] = null;
                 $data['hora_fin'] = null;
-                $data['accion_correctiva'] = null;
             }
 
             $interrupcion->update($data);
@@ -238,11 +268,32 @@ class InterrupcionController extends Controller
             ->orderBy('m_entidad.abrev_entidad')
             ->get();
 
-        $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')->get();
+        $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')
+            ->orderBy('tipo', 'asc')
+            ->orderBy('numeracion', 'asc')
+            ->orderBy('nom_tipo_int_obs', 'asc')
+            ->get();
 
         $view = view('interrupcion.modals.md_subsanar_interrupcion', compact('interrupcion', 'tipos', 'entidades'))->render();
 
         return response()->json(['html' => $view]);
+    }
+    public function verModal(Request $request)
+    {
+        try {
+            $interrupcion = Interrupcion::with(['entidad', 'tipoIntObs', 'centroMac', 'responsableUsuario'])
+                ->find($request->id_interrupcion);
+
+            if (!$interrupcion) {
+                return response()->json(['error' => 'Interrupción no encontrada'], 404);
+            }
+
+            $view = view('interrupcion.modals.md_ver_interrupcion', compact('interrupcion'))->render();
+
+            return response()->json(['html' => $view]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function subsanarGuardar(Request $request)
@@ -250,7 +301,6 @@ class InterrupcionController extends Controller
         $validator = Validator::make($request->all(), [
             'id_interrupcion'    => 'required|integer|exists:m_interrupcion,id_interrupcion',
             'estado'             => 'required|string',
-            'accion_correctiva'  => 'nullable|string',
             'fecha_fin'          => 'nullable|date',
             'hora_fin'           => 'nullable|date_format:H:i',
         ]);
@@ -263,30 +313,141 @@ class InterrupcionController extends Controller
             $interrupcion = Interrupcion::find($request->id_interrupcion);
 
             $interrupcion->update([
-                'estado'            => $request->estado,
-                'accion_correctiva' => $request->accion_correctiva,
-                'fecha_fin'         => $request->fecha_fin,
-                'hora_fin'          => $request->hora_fin,
+                'estado'    => $request->estado,
+                'fecha_fin' => $request->fecha_fin,
+                'hora_fin'  => $request->hora_fin,
             ]);
 
-            return response()->json(['message' => 'Interrupción cerrado correctamente', 'status' => 200]);
+            return response()->json(['message' => 'Interrupción cerrada correctamente', 'status' => 200]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => 400]);
         }
     }
 
-    public function export_excel()
+    public function export_excel(Request $request)
     {
-        $interrupcion = Interrupcion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac'])
-            ->where('idcentro_mac', auth()->user()->idcentro_mac)
-            ->get();
+        try {
+            $user = auth()->user();
+            $idmac = $request->idmac;
+            $fecha_inicio = $request->fecha_inicio;
+            $fecha_fin = $request->fecha_fin;
 
-        $nombreMac = auth()->user()->centroMac->nombre_mac ?? 'Centro MAC';
-        $nombreMes = ucfirst(\Carbon\Carbon::now()->monthName);
+            $query = Interrupcion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac']);
 
-        return Excel::download(
-            new InterrupcionExport($interrupcion, $nombreMac, $nombreMes),
-            'Interrupciones_' . now()->format('Ymd_His') . '.xlsx'
-        );
+            if ($idmac) {
+                $query->where('idcentro_mac', $idmac);
+            } elseif (!$user->hasAnyRole(['Administrador', 'Monitor', 'Moderador'])) {
+                $query->where('idcentro_mac', $user->idcentro_mac);
+            }
+
+            if ($fecha_inicio && $fecha_fin) {
+                $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
+            }
+
+            $interrupciones = $query->orderBy('fecha_inicio', 'desc')->get();
+
+            $nombreMac = $idmac
+                ? DB::table('m_centro_mac')->where('idcentro_mac', $idmac)->value('nombre_mac')
+                : ($user->centroMac->nombre_mac ?? 'Centro MAC');
+
+            $rango = '';
+            if ($fecha_inicio && $fecha_fin) {
+                $rango = '_(' . \Carbon\Carbon::parse($fecha_inicio)->format('d-m-Y') . '_a_' . \Carbon\Carbon::parse($fecha_fin)->format('d-m-Y') . ')';
+            }
+
+            $nombreArchivo = 'Interrupciones_' . str_replace(' ', '_', $nombreMac) . $rango . '.xlsx';
+
+            return Excel::download(
+                new InterrupcionExport($interrupciones, $nombreMac, $rango),
+                $nombreArchivo
+            );
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'status' => 400]);
+        }
+    }
+    public function observarModal(Request $request)
+    {
+        try {
+            $interrupcion = Interrupcion::with(['usuarioObservador'])->find($request->id_interrupcion);
+
+            if (!$interrupcion) {
+                return response()->json(['error' => 'Interrupción no encontrada'], 404);
+            }
+
+            $user = auth()->user();
+
+            // 🔹 Detecta tipo de acceso
+            $soloLectura = !$user->hasAnyRole(['Administrador', 'Moderador']);
+            $puedeCorregir = $user->hasAnyRole(['Supervisor', 'Especialista TIC', 'Moderador', 'Administrador']);
+
+            $view = view('interrupcion.modals.md_observar_interrupcion', compact('interrupcion', 'soloLectura', 'puedeCorregir'))->render();
+
+            return response()->json(['html' => $view]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function observarGuardar(Request $request)
+    {
+        try {
+            $user = auth()->user();
+
+            $request->merge([
+                'observado' => $request->has('observado') ? 1 : 0,
+                'corregido' => $request->has('corregido') ? 1 : 0,
+            ]);
+
+            $validator = Validator::make($request->all(), [
+                'id_interrupcion' => 'required|integer|exists:m_interrupcion,id_interrupcion',
+                'retroalimentacion' => 'nullable|string|max:1000',
+                'observado' => 'required|boolean',
+                'corregido' => 'boolean'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['message' => $validator->errors(), 'status' => 422], 422);
+            }
+
+            $interrupcion = Interrupcion::find($request->id_interrupcion);
+            if (!$interrupcion) {
+                return response()->json(['error' => 'Interrupción no encontrada'], 404);
+            }
+
+            // 🧠 1️⃣ Si el usuario es ADMIN o MODERADOR → puede observar o quitar observación
+            if ($user->hasAnyRole(['Administrador', 'Moderador'])) {
+                $datos = [
+                    'observado' => $request->observado,
+                    'retroalimentacion' => $request->retroalimentacion,
+                    'observado_por' => $request->observado ? $user->id : null,
+                    'fecha_observado' => $request->observado ? now() : null,
+                ];
+
+                // 👇 Si se desmarca "observado", se limpian también los campos de corrección
+                if (!$request->observado) {
+                    $datos['corregido'] = 0;
+                    $datos['corregido_por'] = null;
+                    $datos['fecha_corregido'] = null;
+                }
+
+                $interrupcion->update($datos);
+            }
+
+            // 🧠 2️⃣ Si el usuario es SUPERVISOR o ESPECIALISTA TIC → puede marcar corrección
+            if ($user->hasAnyRole(['Supervisor', 'Especialista TIC', 'Moderador', 'Administrador'])) {
+                // Solo puede corregir si ya fue observado
+                if ($interrupcion->observado) {
+                    $interrupcion->update([
+                        'corregido' => $request->corregido,
+                        'corregido_por' => $request->corregido ? $user->id : null,
+                        'fecha_corregido' => $request->corregido ? now() : null,
+                    ]);
+                }
+            }
+
+            return response()->json(['message' => 'Cambios guardados correctamente', 'status' => 200]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'status' => 400]);
+        }
     }
 }

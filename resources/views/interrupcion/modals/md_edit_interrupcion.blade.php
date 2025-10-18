@@ -13,6 +13,7 @@
             <h4 class="modal-title">Editar Interrupción</h4>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+
         <div class="modal-body">
             <div id="alerta"></div>
             <h5>Editar datos de la Interrupción</h5>
@@ -85,8 +86,7 @@
                     <div class="col-9">
                         <input type="checkbox" id="interrupcion_curso"
                             {{ $interrupcion->estado == 'ABIERTO' ? 'checked' : '' }}>
-                        <span
-                            id="estado_interrupcion">{{ $interrupcion->estado == 'ABIERTO' ? 'Sí' : 'No' }}</span>
+                        <span id="estado_interrupcion">{{ $interrupcion->estado == 'ABIERTO' ? 'Sí' : 'No' }}</span>
                     </div>
                 </div>
 
@@ -98,30 +98,28 @@
                     </div>
                 </div>
 
+                <!-- Acción Tomada -->
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label">Acción Tomada</label>
+                    <div class="col-9">
+                        <textarea class="form-control" name="descripcion_accion">{{ $interrupcion->descripcion_accion }}</textarea>
+                    </div>
+                </div>
+
                 <!-- Campos finales -->
                 <div id="campos_fin" style="{{ $interrupcion->estado == 'ABIERTO' ? 'display:none;' : '' }}">
                     <div class="row mb-3">
                         <label class="col-3 col-form-label">Estado Final</label>
                         <div class="col-9">
                             <select class="form-control select2" name="estado_final" id="estado_final">
-                                <option value="CERRADO"
-                                    {{ $interrupcion->estado == 'CERRADO' ? 'selected' : '' }}>
-                                    CERRADO</option>
-                                {{-- <option value="SUBSANADO SIN DOCUMENTO"
-                                    {{ $interrupcion->estado == 'SUBSANADO SIN DOCUMENTO' ? 'selected' : '' }}>
-                                    SUBSANADO SIN DOCUMENTO</option>
-                                <option value="NO APLICA" {{ $interrupcion->estado == 'NO APLICA' ? 'selected' : '' }}>
-                                    NO APLICA</option> --}}
+                                <option value="CERRADO" {{ $interrupcion->estado == 'CERRADO' ? 'selected' : '' }}>
+                                    CERRADO
+                                </option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label">Acción Correctiva</label>
-                        <div class="col-9">
-                            <textarea class="form-control" name="accion_correctiva">{{ $interrupcion->accion_correctiva }}</textarea>
-                        </div>
-                    </div>
+                    <!-- 🔹 Campo Acción Correctiva ELIMINADO -->
 
                     <div class="row mb-3">
                         <label class="col-3 col-form-label">Fecha Fin</label>
@@ -136,7 +134,6 @@
                         </div>
                     </div>
                 </div>
-
             </form>
         </div>
 
@@ -169,9 +166,7 @@
 
         toggleCamposFin();
 
-        $('#interrupcion_curso').change(function() {
-            toggleCamposFin();
-        });
+        $('#interrupcion_curso').change(toggleCamposFin);
 
         $('#estado_final').change(function() {
             if (!$('#interrupcion_curso').is(':checked')) {

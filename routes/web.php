@@ -354,6 +354,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/modals/md_subsanar_interrupcion', [InterrupcionController::class, 'subsanarModal'])->name('modals.md_subsanar_interrupcion');
         Route::post('/subsanar', [InterrupcionController::class, 'subsanarGuardar'])->name('subsanar');
         Route::get('/interrupcion/export-excel', [InterrupcionController::class, 'export_excel'])->name('export_excel');
+        Route::post('/modals/md_ver_interrupcion', [InterrupcionController::class, 'verModal'])->name('modals.md_ver_interrupcion');
+        Route::post('/modals/md_observar_interrupcion', [InterrupcionController::class, 'observarModal'])->name('modals.md_observar_interrupcion');
+        Route::post('/observar', [InterrupcionController::class, 'observarGuardar'])->name('observar');
+        Route::post('/marcar-corregido', [InterrupcionController::class, 'marcarCorregido'])->name('marcar_corregido');
+        Route::post('/toggle-corregido', [InterrupcionController::class, 'toggleCorregido'])->name('toggle_corregido');
     });
     Route::prefix('observacion')->name('observacion.')->group(function () {
         Route::get('/index', [ObservacionController::class, 'index'])->name('index');
@@ -394,7 +399,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     /******************************************************   OBSERVACION INTERRUPCIONES ************************************************************************/
     // Rutas para la gestión de observaciones e interrupciones
-    Route::group(['prefix' => 'observacion_interrupcion', 'as' => 'observacion_interrupcion.'], function () {
+    /*     Route::group(['prefix' => 'observacion_interrupcion', 'as' => 'observacion_interrupcion.'], function () {
         Route::get('/index', [ObservacionInterrupcionController::class, 'index'])->name('index');
         Route::get('/tablas/tb_index', [ObservacionInterrupcionController::class, 'tb_index'])->name('tablas.tb_index');
         Route::post('/modals/md_add_observacion', [ObservacionInterrupcionController::class, 'create'])->name('modals.md_add_observacion');
@@ -406,7 +411,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/delete', [ObservacionInterrupcionController::class, 'destroy'])->name('delete_observacion');
         Route::post('/toggle_status', [ObservacionInterrupcionController::class, 'toggleStatus'])->name('toggle_status');
         Route::post('/get-personales', [ObservacionInterrupcionController::class, 'getPersonales'])->name('get.personales');
-    });
+    }); */
     /******************************************************   ITINERANTE ************************************************************************/
     // Rutas para la gestión de Itinerante
     Route::group(['prefix' => 'itinerante', 'as' => 'itinerante.'], function () {

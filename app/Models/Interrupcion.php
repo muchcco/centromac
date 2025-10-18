@@ -18,14 +18,21 @@ class Interrupcion extends Model
         'servicio_involucrado',
         'descripcion',
         'descripcion_accion',
-        'accion_correctiva',
         'fecha_inicio',
         'hora_inicio',
         'fecha_fin',
         'hora_fin',
         'estado',
+        'observado',
+        'retroalimentacion',
+        'observado_por',
+        'fecha_observado',
+        'corregido',
+        'corregido_por',
+        'fecha_corregido',
     ];
 
+    // 🔹 Relaciones existentes
     public function entidad()
     {
         return $this->belongsTo(Entidad::class, 'identidad', 'IDENTIDAD');
@@ -44,5 +51,17 @@ class Interrupcion extends Model
     public function responsableUsuario()
     {
         return $this->belongsTo(User::class, 'responsable', 'id');
+    }
+
+    // 🔹 Usuario que observó
+    public function usuarioObservador()
+    {
+        return $this->belongsTo(User::class, 'observado_por', 'id');
+    }
+
+    // 🔹 Usuario que corrigió
+    public function usuarioCorregidor()
+    {
+        return $this->belongsTo(User::class, 'corregido_por', 'id');
     }
 }

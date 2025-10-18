@@ -4,6 +4,7 @@
             <h4 class="modal-title">Subsanar Interrupción</h4>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+
         <div class="modal-body">
             <div id="alerta"></div>
 
@@ -79,21 +80,13 @@
                     <div class="col-9">
                         <select class="form-control" name="estado_final" id="estado_final">
                             <option value="#">Seleccione...</option>
-                            <option value="CERRADO"
-                                {{ $interrupcion->estado == 'CERRADO' ? 'selected' : '' }}>CERRADO</option>
-                            {{--  <option value="SUBSANADO SIN DOCUMENTO" {{ $interrupcion->estado == 'SUBSANADO SIN DOCUMENTO' ? 'selected' : '' }}>SUBSANADO SIN DOCUMENTO</option>
-                            <option value="NO APLICA" {{ $interrupcion->estado == 'NO APLICA' ? 'selected' : '' }}>NO APLICA</option>
-                        --}}
+                            <option value="CERRADO" {{ $interrupcion->estado == 'CERRADO' ? 'selected' : '' }}>CERRADO
+                            </option>
                         </select>
                     </div>
                 </div>
 
-                <div class="row mb-3">
-                    <label class="col-3 col-form-label">Acción Correctiva</label>
-                    <div class="col-9">
-                        <textarea class="form-control" name="accion_correctiva">{{ $interrupcion->accion_correctiva }}</textarea>
-                    </div>
-                </div>
+                <!-- 🔹 Campo Acción Correctiva ELIMINADO -->
 
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Fecha Fin</label>
@@ -104,7 +97,7 @@
                     <label class="col-2 col-form-label text-center">Hora Fin</label>
                     <div class="col-3">
                         <input type="time" class="form-control" name="hora_fin"
-                            value="{{ \Carbon\Carbon::parse($interrupcion->hora_fin)->format('H:i') }}">
+                            value="{{ $interrupcion->hora_fin ? \Carbon\Carbon::parse($interrupcion->hora_fin)->format('H:i') : '' }}">
                     </div>
                 </div>
             </form>

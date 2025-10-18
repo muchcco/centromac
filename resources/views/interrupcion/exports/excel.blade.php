@@ -8,7 +8,7 @@
             </td>
             <td colspan="6" rowspan="2"
                 style="text-align: center; font-weight: bold; font-size: 14px; border: 1px solid black;">
-                REPORTE DE DE INTERRUPCIONES DEL SERVICIO POR CAUSAS ATRIBUIBLES A LA ENTIDAD                
+                REPORTE DE INTERRUPCIONES DEL SERVICIO POR CAUSAS ATRIBUIBLES A LA ENTIDAD
             </td>
             <td rowspan="2" style="text-align: center; font-weight: bold; border: 1px solid black;">CÓDIGO</td>
         </tr>
@@ -24,15 +24,14 @@
             <td colspan="1" style="border: 1px solid black; text-align: center;">{{ strtoupper($nombreMes) }}</td>
             <td colspan="1" style="font-weight: bold; border: 1px solid black; text-align: center;">ANS4</td>
         </tr>
+
         <tr></tr>
+
+        <!-- Leyenda de estados -->
         <tr>
-            <td rowspan="3" style="font-weight: bold; vertical-align: top; text-align: right;">
-                ESTADO
-            </td>
-            <td style="border: 1px solid black;" colspan="1">CERRADO</td>
+            <td rowspan="3" style="font-weight: bold; vertical-align: top; text-align: right;">ESTADO</td>
+            <td style="border: 1px solid black;" colspan="1">ABIERTO</td>
             <td colspan="3">
-                (Para los casos en los que se envió un oficio a la entidad involucrada y se recibió una respuesta que
-                subsanaba la observación advertida)
             </td>
             <td rowspan="3" style="font-weight: bold; vertical-align: top; text-align: right;">
                 (**) TIPIFICACIÓN DE LA OBSERVACIÓN
@@ -41,24 +40,20 @@
             <td colspan="2">Interrupciones vinculadas al software</td>
         </tr>
         <tr>
-            {{-- <td style="border: 1px solid black;">Subsanado sin documento</td>
-            <td colspan="3">
-                (Para los casos en los que no fue necesario el envío de un oficio a la entidad involucrada y la
-                observación se levantó a través de una o más gestiones)
-            </td> --}}
+            <td style="border: 1px solid black;">CERRADO</td>
+            <td colspan="3"></td>
             <td style="border: 1px solid black;">A1</td>
             <td colspan="2">Falla de configuración (internet, drivers, etc.)</td>
         </tr>
         <tr>
-            <td style="border: 1px solid black;">ABIERTO</td>
+            <td></td>
             <td colspan="3">
-                (Para los casos donde la observación advertida no se ha solucionado a pesar de realizar gestiones
-                internas y/o enviar documentos a la entidad involucrada)
             </td>
             <td style="border: 1px solid black;">A2</td>
-            <td colspan="2">Problema en el control de accesos (acceso a cuentas, por
-                ejemplo)</td>
+            <td colspan="2">Problema en control de accesos (cuentas, credenciales, etc.)</td>
         </tr>
+
+        <!-- Tipificación adicional -->
         <tr>
             <td colspan="6" style="border: none;"></td>
             <td style="border: 1px solid black;">A3</td>
@@ -87,18 +82,18 @@
         <tr>
             <td colspan="6" style="border: none;"></td>
             <td style="border: 1px solid black;">B3</td>
-            <td colspan="2">Falta de insumos (tóner, corte del fluido eléctrico, entre otros)</td>
+            <td colspan="2">Falta de insumos (tóner, energía, etc.)</td>
         </tr>
         <tr>
             <td colspan="6" style="border: none;"></td>
             <td style="border: 1px solid black;">B4</td>
-            <td colspan="2">Corte en el servicio de internet (router, switch, otros)</td>
+            <td colspan="2">Corte en el servicio de internet</td>
         </tr>
-        <tr>
+
         <tr></tr>
         <tr></tr>
-        <tr></tr>
-        <!-- FILA 4: Títulos -->
+
+        <!-- FILA DE TÍTULOS DE COLUMNA -->
         <tr style="background-color: #4F81BD; color: white; font-weight: bold;">
             <th style="border: 1px solid black;">N°</th>
             <th style="border: 1px solid black;">ENTIDAD INVOLUCRADA</th>
@@ -106,14 +101,14 @@
             <th style="border: 1px solid black;">TIPIFICACIÓN DE LA INTERRUPCIÓN (**)</th>
             <th style="border: 1px solid black;">DESCRIPCIÓN DE LA INTERRUPCIÓN</th>
             <th style="border: 1px solid black;" colspan="2">DESCRIPCIÓN DE LAS ACCIONES INMEDIATAS</th>
-            <th style="border: 1px solid black;" colspan="2">ACCIÓN CORRECTIVA Y/O PREVENTIVA</th>
-            <th style="border: 1px solid black;">FECHA DE INICIO DE LA INTERRUPCIÓN</th>
-            <th style="border: 1px solid black;">HORA DE INICIO DE LA INTERRUPCIÓN</th>
-            <th style="border: 1px solid black;">FECHA FIN DE INTERRUPCIÓN</th>
-            <th style="border: 1px solid black;">HORA FIN DE INTERRUPCIÓN</th>
-            <th style="border: 1px solid black;">ESTADO (*)</th>            
+            <th style="border: 1px solid black;">FECHA DE INICIO</th>
+            <th style="border: 1px solid black;">HORA DE INICIO</th>
+            <th style="border: 1px solid black;">FECHA FIN</th>
+            <th style="border: 1px solid black;">HORA FIN</th>
+            <th style="border: 1px solid black;">ESTADO (*)</th>
         </tr>
     </thead>
+
     <tbody>
         @foreach ($interrupcion as $i => $obs)
             <tr>
@@ -125,20 +120,15 @@
                 </td>
                 <td style="border: 1px solid black;">{{ $obs->descripcion }}</td>
                 <td style="border: 1px solid black;" colspan="2">{{ $obs->descripcion_accion }}</td>
-                <td style="border: 1px solid black;" colspan="2">{{ $obs->accion_correctiva }}</td>
                 <td style="border: 1px solid black;">
-                    {{ \Carbon\Carbon::parse($obs->fecha_inicio)->format('d-m-Y') }}
+                    {{ $obs->fecha_inicio ? \Carbon\Carbon::parse($obs->fecha_inicio)->format('d-m-Y') : '' }}
                 </td>
+                <td style="border: 1px solid black;">{{ $obs->hora_inicio ?? '' }}</td>
                 <td style="border: 1px solid black;">
-                    {{ $obs->hora_inicio }}
+                    {{ $obs->fecha_fin ? \Carbon\Carbon::parse($obs->fecha_fin)->format('d-m-Y') : '' }}
                 </td>
-                <td style="border: 1px solid black;">
-                    {{ \Carbon\Carbon::parse($obs->fecha_fin)->format('d-m-Y') }}
-                </td>
-                <td style="border: 1px solid black;">
-                    {{ $obs->hora_fin }}
-                </td>
-                <td style="border: 1px solid black;">{{ $obs->estado }}</td>                
+                <td style="border: 1px solid black;">{{ $obs->hora_fin ?? '' }}</td>
+                <td style="border: 1px solid black;">{{ $obs->estado ?? '' }}</td>
             </tr>
         @endforeach
     </tbody>

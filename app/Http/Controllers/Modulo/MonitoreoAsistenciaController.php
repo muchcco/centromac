@@ -183,7 +183,8 @@ class MonitoreoAsistenciaController extends Controller
         // 1️⃣ MACS SEGÚN ROL
         $macsQuery = DB::table('db_centros_mac.m_centro_mac')
             ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
-            ->orderBy('NOMBRE_MAC');
+            ->orderBy('NOMBRE_MAC')
+            ->whereNotIn('IDCENTRO_MAC', [5, 6]); // 🚫 Excluir MAC 5 y 6
 
         if ($usuario->hasRole('Administrador|Monitor|Moderador')) {
             if ($idmac) {
@@ -199,6 +200,7 @@ class MonitoreoAsistenciaController extends Controller
         $cierres = DB::table('db_centros_mac.cierre_asistencia_log')
             ->where('anio', $anio)
             ->where('mes', $mes)
+            ->whereNotIn('idmac', [5, 6]) // 🚫 Excluir MAC 5 y 6
             ->select('idmac', 'fecha', 'tipo_cierre')
             ->get();
 
@@ -232,28 +234,23 @@ class MonitoreoAsistenciaController extends Controller
                     return $f->fecha == $fecha && (is_null($f->id_centromac) || $f->id_centromac == $mac->IDCENTRO_MAC);
                 });
 
-                // ⚠️ SI ES DOMINGO O FERIADO → NO MOSTRAR ✅ NI ❌
                 if ($esDomingo || $esFeriado) {
                     $titulo = $esFeriado
                         ? ($feriados->firstWhere('fecha', $fecha)->name ?? 'Feriado')
                         : 'Domingo';
 
-                    if ($esDomingo) {
-                        $estado = "<div class='celda-domingo' title='{$titulo}'>   </div>";
-                    } else {
-                        $estado = "<div class='celda-feriado' title='{$titulo}'>   </div>";
-                    }
+                    $estado = $esDomingo
+                        ? "<div class='celda-domingo' title='{$titulo}'></div>"
+                        : "<div class='celda-feriado' title='{$titulo}'></div>";
 
                     $fila['dias'][$d] = $estado;
-                    continue; // ⛔ Salta al siguiente día
+                    continue;
                 }
 
-                // Buscar cierre solo si no es domingo ni feriado
                 $cierre = $cierres->first(function ($c) use ($mac, $fecha) {
                     return $c->idmac == $mac->IDCENTRO_MAC && $c->fecha == $fecha;
                 });
 
-                // Estado visual normal
                 if ($fecha > now()->toDateString()) {
                     $estado = '<span class="text-secondary">–</span>';
                 } elseif ($cierre) {
@@ -268,7 +265,6 @@ class MonitoreoAsistenciaController extends Controller
             $pivotData[] = $fila;
         }
 
-        // 5️⃣ RETORNAR VISTA
         return view('monitoreo.asistencia.tablas.tb_pivot', compact('pivotData', 'anio', 'mes', 'diasMes'));
     }
 }

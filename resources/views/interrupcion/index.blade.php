@@ -29,7 +29,63 @@
             </div>
         </div>
     </div>
+    <!-- 🔹 FILTRO -->
+    <div class="card mb-3">
+        <div class="card-header" style="background-color:#132842">
+            <h4 class="card-title text-white mb-0">Filtro de Búsqueda</h4>
+        </div>
 
+        <div class="card-body">
+            <div class="row align-items-end">
+                <!-- CENTRO MAC -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="mb-2 fw-bold text-dark">Centro MAC:</label>
+                        @role('Administrador|Moderador')
+                            <select id="filtro_mac" class="form-control select2" style="width: 100%">
+                                <option value="">-- Todos los MAC --</option>
+                                @foreach ($centros_mac as $mac)
+                                    <option value="{{ $mac->IDCENTRO_MAC }}">{{ $mac->NOMBRE_MAC }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="text" class="form-control text-uppercase"
+                                value="{{ $nombre_mac_usuario ?? 'Sin asignar' }}" readonly>
+                            <input type="hidden" id="filtro_mac" value="{{ auth()->user()->idcentro_mac }}">
+                        @endrole
+                    </div>
+                </div>
+
+                <!-- FECHA INICIO -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="mb-2 fw-bold text-dark">Fecha Inicio:</label>
+                        <input type="date" id="filtro_fecha_inicio" class="form-control" value="{{ date('Y-m-01') }}">
+                    </div>
+                </div>
+
+                <!-- FECHA FIN -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="mb-2 fw-bold text-dark">Fecha Fin:</label>
+                        <input type="date" id="filtro_fecha_fin" class="form-control" value="{{ date('Y-m-d') }}">
+                    </div>
+                </div>
+
+                <!-- BOTONES -->
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="form-group d-flex gap-1 w-100">
+                        <button id="btnBuscar" class="btn btn-primary w-50">
+                            <i class="fa fa-search"></i> Buscar
+                        </button>
+                        <button class="btn btn-dark w-50" onclick="limpiarFiltro()">
+                            <i class="fa fa-undo"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Contenedor principal -->
     <div class="row">
         <div class="col-lg-12">
@@ -44,9 +100,9 @@
                                 onclick="btnAddInterrupcion()">
                                 <i class="fa fa-plus"></i> Nueva Interrupción
                             </button>
-                            <a href="{{ route('interrupcion.export_excel') }}" class="btn btn-outline-primary">
+                            <button type="button" class="btn btn-outline-primary" onclick="exportarExcel()">
                                 <i class="fa fa-file-excel"></i> Exportar Excel
-                            </a>
+                            </button>
                         </div>
                     </div>
                     <div class="row">
@@ -77,22 +133,36 @@
 
     <script>
         $(document).ready(function() {
+            // inicializar select2
+            $('.select2').select2();
+
+            // cargar tabla al iniciar
             cargarTablaInterrupciones();
+
+            // ✅ activar botón BUSCAR
+            $('#btnBuscar').on('click', function(e) {
+                e.preventDefault();
+                cargarTablaInterrupciones();
+            });
         });
 
+        // 🔹 Función principal para cargar la tabla
         function cargarTablaInterrupciones() {
+            let idmac = $('#filtro_mac').val();
+            let fecha_inicio = $('#filtro_fecha_inicio').val();
+            let fecha_fin = $('#filtro_fecha_fin').val();
+
             $.ajax({
                 type: 'GET',
                 url: "{{ route('interrupcion.tablas.tb_index') }}",
-                beforeSend: function() {
-                    $('#table_data').html('<i class="fa fa-spinner fa-spin"></i> Cargando...');
+                data: {
+                    idmac,
+                    fecha_inicio,
+                    fecha_fin
                 },
-                success: function(data) {
-                    $('#table_data').html(data);
-                },
-                error: function() {
-                    $('#table_data').html('Error al cargar los datos.');
-                }
+                beforeSend: () => $('#table_data').html('<i class="fa fa-spinner fa-spin"></i> Cargando...'),
+                success: data => $('#table_data').html(data),
+                error: () => $('#table_data').html('Error al cargar los datos.')
             });
         }
 
@@ -127,9 +197,9 @@
             if (estado && estado.toUpperCase() === 'CERRADO') {
                 // ✅ Detecta valores aunque los campos no existan o estén deshabilitados
                 let fechaInicio = form.find('[name="fecha_inicio"]').val() || form.find('input[type="date"]:disabled')
-                .val() || '';
+                    .val() || '';
                 let horaInicio = form.find('[name="hora_inicio"]').val() || form.find('input[type="time"]:disabled')
-                .val() || '';
+                    .val() || '';
                 let fechaFin = form.find('[name="fecha_fin"]').val() || '';
                 let horaFin = form.find('[name="hora_fin"]').val() || '';
 
@@ -414,6 +484,93 @@
                         text: 'Error al guardar la subsanación',
                         confirmButtonText: 'Aceptar'
                     });
+                }
+            });
+
+        } // ===============================================
+        // 🔹 Exportar Excel con filtros aplicados
+        // ===============================================
+        function exportarExcel() {
+            let idmac = $('#filtro_mac').val() || '';
+            let fecha_inicio = $('#filtro_fecha_inicio').val() || '';
+            let fecha_fin = $('#filtro_fecha_fin').val() || '';
+
+            // Construimos la URL con los filtros
+            const url = "{{ route('interrupcion.export_excel') }}" +
+                `?idmac=${encodeURIComponent(idmac)}&fecha_inicio=${encodeURIComponent(fecha_inicio)}&fecha_fin=${encodeURIComponent(fecha_fin)}`;
+
+            // Redirige para descargar el archivo Excel
+            window.location.href = url;
+        }
+        // ✅ Función para limpiar filtros y recargar
+        function limpiarFiltro() {
+            $('#filtro_mac').val('').trigger('change');
+            $('#filtro_fecha_inicio').val('{{ date('Y-m-01') }}');
+            $('#filtro_fecha_fin').val('{{ date('Y-m-d') }}');
+            cargarTablaInterrupciones();
+        }
+
+        function btnVerInterrupcion(id) {
+            $.ajax({
+                type: 'POST',
+                url: "{{ route('interrupcion.modals.md_ver_interrupcion') }}",
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id_interrupcion": id
+                },
+                success: function(data) {
+                    $("#modal_show_modal").html(data.html);
+                    $("#modal_show_modal").modal('show');
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "No se pudo cargar la información de la interrupción.",
+                        confirmButtonText: "Aceptar"
+                    });
+                }
+            });
+        }
+
+        function btnObservarInterrupcion(id) {
+            $.post("{{ route('interrupcion.modals.md_observar_interrupcion') }}", {
+                _token: "{{ csrf_token() }}",
+                id_interrupcion: id
+            }, function(data) {
+                $('#modal_show_modal').html(data.html);
+                $('#modal_show_modal').modal('show');
+            }).fail(function() {
+                Swal.fire("Error", "No se pudo cargar el formulario de observación.", "error");
+            });
+        }
+
+        function guardarObservacion() {
+            const form = $('#form_observar_interrupcion');
+
+            $.ajax({
+                url: "{{ route('interrupcion.observar') }}",
+                type: "POST",
+                data: form.serialize(),
+                beforeSend: function() {
+                    $('#btnGuardarObservacion').prop('disabled', true).html(
+                        '<i class="fa fa-spinner fa-spin"></i> Guardando...');
+                },
+                success: function(res) {
+                    $('#btnGuardarObservacion').prop('disabled', false).html('Guardar');
+
+                    if (res.status === 200) {
+                        Swal.fire("✅ Éxito", res.message, "success");
+                        $('#modal_show_modal').modal('hide');
+                        cargarTablaInterrupciones(); // 🔁 recarga dinámica
+                    } else {
+                        Swal.fire("⚠️ Atención", res.message || "No se pudo guardar los cambios.", "warning");
+                    }
+                },
+                error: function(xhr) {
+                    $('#btnGuardarObservacion').prop('disabled', false).html('Guardar');
+                    console.error(xhr.responseText);
+                    Swal.fire("❌ Error", "Ocurrió un problema al guardar la observación.", "error");
                 }
             });
         }

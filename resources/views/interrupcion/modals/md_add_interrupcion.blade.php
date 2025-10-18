@@ -13,6 +13,7 @@
             <h4 class="modal-title">Registrar Nueva Interrupción</h4>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+
         <div class="modal-body">
             <div id="alerta"></div>
             <h5>Datos de la Interrupción</h5>
@@ -106,18 +107,11 @@
                         <div class="col-9">
                             <select class="form-control select2" name="estado_final" id="estado_final">
                                 <option value="CERRADO">CERRADO</option>
-                                {{-- <option value="SUBSANADO SIN DOCUMENTO">Subsanado sin Documento</option>
-                                <option value="NO APLICA">No Aplica</option> --}}
                             </select>
                         </div>
                     </div>
 
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label">Acción Correctiva</label>
-                        <div class="col-9">
-                            <textarea class="form-control" name="accion_correctiva" rows="3"></textarea>
-                        </div>
-                    </div>
+                    <!-- 🔹 Acción Correctiva ELIMINADA -->
 
                     <div class="row mb-3">
                         <label class="col-3 col-form-label">Fecha Fin</label>
@@ -135,13 +129,14 @@
 
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
-            <button type="button" class="btn btn-outline-success" id="btnEnviarForm" onclick="btnStoreInterrupcion()">Guardar</button>
+            <button type="button" class="btn btn-outline-success" id="btnEnviarForm"
+                onclick="btnStoreInterrupcion()">Guardar</button>
         </div>
     </div>
 </div>
 
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
         $('.select2').select2({
             dropdownParent: $('#modal_show_modal'),
             width: '100%',
@@ -161,7 +156,7 @@
         }
 
         $('#interrupcion_curso').change(toggleCamposFin);
-        $('#estado_final').change(function () {
+        $('#estado_final').change(function() {
             if (!$('#interrupcion_curso').is(':checked')) {
                 $('#estado').val($(this).val());
                 $('#estado_interrupcion').text($(this).find("option:selected").text());
