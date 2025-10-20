@@ -6,7 +6,7 @@
             <th>Fecha y Hora Inicio</th>
             <th>Tipificación</th>
             <th>Entidad</th>
-            <th>Servicio</th>
+            <th>Descripción</th>
             <th>Estado</th>
             <th>Acciones</th>
         </tr>
@@ -45,7 +45,7 @@
                 <td>{{ $interrupcion->entidad->ABREV_ENTIDAD ?? 'No asignado' }}</td>
 
                 <!-- Servicio Involucrado -->
-                <td class="text-uppercase">{{ $interrupcion->servicio_involucrado }}</td>
+                <td class="text-uppercase">{{ Str::limit(strtoupper($interrupcion->descripcion ?? 'SIN DESCRIPCIÓN'), 100, '...') }}</td>
 
                 <!-- Estado -->
                 <td class="text-center">
