@@ -84,8 +84,67 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 🔹 FILTROS ADICIONALES -->
+            <div id="extraFiltros" class="mt-3" style="display: none;">
+                <div class="row g-3">
+                    <!-- ENTIDAD -->
+                    <div class="col-md-3">
+                        <label class="fw-bold text-dark">Entidad:</label>
+                        <select id="filtro_entidad" class="form-control select2" style="width: 100%;">
+                            <option value="">-- Todas las entidades --</option>
+                            @foreach ($entidades as $ent)
+                                <option value="{{ $ent->nombre_entidad }}">
+                                    {{ $ent->abrev_entidad }} - {{ $ent->nombre_entidad }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- TIPIFICACIÓN -->
+                    <div class="col-md-3">
+                        <label class="fw-bold text-dark">Tipificación:</label>
+                        <select id="filtro_tipificacion" class="form-control select2" style="width: 100%;">
+                            <option value="">-- Todas las tipificaciones --</option>
+                            @foreach ($tipificaciones as $tip)
+                                <option value="{{ $tip->nom_tipo_int_obs }}">
+                                    {{ $tip->tipo }} {{ $tip->numeracion }} - {{ $tip->nom_tipo_int_obs }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- ESTADO -->
+                    <div class="col-md-3">
+                        <label class="fw-bold text-dark">Estado:</label>
+                        <select id="filtro_estado" class="form-control select2" style="width: 100%;">
+                            <option value="">-- Todos --</option>
+                            <option value="ABIERTO">Abierto</option>
+                            <option value="CERRADO">Cerrado</option>
+                        </select>
+                    </div>
+
+                    <!-- REVISIÓN -->
+                    <div class="col-md-3">
+                        <label class="fw-bold text-dark">Revisión:</label>
+                        <select id="filtro_revision" class="form-control select2" style="width: 100%;">
+                            <option value="">-- Todos --</option>
+                            <option value="observado">Observado</option>
+                            <option value="no_observado">No observado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🔹 BOTÓN MÁS FILTROS -->
+            <div class="mt-3 text-center">
+                <button class="btn btn-outline-light w-100" id="btnToggleFiltros" style="font-weight: 600;">
+                    <i class="fa fa-filter"></i> Ver más filtros
+                </button>
+            </div>
         </div>
     </div>
+
     <!-- Contenedor principal -->
     <div class="row">
         <div class="col-lg-12">
@@ -152,19 +211,62 @@
             let fecha_inicio = $('#filtro_fecha_inicio').val();
             let fecha_fin = $('#filtro_fecha_fin').val();
 
+            // 🔸 Filtros adicionales (solo si están visibles o tienen valor)
+            let entidad = $('#filtro_entidad').val();
+            let tipificacion = $('#filtro_tipificacion').val();
+            let estado = $('#filtro_estado').val();
+            let revision = $('#filtro_revision').val();
+
             $.ajax({
                 type: 'GET',
                 url: "{{ route('interrupcion.tablas.tb_index') }}",
                 data: {
                     idmac,
                     fecha_inicio,
-                    fecha_fin
+                    fecha_fin,
+                    entidad,
+                    tipificacion,
+                    estado,
+                    revision
                 },
                 beforeSend: () => $('#table_data').html('<i class="fa fa-spinner fa-spin"></i> Cargando...'),
                 success: data => $('#table_data').html(data),
                 error: () => $('#table_data').html('Error al cargar los datos.')
             });
         }
+
+        // 🔹 Mostrar / ocultar los filtros extra con animación y reseteo
+        $(document).on('click', '#btnToggleFiltros', function() {
+            const $extra = $('#extraFiltros');
+            const visible = $extra.is(':visible');
+            const $btn = $(this);
+
+            // Si está visible, lo estamos cerrando
+            if (visible) {
+                // Ocultamos con animación
+                $extra.slideUp(300, function() {
+                    // ✅ Resetear todos los filtros adicionales a "Todos"
+                    $('#filtro_entidad, #filtro_tipificacion, #filtro_estado, #filtro_revision')
+                        .val('')
+                        .trigger('change.select2'); // evita lanzar evento 'change' normal
+
+                    // 🔁 Actualizar tabla UNA sola vez después del reset
+                    cargarTablaInterrupciones();
+                });
+
+                // Cambiar texto del botón
+                $btn.html('<i class="fa fa-filter"></i> Ver más filtros');
+            } else {
+                // Mostrar filtros con animación
+                $extra.slideDown(300);
+                $btn.html('<i class="fa fa-chevron-up"></i> Ver menos filtros');
+            }
+        });
+
+        // 🔹 Actualizar tabla automáticamente al cambiar filtros
+        $('#extraFiltros input, #extraFiltros select').on('change keyup', function() {
+            cargarTablaInterrupciones();
+        });
 
         function btnAddInterrupcion() {
             $.ajax({
@@ -490,18 +592,30 @@
         } // ===============================================
         // 🔹 Exportar Excel con filtros aplicados
         // ===============================================
+        // 🔹 Exportar Excel con todos los filtros aplicados
         function exportarExcel() {
             let idmac = $('#filtro_mac').val() || '';
             let fecha_inicio = $('#filtro_fecha_inicio').val() || '';
             let fecha_fin = $('#filtro_fecha_fin').val() || '';
+            let entidad = $('#filtro_entidad').val() || '';
+            let tipificacion = $('#filtro_tipificacion').val() || '';
+            let estado = $('#filtro_estado').val() || '';
+            let revision = $('#filtro_revision').val() || '';
 
-            // Construimos la URL con los filtros
+            // 🔸 Construimos la URL con todos los parámetros
             const url = "{{ route('interrupcion.export_excel') }}" +
-                `?idmac=${encodeURIComponent(idmac)}&fecha_inicio=${encodeURIComponent(fecha_inicio)}&fecha_fin=${encodeURIComponent(fecha_fin)}`;
+                `?idmac=${encodeURIComponent(idmac)}` +
+                `&fecha_inicio=${encodeURIComponent(fecha_inicio)}` +
+                `&fecha_fin=${encodeURIComponent(fecha_fin)}` +
+                `&entidad=${encodeURIComponent(entidad)}` +
+                `&tipificacion=${encodeURIComponent(tipificacion)}` +
+                `&estado=${encodeURIComponent(estado)}` +
+                `&revision=${encodeURIComponent(revision)}`;
 
-            // Redirige para descargar el archivo Excel
+            // 🔹 Ejecuta la descarga del Excel
             window.location.href = url;
         }
+
         // ✅ Función para limpiar filtros y recargar
         function limpiarFiltro() {
             $('#filtro_mac').val('').trigger('change');

@@ -96,6 +96,7 @@
         <!-- FILA DE TÍTULOS DE COLUMNA -->
         <tr style="background-color: #4F81BD; color: white; font-weight: bold;">
             <th style="border: 1px solid black;">N°</th>
+            <th style="border: 1px solid black;">CENTRO MAC</th>
             <th style="border: 1px solid black;">ENTIDAD INVOLUCRADA</th>
             <th style="border: 1px solid black;">SERVICIO INVOLUCRADO</th>
             <th style="border: 1px solid black;">TIPIFICACIÓN DE LA INTERRUPCIÓN (**)</th>
@@ -106,6 +107,7 @@
             <th style="border: 1px solid black;">FECHA FIN</th>
             <th style="border: 1px solid black;">HORA FIN</th>
             <th style="border: 1px solid black;">ESTADO (*)</th>
+            <th style="border: 1px solid black;">RESPONSABLE</th>
         </tr>
     </thead>
 
@@ -113,22 +115,26 @@
         @foreach ($interrupcion as $i => $obs)
             <tr>
                 <td style="border: 1px solid black;">{{ $i + 1 }}</td>
-                <td style="border: 1px solid black;">{{ $obs->entidad->ABREV_ENTIDAD ?? '' }}</td>
-                <td style="border: 1px solid black;">{{ $obs->servicio_involucrado ?? '' }}</td>
+                <td style="border: 1px solid black;">{{ strtoupper($obs->centroMac->nombre_mac ?? 'No asignado') }}</td>
+                <td style="border: 1px solid black;">{{ strtoupper($obs->entidad->ABREV_ENTIDAD ?? '') }}</td>
+                <td style="border: 1px solid black;">{{ strtoupper($obs->servicio_involucrado ?? '') }}</td>
                 <td style="border: 1px solid black;">
-                    {{ $obs->tipoIntObs->tipo ?? '' }} {{ $obs->tipoIntObs->numeracion ?? '' }}
+                    {{ strtoupper($obs->tipoIntObs->tipo ?? '') }} {{ strtoupper($obs->tipoIntObs->numeracion ?? '') }}
                 </td>
-                <td style="border: 1px solid black;">{{ $obs->descripcion }}</td>
-                <td style="border: 1px solid black;" colspan="2">{{ $obs->descripcion_accion }}</td>
+                <td style="border: 1px solid black;">{{ strtoupper($obs->descripcion) }}</td>
+                <td style="border: 1px solid black;" colspan="2">{{ strtoupper($obs->descripcion_accion) }}</td>
                 <td style="border: 1px solid black;">
-                    {{ $obs->fecha_inicio ? \Carbon\Carbon::parse($obs->fecha_inicio)->format('d-m-Y') : '' }}
+                    {{ strtoupper($obs->fecha_inicio) ? \Carbon\Carbon::parse($obs->fecha_inicio)->format('d-m-Y') : '' }}
                 </td>
-                <td style="border: 1px solid black;">{{ $obs->hora_inicio ?? '' }}</td>
+                <td style="border: 1px solid black;">{{ strtoupper($obs->hora_inicio ?? '') }}</td>
                 <td style="border: 1px solid black;">
-                    {{ $obs->fecha_fin ? \Carbon\Carbon::parse($obs->fecha_fin)->format('d-m-Y') : '' }}
+                    {{ strtoupper($obs->fecha_fin) ? \Carbon\Carbon::parse($obs->fecha_fin)->format('d-m-Y') : '' }}
                 </td>
-                <td style="border: 1px solid black;">{{ $obs->hora_fin ?? '' }}</td>
-                <td style="border: 1px solid black;">{{ $obs->estado ?? '' }}</td>
+                <td style="border: 1px solid black;">{{ strtoupper($obs->hora_fin ?? '') }}</td>
+                <td style="border: 1px solid black;">{{ strtoupper($obs->estado ?? '') }}</td>
+                <td style="border: 1px solid black; text-align: center;">
+                    {{ strtoupper($obs->responsableUsuario->name ?? '') }}
+                </td>
             </tr>
         @endforeach
     </tbody>

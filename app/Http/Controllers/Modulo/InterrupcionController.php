@@ -34,28 +34,65 @@ class InterrupcionController extends Controller
     {
         $user = auth()->user();
 
-        // Listado completo de MAC (solo para admins y moderadores)
+        // 🔹 Listado de MAC (solo visible para admins/moderadores)
         $centros_mac = DB::table('m_centro_mac')
             ->select('idcentro_mac as IDCENTRO_MAC', 'nombre_mac as NOMBRE_MAC')
             ->orderBy('nombre_mac')
             ->get();
 
-        // Nombre del MAC del usuario actual
+        // 🔹 Nombre del MAC del usuario actual
         $nombre_mac_usuario = DB::table('m_centro_mac')
             ->where('idcentro_mac', $user->idcentro_mac)
             ->value('nombre_mac');
 
-        return view('interrupcion.index', compact('centros_mac', 'nombre_mac_usuario'));
+        // 🔹 Lógica para ENTIDADES
+        if ($user->hasAnyRole(['Administrador', 'Moderador'])) {
+            // Si es admin o moderador, obtiene TODAS las entidades (de todos los MAC)
+            $entidades = DB::table('m_entidad')
+                ->select('identidad', 'abrev_entidad', 'nombre_entidad')
+                ->orderBy('abrev_entidad')
+                ->get();
+        } else {
+            // Si no es admin/moderador, solo las entidades de su MAC
+            $entidades = DB::table('m_entidad')
+                ->join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
+                ->where('m_mac_entidad.idcentro_mac', $user->idcentro_mac)
+                ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
+                ->orderBy('m_entidad.abrev_entidad')
+                ->get();
+        }
+
+        // 🔹 Lógica para TIPIFICACIONES (solo interrupciones)
+        $tipificaciones = DB::table('m_tipo_int_obs')
+            ->where('tipo_obs', 'INTERRUPCIÓN')
+            ->orderBy('tipo', 'asc')
+            ->orderBy('numeracion', 'asc')
+            ->orderBy('nom_tipo_int_obs', 'asc')
+            ->get(['id_tipo_int_obs', 'tipo', 'numeracion', 'nom_tipo_int_obs']);
+
+        // 🔹 Enviamos todo a la vista
+        return view('interrupcion.index', compact(
+            'centros_mac',
+            'nombre_mac_usuario',
+            'entidades',
+            'tipificaciones'
+        ));
     }
 
 
     public function tb_index(Request $request)
     {
         $user = auth()->user();
+
         $idmac = $request->idmac;
         $fecha_inicio = $request->fecha_inicio;
         $fecha_fin = $request->fecha_fin;
+        $entidad = $request->entidad;
+        $tipificacion = $request->tipificacion;
+        $estado = $request->estado;
+        $revision = $request->revision;
 
+        // 🔹 Construcción base de la consulta
         $query = Interrupcion::with([
             'entidad:IDENTIDAD,NOMBRE_ENTIDAD,ABREV_ENTIDAD',
             'tipoIntObs:id_tipo_int_obs,tipo,numeracion,nom_tipo_int_obs',
@@ -67,17 +104,48 @@ class InterrupcionController extends Controller
         if ($idmac) {
             $query->where('idcentro_mac', $idmac);
         } else {
+            // Si no es admin ni moderador, se filtra por el MAC del usuario
             if (!$user->hasAnyRole(['Administrador', 'Monitor', 'Moderador'])) {
                 $query->where('idcentro_mac', $user->idcentro_mac);
             }
         }
 
-        // 🔹 Filtro por fechas
+        // 🔹 Filtro por fechas (inicio y fin)
         if ($fecha_inicio && $fecha_fin) {
             $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
         }
 
-        $interrupciones = $query->orderBy('fecha_inicio', 'desc')
+        // 🔹 Filtro por entidad
+        if (!empty($entidad)) {
+            $query->whereHas('entidad', function ($q) use ($entidad) {
+                $q->where('ABREV_ENTIDAD', 'like', "%{$entidad}%")
+                    ->orWhere('NOMBRE_ENTIDAD', 'like', "%{$entidad}%");
+            });
+        }
+
+        // 🔹 Filtro por tipificación
+        if (!empty($tipificacion)) {
+            $query->whereHas('tipoIntObs', function ($q) use ($tipificacion) {
+                $q->where('nom_tipo_int_obs', 'like', "%{$tipificacion}%")
+                    ->orWhere('tipo', 'like', "%{$tipificacion}%");
+            });
+        }
+
+        // 🔹 Filtro por estado (ABIERTO / CERRADO)
+        if (!empty($estado)) {
+            $query->where('estado', strtoupper($estado));
+        }
+
+        // 🔹 Filtro por revisión (observado o no observado)
+        if ($revision === 'observado') {
+            $query->where('observado', 1);
+        } elseif ($revision === 'no_observado') {
+            $query->where('observado', 0);
+        }
+
+        // 🔹 Ordenamiento
+        $interrupciones = $query
+            ->orderBy('fecha_inicio', 'desc')
             ->orderBy('hora_inicio', 'desc')
             ->get();
 
@@ -328,35 +396,105 @@ class InterrupcionController extends Controller
     {
         try {
             $user = auth()->user();
+
+            // 🔹 Filtros del request
             $idmac = $request->idmac;
             $fecha_inicio = $request->fecha_inicio;
             $fecha_fin = $request->fecha_fin;
+            $entidad = $request->entidad;
+            $tipificacion = $request->tipificacion;
+            $estado = $request->estado;
+            $revision = $request->revision;
 
+            // 🔹 Base de consulta con relaciones
             $query = Interrupcion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac']);
 
+            // 🔹 Filtro por Centro MAC
             if ($idmac) {
                 $query->where('idcentro_mac', $idmac);
             } elseif (!$user->hasAnyRole(['Administrador', 'Monitor', 'Moderador'])) {
                 $query->where('idcentro_mac', $user->idcentro_mac);
             }
 
+            // 🔹 Filtro por fechas
             if ($fecha_inicio && $fecha_fin) {
                 $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
             }
 
-            $interrupciones = $query->orderBy('fecha_inicio', 'desc')->get();
-
-            $nombreMac = $idmac
-                ? DB::table('m_centro_mac')->where('idcentro_mac', $idmac)->value('nombre_mac')
-                : ($user->centroMac->nombre_mac ?? 'Centro MAC');
-
-            $rango = '';
-            if ($fecha_inicio && $fecha_fin) {
-                $rango = '_(' . \Carbon\Carbon::parse($fecha_inicio)->format('d-m-Y') . '_a_' . \Carbon\Carbon::parse($fecha_fin)->format('d-m-Y') . ')';
+            // 🔹 Filtro por entidad
+            if (!empty($entidad)) {
+                $query->whereHas('entidad', function ($q) use ($entidad) {
+                    $q->where('ABREV_ENTIDAD', 'like', "%{$entidad}%")
+                        ->orWhere('NOMBRE_ENTIDAD', 'like', "%{$entidad}%");
+                });
             }
 
+            // 🔹 Filtro por tipificación
+            if (!empty($tipificacion)) {
+                $query->whereHas('tipoIntObs', function ($q) use ($tipificacion) {
+                    $q->where('nom_tipo_int_obs', 'like', "%{$tipificacion}%")
+                        ->orWhere('tipo', 'like', "%{$tipificacion}%");
+                });
+            }
+
+            // 🔹 Filtro por estado
+            if (!empty($estado)) {
+                $query->where('estado', strtoupper($estado));
+            }
+
+            // 🔹 Filtro por revisión (observado / no observado)
+            if ($revision === 'observado') {
+                $query->where('observado', 1);
+            } elseif ($revision === 'no_observado') {
+                $query->where('observado', 0);
+            }
+
+            // 🔹 Ejecutar consulta
+            $interrupciones = $query
+                ->with(['centroMac:idcentro_mac,nombre_mac']) // <-- fuerza el join correcto
+                ->orderBy('fecha_inicio', 'desc')
+                ->orderBy('hora_inicio', 'desc')
+                ->get()
+                ->map(function ($item) {
+                    // 🔧 fallback por si no se cargó correctamente el centroMac
+                    if (!$item->centroMac && $item->idcentro_mac) {
+                        $item->centroMac = (object)[
+                            'nombre_mac' => DB::table('m_centro_mac')
+                                ->where('idcentro_mac', $item->idcentro_mac)
+                                ->value('nombre_mac')
+                        ];
+                    }
+                    return $item;
+                });
+
+            // 🔹 Detectar centros MAC distintos en los resultados
+            $macsUnicos = $interrupciones->pluck('centroMac.nombre_mac')->unique()->filter()->values();
+
+            // Si solo hay uno, lo mostramos; si hay varios, decimos “VARIOS CENTROS MAC”
+            if ($macsUnicos->count() === 1) {
+                $nombreMac = $macsUnicos->first();
+            } elseif ($idmac) {
+                $nombreMac = DB::table('m_centro_mac')
+                    ->where('idcentro_mac', $idmac)
+                    ->value('nombre_mac') ?? 'Centro MAC';
+            } else {
+                $nombreMac = 'TODOS LOS CENTROS MAC';
+            }
+
+            // 🔹 Rango de fechas
+            $rango = '';
+            if ($fecha_inicio && $fecha_fin) {
+                $rango = '_('
+                    . \Carbon\Carbon::parse($fecha_inicio)->format('d-m-Y')
+                    . '_a_'
+                    . \Carbon\Carbon::parse($fecha_fin)->format('d-m-Y')
+                    . ')';
+            }
+
+            // 🔹 Nombre del archivo
             $nombreArchivo = 'Interrupciones_' . str_replace(' ', '_', $nombreMac) . $rango . '.xlsx';
 
+            // 🔹 Exportar con los filtros aplicados
             return Excel::download(
                 new InterrupcionExport($interrupciones, $nombreMac, $rango),
                 $nombreArchivo
@@ -365,6 +503,7 @@ class InterrupcionController extends Controller
             return response()->json(['error' => $e->getMessage(), 'status' => 400]);
         }
     }
+
     public function observarModal(Request $request)
     {
         try {
