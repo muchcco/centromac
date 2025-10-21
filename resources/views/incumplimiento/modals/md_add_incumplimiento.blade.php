@@ -8,7 +8,6 @@
 
     .text-error {
         color: #dc3545;
-        /* rojo Bootstrap */
         font-size: 0.875rem;
         margin-top: 4px;
     }
@@ -20,6 +19,7 @@
             <h4 class="modal-title">Registrar Nuevo Incidente Operativo</h4>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+
         <div class="modal-body">
             <div id="alerta"></div>
             <h5>Datos del Incidente</h5>
@@ -34,7 +34,7 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Tipificación</label>
                     <div class="col-9">
-                        <select class="form-control select2" name="id_tipo_int_obs" id="id_tipo_int_obs">
+                        <select class="form-control select2" name="id_tipo_int_obs" id="id_tipo_int_obs" required>
                             <option value="">--Seleccione--</option>
                             @foreach ($tipos as $tipo)
                                 <option value="{{ $tipo->id_tipo_int_obs }}">
@@ -49,7 +49,7 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Entidad</label>
                     <div class="col-9">
-                        <select class="form-control select2" name="identidad" id="identidad">
+                        <select class="form-control select2" name="identidad" id="identidad" required>
                             <option value="">--Seleccione--</option>
                             @foreach ($entidades as $entidad)
                                 <option value="{{ $entidad->identidad }}">
@@ -64,7 +64,7 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Descripción</label>
                     <div class="col-9">
-                        <textarea class="form-control" name="descripcion" rows="3"></textarea>
+                        <textarea class="form-control" name="descripcion" rows="3" required></textarea>
                     </div>
                 </div>
 
@@ -88,12 +88,13 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Fecha Incidente</label>
                     <div class="col-9">
-                        <input type="date" class="form-control" name="fecha_observacion" required>
+                        <input type="date" class="form-control" name="fecha_observacion" id="fecha_observacion"
+                            required>
                     </div>
                 </div>
 
                 <!-- Estado -->
-                <div class="row mb-3">
+                <div class="row mb-3" id="bloque_estado">
                     <label class="col-3 col-form-label">Incidente en curso?</label>
                     <div class="col-9">
                         <input type="checkbox" id="incumplimiento_curso" checked>
@@ -106,7 +107,7 @@
                     <div class="row mb-1">
                         <label class="col-3 col-form-label">Fecha Cierre</label>
                         <div class="col-9">
-                            <input type="date" class="form-control" name="fecha_solucion">
+                            <input type="date" class="form-control" name="fecha_solucion" id="fecha_solucion">
                             <small id="error_fecha_cierre" class="text-error" style="display:none;"></small>
                         </div>
                     </div>
@@ -129,7 +130,9 @@
             allowClear: true
         });
 
-        // Control estado
+        // ===============================
+        // 🧩 CONTROL DE ESTADO MANUAL
+        // ===============================
         function toggleCamposCierre() {
             if ($('#incumplimiento_curso').is(':checked')) {
                 $('#estado').val('ABIERTO');
@@ -140,35 +143,71 @@
                 $('#estado_label').text('CERRADO');
                 $('#campos_cierre').show();
             }
-            $('#error_fecha_cierre').hide(); // limpiar errores si cambia estado
+            $('#error_fecha_cierre').hide();
         }
 
         $('#incumplimiento_curso').change(toggleCamposCierre);
-        toggleCamposCierre(); // inicial
+        toggleCamposCierre();
 
-        // Validación visual elegante
-        $('#btnEnviarForm').on('click', function(e) {
-            const fechaIncidente = new Date($('input[name="fecha_observacion"]').val());
-            const fechaCierre = new Date($('input[name="fecha_solucion"]').val());
+        // ===============================
+        // 🟨 I5: CIERRE AUTOMÁTICO
+        // ===============================
+        $('#id_tipo_int_obs').on('change', function() {
+            const tipo = parseInt($(this).val());
+            const fechaIncidente = $('#fecha_observacion').val();
+
+            if (tipo === 35) { // Tipología I5
+                $('#bloque_estado').hide(); // ocultar check de “en curso”
+                $('#campos_cierre').show(); // mostrar campo de cierre
+                $('#estado').val('CERRADO');
+                $('#estado_label').text('CERRADO');
+
+                // si ya tiene fecha incidente, igualar
+                if (fechaIncidente) {
+                    $('#fecha_solucion').val(fechaIncidente);
+                }
+
+                $('#fecha_solucion').prop('readonly', true); // bloquear campo
+            } else {
+                $('#bloque_estado').show();
+                $('#fecha_solucion').prop('readonly', false);
+                toggleCamposCierre();
+            }
+        });
+
+        // si cambia la fecha del incidente y es tipo I5, se actualiza fecha cierre
+        $('#fecha_observacion').on('change', function() {
+            const tipo = parseInt($('#id_tipo_int_obs').val());
+            if (tipo === 35) {
+                $('#fecha_solucion').val($(this).val());
+            }
+        });
+
+        // ===============================
+        // 🧩 VALIDACIÓN FINAL Y ENVÍO
+        // ===============================
+        $('#btnEnviarForm').on('click', function() {
+            const fechaIncidente = new Date($('#fecha_observacion').val());
+            const fechaCierre = new Date($('#fecha_solucion').val());
             const estado = $('#estado').val();
             const errorMsg = $('#error_fecha_cierre');
+            const tipo = parseInt($('#id_tipo_int_obs').val());
 
-            errorMsg.hide(); // limpiar mensaje previo
+            errorMsg.hide();
 
-            if (estado === 'CERRADO') {
-                if (!fechaCierre || isNaN(fechaCierre)) {
+            if (estado === 'CERRADO' && tipo !== 35) {
+                if (!$('#fecha_solucion').val()) {
                     errorMsg.text('Debe ingresar la fecha de cierre.').show();
                     return;
                 }
                 if (fechaCierre < fechaIncidente) {
-                    errorMsg.text(
-                            '⚠️ La fecha de cierre no puede ser menor que la fecha del incidente.')
+                    errorMsg.text('⚠️ La fecha de cierre no puede ser menor que la del incidente.')
                         .show();
                     return;
                 }
             }
 
-            // Envía el formulario una sola vez
+            // 🔹 Enviar
             btnStoreIncumplimiento();
         });
     });

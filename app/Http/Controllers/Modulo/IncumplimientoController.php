@@ -171,6 +171,7 @@ class IncumplimientoController extends Controller
         try {
             $data = $request->except('archivo');
 
+            // 📎 Guardar archivo si se adjunta
             if ($request->hasFile('archivo')) {
                 $file = $request->file('archivo');
                 $nombre = 'incumplimiento_' . now()->format('Ymd_His') . '.' . $file->getClientOriginalExtension();
@@ -180,6 +181,12 @@ class IncumplimientoController extends Controller
                 $data['archivo'] = $ruta . $nombre;
             }
 
+            // 🟨 REGLA ESPECIAL: Tipología I5 (id_tipo_int_obs = 35)
+            if ((int) $request->id_tipo_int_obs === 35) {
+                $data['fecha_fin'] = $request->fecha_observacion; // mismo día
+                $data['estado'] = 'CERRADO';
+            }
+
             Observacion::create($data);
 
             return response()->json(['message' => 'Incumplimiento registrado correctamente', 'status' => 201]);
@@ -187,6 +194,7 @@ class IncumplimientoController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
 
     // ✏️ EDITAR
     public function edit(Request $request)
@@ -396,13 +404,23 @@ class IncumplimientoController extends Controller
             $incumplimiento = Observacion::findOrFail($request->id_observacion);
             $data = $request->except('archivo');
 
+            // 📎 Subir nuevo archivo (si existe)
             if ($request->hasFile('archivo')) {
                 $file = $request->file('archivo');
                 $nombre = 'incumplimiento_' . now()->format('Ymd_His') . '.' . $file->getClientOriginalExtension();
                 $ruta = 'archivo_inc/';
                 $file->move(public_path($ruta), $nombre);
                 $data['archivo'] = $ruta . $nombre;
-                if ($incumplimiento->archivo && file_exists(public_path($incumplimiento->archivo))) unlink(public_path($incumplimiento->archivo));
+
+                if ($incumplimiento->archivo && file_exists(public_path($incumplimiento->archivo))) {
+                    unlink(public_path($incumplimiento->archivo));
+                }
+            }
+
+            // 🟨 REGLA ESPECIAL: Tipología I5 (id_tipo_int_obs = 35)
+            if ((int) $request->id_tipo_int_obs === 35) {
+                $data['fecha_fin'] = $request->fecha_observacion; // mismo día
+                $data['estado'] = 'CERRADO';
             }
 
             $incumplimiento->update($data);
