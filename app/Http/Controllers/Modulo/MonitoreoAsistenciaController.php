@@ -254,7 +254,7 @@ class MonitoreoAsistenciaController extends Controller
                 if ($fecha > now()->toDateString()) {
                     $estado = '<span class="text-secondary">–</span>';
                 } elseif ($cierre) {
-                    $estado = '<span class="text-success fw-bold"></span>';
+                    $estado = '<span class="text-success fw-bold">✅</span>';
                 } else {
                     $estado = '<span class="text-danger fw-bold">❌</span>';
                 }
