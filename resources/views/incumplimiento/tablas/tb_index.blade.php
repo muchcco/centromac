@@ -97,7 +97,7 @@
                                 $icono = 'fa-exclamation-triangle text-danger';
                                 $tooltip = 'Ver / Retroalimentar observación';
                             } else {
-                                $icono = 'fa-check-circle text-success font-16';
+                                $icono = 'fa-exclamation-triangle text-info font-16';
                                 $tooltip = 'Marcar como observado';
                             }
                         @endphp
