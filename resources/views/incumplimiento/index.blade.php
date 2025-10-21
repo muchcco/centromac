@@ -152,6 +152,15 @@
 
 
 @section('script')
+    <script src="{{ asset('Script/js/sweet-alert.min.js') }}"></script>
+    <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
+    <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
+    <script src="{{ asset('nuevo/plugins/select2/select2.min.js') }}"></script>
+    <script src="{{ asset('nuevo/plugins/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('nuevo/plugins/datatables/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
+
     <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
     <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/select2/select2.min.js') }}"></script>
@@ -184,7 +193,51 @@
                 tipificacion: $('#filtro_tipificacion').val(),
                 estado: $('#filtro_estado').val(),
                 revision: $('#filtro_revision').val()
-            }, data => $('#table_data').html(data));
+            }, function(data) {
+                $('#table_data').html(data);
+                inicializarTablaIncumplimientos(); // ⚡ DataTable aquí
+            });
+        }
+
+        // 🔹 INICIALIZAR DATATABLE
+        function inicializarTablaIncumplimientos() {
+            if ($.fn.DataTable.isDataTable('#table_incumplimientos')) {
+                $('#table_incumplimientos').DataTable().destroy();
+            }
+
+            $('#table_incumplimientos').DataTable({
+                responsive: true,
+                pageLength: 20,
+                lengthMenu: [
+                    [10, 20, 40, -1],
+                    [10, 20, 40, "Todos"]
+                ],
+                autoWidth: false,
+                searching: true,
+                ordering: true,
+                info: true,
+                language: {
+                    url: "{{ asset('js/Spanish.json') }}"
+                },
+                columnDefs: [{
+                        targets: [0, 6, 7],
+                        className: "text-center"
+                    },
+                    {
+                        targets: [7],
+                        orderable: false,
+                        searchable: false
+                    }
+                ],
+                drawCallback: function() {
+                    tippy(".bandejTool", {
+                        allowHTML: true,
+                        theme: 'light-border',
+                        delay: [100, 50],
+                        placement: 'top'
+                    });
+                }
+            });
         }
 
         // 🔹 Mostrar/ocultar filtros adicionales
@@ -379,13 +432,12 @@
             }
 
             cargarTablaIncumplimientos();
-        } 
-            // 🔹 Si se quita la observación, limpia automáticamente el corregido
-            $('#chk_observado').on('change', function() {
-                if (!$(this).is(':checked')) {
-                    $('#chk_corregido').prop('checked', false);
-                }
-            });
-   
+        }
+        // 🔹 Si se quita la observación, limpia automáticamente el corregido
+        $('#chk_observado').on('change', function() {
+            if (!$(this).is(':checked')) {
+                $('#chk_corregido').prop('checked', false);
+            }
+        });
     </script>
 @endsection
