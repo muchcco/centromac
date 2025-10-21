@@ -135,8 +135,21 @@
     </tbody>
 </table>
 @section('script')
+    {{-- ✅ Librerías necesarias --}}
+    <script src="{{ asset('nuevo/plugins/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('nuevo/plugins/datatables/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
+
+    {{-- ✅ Tooltip moderno (Tippy.js) --}}
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+
+    {{-- ✅ Inicialización de DataTables --}}
     <script>
         $(document).ready(function() {
+
+            // 🧩 Tabla principal de Incumplimientos
             $('#table_incumplimientos').DataTable({
                 responsive: true,
                 pageLength: 20,
@@ -163,7 +176,48 @@
                 ]
             });
 
-            // Tooltip moderno
+            // 🧩 Si existe otra tabla (por ejemplo, de observaciones)
+            if ($('#table_observaciones').length) {
+                $('#table_observaciones').DataTable({
+                    responsive: true,
+                    pageLength: 20,
+                    lengthMenu: [
+                        [10, 20, 40, -1],
+                        [10, 20, 40, "Todos"]
+                    ],
+                    autoWidth: false,
+                    searching: true,
+                    ordering: true,
+                    info: true,
+                    language: {
+                        url: "{{ asset('js/Spanish.json') }}"
+                    },
+                    columns: [{
+                            width: ""
+                        },
+                        {
+                            width: ""
+                        },
+                        {
+                            width: ""
+                        },
+                        {
+                            width: ""
+                        },
+                        {
+                            width: ""
+                        },
+                        {
+                            width: ""
+                        },
+                        {
+                            width: ""
+                        }
+                    ]
+                });
+            }
+
+            // ✅ Tooltips modernos
             tippy(".bandejTool", {
                 allowHTML: true,
                 theme: 'light-border',

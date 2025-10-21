@@ -35,6 +35,7 @@ class IncumplimientoController extends Controller
     {
         $user = auth()->user();
 
+        // 🔹 Listado general de centros MAC
         $centros_mac = DB::table('db_centros_mac.m_centro_mac')
             ->select('idcentro_mac', 'nombre_mac')
             ->orderBy('nombre_mac')
@@ -62,8 +63,19 @@ class IncumplimientoController extends Controller
             ->orderBy('numeracion', 'asc')
             ->get();
 
-        return view('incumplimiento.index', compact('centros_mac', 'entidades', 'tipos'));
+        // 🔹 Centro MAC del usuario (solo si no es Administrador o Moderador)
+        $centro_mac = null;
+        if (!$user->hasAnyRole(['Administrador', 'Moderador'])) {
+            $centro_mac = DB::table('db_centros_mac.m_centro_mac')
+                ->select('idcentro_mac as idmac', 'nombre_mac as name_mac')
+                ->where('idcentro_mac', $user->idcentro_mac)
+                ->first();
+        }
+
+        // 🔹 Retornar vista con todas las variables necesarias
+        return view('incumplimiento.index', compact('centros_mac', 'entidades', 'tipos', 'centro_mac'));
     }
+
 
     // 📋 TABLA PRINCIPAL CON FILTROS
     public function tb_index(Request $request)
