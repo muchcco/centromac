@@ -143,7 +143,7 @@
 
                             @role('Administrador|Monitor|Monitoreo|Especialista TIC')
                                 @if (auth()->user()->hasAnyRole(['Administrador', 'Monitor', 'Monitoreo']))
-                                    {{-- ✅ Admin, Monitor y Monitoreo: siempre pueden revertir --}}
+                                    {{--  Admin, Monitor y Monitoreo: siempre pueden revertir --}}
                                     <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
                                         <i class="fa fa-undo"></i> Revertir Día
                                     </button>

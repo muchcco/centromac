@@ -60,7 +60,7 @@ class ObservacionController extends Controller
             'responsableUsuario:id,name'
         ]);
 
-        // ✅ Filtrar solo tipo de observación
+        //  Filtrar solo tipo de observación
         $query->whereHas('tipoIntObs', function ($q) {
             $q->where('tipo_obs', 'OBSERVACIÓN');
         });

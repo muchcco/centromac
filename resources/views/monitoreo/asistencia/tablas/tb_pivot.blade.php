@@ -50,7 +50,7 @@
         background-color: #f7f9fb !important;
     }
 
-    /* ✅ Cerrado */
+    /*  Cerrado */
     .text-success {
         color: #198754 !important;
         font-weight: bold;

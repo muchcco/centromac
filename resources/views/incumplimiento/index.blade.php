@@ -2,9 +2,9 @@
 
 @section('style')
     <link rel="stylesheet" href="{{ asset('Vendor/toastr/toastr.min.css') }}">
-    <link href="{{ asset('nuevo/plugins/select2/select2.min.css') }}" rel="stylesheet" />
-    <link href="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
-    <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" />
+    <link href="{{ asset('nuevo/plugins/select2/select2.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
 @endsection
 
 @section('main')
@@ -27,359 +27,365 @@
             </div>
         </div>
     </div>
-    <!-- ========== FILTRO DE BÚSQUEDA ========== -->
+
+    <!-- 🔹 FILTROS PRINCIPALES -->
     <div class="card mb-3">
         <div class="card-header" style="background-color:#132842">
-            <h4 class="card-title text-white">Filtro de Búsqueda</h4>
+            <h4 class="card-title text-white mb-0">Filtro de Búsqueda</h4>
         </div>
         <div class="card-body">
-            <div class="row">
-                <!-- CENTRO MAC -->
+            <div class="row align-items-end">
+                <!-- Centro MAC -->
                 <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="mb-2 fw-bold text-dark">Centro MAC:</label>
-                        @if (auth()->user()->hasRole(['Administrador|Moderador']))
-                            <select id="filtro_mac" class="form-control select2">
-                                <option value="">-- Seleccione un MAC --</option>
-                                @foreach ($centros_mac as $mac)
-                                    <option value="{{ $mac->idcentro_mac }}">{{ $mac->nombre_mac }}</option>
-                                @endforeach
-                            </select>
-                        @else
-                            <input type="text" class="form-control" value="{{ $centro_mac->name_mac ?? 'No asignado' }}"
-                                readonly>
-                            <input type="hidden" id="filtro_mac" value="{{ $centro_mac->idmac }}">
-                        @endif
-                    </div>
+                    <label class="fw-bold text-dark mb-2">Centro MAC:</label>
+                    @role('Administrador|Moderador')
+                        <select id="filtro_mac" class="form-control select2">
+                            <option value="">-- Todos los MAC --</option>
+                            @foreach ($centros_mac as $mac)
+                                <option value="{{ $mac->idcentro_mac }}">{{ $mac->nombre_mac }}</option>
+                            @endforeach
+                        </select>
+                    @else
+                        <input type="text" class="form-control text-uppercase"
+                            value="{{ $centro_mac->name_mac ?? 'No asignado' }}" readonly>
+                        <input type="hidden" id="filtro_mac" value="{{ $centro_mac->idmac }}">
+                    @endrole
                 </div>
 
-                <!-- FECHA INICIO -->
+                <!-- Fechas -->
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="mb-2 fw-bold text-dark">Fecha Inicio:</label>
-                        <input type="date" id="filtro_fecha_inicio" class="form-control"
-                            value="{{ now()->startOfMonth()->format('Y-m-d') }}">
-                    </div>
+                    <label class="fw-bold text-dark mb-2">Fecha Inicio:</label>
+                    <input type="date" id="filtro_fecha_inicio" class="form-control" value="{{ date('Y-m-01') }}">
                 </div>
 
-                <!-- FECHA FIN -->
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="mb-2 fw-bold text-dark">Fecha Fin:</label>
-                        <input type="date" id="filtro_fecha_fin" class="form-control"
-                            value="{{ now()->format('Y-m-d') }}">
-                    </div>
+                    <label class="fw-bold text-dark mb-2">Fecha Fin:</label>
+                    <input type="date" id="filtro_fecha_fin" class="form-control" value="{{ date('Y-m-d') }}">
                 </div>
 
-                <!-- BOTONES -->
+                <!-- Botones -->
                 <div class="col-md-2 d-flex align-items-end">
-                    <div class="form-group">
-                        <button class="btn btn-primary me-1" onclick="filtrarIncumplimientos()">
+                    <div class="d-flex gap-1 w-100">
+                        <button id="btnBuscar" class="btn btn-primary w-50">
                             <i class="fa fa-search"></i> Buscar
                         </button>
-                        <button class="btn btn-dark" onclick="limpiarFiltro()">
+                        <button class="btn btn-dark w-50" onclick="limpiarFiltro()">
                             <i class="fa fa-undo"></i> Limpiar
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Contenedor principal -->
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="card">
-                <div class="card-header" style="background-color:#132842">
-                    <h4 class="card-title text-white">Listado de Incidentes Operativos</h4>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <button class="btn btn-success" onclick="btnAddIncumplimiento()">
-                            <i class="fa fa-plus"></i> Nuevo Incidente Operativo
-                        </button>
-                        <a href="{{ route('incumplimiento.export_excel') }}" class="btn btn-outline-primary">
-                            <i class="fa fa-file-excel"></i> Exportar Excel
-                        </a>
+            <!-- 🔹 FILTROS ADICIONALES -->
+            <div id="extraFiltros" class="mt-3" style="display:none;">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="fw-bold text-dark">Entidad:</label>
+                        <select id="filtro_entidad" class="form-control select2" style="width:100%;">
+                            <option value="">-- Todas --</option>
+                            @foreach ($entidades as $ent)
+                                <option value="{{ $ent->nombre_entidad }}">{{ $ent->abrev_entidad }} -
+                                    {{ $ent->nombre_entidad }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div id="table_data" class="table-responsive"></div>
+
+                    <div class="col-md-3">
+                        <label class="fw-bold text-dark">Tipificación:</label>
+                        <select id="filtro_tipificacion" class="form-control select2" style="width:100%;">
+                            <option value="">-- Todas --</option>
+                            @foreach ($tipos as $tip)
+                                <option value="{{ $tip->nom_tipo_int_obs }}">{{ $tip->tipo }} {{ $tip->numeracion }} -
+                                    {{ $tip->nom_tipo_int_obs }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="fw-bold text-dark">Estado:</label>
+                        <select id="filtro_estado" class="form-control select2" style="width:100%;">
+                            <option value="">-- Todos --</option>
+                            <option value="ABIERTO">Abierto</option>
+                            <option value="CERRADO">Cerrado</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="fw-bold text-dark">Revisión:</label>
+                        <select id="filtro_revision" class="form-control select2" style="width:100%;">
+                            <option value="">-- Todos --</option>
+                            <option value="observado">Observado</option>
+                            <option value="no_observado">No observado</option>
+                        </select>
+                    </div>
                 </div>
+            </div>
+
+            <div class="mt-3 text-center">
+                <button id="btnToggleFiltros" class="btn btn-outline-dark w-100">
+                    <i class="fa fa-filter"></i> Ver más filtros
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal contenedor -->
-    <div class="modal fade" id="modal_show_modal" tabindex="-1" role="dialog"></div>
+    <!-- 🔹 TABLA PRINCIPAL -->
+    <div class="card">
+        <div class="card-header" style="background-color:#132842">
+            <h4 class="card-title text-white">Listado de Incidentes Operativos</h4>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <button class="btn btn-success" onclick="btnAddIncumplimiento()">
+                    <i class="fa fa-plus"></i> Nuevo Incidente
+                </button>
+                <button class="btn btn-outline-primary" onclick="exportarExcel()">
+                    <i class="fa fa-file-excel"></i> Exportar Excel
+                </button>
+            </div>
+            <div id="table_data" class="table-responsive"></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal_show_modal" tabindex="-1"></div>
 @endsection
 
+
 @section('script')
-    <script src="{{ asset('Script/js/sweet-alert.min.js') }}"></script>
-    <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
     <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
+    <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/select2/select2.min.js') }}"></script>
-    <script src="{{ asset('nuevo/plugins/datatables/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.js') }}"></script>
-    <script src="{{ asset('nuevo/plugins/datatables/dataTables.responsive.min.js') }}"></script>
-    <script src="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
 
     <script>
         $(document).ready(function() {
+            $('.select2').select2();
             cargarTablaIncumplimientos();
+
+            //  Botón Buscar
+            $('#btnBuscar').click(e => {
+                e.preventDefault();
+                cargarTablaIncumplimientos();
+            });
+
+            //  Cuando cambie cualquier filtro adicional, recarga automáticamente
+            $('#extraFiltros select, #extraFiltros input').on('change keyup', function() {
+                cargarTablaIncumplimientos();
+            });
         });
 
-        // 🔄 Cargar tabla principal
+
+        // 🔹 CARGAR TABLA
         function cargarTablaIncumplimientos() {
-            $.ajax({
-                type: 'GET',
-                url: "{{ route('incumplimiento.tablas.tb_index') }}",
-                beforeSend: () => $('#table_data').html('<i class="fa fa-spinner fa-spin"></i> Cargando...'),
-                success: data => $('#table_data').html(data),
-                error: () => $('#table_data').html('Error al cargar los datos.')
-            });
+            $.get("{{ route('incumplimiento.tablas.tb_index') }}", {
+                idmac: $('#filtro_mac').val(),
+                fecha_inicio: $('#filtro_fecha_inicio').val(),
+                fecha_fin: $('#filtro_fecha_fin').val(),
+                entidad: $('#filtro_entidad').val(),
+                tipificacion: $('#filtro_tipificacion').val(),
+                estado: $('#filtro_estado').val(),
+                revision: $('#filtro_revision').val()
+            }, data => $('#table_data').html(data));
         }
 
-        // ➕ Agregar nuevo incidente
+        // 🔹 Mostrar/ocultar filtros adicionales
+        $('#btnToggleFiltros').click(function() {
+            const extra = $('#extraFiltros');
+            const visible = extra.is(':visible');
+            extra.slideToggle(300);
+            $(this).html(visible ? '<i class="fa fa-filter"></i> Ver más filtros' :
+                '<i class="fa fa-chevron-up"></i> Ver menos filtros');
+            if (visible) {
+                $('#filtro_entidad, #filtro_tipificacion, #filtro_estado, #filtro_revision').val('').trigger(
+                    'change');
+                cargarTablaIncumplimientos();
+            }
+        });
+
+        // 🔹 CRUD BÁSICO
         function btnAddIncumplimiento() {
             $.post("{{ route('incumplimiento.modals.md_add_incumplimiento') }}", {
                 _token: "{{ csrf_token() }}"
             }, function(data) {
                 $('#modal_show_modal').html(data.html).modal('show');
-                setTimeout(() => {
-                    $('.select2').select2({
-                        dropdownParent: $('#modal_show_modal'),
-                        width: '100%',
-                        allowClear: true
-                    });
-                }, 300);
+                $('.select2').select2({
+                    dropdownParent: $('#modal_show_modal')
+                });
             });
         }
 
-        // 💾 Guardar nuevo registro
         function btnStoreIncumplimiento() {
-            let formData = new FormData($('#form_add_incumplimiento')[0]);
+            let form = $('#form_add_incumplimiento')[0];
+            let data = new FormData(form);
             $.ajax({
-                type: 'POST',
                 url: "{{ route('incumplimiento.store') }}",
-                data: formData,
+                method: 'POST',
+                data: data,
                 processData: false,
                 contentType: false,
-                beforeSend: () => {
-                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Guardando...').prop(
-                        "disabled", true);
-                },
-                success: function(data) {
-                    $("#btnEnviarForm").html('Guardar').prop("disabled", false);
-                    if (data.status == 201) {
-                        cargarTablaIncumplimientos();
-                        Swal.fire({
-                            icon: "success",
-                            text: data.message,
-                            confirmButtonText: "Aceptar"
-                        });
+                success: res => {
+                    if (res.status === 201) {
+                        Swal.fire('', res.message, 'success');
                         $('#modal_show_modal').modal('hide');
-                    } else {
-                        $('#alerta').html(`<div class="alert alert-warning">${data.message}</div>`);
+                        cargarTablaIncumplimientos();
                     }
                 },
-                error: function() {
-                    $("#btnEnviarForm").html('Guardar').prop("disabled", false);
-                    Swal.fire({
-                        icon: "error",
-                        text: "Error al guardar el incumplimiento",
-                        confirmButtonText: "Aceptar"
-                    });
-                }
+                error: () => Swal.fire('❌ Error', 'No se pudo guardar', 'error')
             });
         }
 
-        // ✏️ Editar incidente
         function btnEditarIncumplimiento(id) {
             $.post("{{ route('incumplimiento.modals.md_edit_incumplimiento') }}", {
                 _token: "{{ csrf_token() }}",
                 id_observacion: id
-            }, function(data) {
-                $('#modal_show_modal').html(data.html).modal('show');
-                setTimeout(() => {
-                    $('.select2').select2({
-                        dropdownParent: $('#modal_show_modal'),
-                        width: '100%',
-                        allowClear: true
-                    });
-                }, 300);
+            }, res => {
+                $('#modal_show_modal').html(res.html).modal('show');
+                $('.select2').select2({
+                    dropdownParent: $('#modal_show_modal')
+                });
             });
         }
 
-        // 🔄 Actualizar registro (abrir/cerrar libremente)
         function btnUpdateIncumplimiento() {
-            // Asegurar que el valor de "estado" se actualice según el check
-            if ($('#incumplimiento_curso').length) {
-                if ($('#incumplimiento_curso').is(':checked')) {
-                    $('#estado').val('ABIERTO');
-                } else {
-                    $('#estado').val('CERRADO');
-                }
-            }
-
-            // Validar fechas antes de enviar
-            const fechaInc = $('input[name="fecha_observacion"]').val();
-            const fechaCie = $('input[name="fecha_solucion"]').val();
-
-            if (fechaCie && fechaCie < fechaInc) {
-                Swal.fire({
-                    icon: "warning",
-                    text: "⚠️ La fecha de cierre no puede ser menor que la del incidente.",
-                    confirmButtonText: "Aceptar"
-                });
-                return;
-            }
-
-            let formData = new FormData($('#form_edit_incumplimiento')[0]);
-
+            let data = new FormData($('#form_edit_incumplimiento')[0]);
             $.ajax({
-                type: 'POST',
                 url: "{{ route('incumplimiento.update') }}",
-                data: formData,
+                method: 'POST',
+                data: data,
                 processData: false,
                 contentType: false,
-                beforeSend: () => {
-                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Actualizando...').prop(
-                        "disabled", true);
-                },
-                success: function(data) {
-                    $("#btnEnviarForm").html('Guardar').prop("disabled", false);
-                    if (data.status == 200) {
-                        cargarTablaIncumplimientos();
-                        Swal.fire({
-                            icon: "success",
-                            text: data.message,
-                            confirmButtonText: "Aceptar"
-                        });
+                success: res => {
+                    if (res.status === 200) {
+                        Swal.fire('', res.message, 'success');
                         $('#modal_show_modal').modal('hide');
-                    } else {
-                        $('#alerta').html(`<div class="alert alert-warning">${data.message}</div>`);
+                        cargarTablaIncumplimientos();
                     }
-                },
-                error: function() {
-                    $("#btnEnviarForm").html('Guardar').prop("disabled", false);
-                    Swal.fire({
-                        icon: "error",
-                        text: "Error al actualizar",
-                        confirmButtonText: "Aceptar"
-                    });
                 }
             });
         }
 
-        // 🗑️ Eliminar registro
         function btnEliminarIncumplimiento(id) {
             Swal.fire({
-                title: "¿Estás seguro?",
-                text: "Se eliminará este incumplimiento permanentemente.",
-                icon: "warning",
+                title: '¿Eliminar?',
+                text: 'Se eliminará permanentemente.',
+                icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: "Sí, eliminar",
-                cancelButtonText: "Cancelar"
-            }).then((result) => {
+                confirmButtonText: 'Sí, eliminar'
+            }).then(result => {
                 if (result.isConfirmed) {
                     $.post("{{ route('incumplimiento.delete') }}", {
                         _token: "{{ csrf_token() }}",
                         id_observacion: id
-                    }, function() {
-                        cargarTablaIncumplimientos();
-                        Swal.fire({
-                            icon: "success",
-                            title: "Eliminado",
-                            text: "Incidente Operativo eliminado exitosamente."
-                        });
-                    }).fail(() => {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Error",
-                            text: "No se pudo eliminar."
-                        });
-                    });
+                    }, res => {
+                        if (res.status === 200) {
+                            Swal.fire(' Eliminado', res.message, 'success');
+                            cargarTablaIncumplimientos();
+                        } else {
+                            Swal.fire('⚠️', 'No se pudo eliminar', 'warning');
+                        }
+                    }).fail(() => Swal.fire('❌', 'Error al eliminar', 'error'));
                 }
             });
         }
 
-        // 👁️ Ver detalles
+
         function btnVerIncumplimiento(id) {
             $.post("{{ route('incumplimiento.modals.md_ver_incumplimiento') }}", {
                 _token: "{{ csrf_token() }}",
                 id_observacion: id
-            }, function(data) {
-                $('#modal_show_modal').html(data.html).modal('show');
+            }, res => {
+                $('#modal_show_modal').html(res.html).modal('show');
             });
         }
 
-        // ✅ Cerrar incumplimiento (sin restricción)
-        function btnCerrarGuardar() {
-            let formData = new FormData($('#form_cerrar_incumplimiento')[0]);
-            $.ajax({
-                type: 'POST',
-                url: "{{ route('incumplimiento.cerrar') }}",
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(data) {
-                    if (data.status === 200) {
-                        Swal.fire({
-                            icon: "success",
-                            text: data.message
-                        });
-                        $('#modal_show_modal').modal('hide');
-                        cargarTablaIncumplimientos();
-                    } else {
-                        Swal.fire({
-                            icon: "warning",
-                            text: data.message
-                        });
-                    }
-                },
-                error: function() {
-                    Swal.fire({
-                        icon: "error",
-                        text: "Error al cerrar el incumplimiento."
-                    });
+        // 🔹 OBSERVAR / RETROALIMENTAR
+        function btnObservarIncumplimiento(id) {
+            $.post("{{ route('incumplimiento.modals.md_observar_incumplimiento') }}", {
+                _token: "{{ csrf_token() }}",
+                id_observacion: id
+            }, res => {
+                $('#modal_show_modal').html(res.html).modal('show');
+            }).fail(() => {
+                Swal.fire('❌', 'No se pudo cargar el formulario de observación', 'error');
+            });
+        }
+
+        function guardarObservacion() {
+            const form = $('#form_observar_incumplimiento');
+
+            // Leer estado real de los checkboxes
+            const observado = $('#chk_observado').is(':checked') ? 1 : 0;
+            const corregido = $('#chk_corregido').is(':checked') ? 1 : 0;
+
+            // Serializar datos correctamente
+            const data = form.serializeArray();
+            const payload = {};
+            data.forEach(item => payload[item.name] = item.value);
+            payload['observado'] = observado;
+            payload['corregido'] = corregido;
+
+            $.post("{{ route('incumplimiento.observarGuardar') }}", payload, res => {
+                if (res.status === 200) {
+                    Swal.fire('', res.message, 'success');
+                    $('#modal_show_modal').modal('hide');
+                    cargarTablaIncumplimientos();
+                } else {
+                    Swal.fire('⚠️', res.message, 'warning');
                 }
-            });
+            }).fail(() => Swal.fire('❌', 'Error al guardar observación', 'error'));
         }
-        // 🔍 Aplicar filtros de búsqueda (Centro MAC + Fecha Inicio/Fin)
-        function filtrarIncumplimientos() {
-            let idmac = $('#filtro_mac').val();
-            let fechaInicio = $('#filtro_fecha_inicio').val();
-            let fechaFin = $('#filtro_fecha_fin').val();
 
-            $.ajax({
-                url: "{{ route('incumplimiento.tablas.tb_index') }}",
-                type: "GET",
-                data: {
-                    idmac: idmac,
-                    fecha_inicio: fechaInicio,
-                    fecha_fin: fechaFin
-                },
-                beforeSend: () => {
-                    $('#table_data').html('<i class="fa fa-spinner fa-spin"></i> Filtrando...');
-                },
-                success: function(data) {
-                    $('#table_data').html(data);
-                },
-                error: function() {
-                    $('#table_data').html('<div class="text-danger">Error al aplicar el filtro.</div>');
-                }
+        // 🔹 OBSERVAR / RETROALIMENTAR
+        function btnObservarIncumplimiento(id) {
+            $.post("{{ route('incumplimiento.modals.md_observar_incumplimiento') }}", {
+                _token: "{{ csrf_token() }}",
+                id_observacion: id
+            }, res => {
+                $('#modal_show_modal').html(res.html).modal('show');
+            }).fail(() => {
+                Swal.fire('❌', 'No se pudo cargar el formulario de observación', 'error');
             });
         }
 
-        // 🔄 Limpiar filtro (vuelve al mes actual o al MAC del usuario)
+        // 🔹 EXPORTAR
+        function exportarExcel() {
+            const params = {
+                idmac: $('#filtro_mac').val() || '',
+                fecha_inicio: $('#filtro_fecha_inicio').val() || '',
+                fecha_fin: $('#filtro_fecha_fin').val() || '',
+                entidad: $('#filtro_entidad').val() || '',
+                tipificacion: $('#filtro_tipificacion').val() || '',
+                estado: $('#filtro_estado').val() || '',
+                revision: $('#filtro_revision').val() || ''
+            };
+            window.location.href = "{{ route('incumplimiento.export_excel') }}" + '?' + $.param(params);
+        }
+
+
+        // 🔹 LIMPIAR
         function limpiarFiltro() {
-            $('#filtro_fecha_inicio').val('{{ now()->startOfMonth()->format('Y-m-d') }}');
-            $('#filtro_fecha_fin').val('{{ now()->format('Y-m-d') }}');
+            $('#filtro_mac').val('').trigger('change');
+            $('#filtro_fecha_inicio').val('{{ date('Y-m-01') }}');
+            $('#filtro_fecha_fin').val('{{ date('Y-m-d') }}');
 
-            @if (auth()->user()->hasRole(['Administrador']))
-                $('#filtro_mac').val('').trigger('change');
-            @endif
+            //  limpiar filtros adicionales
+            $('#filtro_entidad, #filtro_tipificacion, #filtro_estado, #filtro_revision')
+                .val('')
+                .trigger('change');
 
-            filtrarIncumplimientos();
-        }
+            //  cerrar panel de filtros si está abierto
+            if ($('#extraFiltros').is(':visible')) {
+                $('#extraFiltros').slideUp(300);
+                $('#btnToggleFiltros').html('<i class="fa fa-filter"></i> Ver más filtros');
+            }
+
+            cargarTablaIncumplimientos();
+        } 
+            // 🔹 Si se quita la observación, limpia automáticamente el corregido
+            $('#chk_observado').on('change', function() {
+                if (!$(this).is(':checked')) {
+                    $('#chk_corregido').prop('checked', false);
+                }
+            });
+   
     </script>
 @endsection

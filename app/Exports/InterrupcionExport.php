@@ -48,7 +48,7 @@ class InterrupcionExport implements FromView, WithDefaultStyles, ShouldAutoSize,
         $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
         $drawing->setName('Logo');
         $drawing->setDescription('Logo MAC');
-        $drawing->setPath(public_path('imagen/mac_logo_export.jpg')); // ✅ Asegúrate de que exista
+        $drawing->setPath(public_path('imagen/mac_logo_export.jpg')); //  Asegúrate de que exista
         $drawing->setCoordinates('A2');
     
         // 👉 Redimensionar proporcionalmente

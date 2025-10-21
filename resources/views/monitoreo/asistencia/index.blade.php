@@ -38,7 +38,7 @@
                 <div class="col-md-4">
                     <label class="fw-bold text-dark mb-2">Centro MAC:</label>
 
-                    {{-- ✅ Solo Administrador o Monitor pueden cambiar de MAC --}}
+                    {{--  Solo Administrador o Monitor pueden cambiar de MAC --}}
                     @hasanyrole('Administrador|Monitor')
                         <select id="idmac" name="idmac" class="form-select">
                             <option value="">-- Todos --</option>

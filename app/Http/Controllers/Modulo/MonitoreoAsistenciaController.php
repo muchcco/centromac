@@ -35,7 +35,7 @@ class MonitoreoAsistenciaController extends Controller
         $usuario = auth()->user();
 
         /**
-         * ✅ Solo Administrador o Monitor pueden ver todos los MAC
+         *  Solo Administrador o Monitor pueden ver todos los MAC
          * Los demás (Especialista TIC, Orientador, Asesor, Supervisor, Coordinador)
          * solo ven su propio MAC.
          */
@@ -254,7 +254,7 @@ class MonitoreoAsistenciaController extends Controller
                 if ($fecha > now()->toDateString()) {
                     $estado = '<span class="text-secondary">–</span>';
                 } elseif ($cierre) {
-                    $estado = '<span class="text-success fw-bold">✅</span>';
+                    $estado = '<span class="text-success fw-bold"></span>';
                 } else {
                     $estado = '<span class="text-danger fw-bold">❌</span>';
                 }

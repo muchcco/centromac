@@ -200,7 +200,7 @@ class InterrupcionController extends Controller
 
         try {
             $centro_mac = $this->centro_mac();
-            $data = $request->except('accion_correctiva'); // ✅ se ignora completamente
+            $data = $request->except('accion_correctiva'); //  se ignora completamente
 
             if ($request->estado === 'ABIERTO') {
                 $data['fecha_fin'] = null;
@@ -272,7 +272,7 @@ class InterrupcionController extends Controller
 
         try {
             $interrupcion = Interrupcion::find($request->id_interrupcion);
-            $data = $request->except('accion_correctiva'); // ✅ ignorado
+            $data = $request->except('accion_correctiva'); //  ignorado
 
             if ($request->estado === 'ABIERTO') {
                 $data['fecha_fin'] = null;

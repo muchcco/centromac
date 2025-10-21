@@ -467,7 +467,7 @@ class AsistenciaController extends Controller
             }
         }
 
-        // ✅ Permisos generales
+        //  Permisos generales
         if (!($user->hasAnyRole(['Administrador', 'Monitor', 'Especialista TIC', 'Moderador']))) {
             return response()->json([
                 'ok' => false,
@@ -483,7 +483,7 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'ok' => true,
-                'msg' => "✅ Se revirtió la asistencia del {$request->fecha} en el MAC #{$request->idmac}"
+                'msg' => " Se revirtió la asistencia del {$request->fecha} en el MAC #{$request->idmac}"
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -1381,8 +1381,8 @@ class AsistenciaController extends Controller
                 $detalle = Asistencia::select([
                     DB::raw('DATE(M_ASISTENCIA.FECHA) AS FECHA'),
                     'M_ASISTENCIA.NUM_DOC',
-                    DB::raw('MIN(TIME(M_ASISTENCIA.HORA)) AS HORA_1'), // ✅ menor hora del día (primer marcaje)
-                    DB::raw('MAX(TIME(M_ASISTENCIA.HORA)) AS HORA_4'), // ✅ mayor hora del día (último marcaje)
+                    DB::raw('MIN(TIME(M_ASISTENCIA.HORA)) AS HORA_1'), //  menor hora del día (primer marcaje)
+                    DB::raw('MAX(TIME(M_ASISTENCIA.HORA)) AS HORA_4'), //  mayor hora del día (último marcaje)
                     DB::raw('COUNT(M_ASISTENCIA.NUM_DOC) AS N_NUM_DOC'),
                 ])
                     ->where('M_ASISTENCIA.IDCENTRO_MAC', $this->centro_mac()->idmac)

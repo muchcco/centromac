@@ -61,8 +61,6 @@ class AsesoresController extends Controller
                             SELECT 
                                 IDPERSONAL,
                                 (
-                                    CASE WHEN TIP_CAS IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN N_CONTRATO IS NULL THEN 1 ELSE 0 END + 
                                     CASE WHEN NOMBRE IS NULL THEN 1 ELSE 0 END + 
                                     CASE WHEN APE_PAT IS NULL THEN 1 ELSE 0 END + 
                                     CASE WHEN APE_MAT IS NULL THEN 1 ELSE 0 END + 
@@ -81,10 +79,7 @@ class AsesoresController extends Controller
                                     CASE WHEN DF_N_HIJOS IS NULL THEN 1 ELSE 0 END + 
                                     CASE WHEN DLP_JEFE_INMEDIATO IS NULL THEN 1 ELSE 0 END + 
                                     CASE WHEN DLP_CARGO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN DLP_TELEFONO IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN TVL_ID IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN GI_ID IS NULL THEN 1 ELSE 0 END + 
-                                    CASE WHEN GI_CARRERA IS NULL THEN 1 ELSE 0 END
+                                    CASE WHEN DLP_TELEFONO IS NULL THEN 1 ELSE 0 END 
                                 ) AS CAMPOS_NULL
                             FROM M_PERSONAL
                         ) as CONT'), 'CONT.IDPERSONAL', '=', 'MP.IDPERSONAL')

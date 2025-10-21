@@ -39,7 +39,7 @@
             <div class="row align-items-end">
                 <!-- CENTRO MAC -->
                 <div class="col-md-4">
-                    <div class="form-group">
+                    <div class="">
                         <label class="mb-2 fw-bold text-dark">Centro MAC:</label>
                         @role('Administrador|Moderador')
                             <select id="filtro_mac" class="form-control select2" style="width: 100%">
@@ -58,7 +58,7 @@
 
                 <!-- FECHA INICIO -->
                 <div class="col-md-3">
-                    <div class="form-group">
+                    <div class="">
                         <label class="mb-2 fw-bold text-dark">Fecha Inicio:</label>
                         <input type="date" id="filtro_fecha_inicio" class="form-control" value="{{ date('Y-m-01') }}">
                     </div>
@@ -66,19 +66,19 @@
 
                 <!-- FECHA FIN -->
                 <div class="col-md-3">
-                    <div class="form-group">
+                    <div class="">
                         <label class="mb-2 fw-bold text-dark">Fecha Fin:</label>
                         <input type="date" id="filtro_fecha_fin" class="form-control" value="{{ date('Y-m-d') }}">
                     </div>
                 </div>
 
-                <!-- BOTONES -->
+                <!-- BOTONES BUSCAR / LIMPIAR -->
                 <div class="col-md-2 d-flex align-items-end">
-                    <div class="form-group d-flex gap-1 w-100">
+                    <div class=" d-flex gap-1 w-100">
                         <button id="btnBuscar" class="btn btn-primary w-50">
                             <i class="fa fa-search"></i> Buscar
                         </button>
-                        <button class="btn btn-dark w-50" onclick="limpiarFiltro()">
+                        <button class="btn btn-dark w-50" id="btnLimpiarFiltro">
                             <i class="fa fa-undo"></i> Limpiar
                         </button>
                     </div>
@@ -86,7 +86,7 @@
             </div>
 
             <!-- 🔹 FILTROS ADICIONALES -->
-            <div id="extraFiltros" class="mt-3" style="display: none;">
+            <div id="extraFiltros" class="mt-2" style="display: none;">
                 <div class="row g-3">
                     <!-- ENTIDAD -->
                     <div class="col-md-3">
@@ -138,7 +138,7 @@
 
             <!-- 🔹 BOTÓN MÁS FILTROS -->
             <div class="mt-3 text-center">
-                <button class="btn btn-outline-light w-100" id="btnToggleFiltros" style="font-weight: 600;">
+                <button class="btn btn-outline-dark w-100" id="btnToggleFiltros" style="font-weight: 600;">
                     <i class="fa fa-filter"></i> Ver más filtros
                 </button>
             </div>
@@ -198,7 +198,7 @@
             // cargar tabla al iniciar
             cargarTablaInterrupciones();
 
-            // ✅ activar botón BUSCAR
+            //  activar botón BUSCAR
             $('#btnBuscar').on('click', function(e) {
                 e.preventDefault();
                 cargarTablaInterrupciones();
@@ -245,7 +245,7 @@
             if (visible) {
                 // Ocultamos con animación
                 $extra.slideUp(300, function() {
-                    // ✅ Resetear todos los filtros adicionales a "Todos"
+                    //  Resetear todos los filtros adicionales a "Todos"
                     $('#filtro_entidad, #filtro_tipificacion, #filtro_estado, #filtro_revision')
                         .val('')
                         .trigger('change.select2'); // evita lanzar evento 'change' normal
@@ -297,7 +297,7 @@
         // =====================================================
         function validarFechasHoras(form, estado) {
             if (estado && estado.toUpperCase() === 'CERRADO') {
-                // ✅ Detecta valores aunque los campos no existan o estén deshabilitados
+                //  Detecta valores aunque los campos no existan o estén deshabilitados
                 let fechaInicio = form.find('[name="fecha_inicio"]').val() || form.find('input[type="date"]:disabled')
                     .val() || '';
                 let horaInicio = form.find('[name="hora_inicio"]').val() || form.find('input[type="time"]:disabled')
@@ -370,7 +370,7 @@
             let form = $('#form_add_interrupcion');
             let estado = $('#estado').val();
 
-            // ✅ Llamamos a la función de validación
+            //  Llamamos a la función de validación
             if (!validarFechasHoras(form, estado)) return;
 
             var formData = new FormData($('#form_add_interrupcion')[0]);
@@ -444,7 +444,7 @@
             let form = $('#form_edit_interrupcion');
             let estado = $('#estado').val();
 
-            // ✅ Llamamos a la función de validación
+            //  Llamamos a la función de validación
             if (!validarFechasHoras(form, estado)) return;
 
             var formData = new FormData($('#form_edit_interrupcion')[0]);
@@ -549,7 +549,7 @@
                 form.find('#estado_final').val() ||
                 ''; // si no hay campo, queda vacío
 
-            // ✅ Validar fechas y horas antes de enviar
+            //  Validar fechas y horas antes de enviar
             if (!validarFechasHoras(form, estado)) return;
 
             let formData = new FormData(form[0]);
@@ -616,13 +616,30 @@
             window.location.href = url;
         }
 
-        // ✅ Función para limpiar filtros y recargar
-        function limpiarFiltro() {
+        //  Función para limpiar todos los filtros
+        $(document).on('click', '#btnLimpiarFiltro', function(e) {
+            e.preventDefault();
+
+            // Resetear campos base
             $('#filtro_mac').val('').trigger('change');
             $('#filtro_fecha_inicio').val('{{ date('Y-m-01') }}');
             $('#filtro_fecha_fin').val('{{ date('Y-m-d') }}');
+
+            // Resetear filtros adicionales
+            $('#filtro_entidad, #filtro_tipificacion, #filtro_estado, #filtro_revision')
+                .val('')
+                .trigger('change.select2');
+
+            // Cerrar panel de filtros extra (si está abierto)
+            const $extra = $('#extraFiltros');
+            if ($extra.is(':visible')) {
+                $extra.slideUp(300);
+                $('#btnToggleFiltros').html('<i class="fa fa-filter"></i> Ver más filtros');
+            }
+
+            // Recargar tabla con filtros limpios
             cargarTablaInterrupciones();
-        }
+        });
 
         function btnVerInterrupcion(id) {
             $.ajax({
@@ -674,7 +691,7 @@
                     $('#btnGuardarObservacion').prop('disabled', false).html('Guardar');
 
                     if (res.status === 200) {
-                        Swal.fire("✅ Éxito", res.message, "success");
+                        Swal.fire(" Éxito", res.message, "success");
                         $('#modal_show_modal').modal('hide');
                         cargarTablaInterrupciones(); // 🔁 recarga dinámica
                     } else {
