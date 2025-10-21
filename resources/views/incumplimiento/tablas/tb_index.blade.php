@@ -7,7 +7,6 @@
             <th>Tipificación</th>
             <th>Entidad</th>
             <th>Descripción</th>
-            <th>Revisión</th>
             <th>Estado</th>
             <th width="150px">Acciones</th>
         </tr>
@@ -45,17 +44,6 @@
                 {{-- Descripción --}}
                 <td class="text-wrap text-uppercase" style="max-width:300px;">
                     {{ Str::limit(strtoupper($incumplimiento->descripcion ?? 'SIN DESCRIPCIÓN'), 100, '...') }}
-                </td>
-
-                {{-- Estado de revisión (observado / corregido) --}}
-                <td class="text-center">
-                    @if ($incumplimiento->corregido)
-                        <span class="badge bg-success">Corregido</span>
-                    @elseif ($incumplimiento->observado)
-                        <span class="badge bg-warning text-dark">Observado</span>
-                    @else
-                        <span class="badge bg-secondary">Sin observación</span>
-                    @endif
                 </td>
 
                 {{-- Estado general del incidente --}}
