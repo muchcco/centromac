@@ -126,7 +126,7 @@
                                     </button>
                                 @endif
                             @endrole
-                            @role('Administrador|Supervisor|Especialista TIC|Especialista_TIC')
+                            @role('Administrador|Supervisor|Especialista TIC|Especialista_TIC|Coordinador')
                                 <button class="btn btn-danger" onclick="cerrarDia()" id="btnCerrarDia">
                                     <i class="fa fa-lock"></i> Cerrar Día
                                 </button>
@@ -141,13 +141,13 @@
                                 $mesActual = date('Y-m'); // mes actual fijo (ejemplo: 2025-10)
                             @endphp
 
-                            @role('Administrador|Monitor|Monitoreo|Especialista TIC')
+                            @role('Administrador|Monitor|Monitoreo|Especialista TIC|Coordinador')
                                 @if (auth()->user()->hasAnyRole(['Administrador', 'Monitor', 'Monitoreo']))
                                     {{--  Admin, Monitor y Monitoreo: siempre pueden revertir --}}
                                     <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
                                         <i class="fa fa-undo"></i> Revertir Día
                                     </button>
-                                @elseif (auth()->user()->hasRole('Especialista TIC') && date('Y-m') === $mesActual)
+                                @elseif (auth()->user()->hasRole('Especialista TIC|Coordinador') && date('Y-m') === $mesActual)
                                     {{-- ⚙️ Especialista TIC: solo puede revertir durante el mes actual --}}
                                     <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
                                         <i class="fa fa-undo"></i> Revertir Día
