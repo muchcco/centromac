@@ -156,6 +156,17 @@
             formData.append("id_centromac", $("#id_centromac").val());
             formData.append("es_administrativo", $("#es_administrativo").val()); // Agregar el valor de ES_ADMINISTRATIVO
             formData.append("_token", $("input[name=_token]").val());
+            var inicio = new Date($("#fecha_inicio").val());
+            var fin = new Date($("#fecha_fin").val());
+            if (fin < inicio) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Fechas inválidas",
+                    text: "La fecha de fin no puede ser menor que la fecha de inicio.",
+                    confirmButtonText: "Entendido"
+                });
+                return; // 🚫 Detener envío
+            }
 
             // Solicitud AJAX para almacenar el módulo
             $.ajax({
@@ -222,7 +233,7 @@
                 error: function(xhr, status, error) {
                     Swal.fire({
                         icon: "error",
-                        text: "No se pudo cargar la información del módulo "+error,
+                        text: "No se pudo cargar la información del módulo " + error,
                         confirmButtonText: "Aceptar"
                     });
                 }
@@ -238,6 +249,17 @@
             formData.append("id_modulo", id); // Asegúrate de enviar el id_modulo correctamente
             formData.append("es_administrativo", $("#es_administrativo").val()); // Agregar el valor de ES_ADMINISTRATIVO
             formData.append("_token", $("input[name=_token]").val()); // CSRF token
+            var inicio = new Date($("#fecha_inicio").val());
+            var fin = new Date($("#fecha_fin").val());
+            if (fin < inicio) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Fechas inválidas",
+                    text: "La fecha de fin no puede ser menor que la fecha de inicio.",
+                    confirmButtonText: "Entendido"
+                });
+                return; // 🚫 Detener envío
+            }
 
             $.ajax({
                 type: 'POST',

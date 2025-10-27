@@ -14,9 +14,8 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">¿Es Administrativo?</label>
                     <div class="col-9">
-                        <!-- Select para "Es Administrativo" -->
                         <select class="form-control" name="es_administrativo" id="es_administrativo"
-                            onchange="toggleModuloNumber()">
+                            onchange="toggleModuloNumber()" {{ $solo_fecha_fin ? 'disabled' : '' }}>
                             <option value="SI" {{ $modulo->ES_ADMINISTRATIVO == 'SI' ? 'selected' : '' }}>Sí
                             </option>
                             <option value="NO" {{ $modulo->ES_ADMINISTRATIVO == 'NO' ? 'selected' : '' }}>No
@@ -30,7 +29,8 @@
                     <label class="col-3 col-form-label">Número del Módulo</label>
                     <div class="col-9">
                         <input type="text" class="form-control" name="nombre_modulo" id="nombre_modulo"
-                            onkeyup="isMayus(this)" value="{{ $modulo->N_MODULO }}">
+                            value="{{ $modulo->N_MODULO }}" onkeyup="isMayus(this)"
+                            {{ $solo_fecha_fin ? 'readonly' : '' }}>
                     </div>
                 </div>
 
@@ -39,7 +39,7 @@
                     <label class="col-3 col-form-label">Fecha de Inicio</label>
                     <div class="col-9">
                         <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio"
-                            value="{{ $modulo->FECHAINICIO->format('Y-m-d') }}">
+                            value="{{ $modulo->FECHAINICIO->format('Y-m-d') }}" {{ $solo_fecha_fin ? 'readonly' : '' }}>
                     </div>
                 </div>
 
@@ -56,7 +56,8 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Entidad</label>
                     <div class="col-9">
-                        <select class="form-control" name="entidad_id" id="entidad_id">
+                        <select class="form-control" name="entidad_id" id="entidad_id"
+                            {{ $solo_fecha_fin ? 'disabled' : '' }}>
                             @foreach ($entidades as $entidad)
                                 <option value="{{ $entidad->IDENTIDAD }}"
                                     {{ $modulo->IDENTIDAD == $entidad->IDENTIDAD ? 'selected' : '' }}>
