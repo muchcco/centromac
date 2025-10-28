@@ -458,7 +458,6 @@ class AsistenciaController extends Controller
 
         // 🔒 Validación de permisos según el rol
         if ($user->hasRole('Especialista TIC')) {
-            // Solo puede revertir su propio MAC
             if ($user->idcentro_mac != $request->idmac) {
                 return response()->json([
                     'ok' => false,
@@ -467,12 +466,22 @@ class AsistenciaController extends Controller
             }
         }
 
-        //  Permisos generales
         if (!($user->hasAnyRole(['Administrador', 'Monitor', 'Especialista TIC', 'Moderador']))) {
             return response()->json([
                 'ok' => false,
                 'msg' => 'No tiene permisos para realizar esta acción.'
             ], 403);
+        }
+
+        // 🗓️ Validar que la fecha sea de octubre en adelante
+        $fechaMinima = Carbon::create(2025, 10, 1); // 1 de octubre de 2025
+        $fechaSolicitada = Carbon::parse($request->fecha);
+
+        if ($fechaSolicitada->lt($fechaMinima)) {
+            return response()->json([
+                'ok' => false,
+                'msg' => 'Solo se permite revertir asistencias desde octubre de 2025 en adelante.'
+            ], 422);
         }
 
         try {
@@ -483,7 +492,7 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'ok' => true,
-                'msg' => " Se revirtió la asistencia del {$request->fecha} en el MAC #{$request->idmac}"
+                'msg' => "Se revirtió la asistencia del {$request->fecha} en el MAC #{$request->idmac}"
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -498,7 +507,7 @@ class AsistenciaController extends Controller
         $user = auth()->user();
 
         // Si es Administrador o Monitor → ver todos los MACs
-        if ($user->hasRole(['Administrador', 'Monitor','Moderador'])) {
+        if ($user->hasRole(['Administrador', 'Monitor', 'Moderador'])) {
             $macs = DB::table('db_centros_mac.m_centro_mac')
                 ->select('IDCENTRO_MAC as id', 'NOMBRE_MAC as nom')
                 ->orderBy('NOMBRE_MAC')
