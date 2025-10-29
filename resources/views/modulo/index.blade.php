@@ -44,7 +44,7 @@
                     @else
                         <input type="text" class="form-control text-uppercase"
                             value="{{ $centro_mac->name_mac ?? 'No asignado' }}" readonly>
-                        <input type="hidden" id="filtro_mac" value="{{ $centro_mac->idmac }}">
+                        <input type="hidden" id="filtro_mac" value="{{ $centro_mac->idmac ?? '' }}">
                     @endrole
                 </div>
 

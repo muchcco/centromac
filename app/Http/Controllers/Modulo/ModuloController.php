@@ -34,21 +34,49 @@ class ModuloController extends Controller
     public function index()
     {
         $usuario = auth()->user();
-        $idMac = $this->centro_mac()->idmac;
 
-        // 🔹 Filtros disponibles
-        $macs = $usuario->hasRole('Administrador')
-            ? DB::table('m_centro_mac')->select('IDCENTRO_MAC', 'NOMBRE_MAC')->orderBy('NOMBRE_MAC')->get()
-            : DB::table('m_centro_mac')->where('IDCENTRO_MAC', $idMac)->select('IDCENTRO_MAC', 'NOMBRE_MAC')->get();
+        // 🔹 Si el usuario NO es administrador o moderador, obtener su MAC
+        $centro_mac = null;
+        if (!$usuario->hasRole(['Administrador', 'Moderador'])) {
+            $centro_mac = DB::table('m_centro_mac')
+                ->where('IDCENTRO_MAC', $usuario->idcentro_mac)
+                ->select('IDCENTRO_MAC as idmac', 'NOMBRE_MAC as name_mac')
+                ->first();
+        }
 
-        $entidades = DB::table('m_entidad')->select('IDENTIDAD', 'NOMBRE_ENTIDAD')->orderBy('NOMBRE_ENTIDAD')->get();
+        // 🔹 Listado de MACs disponibles (solo admins pueden ver todos)
+        $macs = $usuario->hasRole(['Administrador', 'Moderador'])
+            ? DB::table('m_centro_mac')
+            ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
+            ->orderBy('NOMBRE_MAC')
+            ->get()
+            : collect(); // vacío para los demás
 
-        return view('modulo.index', compact('macs', 'entidades'));
+        // 🔹 Listado de ENTIDADES según el rol
+        if ($usuario->hasRole(['Administrador', 'Moderador'])) {
+            // Todos los MAC → todas las entidades
+            $entidades = DB::table('m_entidad')
+                ->select('IDENTIDAD', 'NOMBRE_ENTIDAD')
+                ->orderBy('NOMBRE_ENTIDAD')
+                ->get();
+        } else {
+            // Solo entidades del MAC del usuario
+            $entidades = DB::table('m_mac_entidad')
+                ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                ->where('m_mac_entidad.IDCENTRO_MAC', $usuario->idcentro_mac)
+                ->select('m_entidad.IDENTIDAD', 'm_entidad.NOMBRE_ENTIDAD')
+                ->orderBy('m_entidad.NOMBRE_ENTIDAD')
+                ->get();
+        }
+
+        return view('modulo.index', compact('macs', 'entidades', 'centro_mac'));
     }
 
     // Método para cargar los datos de los módulos en la tabla
     public function tb_index(Request $request)
     {
+        $usuario = auth()->user();
+
         $query = DB::table('m_modulo as m')
             ->leftJoin('m_entidad as e', 'm.IDENTIDAD', '=', 'e.IDENTIDAD')
             ->leftJoin('m_centro_mac as c', 'm.IDCENTRO_MAC', '=', 'c.IDCENTRO_MAC')
@@ -63,15 +91,23 @@ class ModuloController extends Controller
             )
             ->orderBy('m.N_MODULO', 'asc');
 
-        // 🔹 Aplicar filtros si existen
+        // 🔹 FILTROS OPCIONALES
         if ($request->filled('id_mac')) {
             $query->where('m.IDCENTRO_MAC', $request->id_mac);
         }
+
         if ($request->filled('id_entidad')) {
             $query->where('m.IDENTIDAD', $request->id_entidad);
         }
+
         if ($request->filled('es_admin')) {
             $query->where('m.ES_ADMINISTRATIVO', $request->es_admin);
+        }
+
+        // 🔒 RESTRICCIÓN POR ROL
+        if (!$usuario->hasRole(['Administrador', 'Moderador'])) {
+            // Forzar que solo vea los módulos de su MAC
+            $query->where('m.IDCENTRO_MAC', $usuario->idcentro_mac);
         }
 
         $modulos = $query->get();
