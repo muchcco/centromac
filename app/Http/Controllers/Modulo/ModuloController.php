@@ -33,33 +33,52 @@ class ModuloController extends Controller
     // Método para mostrar la lista inicial de módulos
     public function index()
     {
-        return view('modulo.index');
+        $usuario = auth()->user();
+        $idMac = $this->centro_mac()->idmac;
+
+        // 🔹 Filtros disponibles
+        $macs = $usuario->hasRole('Administrador')
+            ? DB::table('m_centro_mac')->select('IDCENTRO_MAC', 'NOMBRE_MAC')->orderBy('NOMBRE_MAC')->get()
+            : DB::table('m_centro_mac')->where('IDCENTRO_MAC', $idMac)->select('IDCENTRO_MAC', 'NOMBRE_MAC')->get();
+
+        $entidades = DB::table('m_entidad')->select('IDENTIDAD', 'NOMBRE_ENTIDAD')->orderBy('NOMBRE_ENTIDAD')->get();
+
+        return view('modulo.index', compact('macs', 'entidades'));
     }
 
     // Método para cargar los datos de los módulos en la tabla
-    public function tb_index()
+    public function tb_index(Request $request)
     {
-        // Realizar leftJoin para asegurar que los módulos sin entidad o centro MAC también se muestren
-        $modulos = DB::table('M_MODULO')
-            ->leftJoin('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD') // Usar leftJoin para incluir todos los módulos
-            ->leftJoin('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MODULO.IDCENTRO_MAC')
-            ->where(function ($query) {
-                // Condición para roles específicos
-                if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                    $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
-                }
-            })
+        $query = DB::table('m_modulo as m')
+            ->leftJoin('m_entidad as e', 'm.IDENTIDAD', '=', 'e.IDENTIDAD')
+            ->leftJoin('m_centro_mac as c', 'm.IDCENTRO_MAC', '=', 'c.IDCENTRO_MAC')
             ->select(
-                'M_MODULO.*',
-                'M_ENTIDAD.NOMBRE_ENTIDAD', // Campo de la entidad
-                'M_CENTRO_MAC.NOMBRE_MAC'   // Campo del centro MAC
+                'm.IDMODULO',
+                'm.N_MODULO',
+                'm.FECHAINICIO',
+                'm.FECHAFIN',
+                'm.ES_ADMINISTRATIVO',
+                'e.NOMBRE_ENTIDAD',
+                'c.NOMBRE_MAC'
             )
-            ->get();
+            ->orderBy('m.N_MODULO', 'asc');
 
-        // Pasar los módulos a la vista
-        return view('modulo.tablas.tb_index', compact('modulos'));
+        // 🔹 Aplicar filtros si existen
+        if ($request->filled('id_mac')) {
+            $query->where('m.IDCENTRO_MAC', $request->id_mac);
+        }
+        if ($request->filled('id_entidad')) {
+            $query->where('m.IDENTIDAD', $request->id_entidad);
+        }
+        if ($request->filled('es_admin')) {
+            $query->where('m.ES_ADMINISTRATIVO', $request->es_admin);
+        }
+
+        $modulos = $query->get();
+
+        $view = view('modulo.tablas.tb_index', compact('modulos'))->render();
+        return response()->json($view);
     }
-
 
     // Método para mostrar el formulario de creación de módulos
     public function create()
@@ -249,6 +268,107 @@ class ModuloController extends Controller
             return response()->json([
                 'error' => $e->getMessage()
             ], 400); // Código de estado HTTP para errores de cliente
+        }
+    }
+    public function modalCambiarEntidad(Request $request)
+    {
+        try {
+            $modulo = Modulo::with('entidad')->where('IDMODULO', $request->id_modulo)->first();
+
+            if (!$modulo) {
+                return response()->json(['error' => 'Módulo no encontrado'], 404);
+            }
+
+            // ✅ Si es Administrador, puede ver todas las entidades
+            if (auth()->user()->hasRole('Administrador')) {
+                $entidades = DB::table('M_ENTIDAD')
+                    ->select('IDENTIDAD', 'NOMBRE_ENTIDAD')
+                    ->orderBy('NOMBRE_ENTIDAD')
+                    ->get();
+            } else {
+                // 🔹 Caso contrario: solo entidades del mismo MAC del usuario autenticado
+                $idMacUsuario = $this->centro_mac()->idmac;
+
+                $entidades = DB::table('M_MAC_ENTIDAD')
+                    ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
+                    ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
+                    ->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $idMacUsuario)
+                    ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD')
+                    ->orderBy('M_ENTIDAD.NOMBRE_ENTIDAD')
+                    ->get();
+            }
+
+            $view = view('modulo.modals.md_cambiar_entidad', compact('modulo', 'entidades'))->render();
+            return response()->json(['html' => $view]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function cambiarEntidad(Request $request)
+    {
+        $request->validate([
+            'id_modulo' => 'required|integer|exists:m_modulo,IDMODULO',
+            'nueva_entidad_id' => 'required|integer|exists:m_entidad,IDENTIDAD',
+            'fecha_fin' => 'required|date'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $moduloActual = Modulo::findOrFail($request->id_modulo);
+
+            // 🔹 Validar fecha
+            if (strtotime($request->fecha_fin) < strtotime($moduloActual->FECHAINICIO)) {
+                return response()->json([
+                    'message' => 'La fecha de fin no puede ser menor que la fecha de inicio actual.'
+                ], 422);
+            }
+
+            // 🔹 Validar que la nueva entidad pertenezca al MAC del usuario
+            $idMacUsuario = $this->centro_mac()->idmac;
+
+            $entidadPertenece = DB::table('M_MAC_ENTIDAD')
+                ->where('IDCENTRO_MAC', $idMacUsuario)
+                ->where('IDENTIDAD', $request->nueva_entidad_id)
+                ->exists();
+
+            if (!$entidadPertenece && !auth()->user()->hasRole('Administrador')) {
+                return response()->json([
+                    'message' => 'No puede asignar una entidad que no pertenece a su Centro MAC.'
+                ], 403);
+            }
+
+            // 🔹 1. Cerrar módulo actual
+            $moduloActual->FECHAFIN = $request->fecha_fin;
+            $moduloActual->save();
+
+            // 🔹 2. Crear nuevo módulo con nueva entidad
+            $nuevoModulo = new Modulo();
+            $nuevoModulo->N_MODULO = $moduloActual->N_MODULO;
+            $nuevoModulo->FECHAINICIO = date('Y-m-d', strtotime($request->fecha_fin . ' +1 day'));
+            $nuevoModulo->FECHAFIN = '2050-12-31'; // cierre largo fijo
+            $nuevoModulo->IDENTIDAD = $request->nueva_entidad_id;
+            $nuevoModulo->IDCENTRO_MAC = $moduloActual->IDCENTRO_MAC;
+            $nuevoModulo->ES_ADMINISTRATIVO = $moduloActual->ES_ADMINISTRATIVO;
+            $nuevoModulo->save();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Cambio de entidad realizado correctamente.',
+                'nuevo_modulo' => [
+                    'id' => $nuevoModulo->IDMODULO,
+                    'nueva_entidad' => DB::table('M_ENTIDAD')
+                        ->where('IDENTIDAD', $request->nueva_entidad_id)
+                        ->value('NOMBRE_ENTIDAD'),
+                    'fecha_inicio' => $nuevoModulo->FECHAINICIO,
+                    'fecha_fin' => $nuevoModulo->FECHAFIN
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 }

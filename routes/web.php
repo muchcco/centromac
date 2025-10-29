@@ -450,9 +450,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/tablas/tb_index', [ModuloController::class, 'tb_index'])->name('tablas.tb_index');
         Route::post('/modals/md_add_modulo', [ModuloController::class, 'create'])->name('modals.md_add_modulo');
         Route::post('/modals/md_edit_modulo', [ModuloController::class, 'edit'])->name('modals.md_edit_modulo');
+        Route::post('/modals/md_cambiar_entidad', [ModuloController::class, 'modalCambiarEntidad'])->name('modals.md_cambiar_entidad');
         Route::post('/store_modulo', [ModuloController::class, 'store'])->name('store_modulo');
         Route::post('/update_modulo', [ModuloController::class, 'update'])->name('update_modulo');
         Route::post('/delete_modulo', [ModuloController::class, 'destroy'])->name('delete_modulo');
+        Route::post('/cambiar_entidad', [ModuloController::class, 'cambiarEntidad'])->name('cambiar_entidad');
     });
 
     /******************************************************   FORMATOS *****************************************************************************/

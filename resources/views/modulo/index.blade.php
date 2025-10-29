@@ -2,14 +2,8 @@
 
 @section('style')
     <link rel="stylesheet" href="{{ asset('Vendor/toastr/toastr.min.css') }}">
-    <!-- Plugins css -->
     <link href="{{ asset('nuevo/plugins/select2/select2.min.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ asset('nuevo/plugins/timepicker/bootstrap-material-datetimepicker.css') }}" rel="stylesheet">
-    <link href="{{ asset('nuevo/plugins/bootstrap-touchspin/css/jquery.bootstrap-touchspin.min.css') }}" rel="stylesheet" />
-    <!-- DataTables -->
     <link href="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ asset('nuevo/plugins/datatables/buttons.bootstrap5.min.css') }}" rel="stylesheet" type="text/css" />
-    <!-- Responsive datatable examples -->
     <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
 @endsection
 
@@ -30,39 +24,87 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="card">
-                <div class="card-header" style="background-color:#132842">
-                    <h4 class="card-title text-white">Lista de Módulos</h4>
+    <!-- 🔹 FILTROS PRINCIPALES -->
+    <div class="card mb-3">
+        <div class="card-header" style="background-color:#132842">
+            <h4 class="card-title text-white mb-0">Filtro de Búsqueda</h4>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-end">
+                <!-- Centro MAC -->
+                <div class="col-md-4">
+                    <label class="fw-bold text-dark mb-2">Centro MAC:</label>
+                    @role('Administrador|Moderador')
+                        <select id="filtro_mac" class="form-control select2">
+                            <option value="">-- Todos los MAC --</option>
+                            @foreach ($macs as $mac)
+                                <option value="{{ $mac->IDCENTRO_MAC }}">{{ $mac->NOMBRE_MAC }}</option>
+                            @endforeach
+                        </select>
+                    @else
+                        <input type="text" class="form-control text-uppercase"
+                            value="{{ $centro_mac->name_mac ?? 'No asignado' }}" readonly>
+                        <input type="hidden" id="filtro_mac" value="{{ $centro_mac->idmac }}">
+                    @endrole
                 </div>
 
-                <div class="card-body bootstrap-select-1">
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <button class="btn btn-success" onclick="btnAddModulo()"><i class="fa fa-plus"
-                                    aria-hidden="true"></i>
-                                Agregar Módulo</button>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="table-responsive">
-                                <div id="table_data">
-                                    <!-- Aquí se carga la tabla de módulos -->
-                                </div>
-                            </div>
-                        </div>
+                <!-- Entidad -->
+                <div class="col-md-4">
+                    <label class="fw-bold text-dark mb-2">Entidad:</label>
+                    <select id="filtro_entidad" class="form-control select2">
+                        <option value="">-- Todas --</option>
+                        @foreach ($entidades as $ent)
+                            <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Administrativo -->
+                <div class="col-md-2">
+                    <label class="fw-bold text-dark mb-2">Administrativo:</label>
+                    <select id="filtro_admin" class="form-control">
+                        <option value="">-- Todos --</option>
+                        <option value="SI">Sí</option>
+                        <option value="NO">No</option>
+                    </select>
+                </div>
+
+                <!-- Botones -->
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="d-flex gap-1 w-100">
+                        <button class="btn btn-primary w-50" onclick="filtrarModulos()">
+                            <i class="fa fa-search"></i> Buscar
+                        </button>
+                        <button class="btn btn-dark w-50" onclick="limpiarFiltro()">
+                            <i class="fa fa-undo"></i> Limpiar
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal para mostrar formularios de módulos -->
+    <!-- 🔹 LISTA DE MÓDULOS -->
+    <div class="card">
+        <div class="card-header" style="background-color:#132842">
+            <h4 class="card-title text-white mb-0">Lista de Módulos</h4>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <button class="btn btn-success" onclick="btnAddModulo()">
+                    <i class="fa fa-plus"></i> Agregar Módulo
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <div id="table_data"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
     <div class="modal fade" id="modal_show_modal" tabindex="-1" role="dialog"></div>
 @endsection
-
 @section('script')
     <script src="{{ asset('Script/js/sweet-alert.min.js') }}"></script>
     <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
@@ -92,13 +134,23 @@
 
     <script>
         $(document).ready(function() {
+            $('.select2').select2();
             cargarModulos();
         });
 
-        function cargarModulos() {
+        $(document).ready(function() {
+            cargarModulos();
+        });
+
+        function cargarModulos(mac = '', entidad = '', admin = '') {
             $.ajax({
                 url: "{{ route('modulos.tablas.tb_index') }}",
                 type: 'GET',
+                data: {
+                    id_mac: mac,
+                    id_entidad: entidad,
+                    es_admin: admin
+                },
                 beforeSend: function() {
                     $('#table_data').html('<i class="fa fa-spinner fa-spin"></i> Cargando...');
                 },
@@ -111,13 +163,20 @@
             });
         }
 
+        function filtrarModulos() {
+            const mac = $('#filtro_mac').val();
+            const entidad = $('#filtro_entidad').val();
+            const admin = $('#filtro_admin').val();
+            cargarModulos(mac, entidad, admin);
+        }
+
         function btnAddModulo() {
             $.ajax({
                 type: 'post',
-                url: "{{ route('modulos.modals.md_add_modulo') }}", // Cambia la ruta a la correcta para abrir el modal de añadir módulo
+                url: "{{ route('modulos.modals.md_add_modulo') }}",
                 dataType: "json",
                 data: {
-                    "_token": "{{ csrf_token() }}" // Incluir CSRF token
+                    "_token": "{{ csrf_token() }}"
                 },
                 success: function(data) {
                     $("#modal_show_modal").html(data.html);
@@ -329,6 +388,106 @@
                                 confirmButtonText: "Aceptar"
                             });
                         }
+                    });
+                }
+            });
+        } // Abrir modal para cambiar entidad
+        function btnCambiarEntidad(idModulo) {
+            $.ajax({
+                type: 'POST',
+                url: "{{ route('modulos.modals.md_cambiar_entidad') }}", // ✅ esta es la correcta
+                dataType: "json",
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id_modulo": idModulo
+                },
+                beforeSend: function() {
+                    $("#modal_show_modal").html(
+                        '<div class="text-center p-4"><i class="fa fa-spinner fa-spin fa-2x text-secondary"></i><br>Cargando...</div>'
+                    );
+                },
+                success: function(data) {
+                    if (data.html) {
+                        $("#modal_show_modal").html(data.html);
+                        $("#modal_show_modal").modal('show');
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            text: "No se pudo cargar el formulario de cambio de entidad",
+                            confirmButtonText: "Aceptar"
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error(xhr.responseText);
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Error al cargar el modal de cambio de entidad.",
+                        confirmButtonText: "Aceptar"
+                    });
+                }
+            });
+        }
+
+        // Guardar cambio de entidad
+        function btnGuardarCambioEntidad(idModulo) {
+            var formData = new FormData(document.getElementById("form_cambio_entidad"));
+            formData.append("_token", "{{ csrf_token() }}");
+
+            // Validar entidad
+            if ($("#nueva_entidad_id").val() === "") {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Seleccione una entidad",
+                    text: "Debe elegir una nueva entidad antes de continuar.",
+                    confirmButtonText: "Entendido"
+                });
+                return;
+            }
+
+            // Validar fecha
+            var fechaFin = new Date($("#fecha_fin").val());
+            if (isNaN(fechaFin.getTime())) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Fecha no válida",
+                    text: "Debe seleccionar una fecha de fin correcta para cerrar el módulo actual.",
+                    confirmButtonText: "Entendido"
+                });
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "{{ route('modulos.cambiar_entidad') }}", // ✅ la ruta correcta
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $("#btnConfirmarCambio").html('<i class="fa fa-spinner fa-spin"></i> Procesando...');
+                    $("#btnConfirmarCambio").prop("disabled", true);
+                },
+                success: function(response) {
+                    $("#btnConfirmarCambio").html('Confirmar Cambio').prop("disabled", false);
+                    $("#modal_show_modal").modal('hide');
+                    cargarModulos();
+                    Swal.fire({
+                        icon: "success",
+                        title: "Cambio de Entidad Exitoso",
+                        html: "El módulo fue cerrado correctamente y se generó un nuevo registro con la nueva entidad.<br><br>" +
+                            "<b>Nueva Entidad:</b> " + response.nuevo_modulo.nueva_entidad +
+                            "<br><b>Fecha de inicio:</b> " + response.nuevo_modulo.fecha_inicio,
+                        confirmButtonText: "Aceptar"
+                    });
+                },
+                error: function(xhr) {
+                    $("#btnConfirmarCambio").html('Confirmar Cambio').prop("disabled", false);
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: xhr.responseJSON?.message || "No se pudo realizar el cambio de entidad.",
+                        confirmButtonText: "Aceptar"
                     });
                 }
             });
