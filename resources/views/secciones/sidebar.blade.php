@@ -399,7 +399,7 @@
             @endrole
 
 
-            @role('Administrador|Especialista TIC|Supervisor|Coordinador')
+            @role('Administrador|Especialista TIC|Supervisor|Coordinador|Moderador')
                 <li class="@if (Request::is('modulos*')) mm-active @endif">
                     <a href="{{ route('modulos.index') }}" class="@if (Request::is('modulos/index*')) active @endif">
                         <i data-feather="monitor" class="align-self-center menu-icon"></i><span>Módulo</span></a>
@@ -434,7 +434,7 @@
                             class="align-self-center menu-icon"></i><span>Servicios por MAC</span></a>
                 </li>
             @endif
-            @role('Administrador|Moderador|Supervisor|Especialista_TIC|Especialista TIC')
+            @role('Administrador|Moderador|Supervisor|Especialista_TIC|Especialista TIC|Coordinador')
                 <hr class="hr-dashed hr-menu">
 
                 <!-- Nueva sección MONITOREO -->
@@ -452,7 +452,7 @@
                     <a href="{{ route('monitoreo.asistencia.pivot') }}"
                         class="@if (Request::is('monitoreo/asistencia/pivot*')) active @endif">
                         <i data-feather="grid" class="align-self-center menu-icon"></i>
-                        <span>Pivot de Cierres</span>
+                        <span>Monitoreo de Cierres</span>
                     </a>
                 </li>
             @endrole
