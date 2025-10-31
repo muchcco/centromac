@@ -13,6 +13,8 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Concerns\WithDrawings;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSize, WithDrawings, WithStyles, WithTitle
 {
@@ -62,13 +64,12 @@ class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSi
     public function styles(Worksheet $sheet)
     {
         $lastRow = count($this->incumplimientos) + 8;
-        $range = 'A9:I' . $lastRow;
 
-        // Cabecera → fila 18 como en observaciones
-        $sheet->getStyle('A18:I18')->applyFromArray([
+        /* 🔹 Encabezado azul institucional */
+        $sheet->getStyle('A14:I14')->applyFromArray([
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FF9C0006'], // 🔴 Rojo para diferenciar incumplimientos
+                'startColor' => ['argb' => 'FF1F4E79'], // Azul MAC
             ],
             'font' => [
                 'bold'  => true,
@@ -76,7 +77,7 @@ class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSi
             ],
             'borders' => [
                 'allBorders' => [
-                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'borderStyle' => Border::BORDER_THIN,
                     'color'       => ['argb' => 'FF000000'],
                 ],
             ],
@@ -86,6 +87,51 @@ class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSi
                 'wrapText'   => true,
             ],
         ]);
+
+        /* 🔹 Bordes y alineación para todo el rango */
+        $range = 'A15:I' . $lastRow;
+        $sheet->getStyle($range)->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color'       => ['argb' => 'FF000000'],
+                ],
+            ],
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_TOP,
+                'wrapText' => true,
+            ],
+        ]);
+    }
+
+    /**
+     * 🔧 Ajustar automáticamente el ancho de columnas y establecer máximo
+     */
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+
+                // Recorrer columnas A → I y ajustar ancho automáticamente
+                foreach (range('A', 'I') as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                    $calculatedWidth = $sheet->getColumnDimension($col)->getWidth();
+
+                    // Limitar ancho máximo (por ejemplo 45)
+                    if ($calculatedWidth > 45) {
+                        $sheet->getColumnDimension($col)->setWidth(45);
+                    }
+                }
+
+                // Aplicar ajuste de texto (wrapText) global
+                $highestRow = $sheet->getHighestRow();
+                $sheet->getStyle("A1:I{$highestRow}")
+                    ->getAlignment()
+                    ->setWrapText(true)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+            },
+        ];
     }
 
     public function title(): string
