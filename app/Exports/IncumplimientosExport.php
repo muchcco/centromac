@@ -13,10 +13,11 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Concerns\WithDrawings;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSize, WithDrawings, WithStyles, WithTitle
+class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSize, WithDrawings, WithStyles, WithTitle, WithEvents
 {
     protected $incumplimientos;
     protected $nombreMac;
@@ -48,13 +49,11 @@ class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSi
         $drawing = new Drawing();
         $drawing->setName('Logo');
         $drawing->setDescription('Logo MAC');
-        $drawing->setPath(public_path('imagen/mac_logo_export.jpg')); //  asegúrate de que exista
+        $drawing->setPath(public_path('imagen/mac_logo_export.jpg'));
         $drawing->setCoordinates('A2');
 
-        // Redimensionar proporcionalmente
         $drawing->setWidth(100);
         $drawing->setHeight(60);
-
         $drawing->setOffsetY(5);
         $drawing->setOffsetX(5);
 
@@ -88,7 +87,7 @@ class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSi
             ],
         ]);
 
-        /* 🔹 Bordes y alineación para todo el rango */
+        /* 🔹 Bordes y alineación general */
         $range = 'A15:I' . $lastRow;
         $sheet->getStyle($range)->applyFromArray([
             'borders' => [
@@ -98,38 +97,54 @@ class IncumplimientosExport implements FromView, WithDefaultStyles, ShouldAutoSi
                 ],
             ],
             'alignment' => [
-                'vertical' => Alignment::VERTICAL_TOP,
-                'wrapText' => true,
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical'   => Alignment::VERTICAL_CENTER,
+                'wrapText'   => true,
             ],
         ]);
     }
 
     /**
-     * 🔧 Ajustar automáticamente el ancho de columnas y establecer máximo
+     * 🔧 Ajuste de columnas, centrado general y justificación en descripciones
      */
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
+                $highestRow = $sheet->getHighestRow();
 
-                // Recorrer columnas A → I y ajustar ancho automáticamente
-                foreach (range('A', 'I') as $col) {
+                // 🔹 Centramos todo el contenido general
+                $sheet->getStyle("A15:I{$highestRow}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER)
+                    ->setWrapText(true);
+
+                // 🔹 Justificamos las columnas de descripción (D y E)
+                $sheet->getStyle("D15:D{$highestRow}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_JUSTIFY)
+                    ->setVertical(Alignment::VERTICAL_TOP)
+                    ->setWrapText(true);
+
+                $sheet->getStyle("E15:E{$highestRow}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_JUSTIFY)
+                    ->setVertical(Alignment::VERTICAL_TOP)
+                    ->setWrapText(true);
+
+                // 🔹 Ajuste de anchos
+                $sheet->getColumnDimension('D')->setWidth(80);
+                $sheet->getColumnDimension('E')->setWidth(80);
+
+                foreach (['A', 'B', 'C', 'F', 'G', 'H', 'I'] as $col) {
                     $sheet->getColumnDimension($col)->setAutoSize(true);
-                    $calculatedWidth = $sheet->getColumnDimension($col)->getWidth();
-
-                    // Limitar ancho máximo (por ejemplo 45)
-                    if ($calculatedWidth > 45) {
-                        $sheet->getColumnDimension($col)->setWidth(45);
+                    $width = $sheet->getColumnDimension($col)->getWidth();
+                    if ($width > 25) {
+                        $sheet->getColumnDimension($col)->setWidth(25);
                     }
                 }
-
-                // Aplicar ajuste de texto (wrapText) global
-                $highestRow = $sheet->getHighestRow();
-                $sheet->getStyle("A1:I{$highestRow}")
-                    ->getAlignment()
-                    ->setWrapText(true)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
             },
         ];
     }

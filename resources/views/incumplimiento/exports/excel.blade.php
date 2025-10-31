@@ -56,7 +56,7 @@
             </td>
         </tr>
         <tr>
-           
+
             <td rowspan="5" colspan="5">
 
             </td>
@@ -73,21 +73,21 @@
             </td>
         </tr>
         <tr>
-           
+
             <td style="border: 1px solid black; text-align: center;">I5</td>
             <td colspan="3" style="border: 1px solid black;">
                 CIERRE DEL SERVICIO POR FALTA DE CUPOS O AFORO
             </td>
         </tr>
         <tr>
-            
+
             <td style="border: 1px solid black; text-align: center;">I6</td>
             <td colspan="3" style="border: 1px solid black;">
                 HORARIO DIFERENCIADO
             </td>
         </tr>
         <tr>
-           
+
             <td style="border: 1px solid black; text-align: center;">I7</td>
             <td colspan="3" style="border: 1px solid black;">
                 OTROS
@@ -122,12 +122,24 @@
                 <td style="border: 1px solid black; text-align: center; white-space: nowrap; padding: 3px;">
                     {{ $inc->tipoIntObs->tipo ?? '' }} {{ $inc->tipoIntObs->numeracion ?? '' }}
                 </td>
-                <td style="border: 1px solid black; text-align: justify; white-space: normal; padding: 4px;">
+                <td
+                    style="border: 1px solid black; text-align: justify;
+           width: 220px; max-width: 220px;
+           word-break: break-word;
+           white-space: normal;
+           padding: 4px;">
                     {{ $inc->descripcion }}
                 </td>
-                <td style="border: 1px solid black; text-align: justify; white-space: normal; padding: 4px;">
+
+                <td
+                    style="border: 1px solid black; text-align: justify;
+           width: 220px; max-width: 220px;
+           word-break: break-word;
+           white-space: normal;
+           padding: 4px;">
                     {{ $inc->descripcion_accion }}
                 </td>
+
                 <td style="border: 1px solid black; text-align: center; white-space: nowrap; padding: 3px;">
                     {{ \Carbon\Carbon::parse($inc->fecha_observacion)->format('d-m-Y') }}
                 </td>
