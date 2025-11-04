@@ -474,7 +474,7 @@ class AsistenciaController extends Controller
         }
 
         // 🗓️ Validar que la fecha sea de octubre en adelante
-        $fechaMinima = Carbon::create(2025, 10, 1); // 1 de octubre de 2025
+        $fechaMinima = Carbon::create(2025, 11, 1); // 1 de octubre de 2025
         $fechaSolicitada = Carbon::parse($request->fecha);
 
         if ($fechaSolicitada->lt($fechaMinima)) {
