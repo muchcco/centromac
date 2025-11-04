@@ -22,7 +22,7 @@
             <div class="page-title-box">
                 <div class="row">
                     <div class="col">
-                        <h4 class="page-title">Monitoreo PIVOT de Cierres</h4>
+                        <h4 class="page-title">Monitoreo de Cierres</h4>
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
                                 <a href="{{ route('inicio') }}">

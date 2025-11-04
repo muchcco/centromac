@@ -138,14 +138,13 @@ class MonitoreoAsistenciaController extends Controller
         $usuario = auth()->user();
         $idmacUsuario = $usuario->idcentro_mac;
 
-        // Obtener lista de MACs visibles según rol
+        // ✅ 1. MACs visibles según rol
         if ($usuario->hasRole('Administrador|Monitor|Moderador')) {
             $macs = DB::table('db_centros_mac.m_centro_mac')
                 ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
                 ->orderBy('NOMBRE_MAC')
                 ->get();
 
-            // Todos los feriados (nacionales o locales)
             $feriados = DB::table('db_centros_mac.feriados')
                 ->select('id', 'name', 'fecha', 'id_centromac')
                 ->orderBy('fecha')
@@ -156,7 +155,6 @@ class MonitoreoAsistenciaController extends Controller
                 ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
                 ->get();
 
-            // Solo feriados nacionales o locales
             $feriados = DB::table('db_centros_mac.feriados')
                 ->select('id', 'name', 'fecha', 'id_centromac')
                 ->whereNull('id_centromac')
@@ -165,9 +163,9 @@ class MonitoreoAsistenciaController extends Controller
                 ->get();
         }
 
-        // Pasamos a la vista
         return view('monitoreo.asistencia.pivot_index', compact('macs', 'feriados'));
     }
+
 
     public function tb_pivot(Request $request)
     {
@@ -180,11 +178,11 @@ class MonitoreoAsistenciaController extends Controller
 
         $diasMes = Carbon::createFromDate($anio, $mes, 1)->daysInMonth;
 
-        // 1️⃣ MACS SEGÚN ROL
+        // ✅ 1. MACs según rol
         $macsQuery = DB::table('db_centros_mac.m_centro_mac')
             ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
             ->orderBy('NOMBRE_MAC')
-            ->whereNotIn('IDCENTRO_MAC', [5, 6]); // 🚫 Excluir MAC 5 y 6
+            ->whereNotIn('IDCENTRO_MAC', [5, 6]); // excluir MAC 5 y 6
 
         if ($usuario->hasRole('Administrador|Monitor|Moderador')) {
             if ($idmac) {
@@ -196,27 +194,22 @@ class MonitoreoAsistenciaController extends Controller
 
         $macs = $macsQuery->get();
 
-        // 2️⃣ CIERRES DE ASISTENCIA
-        $cierres = DB::table('db_centros_mac.cierre_asistencia_log')
-            ->where('anio', $anio)
-            ->where('mes', $mes)
-            ->whereNotIn('idmac', [5, 6]) // 🚫 Excluir MAC 5 y 6
-            ->select('idmac', 'fecha', 'tipo_cierre')
+        // ✅ 2. Traer asistencia real (no cierres)
+        $asistencias = DB::table('db_centro_mac_reporte.asistencia_resumen')
+            ->select('idmac', 'fecha_asistencia')
+            ->whereYear('fecha_asistencia', $anio)
+            ->whereMonth('fecha_asistencia', $mes)
+            ->whereNotIn('idmac', [5, 6])
             ->get();
 
-        // 3️⃣ FERIADOS NACIONALES Y POR MAC
+        // ✅ 3. Feriados nacionales + locales
         $feriados = DB::table('db_centros_mac.feriados')
             ->select('fecha', 'id_centromac', 'name')
             ->whereYear('fecha', $anio)
-            ->where(function ($q) use ($idmac) {
-                $q->whereNull('id_centromac'); // nacionales
-                if ($idmac) {
-                    $q->orWhere('id_centromac', $idmac); // locales
-                }
-            })
+            ->whereMonth('fecha', $mes)
             ->get();
 
-        // 4️⃣ CONSTRUCCIÓN DEL PIVOT
+        // ✅ 4. Construcción del PIVOT
         $pivotData = [];
         foreach ($macs as $mac) {
             $fila = [
@@ -247,16 +240,17 @@ class MonitoreoAsistenciaController extends Controller
                     continue;
                 }
 
-                $cierre = $cierres->first(function ($c) use ($mac, $fecha) {
-                    return $c->idmac == $mac->IDCENTRO_MAC && $c->fecha == $fecha;
+                // ✅ Verificar si existe asistencia en esa fecha y MAC
+                $tieneAsistencia = $asistencias->contains(function ($a) use ($mac, $fecha) {
+                    return $a->idmac == $mac->IDCENTRO_MAC && $a->fecha_asistencia == $fecha;
                 });
 
                 if ($fecha > now()->toDateString()) {
-                    $estado = '<span class="text-secondary">–</span>';
-                } elseif ($cierre) {
-                    $estado = '<span class="text-success fw-bold">✅</span>';
+                    $estado = '<span class="text-secondary">–</span>'; // futuro
+                } elseif ($tieneAsistencia) {
+                    $estado = '<span class="text-success fw-bold">✅</span>'; // hay registros
                 } else {
-                    $estado = '<span class="text-danger fw-bold">❌</span>';
+                    $estado = '<span class="text-danger fw-bold">❌</span>'; // no hay registros
                 }
 
                 $fila['dias'][$d] = $estado;
