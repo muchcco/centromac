@@ -480,7 +480,7 @@ class AsistenciaController extends Controller
         if ($fechaSolicitada->lt($fechaMinima)) {
             return response()->json([
                 'ok' => false,
-                'msg' => 'Solo se permite revertir asistencias desde octubre de 2025 en adelante.'
+                'msg' => 'Solo se permite revertir asistencias desde Noviembre de 2025 en adelante.'
             ], 422);
         }
 
