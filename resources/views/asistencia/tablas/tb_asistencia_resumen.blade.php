@@ -33,17 +33,19 @@
                     <i class="fa fa-lock text-danger"></i>
                     <a href="javascript:void(0);"
                         onclick="abrirModalAgregarObservacion(
-                            '{{ $item->idpersonal }}',
-                            '{{ $item->fecha_asistencia }}',
-                            '{{ $item->n_dni }}',
-                            '{{ $item->idmac }}'
-                        )"
+                                    '{{ $item->idpersonal }}',
+                                    '{{ $item->fecha_asistencia }}',
+                                    '{{ $item->n_dni }}',
+                                    '{{ $item->idmac }}'
+                                )"
                         class="text-primary ms-2">
                         <i class="fa fa-eye"></i>
+
                         @if ($item->contador_obs > 0)
                             <span class="badge bg-danger">{{ $item->contador_obs }}</span>
                         @endif
                     </a>
+
                 </td>
 
             </tr>

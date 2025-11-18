@@ -532,28 +532,29 @@ class AsistenciaController extends Controller
     }
     public function tb_asistencia_resumen(Request $request)
     {
-        // 1. Verificar a qué MAC pertenece el usuario
+        // 1. Verificar MAC
         $us_id = auth()->user()->idcentro_mac;
         $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
             ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)
             ->first();
 
         $idmac = $user->IDCENTRO_MAC;
-        $name_mac = $user->NOMBRE_MAC;
 
-        // 2. Tomar la fecha solicitada (o actual)
+        // 2. Fecha
         $fecha = $request->fecha ?? date('Y-m-d');
 
-        // 3. Consultar directamente asistencia_resumen
+        // 3. Datos desde tabla resumen
         $datos = DB::table('db_centro_mac_reporte.asistencia_resumen')
             ->where('idmac', $idmac)
             ->whereDate('fecha_asistencia', $fecha)
             ->orderBy('nombre_modulo', 'asc')
             ->get();
 
-        // 4. Procesar las horas (igual que en tb_asistencia)
+        // 4. Procesar horas y contador de observaciones
         foreach ($datos as $q) {
-            $horas = explode(',', $q->fecha_biometrico); // Separa las horas por coma
+
+            // Procesar horas biométricas
+            $horas = explode(',', $q->fecha_biometrico);
             $num_horas = count($horas);
 
             if ($num_horas == 1) {
@@ -577,11 +578,20 @@ class AsistenciaController extends Controller
                 $q->HORA_3 = $horas[2];
                 $q->HORA_4 = $horas[3];
             }
+
+            // 🔥 Contador de observaciones
+            $q->contador_obs = DB::table('D_ASISTENCIA_OBSERVACION')
+                ->where('NUM_DOC', $q->n_dni)
+                ->where('FECHA', $q->fecha_asistencia)
+                ->where('IDCENTRO_MAC', $q->idmac)
+                ->where('flag', 1)
+                ->count();
         }
 
-        // 5. Retornar la vista del resumen
+        // 5. Vista
         return view('asistencia.tablas.tb_asistencia_resumen', compact('datos'));
     }
+
 
     public function md_moficicar_modulo(Request $request)
     {
@@ -630,28 +640,39 @@ class AsistenciaController extends Controller
     }
 
     /********** OBSERVACIONES ASISTENCIA  *************************/
-
     public function md_add_comment_user(Request $request)
     {
-        $personal = Personal::select(DB::raw('UPPER(CONCAT(APE_PAT," ",APE_MAT,", ",NOMBRE)) AS nombreu'))->where('IDPERSONAL', $request->IDPERSONAL)->first();
+        // Datos del usuario
+        $personal = Personal::select(DB::raw('UPPER(CONCAT(APE_PAT," ",APE_MAT,", ",NOMBRE)) AS nombreu'))
+            ->where('IDPERSONAL', $request->IDPERSONAL)
+            ->first();
 
-        $observacion = DB::table('M_ASISTENCIA as MA')
-            ->leftJoin('D_ASISTENCIA_OBSERVACION as DAO', function (JoinClause $join) {
-                $join->on('DAO.NUM_DOC', '=', 'MA.NUM_DOC')
-                    ->on('DAO.FECHA',     '=', 'MA.FECHA')
-                    ->on('DAO.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC');
-            })
-            ->where('DAO.NUM_DOC', $request->NUM_DOC)
-            ->where('DAO.FECHA', $request->FECHA)
-            ->where('DAO.IDCENTRO_MAC', $request->IDCENTRO_MAC)
-            ->where('DAO.flag', 1)
+        // 🔥 Consulta corregida — sin JOIN que duplica registros
+        $observacion = DB::table('D_ASISTENCIA_OBSERVACION')
+            ->where('NUM_DOC', $request->NUM_DOC)
+            ->where('FECHA', $request->FECHA)
+            ->where('IDCENTRO_MAC', $request->IDCENTRO_MAC)
+            ->where('flag', 1)
+            ->orderBy('id_asistencia_obv')
             ->get();
 
+        // Conteo real
+        $count_observaciones = $observacion->count();
+
+        // Variables para el modal
         $fecha_d = $request->FECHA;
-        $mac_d = $request->IDCENTRO_MAC;
+        $mac_d   = $request->IDCENTRO_MAC;
         $num_doc = $request->NUM_DOC;
 
-        $html = view('asistencia.modals.md_add_comment_user', compact('personal', 'observacion', 'fecha_d', 'mac_d', 'num_doc'))->render();
+        // Render de la vista
+        $html = view('asistencia.modals.md_add_comment_user', compact(
+            'personal',
+            'observacion',
+            'count_observaciones',
+            'fecha_d',
+            'mac_d',
+            'num_doc'
+        ))->render();
 
         return response()->json(['html' => $html]);
     }

@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\InterrupcionExport;
 
-
 class InterrupcionController extends Controller
 {
     private function centro_mac()
@@ -104,13 +103,12 @@ class InterrupcionController extends Controller
         if ($idmac) {
             $query->where('idcentro_mac', $idmac);
         } else {
-            // Si no es admin ni moderador, se filtra por el MAC del usuario
             if (!$user->hasAnyRole(['Administrador', 'Monitor', 'Moderador'])) {
                 $query->where('idcentro_mac', $user->idcentro_mac);
             }
         }
 
-        // 🔹 Filtro por fechas (inicio y fin)
+        // 🔹 Filtro por fechas
         if ($fecha_inicio && $fecha_fin) {
             $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
         }
@@ -131,23 +129,112 @@ class InterrupcionController extends Controller
             });
         }
 
-        // 🔹 Filtro por estado (ABIERTO / CERRADO)
+        // 🔹 Filtro por estado
         if (!empty($estado)) {
             $query->where('estado', strtoupper($estado));
         }
 
-        // 🔹 Filtro por revisión (observado o no observado)
+        // 🔹 Filtro por revisión
         if ($revision === 'observado') {
             $query->where('observado', 1);
         } elseif ($revision === 'no_observado') {
             $query->where('observado', 0);
         }
 
-        // 🔹 Ordenamiento
+        // --------------------------------------------------------------
+        // 🔹 EJECUTAR CONSULTA Y CALCULAR TIEMPO DE INTERRUPCIÓN
+        // --------------------------------------------------------------
+
         $interrupciones = $query
             ->orderBy('fecha_inicio', 'desc')
             ->orderBy('hora_inicio', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+
+                // Solo si está cerrado
+                if (
+                    strtoupper($item->estado) !== 'CERRADO' ||
+                    !$item->fecha_fin || !$item->hora_fin
+                ) {
+                    $item->tiempo_horario = '-';
+                    return $item;
+                }
+
+                $inicio = \Carbon\Carbon::parse("{$item->fecha_inicio} {$item->hora_inicio}");
+                $fin    = \Carbon\Carbon::parse("{$item->fecha_fin} {$item->hora_fin}");
+
+                if ($fin <= $inicio) {
+                    $item->tiempo_horario = '-';
+                    return $item;
+                }
+
+                // ⏰ Horarios del MAC
+                $horarios = DB::table('m_horario_mac')
+                    ->where('idcentro_mac', $item->idcentro_mac)
+                    ->where('activo', 1)
+                    ->get();
+
+                // 📅 Feriados nacionales o por MAC
+                $feriados = DB::table('feriados')
+                    ->where(function ($q) use ($item) {
+                        $q->whereNull('id_centromac')
+                            ->orWhere('id_centromac', $item->idcentro_mac);
+                    })
+                    ->pluck('fecha')
+                    ->toArray();
+
+                $totalMin = 0;
+                $cursor = $inicio->copy()->startOfDay();
+
+                while ($cursor->lte($fin)) {
+
+                    $dia = $cursor->format('Y-m-d');
+                    $diaIso = $cursor->dayOfWeekIso; // 1-7
+
+                    // Domingo no atiende (7)
+                    if ($diaIso == 7) {
+                        $cursor->addDay();
+                        continue;
+                    }
+
+                    // Feriado no atiende
+                    if (in_array($dia, $feriados)) {
+                        $cursor->addDay();
+                        continue;
+                    }
+
+                    // Horario de ese día
+                    $h = $horarios->firstWhere('dia_semana', $diaIso);
+
+                    if (!$h) {
+                        $cursor->addDay();
+                        continue;
+                    }
+
+                    $inicioDia = \Carbon\Carbon::parse("$dia {$h->hora_inicio}");
+                    $finDia    = \Carbon\Carbon::parse("$dia {$h->hora_fin}");
+
+                    // Intersección con la interrupción
+                    $desde = $inicioDia->max($inicio);
+                    $hasta = $finDia->min($fin);
+
+                    if ($hasta->gt($desde)) {
+                        $totalMin += $desde->diffInMinutes($hasta);
+                    }
+
+                    $cursor->addDay();
+                }
+
+                if ($totalMin <= 0) {
+                    $item->tiempo_horario = '-';
+                } else {
+                    $h = intdiv($totalMin, 60);
+                    $m = $totalMin % 60;
+                    $item->tiempo_horario = sprintf('%02d:%02d', $h, $m);
+                }
+
+                return $item;
+            });
 
         return view('interrupcion.tablas.tb_index', compact('interrupciones'));
     }

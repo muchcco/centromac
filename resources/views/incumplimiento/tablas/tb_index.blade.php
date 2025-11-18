@@ -47,11 +47,11 @@
                 <td class="text-center">
                     @switch(strtoupper($incumplimiento->estado))
                         @case('ABIERTO')
-                            <span class="badge bg-success">ABIERTO</span>
+                            <span class="badge bg-danger">ABIERTO</span>
                         @break
 
                         @case('CERRADO')
-                            <span class="badge bg-danger">CERRADO</span>
+                            <span class="badge bg-success">CERRADO</span>
                         @break
 
                         @default

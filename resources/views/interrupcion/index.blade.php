@@ -706,4 +706,193 @@
             });
         }
     </script>
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2();
+
+            cargarTablaInterrupciones();
+
+            $('#btnBuscar').on('click', function(e) {
+                e.preventDefault();
+                cargarTablaInterrupciones();
+            });
+        });
+
+        function cargarTablaInterrupciones() {
+            let idmac = $('#filtro_mac').val();
+            let fecha_inicio = $('#filtro_fecha_inicio').val();
+            let fecha_fin = $('#filtro_fecha_fin').val();
+
+            let entidad = $('#filtro_entidad').val();
+            let tipificacion = $('#filtro_tipificacion').val();
+            let estado = $('#filtro_estado').val();
+            let revision = $('#filtro_revision').val();
+
+            $.ajax({
+                type: 'GET',
+                url: "{{ route('interrupcion.tablas.tb_index') }}",
+                data: {
+                    idmac,
+                    fecha_inicio,
+                    fecha_fin,
+                    entidad,
+                    tipificacion,
+                    estado,
+                    revision
+                },
+                beforeSend: () => $('#table_data').html('<i class="fa fa-spinner fa-spin"></i> Cargando...'),
+                success: data => $('#table_data').html(data),
+                error: () => $('#table_data').html('Error al cargar los datos.')
+            });
+        }
+
+        // =============================
+        // VALIDACIÓN GLOBAL
+        // =============================
+        function validarFechasHoras(form, estado) {
+            if (estado && estado.toUpperCase() === 'CERRADO') {
+
+                let fechaInicio = form.find('[name="fecha_inicio"]').val() || form.find('input[type="date"]:disabled')
+                .val() || '';
+                let horaInicio = form.find('[name="hora_inicio"]').val() || form.find('input[type="time"]:disabled')
+                .val() || '';
+                let fechaFin = form.find('[name="fecha_fin"]').val() || '';
+                let horaFin = form.find('[name="hora_fin"]').val() || '';
+
+                if (!fechaFin || !horaFin) {
+                    Swal.fire({
+                        icon: "warning",
+                        text: "Debe ingresar la Fecha y Hora de Fin para un estado CERRADO.",
+                        confirmButtonText: "Aceptar"
+                    });
+                    return false;
+                }
+
+                if (!fechaInicio || !horaInicio) {
+                    return true;
+                }
+
+                if (fechaFin < fechaInicio) {
+                    Swal.fire({
+                        icon: "warning",
+                        text: "La Fecha de Fin no puede ser anterior a la Fecha de Inicio.",
+                        confirmButtonText: "Aceptar"
+                    });
+                    return false;
+                }
+
+                if (fechaFin === fechaInicio && horaFin <= horaInicio) {
+                    Swal.fire({
+                        icon: "warning",
+                        text: "La Hora de Fin debe ser mayor a la Hora de Inicio cuando las fechas son iguales.",
+                        confirmButtonText: "Aceptar"
+                    });
+                    return false;
+                }
+
+                const inicio = new Date(`${fechaInicio}T${horaInicio}`);
+                const fin = new Date(`${fechaFin}T${horaFin}`);
+
+                if (fin <= inicio) {
+                    Swal.fire({
+                        icon: "warning",
+                        text: "La Fecha y Hora de Fin deben ser posteriores a las de Inicio.",
+                        confirmButtonText: "Aceptar"
+                    });
+                    return false;
+                }
+
+                // ======================================
+                // 🟦 NUEVA VALIDACIÓN: ¿CAMBIÓ DE DÍA?
+                // ======================================
+                if (fechaFin > fechaInicio) {
+
+                    return Swal.fire({
+                        title: "Interrupción mayor a un día",
+                        text: "La interrupción ha pasado al día siguiente. ¿Desea continuar?",
+                        icon: "question",
+                        showCancelButton: true,
+                        confirmButtonText: "Sí, continuar",
+                        cancelButtonText: "Cancelar"
+                    }).then((result) => {
+                        return result.isConfirmed; // true para continuar / false para detener
+                    });
+                }
+            }
+
+            return true;
+        }
+
+        async function btnStoreInterrupcion() {
+            let form = $('#form_add_interrupcion');
+            let estado = $('#estado').val();
+
+            let valido = await validarFechasHoras(form, estado);
+            if (!valido) return;
+
+            var formData = new FormData($('#form_add_interrupcion')[0]);
+
+            $.ajax({
+                type: 'POST',
+                url: "{{ route('interrupcion.store') }}",
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> ESPERE').prop(
+                        "disabled", true);
+                },
+                success: function(data) {
+                    $("#btnEnviarForm").html('Guardar').prop("disabled", false);
+                    if (data.status == 201) {
+                        cargarTablaInterrupciones();
+                        Swal.fire({
+                            icon: "success",
+                            text: "Interrupción creada exitosamente",
+                            confirmButtonText: "Aceptar"
+                        });
+                        $('#modal_show_modal').modal('hide');
+                    } else {
+                        $('#alerta').html(`<div class="alert alert-warning">${data.message}</div>`);
+                    }
+                }
+            });
+        }
+
+        async function btnUpdateInterrupcion() {
+            let form = $('#form_edit_interrupcion');
+            let estado = $('#estado').val();
+
+            let valido = await validarFechasHoras(form, estado);
+            if (!valido) return;
+
+            var formData = new FormData($('#form_edit_interrupcion')[0]);
+
+            $.ajax({
+                type: 'POST',
+                url: "{{ route('interrupcion.update') }}",
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> ESPERE').prop(
+                        "disabled", true);
+                },
+                success: function(data) {
+                    $("#btnEnviarForm").html('Guardar').prop("disabled", false);
+                    if (data.status == 200) {
+                        cargarTablaInterrupciones();
+                        Swal.fire({
+                            icon: "success",
+                            text: "Interrupción actualizada exitosamente",
+                            confirmButtonText: "Aceptar"
+                        });
+                        $('#modal_show_modal').modal('hide');
+                    } else {
+                        $('#alerta').html(`<div class="alert alert-warning">${data.message}</div>`);
+                    }
+                }
+            });
+        }
+    </script>
 @endsection
