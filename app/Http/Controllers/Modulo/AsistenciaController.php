@@ -2210,7 +2210,7 @@ class AsistenciaController extends Controller
             ], 500);
         }
     }
-    public function migrarDatos(Request $request)
+    /*   public function migrarDatos(Request $request)
     {
         try {
             $dbCentroMac = DB::connection('mysql');
@@ -2279,7 +2279,115 @@ class AsistenciaController extends Controller
                 'message' => "Error al migrar desde iclock_transaction: " . $e->getMessage()
             ], 500);
         }
+    } */
+    public function migrarDatos(Request $request)
+    {
+        $dbZK = null;
+        $dbSqlServer = null;
+        $dbMysql = null;
+
+        try {
+            /* =====================================================
+         * CONEXIONES
+         * ===================================================== */
+            $dbZK        = DB::connection('zk');        // ZK Huánuco
+            $dbSqlServer = DB::connection('sqlserver'); // SQL Server Junín
+            $dbMysql     = DB::connection('mysql');     // MySQL local FINAL
+
+            $dbZK->getPdo();
+            $dbSqlServer->getPdo();
+            $dbMysql->getPdo();
+
+            /* =====================================================
+         * PASO A: ZK → SQL SERVER
+         * ===================================================== */
+            $regZK = $dbZK->table('iclock_transaction')
+                ->where(function ($q) {
+                    $q->where('migrado', 0)
+                        ->orWhereNull('migrado');
+                })
+                ->orderBy('punch_time')
+                ->get();
+
+            foreach ($regZK as $z) {
+
+                $fechaHora = Carbon::parse($z->punch_time)->second(0);
+                $fecha = $fechaHora->toDateString();
+                $hora  = $fechaHora->toTimeString();
+
+                $dbSqlServer->table('MAC_HUANUCO')->insert([
+                    'num_doc'       => $z->emp_code,
+                    'idcentro_mac'  => 11,
+                    'fecha'         => $fecha,
+                    'hora'          => $hora,
+                    'mes'           => (int)$fechaHora->format('m'),
+                    'anio'          => (int)$fechaHora->format('Y'),
+                    'origen'        => 'ZK',
+                    'estado'        => 0,
+                    'fecha_ingreso' => now(),
+                ]);
+
+                // marcar ZK
+                $dbZK->table('iclock_transaction')
+                    ->where('id', $z->id)
+                    ->update(['migrado' => 1]);
+            }
+
+            /* =====================================================
+         * PASO B: SQL SERVER → MYSQL
+         * ===================================================== */
+            $pendientes = $dbSqlServer->table('MAC_HUANUCO')
+                ->where('estado', 0)
+                ->orderBy('fecha', 'asc')
+                ->orderBy('hora', 'asc')
+                ->get();
+
+
+            foreach ($pendientes as $p) {
+
+                $idAsistencia = ($dbMysql->table('m_asistencia')->max('IDASISTENCIA') ?? 0) + 1;
+
+                $correlativoDia = $dbMysql->table('m_asistencia')
+                    ->whereDate('FECHA', $p->fecha)
+                    ->count() + 1;
+
+                $dbMysql->table('m_asistencia')->insert([
+                    'IDASISTENCIA'      => $idAsistencia,
+                    'IDTIPO_ASISTENCIA' => 1,
+                    'NUM_DOC'           => $p->num_doc,
+                    'IDCENTRO_MAC'      => $p->idcentro_mac,
+                    'MES'               => $p->mes,
+                    'AÑO'               => $p->anio,
+                    'FECHA'             => $p->fecha,
+                    'HORA'              => $p->hora,
+                    'FECHA_BIOMETRICO'  => "{$p->fecha} {$p->hora}",
+                    'NUM_BIOMETRICO'    => null,
+                    'CORRELATIVO'       => $idAsistencia,
+                    'CORRELATIVO_DIA'   => $correlativoDia,
+                    'estado'            => 0,
+                ]);
+
+                // marcar SQL Server
+                $dbSqlServer->table('MAC_HUANUCO')
+                    ->where('id_staging', $p->id_staging)
+                    ->update([
+                        'estado' => 1,
+                        'fecha_procesado' => now()
+                    ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Migración completa: ZK → SQL Server → MySQL'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en migración encadenada: ' . $e->getMessage()
+            ], 500);
+        }
     }
+
     public function exportgroup_excel_resumen(Request $request)
     {
         $mes  = $request->mes;

@@ -113,7 +113,17 @@ return [
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA2'),
             ]) : [],
         ],
-
+        'sqlserver' => [
+            'driver' => 'sqlsrv',
+            'host' => env('DB_SQLSRV_HOST'),
+            'port' => env('DB_SQLSRV_PORT', 1433),
+            'database' => env('DB_SQLSRV_DATABASE'),
+            'username' => env('DB_SQLSRV_USERNAME'),
+            'password' => env('DB_SQLSRV_PASSWORD'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'trust_server_certificate' => true,
+        ],
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
