@@ -2282,59 +2282,21 @@ class AsistenciaController extends Controller
     } */
     public function migrarDatos(Request $request)
     {
-        $dbZK = null;
         $dbSqlServer = null;
         $dbMysql = null;
 
         try {
             /* =====================================================
-         * CONEXIONES
+         * CONEXIONES (SOLO B y C)
          * ===================================================== */
-            $dbZK        = DB::connection('zk');        // ZK Huánuco
-            $dbSqlServer = DB::connection('sqlserver'); // SQL Server Junín
-            $dbMysql     = DB::connection('mysql');     // MySQL local FINAL
+            $dbSqlServer = DB::connection('sqlserver'); // B
+            $dbMysql     = DB::connection('mysql');     // C (local)
 
-            $dbZK->getPdo();
             $dbSqlServer->getPdo();
             $dbMysql->getPdo();
 
             /* =====================================================
-         * PASO A: ZK → SQL SERVER
-         * ===================================================== */
-            $regZK = $dbZK->table('iclock_transaction')
-                ->where(function ($q) {
-                    $q->where('migrado', 0)
-                        ->orWhereNull('migrado');
-                })
-                ->orderBy('punch_time')
-                ->get();
-
-            foreach ($regZK as $z) {
-
-                $fechaHora = Carbon::parse($z->punch_time)->second(0);
-                $fecha = $fechaHora->toDateString();
-                $hora  = $fechaHora->toTimeString();
-
-                $dbSqlServer->table('MAC_HUANUCO')->insert([
-                    'num_doc'       => $z->emp_code,
-                    'idcentro_mac'  => 11,
-                    'fecha'         => $fecha,
-                    'hora'          => $hora,
-                    'mes'           => (int)$fechaHora->format('m'),
-                    'anio'          => (int)$fechaHora->format('Y'),
-                    'origen'        => 'ZK',
-                    'estado'        => 0,
-                    'fecha_ingreso' => now(),
-                ]);
-
-                // marcar ZK
-                $dbZK->table('iclock_transaction')
-                    ->where('id', $z->id)
-                    ->update(['migrado' => 1]);
-            }
-
-            /* =====================================================
-         * PASO B: SQL SERVER → MYSQL
+         * LEER PENDIENTES DE SQL SERVER
          * ===================================================== */
             $pendientes = $dbSqlServer->table('MAC_HUANUCO')
                 ->where('estado', 0)
@@ -2342,7 +2304,18 @@ class AsistenciaController extends Controller
                 ->orderBy('hora', 'asc')
                 ->get();
 
+            if ($pendientes->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No hay registros pendientes desde SQL Server.'
+                ]);
+            }
 
+            $procesados = 0;
+
+            /* =====================================================
+         * INSERTAR EN MYSQL FINAL
+         * ===================================================== */
             foreach ($pendientes as $p) {
 
                 $idAsistencia = ($dbMysql->table('m_asistencia')->max('IDASISTENCIA') ?? 0) + 1;
@@ -2367,26 +2340,29 @@ class AsistenciaController extends Controller
                     'estado'            => 0,
                 ]);
 
-                // marcar SQL Server
+                // Marcar SQL Server como procesado
                 $dbSqlServer->table('MAC_HUANUCO')
                     ->where('id_staging', $p->id_staging)
                     ->update([
                         'estado' => 1,
                         'fecha_procesado' => now()
                     ]);
+
+                $procesados++;
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Migración completa: ZK → SQL Server → MySQL'
+                'message' => "Migración completa: $procesados registros pasaron de SQL Server a MySQL."
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error en migración encadenada: ' . $e->getMessage()
+                'message' => 'Error en migración B → C: ' . $e->getMessage()
             ], 500);
         }
     }
+
 
     public function exportgroup_excel_resumen(Request $request)
     {
