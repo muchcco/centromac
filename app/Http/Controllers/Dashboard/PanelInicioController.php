@@ -20,4 +20,13 @@ class PanelInicioController extends Controller
     {
         return view('dashboard.indicadores_ans');
     }
+    public function alo_mac(Request $request)
+    {
+        return view('dashboard.alo_mac');
+    }
+
+    public function incidencias_mac(Request $request)
+    {
+        return view('dashboard.incidencias_mac');
+    }
 }

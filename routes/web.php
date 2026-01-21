@@ -615,6 +615,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/index', [PanelInicioController::class, 'index'])->name('index');
         Route::get('/getion_interna', [PanelInicioController::class, 'getion_interna'])->name('getion_interna');
         Route::get('/indicadores_ans', [PanelInicioController::class, 'indicadores_ans'])->name('indicadores_ans');
+        Route::get('/alo_mac', [PanelInicioController::class, 'alo_mac'])->name('alo_mac');
+        Route::get('/incidencias_mac', [PanelInicioController::class, 'incidencias_mac'])->name('incidencias_mac');
     });
 
 

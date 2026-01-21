@@ -151,12 +151,12 @@
                         </a>
                     </li>
 
-                    <li class="">
+                    {{--        <li class="">
                         <a href="https://apps.powerapps.com/play/e/default-34b48e4e-2519-4060-a09e-5b05d901a4d7/a/a2036540-c323-4a79-8cf2-0a9330c23119?tenantId=34b48e4e-2519-4060-a09e-5b05d901a4d7&hint=7bbca76f-2366-4f77-82a7-401fa606b4c1&sourcetime=1720627181714&source=portal"
                             target="_blank">
                             <i class="ti-control-record"></i><span>Observaciones e Interrupciones</span>
                         </a>
-                    </li>
+                    </li> --}}
 
                     @role('Administrador|Coordinador|Supervisor|Moderador')
                         <li class="">
@@ -239,37 +239,82 @@
             @endif
 
             @if ($dashboard->VALOR == '1')
-                <li class="menu-label mt-0">Tableros de Información </li>
-
+                <li class="menu-label mt-0">Tableros de Información</li>
 
                 <li>
-                    <a href="javascript: void(0);"><i data-feather="lock"
-                            class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i><span>Plataforma
-                            MAC</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
+                    <a href="javascript:void(0);">
+                        <i data-feather="lock"
+                            class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i>
+                        <span>Plataforma MAC</span>
+                        <span class="menu-arrow">
+                            <i class="mdi mdi-chevron-right"></i>
+                        </span>
+                    </a>
+
                     <ul class="nav-second-level" aria-expanded="false">
-                        <li class="nav-item @if (Request::is('dashboard/index')) mm-active @endif"><a class="nav-link"
-                                href="{{ route('dashboard.index') }}"><i class="ti-control-record"></i>Atenciones</a>
+
+                        {{-- Atenciones --}}
+                        <li class="nav-item @if (Request::is('dashboard/index')) mm-active @endif">
+                            <a class="nav-link d-flex align-items-start" href="{{ route('dashboard.index') }}">
+                                <i class="ti-control-record mt-1"></i>
+                                <span class="ms-2">Atenciones</span>
+                            </a>
                         </li>
-                        <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif"><a class="nav-link"
-                                href="{{ route('dashboard.getion_interna') }}"><i class="ti-control-record"></i>CMAC
-                                y MAC Express (Implementación y Módulos asignados)</a></li>
+
+                        {{-- CMAC y MAC Express - Implementación --}}
                         <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif">
-                            <a class="nav-link" href="{{ route('dashboard.getion_interna') }}"><i
-                                    class="ti-control-record"></i>CMAC
-                                y MAC Express (Entidades y servicios)
+                            <a class="nav-link d-flex align-items-start"
+                                href="{{ route('dashboard.getion_interna') }}">
+                                <i class="ti-control-record mt-1"></i>
+                                <span class="ms-2">CMAC y MAC Express<br>
+                                    <small class="text-muted">(Implementación y Módulos asignados)</small>
+                                </span>
                             </a>
                         </li>
-                        <li class="nav-item @if (Request::is('dashboard/indicadores_ans*')) mm-active @endif">
-                            <a class="nav-link" href="{{ route('dashboard.indicadores_ans') }}">
-                                <i class="ti-control-record"></i>Indicadores ANS
+
+                        {{-- CMAC y MAC Express - Entidades --}}
+                        <li class="nav-item @if (Request::is('dashboard/getion_interna')) mm-active @endif">
+                            <a class="nav-link d-flex align-items-start"
+                                href="{{ route('dashboard.getion_interna') }}">
+                                <i class="ti-control-record mt-1"></i>
+                                <span class="ms-2">CMAC y MAC Express<br>
+                                    <small class="text-muted">(Entidades y servicios)</small>
+                                </span>
                             </a>
                         </li>
+
+                        {{-- Indicadores ANS --}}
+                        {{--                      <li class="nav-item @if (Request::is('dashboard/indicadores_ans*')) mm-active @endif">
+                            <a class="nav-link d-flex align-items-start"
+                                href="{{ route('dashboard.indicadores_ans') }}">
+                                <i class="ti-control-record mt-1"></i>
+                                <span class="ms-2">Indicadores ANS</span>
+                            </a>
+                        </li> --}}
+
+                        {{-- Reporte ALO MAC --}}
+                        <li class="nav-item @if (Request::is('dashboard/alo_mac*')) mm-active @endif">
+                            <a class="nav-link d-flex align-items-start" href="{{ route('dashboard.alo_mac') }}">
+                                <i class="ti-control-record mt-1"></i>
+                                <span class="ms-2">Reporte ALO MAC</span>
+                            </a>
+                        </li>
+
+                        {{-- Incidencias MAC por Departamento --}}
+                        <li class="nav-item @if (Request::is('dashboard/incidencias_mac*')) mm-active @endif">
+                            <a class="nav-link d-flex align-items-start"
+                                href="{{ route('dashboard.incidencias_mac') }}">
+                                <i class="ti-control-record mt-1"></i>
+                                <span class="ms-2">Incidencias MAC por Departamento</span>
+                            </a>
+                        </li>
+
                     </ul>
                 </li>
             @endif
 
-            {{--             <hr class="hr-dashed hr-menu">
- --}} <li class="menu-label mt-0">PILOTO</li>
+            {{--             <hr class="hr-dashed hr-menu"> --}}
+            <li class="menu-label mt-0">PILOTO</li>
             @role('Supervisor|Coordinador|Especialista TIC|Moderador|Administrador')
                 <li class="@if (Request::is('incumplimiento*')) mm-active @endif">
                     <a href="{{ route('incumplimiento.index') }}"
@@ -456,20 +501,7 @@
                     </a>
                 </li>
             @endrole
-            {{-- @role('Administrador|Especialista_TIC|Supervisor|Coordinador')
-                <hr class="hr-dashed hr-menu">
 
-                <!-- NUEVA SECCIÓN -->
-                <li class="menu-label mt-0">ACTUALIZACIONES</li>
-
-                <li class="@if (Request::is('actualizaciones*')) mm-active @endif">
-                    <a href="{{ route('actualizaciones.index') }}"
-                        class="@if (Request::is('actualizaciones/index*')) active @endif">
-                        <i data-feather="git-commit" class="align-self-center menu-icon"></i>
-                        <span>Cambios del GitHub</span>
-                    </a>
-                </li>
-            @endrole --}}
         </ul>
 
     </div>
