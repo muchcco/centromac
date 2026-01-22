@@ -30,18 +30,15 @@ class IncumplimientoController extends Controller
         ];
     }
 
-    // 🧭 INDEX PRINCIPAL
     public function index()
     {
         $user = auth()->user();
 
-        // 🔹 Listado general de centros MAC
         $centros_mac = DB::table('db_centros_mac.m_centro_mac')
             ->select('idcentro_mac', 'nombre_mac')
             ->orderBy('nombre_mac')
             ->get();
 
-        // 🔹 Entidades dinámicas según rol
         if ($user->hasAnyRole(['Administrador', 'Moderador'])) {
             $entidades = DB::table('m_entidad')
                 ->select('identidad', 'abrev_entidad', 'nombre_entidad')
@@ -56,14 +53,12 @@ class IncumplimientoController extends Controller
                 ->get();
         }
 
-        // 🔹 Tipificaciones solo de tipo INCUMPLIMIENTO
         $tipos = TipoIntObs::where('tipo_obs', 'INCUMPLIMIENTO')
             ->select('id_tipo_int_obs', 'tipo', 'numeracion', 'nom_tipo_int_obs')
             ->orderBy('tipo', 'asc')
             ->orderBy('numeracion', 'asc')
             ->get();
 
-        // 🔹 Centro MAC del usuario (solo si no es Administrador o Moderador)
         $centro_mac = null;
         if (!$user->hasAnyRole(['Administrador', 'Moderador'])) {
             $centro_mac = DB::table('db_centros_mac.m_centro_mac')
@@ -72,12 +67,9 @@ class IncumplimientoController extends Controller
                 ->first();
         }
 
-        // 🔹 Retornar vista con todas las variables necesarias
         return view('incumplimiento.index', compact('centros_mac', 'entidades', 'tipos', 'centro_mac'));
     }
 
-
-    // 📋 TABLA PRINCIPAL CON FILTROS
     public function tb_index(Request $request)
     {
         $user = auth()->user();
@@ -89,7 +81,6 @@ class IncumplimientoController extends Controller
             'responsableUsuario:id,name'
         ])->whereHas('tipoIntObs', fn($q) => $q->where('tipo_obs', 'INCUMPLIMIENTO'));
 
-        // 🔹 Filtros dinámicos
         if ($request->idmac) {
             $query->where('idcentro_mac', $request->idmac);
         } elseif (!$user->hasAnyRole(['Administrador', 'Moderador'])) {
@@ -128,7 +119,6 @@ class IncumplimientoController extends Controller
         return view('incumplimiento.tablas.tb_index', compact('incumplimientos'));
     }
 
-    // 🧱 CREAR NUEVO
     public function create()
     {
         try {
@@ -153,7 +143,6 @@ class IncumplimientoController extends Controller
         }
     }
 
-    // 💾 GUARDAR NUEVO
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -171,7 +160,6 @@ class IncumplimientoController extends Controller
         try {
             $data = $request->except('archivo');
 
-            // 📎 Guardar archivo si se adjunta
             if ($request->hasFile('archivo')) {
                 $file = $request->file('archivo');
                 $nombre = 'incumplimiento_' . now()->format('Ymd_His') . '.' . $file->getClientOriginalExtension();
@@ -181,9 +169,8 @@ class IncumplimientoController extends Controller
                 $data['archivo'] = $ruta . $nombre;
             }
 
-            // 🟨 REGLA ESPECIAL: Tipología I5 (id_tipo_int_obs = 35)
             if ((int) $request->id_tipo_int_obs === 35) {
-                $data['fecha_fin'] = $request->fecha_observacion; // mismo día
+                $data['fecha_fin'] = $request->fecha_observacion; 
                 $data['estado'] = 'CERRADO';
             }
 
@@ -194,9 +181,6 @@ class IncumplimientoController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-
-    // ✏️ EDITAR
     public function edit(Request $request)
     {
         try {
@@ -220,8 +204,6 @@ class IncumplimientoController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-    // 👁️ VER DETALLE
     public function ver(Request $request)
     {
         try {
@@ -235,7 +217,6 @@ class IncumplimientoController extends Controller
         }
     }
 
-    // 🚨 MODAL DE OBSERVACIÓN (abrir)
     public function observarModal(Request $request)
     {
         try {
@@ -247,13 +228,10 @@ class IncumplimientoController extends Controller
         }
     }
 
-    // 🚨 OBSERVAR / CORREGIR (Guardar)
     public function observarGuardar(Request $request)
     {
         try {
             $user = auth()->user();
-
-            // 🔹 Validación estricta
             $validator = Validator::make($request->all(), [
                 'id_observacion' => 'required|integer|exists:m_observacion,id_observacion',
                 'retroalimentacion' => 'nullable|string|max:1000',
@@ -276,10 +254,8 @@ class IncumplimientoController extends Controller
                 ]);
             }
 
-            // 🟨 ADMIN / MODERADOR → pueden observar o quitar observación
             if ($user->hasAnyRole(['Administrador', 'Moderador'])) {
                 if ((int) $request->observado === 1) {
-                    // ✅ Marcar como observado
                     $incumplimiento->update([
                         'observado' => 1,
                         'retroalimentacion' => $request->retroalimentacion,
@@ -287,7 +263,6 @@ class IncumplimientoController extends Controller
                         'fecha_observado' => now(),
                     ]);
                 } else {
-                    // ❌ Quitar observación → limpiar todo
                     $incumplimiento->update([
                         'observado' => 0,
                         'retroalimentacion' => null,
@@ -299,11 +274,7 @@ class IncumplimientoController extends Controller
                     ]);
                 }
             }
-
-            // 🟩 Vuelve a refrescar el modelo (para leer los cambios recién guardados)
             $incumplimiento->refresh();
-
-            // 🟩 SUPERVISOR / TIC → pueden corregir solo si está observado
             if ($user->hasAnyRole(['Supervisor', 'Especialista TIC', 'Moderador', 'Administrador']) && $incumplimiento->observado == 1) {
                 $incumplimiento->update([
                     'corregido' => (int) $request->corregido,
@@ -311,7 +282,6 @@ class IncumplimientoController extends Controller
                     'fecha_corregido' => $request->corregido ? now() : null,
                 ]);
             }
-
             return response()->json([
                 'status' => 200,
                 'message' => 'Cambios guardados correctamente.'
@@ -324,7 +294,6 @@ class IncumplimientoController extends Controller
         }
     }
 
-    // 📤 EXPORTAR CON FILTROS
     public function export_excel(Request $request)
     {
         try {
@@ -368,14 +337,20 @@ class IncumplimientoController extends Controller
 
             $incumplimientos = $query->orderBy('fecha_observacion', 'desc')->get();
 
-            $nombreMac = auth()->user()->centroMac->nombre_mac ?? 'Centro MAC';
+            if ($request->idmac) {
+                $nombreMac = DB::table('db_centros_mac.m_centro_mac')
+                    ->where('idcentro_mac', $request->idmac)
+                    ->value('nombre_mac') ?? 'Centro MAC';
+            } else {
+                $nombreMac = 'TODOS LOS CENTROS MAC';
+            }
             $rango = '';
             if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
-                $rango = '_(' . \Carbon\Carbon::parse($request->fecha_inicio)->format('d-m-Y') . '_a_' .
-                    \Carbon\Carbon::parse($request->fecha_fin)->format('d-m-Y') . ')';
+                $rango = '' . \Carbon\Carbon::parse($request->fecha_inicio)->format('d-m-Y') . ' a ' .
+                    \Carbon\Carbon::parse($request->fecha_fin)->format('d-m-Y') . '';
             }
 
-            $nombreArchivo = 'Incumplimientos_' . str_replace(' ', '_', $nombreMac) . $rango . '.xlsx';
+            $nombreArchivo = 'Incidentes ' . str_replace(' ', '_', $nombreMac) . $rango . '.xlsx';
 
             return Excel::download(
                 new IncumplimientosExport($incumplimientos, $nombreMac, $rango),
@@ -386,7 +361,6 @@ class IncumplimientoController extends Controller
         }
     }
 
-    // 💾 ACTUALIZAR
     public function update(Request $request)
     {
         try {

@@ -65,14 +65,15 @@ class FormFelicitacionesController extends Controller
                     $query->where('FLF.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
                 }
             })
-            ->when($request->filled('fecha_desde') && $request->filled('fecha_hasta'), function($q) use ($request) {
+            ->when($request->filled('fecha_desde') && $request->filled('fecha_hasta'), function ($q) use ($request) {
                 $q->whereDate('FLF.R_FECHA', '>=', $request->fecha_desde)
-                  ->whereDate('FLF.R_FECHA', '<=', $request->fecha_hasta);
+                    ->whereDate('FLF.R_FECHA', '<=', $request->fecha_hasta);
             })
+            ->orderBy('FLF.R_FECHA', 'desc')
             ->orderBy('FLF.CORRELATVIO', 'desc')
             ->get();
 
-            // dd($query->count());
+        // dd($query->count());
 
         return view('formatos.f_felicitaciones.tablas.tb_index', compact('query'));
     }
@@ -95,7 +96,7 @@ class FormFelicitacionesController extends Controller
             ->where('D_PERSONAL_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
             ->select('M_PERSONAL.IDPERSONAL', 'M_PERSONAL.NOMBRE', 'M_PERSONAL.APE_PAT', 'M_PERSONAL.APE_MAT')
             ->get();
-            
+
         $view = view('formatos.f_felicitaciones.modals.md_add_felicitacion', compact('tip_doc', 'entidad', 'asesor'))->render();
 
         return response()->json(['html' => $view]);
@@ -181,11 +182,11 @@ class FormFelicitacionesController extends Controller
             ->get();
 
         $asesor = DB::table('D_PERSONAL_MAC')
-                    ->join('M_PERSONAL', 'D_PERSONAL_MAC.IDPERSONAL', '=', 'M_PERSONAL.IDPERSONAL')
-                    // ->where('D_PERSONAL_MAC.Status', 1) // Filtra por status = 1
-                    ->where('D_PERSONAL_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
-                    ->select('M_PERSONAL.IDPERSONAL', 'M_PERSONAL.NOMBRE', 'M_PERSONAL.APE_PAT', 'M_PERSONAL.APE_MAT')
-                    ->get();
+            ->join('M_PERSONAL', 'D_PERSONAL_MAC.IDPERSONAL', '=', 'M_PERSONAL.IDPERSONAL')
+            // ->where('D_PERSONAL_MAC.Status', 1) // Filtra por status = 1
+            ->where('D_PERSONAL_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
+            ->select('M_PERSONAL.IDPERSONAL', 'M_PERSONAL.NOMBRE', 'M_PERSONAL.APE_PAT', 'M_PERSONAL.APE_MAT')
+            ->get();
 
         $felicitacion = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->first();
 
@@ -313,9 +314,9 @@ class FormFelicitacionesController extends Controller
                     $query->where('FLF.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
                 }
             })
-            ->when($request->filled('fecha_desde') && $request->filled('fecha_hasta'), function($q) use ($request) {
+            ->when($request->filled('fecha_desde') && $request->filled('fecha_hasta'), function ($q) use ($request) {
                 $q->whereDate('FLF.R_FECHA', '>=', $request->fecha_desde)
-                  ->whereDate('FLF.R_FECHA', '<=', $request->fecha_hasta);
+                    ->whereDate('FLF.R_FECHA', '<=', $request->fecha_hasta);
             })
             ->orderBy('FLF.CORRELATVIO', 'desc')
             ->get();

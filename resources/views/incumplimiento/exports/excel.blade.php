@@ -8,7 +8,7 @@
             </td>
             <td colspan="6" rowspan="2"
                 style="text-align: center; font-weight: bold; font-size: 14px; border: 1px solid black;">
-                REPORTE DE INCUMPLIMIENTOS
+                REPORTE DE INCIDENTES OPERATIVOS
             </td>
             <td rowspan="2" style="text-align: center; font-weight: bold; border: 1px solid black;">CÓDIGO</td>
         </tr>
