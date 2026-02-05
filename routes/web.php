@@ -112,13 +112,20 @@ Route::get('/login_verificacion/get/', [PagesController::class, 'login_verificac
 Auth::routes();
 
 // Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::get('login', function () {
-    return redirect()->away(env('REDIRECT_URL', 'http://190.187.182.55:8081/oauth/login'));
-})->name('login');
-Route::get('login', [AuthController::class, 'login']);
-Route::get('authenticate', [AuthController::class, 'authenticateWithToken']);
-// Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+// Route::get('login', function () {
+//     return redirect()->away(env('REDIRECT_URL', 'http://190.187.182.55:8081/oauth/login'));
+// })->name('login');
+// Route::get('login', [AuthController::class, 'login']);
+// Route::get('authenticate', [AuthController::class, 'authenticateWithToken']);
+// // Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+// Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+// Route::get('/debug-auth', fn() => ['auth' => auth()->check()]);
+// Deja SOLO estas dos:
+Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::get('authenticate', [AuthController::class, 'authenticate'])->name('authenticate');
 
+// Logout si quieres:
+Route::get('logout', [AuthController::class, 'logout'])->name('logout');
 
 /**************************************************************** CUMPLEAÑOS *******************************************************************/
 
