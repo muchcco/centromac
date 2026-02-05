@@ -14,7 +14,7 @@ class RedirectIfSessionExpired
         // Verifica si el usuario no está autenticado
         if (!Auth::check()) {
             // Redirige a la URL configurada en el archivo .env si la sesión ha expirado
-            return Redirect::to(env('REDIRECT_URL', '/login'));
+            return Redirect::to(env('AUTH_SERVER_LOGIN_URL', '/login'));
         }
 
         return $next($request);

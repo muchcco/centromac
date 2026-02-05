@@ -1111,19 +1111,43 @@ class PagesController extends Controller
             ], 400);
         }
 
-        // Actualización de la contraseña
-        $auth_id = auth()->user()->id;
+        try {
+            // Actualización de la contraseña
+            $authId = auth()->user()->id;
+            $hashedPassword = bcrypt($request->password);
+            $authDb = env('AUTH_DB_DATABASE', 'auth_db');
 
-        $save = User::findOrFail($auth_id);
-        $save->password = bcrypt($request->password);
-        $save->save();
+            DB::transaction(function () use ($authId, $hashedPassword, $authDb) {
+                $save = User::findOrFail($authId);
+                $save->password = $hashedPassword;
+                $save->save();
 
-        // Actualizar en tabla adicional si aplica
-        $update = DB::table('jwt-mac.users')->where('name', $save->email)->update(['password' => bcrypt($request->password)]);
+                // Sincroniza en la BD de autenticación por num_doc (email local = DNI).
+                $updatedInAuth = DB::table($authDb . '.users')
+                    ->where('num_doc', $save->email)
+                    ->update(['password' => $hashedPassword]);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Contraseña actualizada correctamente.',
-        ]);
+                // Compatibilidad con esquema legado.
+                if ($updatedInAuth === 0) {
+                    $updatedInAuth = DB::table('jwt-mac.users')
+                        ->where('name', $save->email)
+                        ->update(['password' => $hashedPassword]);
+                }
+
+                if ($updatedInAuth === 0) {
+                    throw new \RuntimeException('No se encontr� el usuario en la BD de autenticaci�n para sincronizar la contrase�a.');
+                }
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Contraseña actualizada correctamente.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
 }

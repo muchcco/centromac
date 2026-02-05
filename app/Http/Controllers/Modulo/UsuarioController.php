@@ -196,20 +196,45 @@ class UsuarioController extends Controller
 
     public function updatepass_user(Request $request)
     {
-        // dd($request->all());
-
-        $this->validate($request,[
+        $this->validate($request, [
             'password' => 'required',
         ]);
 
-        $save = User::findOrFail($request->id);
-        $save->password = bcrypt($request->password);
-        $save->save();
+        try {
+            $save = null;
+            $hashedPassword = bcrypt($request->password);
+            $authDb = env('AUTH_DB_DATABASE', 'auth_db');
 
-        // Actualizar en tabla adicional si aplica
-        $update = DB::table('jwt-mac.users')->where('name', $save->email)->update(['password' => bcrypt($request->password)]);
+            DB::transaction(function () use ($request, $hashedPassword, $authDb, &$save) {
+                $save = User::findOrFail($request->id);
+                $save->password = $hashedPassword;
+                $save->save();
 
-        return $save;
+                // Sincroniza en la BD de autenticación por num_doc (email local = DNI).
+                $updatedInAuth = DB::table($authDb . '.users')
+                    ->where('num_doc', $save->email)
+                    ->update(['password' => $hashedPassword]);
+
+                // Compatibilidad con esquema legado.
+                if ($updatedInAuth === 0) {
+                    $updatedInAuth = DB::table('jwt-mac.users')
+                        ->where('name', $save->email)
+                        ->update(['password' => $hashedPassword]);
+                }
+
+                if ($updatedInAuth === 0) {
+                    throw new \RuntimeException('No se encontró el usuario en la BD de autenticación para sincronizar la contraseña.');
+                }
+            });
+
+            return $save->fresh();
+        } catch (\Throwable $e) {
+            return response()->json([
+                'data' => null,
+                'error' => $e->getMessage(),
+                'message' => 'BAD',
+            ], 400);
+        }
     }
 
     public function delete_user(Request $request)

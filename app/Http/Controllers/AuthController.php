@@ -144,7 +144,7 @@ class AuthController extends Controller
         }
 
         // 4) Flujo normal: manda al Auth-Server
-        return redirect()->away(env('REDIRECT_URL', 'http://190.187.182.55:8081/oauth/login'));
+        return redirect()->away(env('AUTH_SERVER_LOGIN_URL', 'http://localhost/auth-server/public/login'));
     }
 
     /* =========================
@@ -205,7 +205,16 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to(env('REDIRECT_URL', '/login'));
+        $logoutBaseUrl = trim((string) env('AUTH_SERVER_LOGOUT_BASE_URL', ''));
+        $logoutNext = trim((string) env('AUTH_SERVER_LOGOUT_NEXT', ''));
+        if ($logoutBaseUrl === '') {
+            $logoutBaseUrl = 'http://localhost/auth-server/public/logout';
+        }
+        if ($logoutNext === '') {
+            $logoutNext = url('login');
+        }
+        $logoutUrl = $logoutBaseUrl . '?next=' . urlencode($logoutNext);
+        return Redirect::away($logoutUrl);
     }
 }
 
