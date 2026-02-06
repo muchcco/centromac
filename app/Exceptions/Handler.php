@@ -51,9 +51,9 @@ class Handler extends ExceptionHandler
     }
 
     protected function unauthenticated($request, AuthenticationException $exception)
-{
-    return $request->expectsJson()
-                ? response()->json(['message' => $exception->getMessage()], 401)
-                : redirect()->away(env('AUTH_SERVER_LOGIN_URL', 'http://190.187.182.55:8081/oauth/login'));
-} 
+    {
+        return $request->expectsJson()
+            ? response()->json(['message' => $exception->getMessage()], 401)
+            : redirect()->away(config('auth_external.login_url'));
+    }
 }

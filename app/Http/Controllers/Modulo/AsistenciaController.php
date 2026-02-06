@@ -505,7 +505,6 @@ class AsistenciaController extends Controller
     public function mdRevertir(Request $request)
     {
         $user = auth()->user();
-
         // Si es Administrador o Monitor → ver todos los MACs
         if ($user->hasRole(['Administrador', 'Monitor', 'Moderador'])) {
             $macs = DB::table('db_centros_mac.m_centro_mac')
@@ -525,11 +524,11 @@ class AsistenciaController extends Controller
                 'html' => "<div class='p-3 text-center text-danger'>No tiene permisos para esta acción.</div>"
             ]);
         }
-
         return response()->json([
             'html' => view('asistencia.modals.md_revertir', compact('macs'))->render()
         ]);
     }
+
     public function tb_asistencia_resumen(Request $request)
     {
         // 1. Verificar MAC

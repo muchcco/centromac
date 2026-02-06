@@ -278,7 +278,7 @@
         });
 
         $("#limpiar").on("click", function(e) {
-            console.log("adsda")
+            // console.log("adsda")
             e.preventDefault(); // Evita comportamiento por defecto del botón
 
             var fechaActual = new Date();
