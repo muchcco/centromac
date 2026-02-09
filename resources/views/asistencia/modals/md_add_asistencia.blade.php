@@ -23,7 +23,7 @@
             <div class="mt-2 d-none" id="uploadQueueInfo"></div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-outline-danger" id="btnCancelarUpload" data-bs-dismiss="modal">Cerrar</button>
+            <button type="button" class="btn btn-outline-danger" id="btnCancelarUpload">Cerrar</button>
             <button type="button" class="btn btn-outline-success" id="btnEnviarForm" onclick="btnStoreTxt()">Importar</button>
         </div>
     </div>
