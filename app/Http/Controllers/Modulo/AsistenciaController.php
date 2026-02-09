@@ -12,7 +12,9 @@ use App\Models\Asistencia;
 use App\Models\Asistenciatest;
 use App\Models\Entidad;
 use App\Models\Mac;
+use App\Jobs\ProcessAsistenciaTxt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use App\Imports\AsistenciaImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Personal;
@@ -104,12 +106,12 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "El día $fecha en el MAC $idmac se cerró correctamente."
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => "Error al cerrar el día: " . $e->getMessage()
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ], 500);
         }
     }
@@ -222,7 +224,7 @@ class AsistenciaController extends Controller
             if (!$personal) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'El DNI proporcionado no corresponde a ningún personal registrado en este centro MAC.'
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 ]);
             }
 
@@ -295,12 +297,12 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Registro(s) guardado(s) exitosamente para ' . $nombreCompleto
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al guardar el registro: ' . $e->getMessage()
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         }
     }
@@ -741,84 +743,32 @@ class AsistenciaController extends Controller
 
     public function store_asistencia(Request $request)
     {
-        // Obtener el archivo de la solicitud
+        $request->validate([
+            'txt_file' => 'required|file',
+        ]);
+
         $file = $request->file('txt_file');
-
-        // Convertir el archivo a un array de líneas
-        $lines = file($file->getRealPath());
-
-        // Inicializar arrays vacíos
-        $num_docs = [];
-        $fechas_biometrico = [];
-        $horas = [];
-        $anios = [];
-        $meses = [];
-
-        // Recorrer las líneas y procesar datos
-        foreach ($lines as $line) {
-            // Usar tabulación como separador
-            $data = explode("\t", $line);
-
-            // Verificar que se tengan al menos 7 columnas (ya que la columna 6 contiene la fecha y hora)
-            if (count($data) >= 7) {
-                // Extraer los valores que necesitamos
-                $num_docs[] = trim($data[2]); // DNI o NUM_DOC
-                $fechas_biometrico[] = trim($data[6]); // FECHA_BIOMETRICO
-
-                // Separar la fecha y la hora
-                $fechaHora = explode(' ', trim($data[6]));
-                if (count($fechaHora) == 2) {
-                    $fecha = $fechaHora[0]; // Fecha
-                    $hora = $fechaHora[1]; // Hora
-                    $horas[] = $hora;
-
-                    // Extraer año y mes
-                    $fechaParts = explode('/', $fecha);
-                    if (count($fechaParts) == 3) {
-                        $anios[] = $fechaParts[0]; // Año
-                        $meses[] = $fechaParts[1]; // Mes
-                    }
-                }
-            } else {
-                echo "<pre>Línea con formato incorrecto: " . print_r($line, true) . "</pre>";
-            }
-        }
-
-        // Obtener el ID del Centro MAC usando el método
         $idCentroMac = $this->centro_mac()->idmac;
 
-        // Ahora insertamos los datos en la base de datos
-        foreach ($num_docs as $index => $num_doc) {
-            // Verificar si ya existe un registro con los mismos valores de NUM_DOC, IDCENTRO_MAC y FECHA_BIOMETRICO
-            $existingRecord = Asistencia::where('NUM_DOC', $num_doc)
-                ->where('IDCENTRO_MAC', $idCentroMac)
-                ->where('FECHA_BIOMETRICO', $fechas_biometrico[$index])
-                ->first();
+        $filename = 'asistencia_' . now()->format('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.txt';
+        $storedPath = $file->storeAs('asistencia-txt', $filename);
+        $uploadToken = bin2hex(random_bytes(8));
+        Cache::put('upload_progress:' . $uploadToken, 0);
+        Cache::put('upload_status:' . $uploadToken, 'queued');
 
-            // Si no existe el registro, crear uno nuevo
-            if (!$existingRecord) {
-                Asistencia::create([
-                    'IDTIPO_ASISTENCIA' => 1, // Puedes ajustar este valor según tus necesidades
-                    'NUM_DOC' => $num_doc,
-                    'IDCENTRO_MAC' => $idCentroMac,
-                    'MES' => $meses[$index],
-                    'AÑO' => $anios[$index],
-                    'FECHA' => $fechas_biometrico[$index], // Fecha completa (biométrico)
-                    'HORA' => $horas[$index],
-                    'FECHA_BIOMETRICO' => $fechas_biometrico[$index],
-                    'NUM_BIOMETRICO' => '', // Si no hay valor, se puede dejar vacío
-                    'CORRELATIVO' => $index + 1, // Puedes ajustar el correlativo según tu lógica
-                    'CORRELATIVO_DIA' => '' // Puedes agregar el valor según lo que necesites
-                ]);
-            } else {
-                // Si ya existe el registro, lo omitimos y continuamos con el siguiente
-                continue;
-            }
-        }
+        $jobId = Queue::connection('database')->push(
+            new ProcessAsistenciaTxt($storedPath, $idCentroMac, $uploadToken),
+            '',
+            'asistencia'
+        );
+        Cache::put('upload_job_id:' . $uploadToken, $jobId);
 
-        return response()->json(['success' => true, 'message' => 'Asistencias cargadas exitosamente.']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+            'upload_token' => $uploadToken,
+        ]);
     }
-
     public function store_asistencia_callao(Request $request)
     {
         // Inicializar el progreso a 0%
@@ -971,9 +921,45 @@ class AsistenciaController extends Controller
 
     public function getUploadProgress(Request $request)
     {
-        // Retorna el progreso actual (si no existe, se asume 0)
-        $progress = Cache::get('upload_progress', 0);
-        return response()->json(['progress' => $progress]);
+        $token = $request->query('token');
+        $key = $token ? 'upload_progress:' . $token : 'upload_progress';
+        $progress = Cache::get($key, 0);
+        $status = $token ? Cache::get('upload_status:' . $token, 'queued') : 'queued';
+        $position = null;
+
+        if ($token) {
+            $jobId = Cache::get('upload_job_id:' . $token);
+            if ($jobId) {
+                $position = DB::table('jobs')
+                    ->where('queue', 'asistencia')
+                    ->where('id', '<', $jobId)
+                    ->count();
+            }
+        }
+
+        return response()->json([
+            'progress' => $progress,
+            'status' => $status,
+            'position' => $position,
+        ]);
+    }
+
+    public function cancelUpload(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        $token = $request->input('token');
+        Cache::put('upload_cancelled:' . $token, true);
+        Cache::put('upload_status:' . $token, 'cancelled');
+
+        $jobId = Cache::get('upload_job_id:' . $token);
+        if ($jobId) {
+            DB::table('jobs')->where('id', $jobId)->delete();
+        }
+
+        return response()->json(['success' => true]);
     }
 
     public function md_detalle(Request $request)
@@ -1044,7 +1030,7 @@ class AsistenciaController extends Controller
             } catch (\Exception $ex) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al guardar auditoría: ' . $ex->getMessage()
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 ]);
             }
 
@@ -1056,12 +1042,12 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Hora eliminada correctamente'
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar la hora: ' . $e->getMessage()
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ], 500);
         }
     }
@@ -2198,13 +2184,13 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Se cargaron las asistencia con éxito.',
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 'data' => $insert,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Hubo un error al actualizar el usuario.',
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -2270,12 +2256,12 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "$processedCount registros migrados correctamente desde iclock_transaction."
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => "Error al migrar desde iclock_transaction: " . $e->getMessage()
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ], 500);
         }
     } */
@@ -2306,7 +2292,7 @@ class AsistenciaController extends Controller
             if ($pendientes->isEmpty()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'No hay registros pendientes desde SQL Server.'
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 ]);
             }
 
@@ -2352,12 +2338,12 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Migración completa: $procesados registros pasaron de SQL Server a MySQL."
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error en migración B → C: ' . $e->getMessage()
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ], 500);
         }
     }

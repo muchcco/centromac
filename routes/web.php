@@ -209,6 +209,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/migrar-datos', [AsistenciaController::class, 'migrarDatos'])->name('migrar.datos');
 
         Route::get('/upload-progress', [AsistenciaController::class, 'getUploadProgress'])->name('upload.progress');
+        Route::post('/upload-cancel', [AsistenciaController::class, 'cancelUpload'])->name('upload.cancel');
     });
 
     /********************************************************** REGISTRO DE PERSONAL *******************************************************************/

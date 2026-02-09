@@ -440,6 +440,57 @@
             followCursor: true,
         });
 
+        var currentUploadToken = null;
+        var uploadPollingInterval = null;
+        var uploadInProgress = false;
+
+        window.addEventListener('beforeunload', function(e) {
+            if (uploadInProgress) {
+                var msg = 'Si sale de esta ventana se cancelara el envio.';
+                e.preventDefault();
+                e.returnValue = msg;
+                return msg;
+            }
+        });
+
+        window.addEventListener('unload', function() {
+            if (!uploadInProgress || !currentUploadToken) {
+                return;
+            }
+            var params = new URLSearchParams();
+            params.append('token', currentUploadToken);
+            params.append('_token', "{{ csrf_token() }}");
+            navigator.sendBeacon("{{ route('asistencia.upload.cancel') }}", params);
+        });
+
+        $(document).on('click', '#btnCancelarUpload', function(e) {
+            if (!uploadInProgress || !currentUploadToken) {
+                return;
+            }
+            e.preventDefault();
+            var confirmCancel = confirm('Si sale de esta ventana se cancelara el envio. Desea continuar?');
+            if (!confirmCancel) {
+                return;
+            }
+
+            $.post("{{ route('asistencia.upload.cancel') }}", {
+                token: currentUploadToken,
+                _token: "{{ csrf_token() }}"
+            }).always(function() {
+                if (uploadPollingInterval) {
+                    clearInterval(uploadPollingInterval);
+                }
+                uploadInProgress = false;
+                currentUploadToken = null;
+                $("#uploadProgressWrapper").addClass("d-none");
+                $("#uploadQueueInfo").addClass("d-none").text("");
+                $("#uploadProgressBar").css("width", "0%").text("0%");
+                document.getElementById("btnEnviarForm").disabled = false;
+                document.getElementById("btnEnviarForm").innerHTML = "Importar";
+                $("#modal_show_modal").modal('hide');
+            });
+        });
+
         function btnStoreTxt() {
 
             var file_data = $("#txt_file").prop("files")[0];
@@ -449,7 +500,7 @@
 
             $.ajax({
                 type: 'POST',
-                url: "{{ route('asistencia.store_asistencia') }}", // Cambia la ruta según tu configuración
+                url: "{{ route('asistencia.store_asistencia') }}", // Cambia la ruta segun tu configuracion
                 data: formData,
                 processData: false,
                 contentType: false,
@@ -457,24 +508,81 @@
                     document.getElementById("btnEnviarForm").innerHTML =
                         '<i class="fa fa-spinner fa-spin"></i> Espere... Cargando datos';
                     document.getElementById("btnEnviarForm").disabled = true;
+                    $("#uploadProgressWrapper").removeClass("d-none");
+                    $("#uploadProgressBar").css("width", "0%").text("0%");
+                    $("#uploadQueueInfo").addClass("d-none").text("");
+                    uploadInProgress = true;
                 },
                 success: function(data) {
-                    $("#modal_show_modal").modal('hide');
-                    tabla_seccion();
-                    Toastify({
-                        text: "Se agregó exitosamente los registros",
-                        className: "info",
-                        gravity: "bottom",
-                        style: {
-                            background: "#47B257",
-                        }
-                    }).showToast();
+                    if (!data.upload_token) {
+                        $("#modal_show_modal").modal('hide');
+                        tabla_seccion();
+                        Toastify({
+                            text: "Se agregaron los registros",
+                            className: "info",
+                            gravity: "bottom",
+                            style: {
+                                background: "#47B257",
+                            }
+                        }).showToast();
+                        return;
+                    }
+
+                    currentUploadToken = data.upload_token;
+                    uploadPollingInterval = setInterval(function() {
+                        $.get("{{ route('asistencia.upload.progress') }}", {
+                            token: data.upload_token
+                        }, function(resp) {
+                            var progress = resp.progress || 0;
+                            $("#uploadProgressBar")
+                                .css("width", progress + "%")
+                                .text(progress + "%");
+
+                            if (resp.status === 'cancelled') {
+                                clearInterval(uploadPollingInterval);
+                                uploadInProgress = false;
+                                currentUploadToken = null;
+                                $("#uploadQueueInfo").removeClass("d-none").text("Carga cancelada.");
+                                document.getElementById("btnEnviarForm").disabled = false;
+                                document.getElementById("btnEnviarForm").innerHTML = "Importar";
+                                return;
+                            }
+
+                            if (resp.status === 'queued' && resp.position !== null) {
+                                $("#uploadQueueInfo").removeClass("d-none").text("En cola: posicion " + (resp.position + 1));
+                            } else if (resp.status === 'running') {
+                                $("#uploadQueueInfo").removeClass("d-none").text("Procesando...");
+                            }
+
+                            if (progress >= 100) {
+                                clearInterval(uploadPollingInterval);
+                                uploadInProgress = false;
+                                currentUploadToken = null;
+                                $("#modal_show_modal").modal('hide');
+                                document.getElementById("btnEnviarForm").disabled = false;
+                                document.getElementById("btnEnviarForm").innerHTML = "Importar";
+                                tabla_seccion();
+                                Toastify({
+                                    text: "Carga terminada",
+                                    className: "info",
+                                    gravity: "bottom",
+                                    style: {
+                                        background: "#47B257",
+                                    }
+                                }).showToast();
+                            }
+                        });
+                    }, 1000);
                 },
                 error: function(error) {
                     $("#modal_show_modal").modal('hide');
+                    document.getElementById("btnEnviarForm").disabled = false;
+                    document.getElementById("btnEnviarForm").innerHTML = "Importar";
+                    uploadInProgress = false;
+                    currentUploadToken = null;
                     Swal.fire({
                         icon: "error",
-                        text: "Hubo un error al cargar las asistencias... Intentar nuevamente! Verifique que el archivo txt no tenga el caracter en la última fila ",
+                        text: "Hubo un error al cargar las asistencias... Intentar nuevamente! Verifique que el archivo txt no tenga el caracter en la ultima fila  \x1a",
                         confirmButtonText: "Aceptar"
                     })
                 }
