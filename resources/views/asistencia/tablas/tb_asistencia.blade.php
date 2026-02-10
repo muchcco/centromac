@@ -19,8 +19,7 @@
     <tbody>
         @foreach ($datos as $i => $dato)
             @php
-                use Carbon\Carbon;
-                $esHoy = Carbon::parse($dato->fecha_asistencia)->isToday();
+                $esHoy = Carbon\Carbon::parse($dato->fecha_asistencia)->isToday();
 
                 // CONTAR MARCACIONES
                 $horas = array_filter(
