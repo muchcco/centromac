@@ -19,6 +19,9 @@
     <tbody>
         @foreach ($datos as $i => $dato)
             @php
+                use Carbon\Carbon;
+                $esHoy = Carbon::parse($dato->fecha_asistencia)->isToday();
+
                 // CONTAR MARCACIONES
                 $horas = array_filter(
                     [$dato->HORA_1, $dato->HORA_2, $dato->HORA_3, $dato->HORA_4],
@@ -40,7 +43,8 @@
                 } elseif (!empty($dato->flag_exceso)) {
                     $rowClass = 'table-danger';
                     $rowTitle = 'Exceso de marcaciones';
-                } elseif (in_array($numHoras, [1, 3])) {
+                } elseif (!$esHoy && in_array($numHoras, [1, 3])) {
+                    // ❗ SOLO fechas PASADAS
                     $rowClass = 'table-primary';
                     $rowTitle = 'Marcaciones incompletas';
                 }
@@ -107,13 +111,13 @@
                         <span class="badge bg-info text-dark">
                             Tardanza
                         </span>
-                    @elseif ($numHoras > 4)
-                        <span class="badge bg-danger">
-                            Exceso de marcaciones
-                        </span>
                     @elseif (!empty($dato->flag_exceso))
                         <span class="badge bg-danger">
                             Exceso de marcaciones
+                        </span>
+                    @elseif (!$esHoy && in_array($numHoras, [1, 3]))
+                        <span class="badge bg-primary">
+                            Marcación incompleta
                         </span>
                     @else
                         <span class="badge bg-success">
@@ -121,6 +125,7 @@
                         </span>
                     @endif
                 </td>
+
                 <td>{{ $dato->HORA_1 }}</td>
                 <td>{{ $dato->HORA_2 }}</td>
                 <td>{{ $dato->HORA_3 }}</td>
