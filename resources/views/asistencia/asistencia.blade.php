@@ -36,49 +36,80 @@
 
     <div class="row">
         <div class="col-lg-12">
-            <div class="card">
+            <div class="card shadow-sm">
                 <div class="card-header" style="background-color:#132842">
-                    <h4 class="card-title text-white">Filtro de Búsqueda</h4>
-                </div><!--end card-header-->
+                    <h4 class="card-title text-white mb-0">Filtro de Búsqueda</h4>
+                </div>
+
                 <div class="card-body bootstrap-select-1">
-                    <div class="row">
-                        <div class="col-md-4">
+                    <div class="row align-items-end">
+
+                        {{-- 🔐 SOLO ADMINISTRADOR --}}
+                        @role('Administrador')
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="mb-2 fw-semibold">Centro MAC</label>
+                                    <select name="mac" id="mac" class="form-control select2">
+                                        <option value="">-- Todos los MAC --</option>
+                                        @foreach ($macs as $mac)
+                                            <option value="{{ $mac->id }}"
+                                                {{ isset($idmac) && $idmac == $mac->id ? 'selected' : '' }}>
+                                                {{ $mac->nom }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        @endrole
+
+                        {{-- 📅 FECHA --}}
+                        <div class="@role('Administrador') col-md-3 @else col-md-4 @endrole">
                             <div class="form-group">
-                                <label class="mb-3">Fecha:</label>
+                                <label class="mb-2 fw-semibold">Fecha</label>
                                 @php
-                                    $fecha6dias = date('d-m-Y', strtotime(now()));
-                                    $fecha6diasconvert = date('Y-m-d', strtotime($fecha6dias));
+                                    $fechaHoy = now()->format('Y-m-d');
                                 @endphp
                                 <input type="date" name="fecha" id="fecha" class="form-control"
-                                    value="{{ $fecha6diasconvert }}">
+                                    value="{{ $fechaHoy }}">
                             </div>
-                        </div><!-- end col -->
-                        <div class="col-md-4">
+                        </div>
+
+                        {{-- 🏛️ ENTIDAD --}}
+                        <div class="@role('Administrador') col-md-3 @else col-md-4 @endrole">
                             <div class="form-group">
-                                <label class="mb-3">Entidad:</label>
-                                <select name="entidad" id="entidad" class="form-control col-sm-12 select2">
-                                    <option value="" selected>-- Selecciones una opción --</option>
+                                <label class="mb-2 fw-semibold">Entidad</label>
+                                <select name="entidad" id="entidad" class="form-control select2">
+                                    <option value="">-- Seleccione una opción --</option>
                                     @forelse ($entidad as $ent)
-                                        <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }}</option>
+                                        <option value="{{ $ent->IDENTIDAD }}">
+                                            {{ $ent->NOMBRE_ENTIDAD }}
+                                        </option>
                                     @empty
                                         <option value="">No hay datos disponibles</option>
                                     @endforelse
                                 </select>
                             </div>
-                        </div><!-- end col -->
-                        <div class="col-md-4">
-                            <div class="form-group" style="margin-top: 2.6em">
-                                <button type="button" class="btn btn-primary" id="filtro" onclick="execute_filter()"><i
-                                        class="fa fa-search" aria-hidden="true"></i> Buscar</button>
-                                <button class="btn btn-dark" id="limpiar"><i class="fa fa-undo" aria-hidden="true"></i>
-                                    Limpiar</button>
+                        </div>
+
+                        {{-- 🔍 BOTONES --}}
+                        <div class="@role('Administrador') col-md-3 @else col-md-4 @endrole text-end">
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary me-2" id="filtro"
+                                    onclick="execute_filter()">
+                                    <i class="fa fa-search"></i> Buscar
+                                </button>
+
+                                <button type="button" class="btn btn-dark" id="limpiar">
+                                    <i class="fa fa-undo"></i> Limpiar
+                                </button>
                             </div>
-                        </div><!-- end col -->
+                        </div>
+
                     </div>
-                </div><!-- end card-body -->
-            </div> <!-- end card -->
-        </div> <!-- end col -->
-    </div> <!-- end row -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-lg-12">
@@ -157,6 +188,7 @@
 
                         </div>
                     </div>
+
                     <br />
                     <div class="row">
                         <div class="col-12">
@@ -214,6 +246,16 @@
     <script src="{{ asset('nuevo/assets/pages/jquery.datatable.init.js') }}"></script>
 
     <script>
+        function refrescarTablaActual() {
+            const fecha = $('#fecha').val();
+            const entidad = $('#entidad').val();
+            const estado = $('#estado').val();
+            const mac = $('#mac').length ? $('#mac').val() : null;
+
+            tabla_seccion(fecha, entidad, estado, mac);
+        }
+
+
         $(document).ready(function() {
             tabla_seccion();
             $(document).ready(function() {
@@ -222,12 +264,13 @@
         });
         const listaMacs = @json($macs);
 
-        function tabla_seccion(fecha = '', entidad = '', estado = '') {
+        function tabla_seccion(fecha = '', entidad = '', estado = '', mac = null) {
             $.ajax({
                 type: 'GET',
                 url: "{{ route('asistencia.verificar_cierre') }}",
                 data: {
-                    fecha: fecha
+                    fecha: fecha,
+                     mac: mac
                 },
                 success: function(resp) {
                     let urlTabla = resp.cerrado ?
@@ -256,7 +299,8 @@
                         data: {
                             fecha: fecha,
                             entidad: entidad,
-                            estado: estado
+                            estado: estado,
+                            mac: mac
                         },
                         beforeSend: function() {
                             $("#table_data").html(
@@ -294,41 +338,43 @@
 
         // EJECUTA LOS FILTROS Y ENVIA AL CONTROLLADOR PARA  MOSTRAR EL RESULTADO EN LA TABLA
         var execute_filter = () => {
-            var fecha = $('#fecha').val();
-            var entidad = $('#entidad').val();
-            var estado = $('#estado').val();
+            const fecha = $('#fecha').val();
+            const entidad = $('#entidad').val();
+            const estado = $('#estado').val();
 
-            // var proc_data = "fecha="+fecha+"&entidad="+entidad+"$estado="+estado;
-
-            // console.log(proc_data);
+            // 🔐 Solo existe si es Administrador
+            const mac = $('#mac').length ? $('#mac').val() : null;
 
             $.ajax({
                 type: 'get',
                 url: "{{ route('asistencia.tablas.tb_asistencia') }}",
-                dataType: "",
                 data: {
                     fecha: fecha,
                     entidad: entidad,
-                    estado: estado
+                    estado: estado,
+                    mac: mac // 👈 se envía solo si existe
                 },
                 beforeSend: function() {
-                    document.getElementById("filtro").innerHTML =
-                        '<i class="fa fa-spinner fa-spin"></i> Buscando';
-                    document.getElementById("filtro").style.disabled = true;
+                    const btn = document.getElementById("filtro");
+                    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Buscando';
+                    btn.disabled = true;
                 },
-                success: function(data) {
-                    document.getElementById("filtro").innerHTML = '<i class="fa fa-search"></i> Buscar';
-                    document.getElementById("filtro").style.disabled = false;
-                    tabla_seccion(fecha, entidad, estado);
+                success: function() {
+                    const btn = document.getElementById("filtro");
+                    btn.innerHTML = '<i class="fa fa-search"></i> Buscar';
+                    btn.disabled = false;
+
+                    // 🔥 refresca manteniendo filtros
+                    tabla_seccion(fecha, entidad, estado, mac);
                 },
                 error: function(xhr, status, error) {
-                    console.log("error");
-                    console.log('Error:', error);
+                    const btn = document.getElementById("filtro");
+                    btn.innerHTML = '<i class="fa fa-search"></i> Buscar';
+                    btn.disabled = false;
+
+                    console.error('Error:', error);
                 }
             });
-
-            // console.log('Fecha fecha: '+fecha,'Fecha Fin: ' +fechaFin,'Dependencia: ' +dependencia,'Estado: '+estado,'Usuario OEAS: '+us_oeas);
-            //table_asistencia(fecha, entidad, estado);
         }
 
         function btnAddAsistencia() {
@@ -413,7 +459,7 @@
                             text: data.message,
                             confirmButtonText: 'Aceptar'
                         });
-                        tabla_seccion();
+                        refrescarTablaActual();
                         $("#modal_show_modal").modal('hide'); // Cerrar el modal
                     } else {
                         Swal.fire({
@@ -516,7 +562,7 @@
                 success: function(data) {
                     if (!data.upload_token) {
                         $("#modal_show_modal").modal('hide');
-                        tabla_seccion();
+                        refrescarTablaActual();
                         Toastify({
                             text: "Se agregaron los registros",
                             className: "info",
@@ -542,16 +588,19 @@
                                 clearInterval(uploadPollingInterval);
                                 uploadInProgress = false;
                                 currentUploadToken = null;
-                                $("#uploadQueueInfo").removeClass("d-none").text("Carga cancelada.");
+                                $("#uploadQueueInfo").removeClass("d-none").text(
+                                    "Carga cancelada.");
                                 document.getElementById("btnEnviarForm").disabled = false;
                                 document.getElementById("btnEnviarForm").innerHTML = "Importar";
                                 return;
                             }
 
                             if (resp.status === 'queued' && resp.position !== null) {
-                                $("#uploadQueueInfo").removeClass("d-none").text("En cola: posicion " + (resp.position + 1));
+                                $("#uploadQueueInfo").removeClass("d-none").text(
+                                    "En cola: posicion " + (resp.position + 1));
                             } else if (resp.status === 'running') {
-                                $("#uploadQueueInfo").removeClass("d-none").text("Procesando...");
+                                $("#uploadQueueInfo").removeClass("d-none").text(
+                                    "Procesando...");
                             }
 
                             if (progress >= 100) {
@@ -561,7 +610,7 @@
                                 $("#modal_show_modal").modal('hide');
                                 document.getElementById("btnEnviarForm").disabled = false;
                                 document.getElementById("btnEnviarForm").innerHTML = "Importar";
-                                tabla_seccion();
+                                refrescarTablaActual();
                                 Toastify({
                                     text: "Carga terminada",
                                     className: "info",
@@ -828,7 +877,8 @@
                             text: response.message,
                             confirmButtonText: "Aceptar"
                         });
-                        tabla_seccion(); // Refresca la tabla
+                        refrescarTablaActual();
+                        // Refresca la tabla
 
                         // Cerrar el modal
                         $('#modal_show_modal').modal('hide');
@@ -1030,7 +1080,7 @@
                                 });
 
                                 $("#modal_show_modal").modal('hide');
-                                tabla_seccion();
+                                refrescarTablaActual();
                             } else {
                                 Swal.fire('Error', data.message, 'error');
                             }

@@ -106,12 +106,12 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'success' => true,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ], 500);
         }
     }
@@ -224,7 +224,7 @@ class AsistenciaController extends Controller
             if (!$personal) {
                 return response()->json([
                     'success' => false,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                    'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 ]);
             }
 
@@ -297,148 +297,135 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'success' => true,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         }
     }
 
     public function tb_asistencia(Request $request)
     {
-        // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
-        /*================================================================================================================*/
-        $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $userAuth = auth()->user();
 
-        $idmac = $user->IDCENTRO_MAC;
-        $name_mac = $user->NOMBRE_MAC;
-        /*================================================================================================================*/
+        if ($userAuth->hasRole(['Administrador', 'Moderador'])) {
+            $idmac = $request->mac ?: $userAuth->idcentro_mac;
+        } else {
+            $idmac = $userAuth->idcentro_mac;
+        }
 
-        // VERIFICAMOS LA HORA DE INGRESO PARA INDICAR SI ESTAN EN HORA O TARDANZA TOMAMOS REF DE LUN A VIER YA QUE ES EL MISMO HORARIO DEL SABADO
+        $fecha     = $request->fecha ?? date('Y-m-d');
+        $identidad = $request->entidad ?? 0;
+
         $conf = Configuracion::where('IDCONFIGURACION', 2)->first();
 
-        $entidad = Entidad::select('NOMBRE_ENTIDAD', 'ABREV_ENTIDAD', 'IDENTIDAD');
-        $fecha = $request->fecha ?? date('Y-m-d');
+        // SP
+        $datos = DB::select(
+            'CALL db_centros_mac.SP_ASISTENCIA_DIARIA_MAC(?, ?, ?)',
+            [$idmac, $fecha, $identidad]
+        );
 
-        $datos = DB::table('M_ASISTENCIA as MA')
-            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-            ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
-
-            ->leftJoin('M_PERSONAL_MODULO as MPM', function (JoinClause $join) use ($idmac, $fecha) {
-                $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
-                    ->where('MPM.STATUS', '!=', 'eliminado')
-                    ->where('MPM.IDCENTRO_MAC', '=', $idmac)
-                    ->where(function ($q) use ($fecha) {
-                        $q->where('MPM.STATUS', 'itinerante')
-                            ->where('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
-                            ->where('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
-                            ->orWhere(function ($q2) use ($fecha) {
-                                $q2->where('MPM.STATUS', 'fijo')
-                                    ->where('MA.FECHA', '>=', DB::raw('MPM.FECHAINICIO'))
-                                    ->where('MA.FECHA', '<=', DB::raw('MPM.FECHAFIN'))
-                                    ->whereNotExists(function ($q3) {
-                                        $q3->select(DB::raw(1))
-                                            ->from('M_PERSONAL_MODULO as MPM2')
-                                            ->whereRaw('MPM2.NUM_DOC = MPM.NUM_DOC')
-                                            ->where('MPM2.STATUS', 'itinerante')
-                                            ->whereColumn('MA.FECHA', '>=', 'MPM2.FECHAINICIO')
-                                            ->whereColumn('MA.FECHA', '<=', 'MPM2.FECHAFIN');
-                                    });
-                            });
-                    });
-            })
-
-            ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
-
-            ->leftJoin('M_ENTIDAD as ME', function (JoinClause $join) {
-                $case = <<<'SQL'
-                    CASE
-                    WHEN MPM.NUM_DOC IS NOT NULL THEN MM.IDENTIDAD
-                    ELSE MP.IDENTIDAD
-                    END
-                    SQL;
-                $join->on(DB::raw('ME.IDENTIDAD'), '=', DB::raw($case));
-            })
-
-            ->leftJoin('D_ASISTENCIA_OBSERVACION as DAO', function (JoinClause $join) {
-                $join->on('DAO.NUM_DOC', '=', 'MA.NUM_DOC')
-                    ->on('DAO.FECHA',     '=', 'MA.FECHA')
-                    ->on('DAO.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC');
-            })
-
-            ->select([
-                'MA.FECHA as fecha_asistencia',
-                'MA.IDCENTRO_MAC as idmac',
-                'MP.IDPERSONAL as idpersonal',
-                DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
-                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(MA.HORA, '%H:%i:%s') ORDER BY MA.HORA) AS fecha_biometrico"),
-                'MA.NUM_DOC as n_dni',
-                DB::raw('UPPER(CONCAT(MP.APE_PAT," ",MP.APE_MAT,", ",MP.NOMBRE)) AS nombreu'),
-                'ME.ABREV_ENTIDAD',
-                'MC.NOMBRE_MAC',
-                'MPM.STATUS as status_modulo',
-                'MM.N_MODULO as nombre_modulo',
-                DB::raw('COUNT(IF(DAO.flag = 1, DAO.id_asistencia_obv, NULL)) as contador_obs'),
-            ])
-
-            ->where('MA.IDCENTRO_MAC', $idmac)
-            // ->where('ME.IDENTIDAD', $request->entidad)
-            ->when($request->filled('entidad'), function ($query) use ($request) {
-                $query->where('ME.IDENTIDAD', $request->entidad);
-            })
-            ->whereDate('MA.FECHA', $fecha)
-
-            ->groupBy(
-                'MA.FECHA',
-                'MA.IDCENTRO_MAC',
-                'MP.IDPERSONAL',
-                'MA.NUM_DOC',
-                'ME.ABREV_ENTIDAD',
-                'MC.NOMBRE_MAC',
-                'MPM.STATUS',
-                'MM.N_MODULO'
-            )
-            ->orderBy('MM.N_MODULO', 'asc')
-            ->get();
-
+        // 1️⃣ PREPROCESO
         foreach ($datos as $q) {
-            $horas = explode(',', $q->fecha_biometrico); // Separa las horas por coma
-            $num_horas = count($horas);
 
-            // Asigna las horas con segundos
-            if ($num_horas == 1) {
+            $q->idpersonal    = $q->IDPERSONAL;
+            $q->n_dni         = $q->NUM_DOC;
+            $q->nombreu       = $q->nombre;
+            $q->nombre_modulo = $q->N_MODULO;
+
+            $horas = $q->horas ? explode(',', $q->horas) : [];
+            $num   = count($horas);
+
+            $q->HORA_1 = $q->HORA_2 = $q->HORA_3 = $q->HORA_4 = null;
+
+            if ($num == 1) {
                 $q->HORA_1 = $horas[0];
-                $q->HORA_2 = null;
-                $q->HORA_3 = null;
-                $q->HORA_4 = null;
-            } elseif ($num_horas == 2) {
+            } elseif ($num == 2) {
                 $q->HORA_1 = $horas[0];
-                $q->HORA_2 = null;
-                $q->HORA_3 = null;
                 $q->HORA_4 = $horas[1];
-            } elseif ($num_horas == 3) {
+            } elseif ($num == 3) {
                 $q->HORA_1 = $horas[0];
                 $q->HORA_2 = $horas[1];
-                $q->HORA_3 = null;
                 $q->HORA_4 = $horas[2];
-            } elseif ($num_horas >= 4) {
+            } elseif ($num >= 4) {
                 $q->HORA_1 = $horas[0];
                 $q->HORA_2 = $horas[1];
                 $q->HORA_3 = $horas[2];
                 $q->HORA_4 = $horas[3];
             }
+
+            $q->flag_exceso     = $num > 4;
+            $q->flag_incompleto = in_array($num, [1, 3]);
+
+            // inicializar
+            $q->flag_tarde = false;
+            $q->flag_tardanza_grupal = false;
+            $q->hora_tardanza = null;
         }
-        // dd($datos);
+
+        // 2️⃣ TARDANZA
+        $modulos = collect($datos)->groupBy('nombre_modulo');
+
+        foreach ($modulos as $modulo => $items) {
+
+            $esPCM = $items->first()->ABREV_ENTIDAD === 'PCM';
+
+            if ($esPCM) {
+                // PCM → individual
+                foreach ($items as $q) {
+                    if ($q->HORA_1 && $q->HORA_1 > '08:16:00') {
+                        $q->flag_tarde = true;
+                        $q->hora_tardanza = $q->HORA_1;
+                    }
+                }
+                continue;
+            }
+
+            // NO PCM → por módulo
+            $horaMinimaModulo = $items->pluck('HORA_1')->filter()->min();
+            $totalPersonas = $items->count();
+
+            if ($totalPersonas >= 2 && $horaMinimaModulo && $horaMinimaModulo > '08:16:00') {
+                // 🩶 Grupal (2 o más)
+                foreach ($items as $q) {
+                    $q->flag_tardanza_grupal = true;
+                    $q->flag_tarde = false;
+                }
+            } elseif ($totalPersonas === 1) {
+                // 🟥 Individual (solo uno)
+                foreach ($items as $q) {
+                    if ($q->HORA_1 && $q->HORA_1 > '08:16:00') {
+                        $q->flag_tarde = true;
+                    }
+                    $q->flag_tardanza_grupal = false;
+                }
+            } else {
+                // 🟢 Puntual
+                foreach ($items as $q) {
+                    $q->flag_tarde = false;
+                    $q->flag_tardanza_grupal = false;
+                }
+            }
+        }
+
         return view('asistencia.tablas.tb_asistencia', compact('datos', 'conf'));
     }
+
+
     public function verificarCierre(Request $request)
     {
+        $userAuth = auth()->user();
+
+        if ($userAuth->hasRole(['Administrador', 'Moderador'])) {
+            $idmac = $request->mac ?: $userAuth->idcentro_mac;
+        } else {
+            $idmac = $userAuth->idcentro_mac;
+        }
+
         $fecha = $request->input('fecha');
-        $idmac = auth()->user()->idcentro_mac;
 
         $existe = DB::table('db_centro_mac_reporte.asistencia_resumen')
             ->where('idmac', $idmac)
@@ -446,9 +433,11 @@ class AsistenciaController extends Controller
             ->exists();
 
         return response()->json([
-            'cerrado' => $existe
+            'cerrado' => $existe,
+            'idmac'   => $idmac 
         ]);
     }
+
     public function revertirDia(Request $request)
     {
         $request->validate([
@@ -533,23 +522,22 @@ class AsistenciaController extends Controller
 
     public function tb_asistencia_resumen(Request $request)
     {
-        // 1. Verificar MAC
-        $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)
-            ->first();
+        $userAuth = auth()->user();
 
-        $idmac = $user->IDCENTRO_MAC;
+        if ($userAuth->hasRole(['Administrador', 'Moderador'])) {
+            $idmac = $request->mac ?: $userAuth->idcentro_mac;
+        } else {
+            $idmac = $userAuth->idcentro_mac;
+        }
 
-        // 2. Fecha
         $fecha = $request->fecha ?? date('Y-m-d');
 
-        // 3. Datos desde tabla resumen
         $datos = DB::table('db_centro_mac_reporte.asistencia_resumen')
             ->where('idmac', $idmac)
             ->whereDate('fecha_asistencia', $fecha)
             ->orderBy('nombre_modulo', 'asc')
             ->get();
+
 
         // 4. Procesar horas y contador de observaciones
         foreach ($datos as $q) {
@@ -1030,7 +1018,7 @@ class AsistenciaController extends Controller
             } catch (\Exception $ex) {
                 return response()->json([
                     'success' => false,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                    'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 ]);
             }
 
@@ -1042,18 +1030,15 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'success' => true,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ], 500);
         }
     }
-
-
-
 
     public function det_us(Request $request, $id)
     {
@@ -2184,13 +2169,13 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'status' => true,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 'data' => $insert,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -2292,7 +2277,7 @@ class AsistenciaController extends Controller
             if ($pendientes->isEmpty()) {
                 return response()->json([
                     'success' => true,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                    'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
                 ]);
             }
 
@@ -2338,12 +2323,12 @@ class AsistenciaController extends Controller
 
             return response()->json([
                 'success' => true,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+                'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             ], 500);
         }
     }

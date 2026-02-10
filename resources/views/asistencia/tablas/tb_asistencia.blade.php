@@ -8,6 +8,7 @@
             <th class="th">Entidad</th>
             <th class="th">Centro MAC</th>
             <th class="th">Fecha</th>
+            <th class="th">Estado</th>
             <th class="th">Ingreso</th>
             <th class="th">Receso</th>
             <th class="th">Receso</th>
@@ -18,27 +19,50 @@
     <tbody>
         @foreach ($datos as $i => $dato)
             @php
-                // Contar las horas no vacías
+                // CONTAR MARCACIONES
                 $horas = array_filter(
                     [$dato->HORA_1, $dato->HORA_2, $dato->HORA_3, $dato->HORA_4],
                     fn($h) => !is_null($h) && trim($h) !== '',
                 );
+
                 $numHoras = count($horas);
-                $claseRojo = $numHoras % 2 !== 0 ? 'text-danger fw-bold' : '';
+
+                // CLASE + TOOLTIP
+                $rowClass = '';
+                $rowTitle = '';
+
+                if (!empty($dato->flag_tardanza_grupal)) {
+                    $rowClass = 'table-warning';
+                    $rowTitle = 'Tardanza grupal del módulo';
+                } elseif (!empty($dato->flag_tarde)) {
+                    $rowClass = 'table-info';
+                    $rowTitle = 'Tardanza';
+                } elseif (!empty($dato->flag_exceso)) {
+                    $rowClass = 'table-danger';
+                    $rowTitle = 'Exceso de marcaciones';
+                } elseif (in_array($numHoras, [1, 3])) {
+                    $rowClass = 'table-primary';
+                    $rowTitle = 'Marcaciones incompletas';
+                }
             @endphp
 
-            <tr class="{{ $claseRojo }}">
+            <tr class="{{ $rowClass }}"
+                @if ($rowTitle) data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            title="{{ $rowTitle }}" @endif>
                 <td>{{ $i + 1 }}</td>
+
                 <td class="text-uppercase">
                     <a href="javascript:void(0);" class="d-flex justify-content-around align-items-start"
                         data-dni="{{ $dato->n_dni }}"
                         onclick="abrirModalAgregarObservacion(
-                        '{{ $dato->idpersonal }}',
-                        '{{ $dato->fecha_asistencia }}',
-                        '{{ $dato->n_dni }}',
-                        '{{ $dato->idmac }}'
-                    )">
+                    '{{ $dato->idpersonal }}',
+                    '{{ $dato->fecha_asistencia }}',
+                    '{{ $dato->n_dni }}',
+                    '{{ $dato->idmac }}'
+               )">
                         {{ $dato->nombreu }}
+
                         @if ($dato->contador_obs > 0)
                             <span class="bandejTool text-dark"
                                 data-tippy-content="Este usuario tiene ({{ $dato->contador_obs }}) observación(es)">
@@ -47,25 +71,61 @@
                         @endif
                     </a>
                 </td>
+
                 <td>
                     <a href="javascript:void(0);"
-                        onclick="abrirModalAgregarAsistencia('{{ $dato->n_dni }}', '{{ $dato->nombreu }}', '{{ $dato->fecha_asistencia }}')">
+                        onclick="abrirModalAgregarAsistencia(
+                    '{{ $dato->n_dni }}',
+                    '{{ $dato->nombreu }}',
+                    '{{ $dato->fecha_asistencia }}'
+               )">
                         {{ $dato->n_dni }}
                     </a>
                 </td>
+
                 <td>
                     <a href="javascript:void(0);"
-                        onclick="abrirModalModificar('{{ $dato->n_dni }}', '{{ $dato->nombreu }}', '{{ $dato->nombre_modulo }}', '{{ $dato->fecha_asistencia }}')">
+                        onclick="abrirModalModificar(
+                    '{{ $dato->n_dni }}',
+                    '{{ $dato->nombreu }}',
+                    '{{ $dato->nombre_modulo }}',
+                    '{{ $dato->fecha_asistencia }}'
+               )">
                         {{ $dato->nombre_modulo }}
                     </a>
                 </td>
+
                 <td class="text-uppercase">{{ $dato->ABREV_ENTIDAD }}</td>
                 <td>{{ $dato->NOMBRE_MAC }}</td>
                 <td>{{ \Carbon\Carbon::parse($dato->fecha_asistencia)->format('d-m-Y') }}</td>
+                <td class="text-center">
+                    @if (!empty($dato->flag_tardanza_grupal))
+                        <span class="badge bg-warning text-dark">
+                            Tardanza grupal
+                        </span>
+                    @elseif (!empty($dato->flag_tarde))
+                        <span class="badge bg-info text-dark">
+                            Tardanza
+                        </span>
+                    @elseif ($numHoras > 4)
+                        <span class="badge bg-danger">
+                            Exceso de marcaciones
+                        </span>
+                    @elseif (!empty($dato->flag_exceso))
+                        <span class="badge bg-danger">
+                            Exceso de marcaciones
+                        </span>
+                    @else
+                        <span class="badge bg-success">
+                            Puntual
+                        </span>
+                    @endif
+                </td>
                 <td>{{ $dato->HORA_1 }}</td>
                 <td>{{ $dato->HORA_2 }}</td>
                 <td>{{ $dato->HORA_3 }}</td>
                 <td>{{ $dato->HORA_4 }}</td>
+
                 <td>
                     <button class="btn btn-primary btn-sm"
                         onclick="btnModalView('{{ $dato->n_dni }}', '{{ $dato->fecha_asistencia }}')">
@@ -75,6 +135,7 @@
             </tr>
         @endforeach
     </tbody>
+
 </table>
 
 <script>
@@ -106,6 +167,9 @@
                 ">",
             language: {
                 "url": "{{ asset('js/Spanish.json') }}"
+            },
+            drawCallback: function() {
+                initBootstrapTooltips(); // 👈 CLAVE
             },
             "columns": [{
                     "width": ""
@@ -140,10 +204,24 @@
                 },
                 {
                     "width": ""
+                }, {
+                    "width": ""
                 }
             ]
         });
     });
+
+    function initBootstrapTooltips() {
+        const tooltipTriggerList = [].slice.call(
+            document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        );
+
+        tooltipTriggerList.forEach(el => {
+            if (!bootstrap.Tooltip.getInstance(el)) {
+                new bootstrap.Tooltip(el);
+            }
+        });
+    }
 
     function abrirModalModificar(num_doc, nombre_asesor, nombre_modulo, fecha_asistencia) {
         // Enviar los datos a través de AJAX para mostrar el modal

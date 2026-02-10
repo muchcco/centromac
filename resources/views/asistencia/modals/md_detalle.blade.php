@@ -76,6 +76,8 @@
                         idAsistencia: idAsistencia
                     },
                     success: function(response) {
+                        recargarTablaAlCerrarModal = true; 
+
                         if (response.success) {
                             Toastify({
                                 text: response.message,
