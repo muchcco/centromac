@@ -94,6 +94,20 @@ return [
             'engine' => null,
         ],
 
+        'asistencia_callao' => [
+            'driver' => 'mysql',
+            'host' => env('DB_CALLAO_HOST', '127.0.0.1'),
+            'port' => env('DB_CALLAO_PORT', '3306'),
+            'database' => env('DB_CALLAO_DATABASE', 'asistencia_callao'),
+            'username' => env('DB_CALLAO_USERNAME', 'root'),
+            'password' => env('DB_CALLAO_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => false,
+            'engine' => null,
+        ],
+
         'mysql2' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL2', config('database.connections.mysql2.url')),

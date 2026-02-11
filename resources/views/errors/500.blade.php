@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Pagina no encontrada</title>
+    <title>500 - Error del servidor</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -68,38 +68,38 @@
                 <ellipse cx="100" cy="140" rx="55" ry="40" fill="#c8a87c"/>
                 <!-- Cabeza -->
                 <circle cx="100" cy="80" r="42" fill="#d4b896"/>
-                <!-- Orejas -->
-                <ellipse cx="62" cy="55" rx="16" ry="28" fill="#a0785a" transform="rotate(-15 62 55)"/>
-                <ellipse cx="138" cy="55" rx="16" ry="28" fill="#a0785a" transform="rotate(15 138 55)"/>
-                <!-- Ojos -->
-                <circle cx="85" cy="75" r="7" fill="#333"/>
-                <circle cx="115" cy="75" r="7" fill="#333"/>
-                <circle cx="87" cy="73" r="2.5" fill="#fff"/>
-                <circle cx="117" cy="73" r="2.5" fill="#fff"/>
-                <!-- Cejas tristes -->
-                <line x1="78" y1="63" x2="92" y2="66" stroke="#5a4a3a" stroke-width="2.5" stroke-linecap="round"/>
-                <line x1="108" y1="66" x2="122" y2="63" stroke="#5a4a3a" stroke-width="2.5" stroke-linecap="round"/>
+                <!-- Orejas caidas -->
+                <ellipse cx="58" cy="62" rx="14" ry="26" fill="#a0785a" transform="rotate(-25 58 62)"/>
+                <ellipse cx="142" cy="62" rx="14" ry="26" fill="#a0785a" transform="rotate(25 142 62)"/>
+                <!-- Ojos con X (mareado) -->
+                <g stroke="#333" stroke-width="3" stroke-linecap="round">
+                    <line x1="80" y1="70" x2="90" y2="80"/>
+                    <line x1="90" y1="70" x2="80" y2="80"/>
+                    <line x1="110" y1="70" x2="120" y2="80"/>
+                    <line x1="120" y1="70" x2="110" y2="80"/>
+                </g>
                 <!-- Nariz -->
-                <ellipse cx="100" cy="90" rx="6" ry="4.5" fill="#333"/>
-                <!-- Boca triste -->
-                <path d="M 88 98 Q 100 92 112 98" stroke="#5a4a3a" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <ellipse cx="100" cy="92" rx="6" ry="4.5" fill="#333"/>
+                <!-- Lengua afuera -->
+                <path d="M 96 100 Q 100 112 104 100" fill="#e74c3c" stroke="#c0392b" stroke-width="1"/>
                 <!-- Patas delanteras -->
                 <ellipse cx="75" cy="175" rx="12" ry="8" fill="#d4b896"/>
                 <ellipse cx="125" cy="175" rx="12" ry="8" fill="#d4b896"/>
-                <!-- Cola -->
-                <path d="M 155 135 Q 175 115 168 100" stroke="#c8a87c" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <!-- Cola caida -->
+                <path d="M 155 140 Q 170 150 165 165" stroke="#c8a87c" stroke-width="8" fill="none" stroke-linecap="round"/>
                 <!-- Collar -->
-                <path d="M 68 110 Q 100 125 132 110" stroke="#e74c3c" stroke-width="4" fill="none" stroke-linecap="round"/>
+                <path d="M 68 110 Q 100 125 132 110" stroke="#3498db" stroke-width="4" fill="none" stroke-linecap="round"/>
                 <circle cx="100" cy="118" r="4" fill="#f1c40f"/>
+                <!-- Estrellas de mareo -->
+                <text x="60" y="45" font-size="14" fill="#f39c12">&#9733;</text>
+                <text x="130" y="42" font-size="10" fill="#f39c12">&#9733;</text>
+                <text x="145" y="55" font-size="12" fill="#f39c12">&#9733;</text>
             </svg>
         </div>
-        <div class="error-code">404</div>
-        <div class="error-title">Pagina no encontrada</div>
+        <div class="error-code">500</div>
+        <div class="error-title">Error interno del servidor</div>
         <div class="error-message">
-            Lo sentimos, la pagina que buscas no existe o fue movida.
-            @if(!empty($errorMessage))
-                <br><small style="color:#999;">{{ $errorMessage }}</small>
-            @endif
+            Algo salio mal en nuestro servidor. Estamos trabajando para solucionarlo.
         </div>
         <a href="{{ url('/') }}" class="btn-home">Volver al inicio</a>
     </div>

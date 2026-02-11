@@ -13,6 +13,7 @@ use App\Models\Asistenciatest;
 use App\Models\Entidad;
 use App\Models\Mac;
 use App\Jobs\ProcessAsistenciaTxt;
+use App\Jobs\ProcessAsistenciaCallao;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use App\Imports\AsistenciaImport;
@@ -759,152 +760,33 @@ class AsistenciaController extends Controller
     }
     public function store_asistencia_callao(Request $request)
     {
-        // Inicializar el progreso a 0%
-        Cache::put('upload_progress', 0);
+        $request->validate([
+            'txt_file' => 'required|file',
+        ]);
 
-        if ($request->hasFile('txt_file') && $request->file('txt_file')->isValid()) {
-            $fileTmpPath = $request->file('txt_file')->getPathName();
-            $dsn = "odbc:Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=$fileTmpPath;";
+        $file = $request->file('txt_file');
+        $idCentroMac = $this->centro_mac()->idmac;
+        $fechaInicio = $request->fecha_inicio;
+        $fechaFin = $request->fecha_fin;
 
-            try {
-                $accessDb = new PDO($dsn);
-                $mysqli = new mysqli('localhost', 'root', '', 'asistencia_callao');
-                if ($mysqli->connect_error) {
-                    return response()->json(['success' => false, 'message' => 'Error de conexión a MySQL: ' . $mysqli->connect_error], 500);
-                }
-                $mysqli->set_charset('utf8mb4');
+        $filename = 'asistencia_callao_' . now()->format('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $file->getClientOriginalExtension();
+        $storedPath = $file->storeAs('asistencia-accdb', $filename);
+        $uploadToken = bin2hex(random_bytes(8));
+        Cache::put('upload_progress:' . $uploadToken, 0);
+        Cache::put('upload_status:' . $uploadToken, 'queued');
 
-                // Actualiza el progreso al 10%
-                Cache::put('upload_progress', 10);
+        $jobId = Queue::connection('database')->push(
+            new ProcessAsistenciaCallao($storedPath, $idCentroMac, $uploadToken, $fechaInicio, $fechaFin),
+            '',
+            'asistencia'
+        );
+        Cache::put('upload_job_id:' . $uploadToken, $jobId);
 
-                $tablesQuery = $accessDb->query("SELECT Name FROM MSysObjects WHERE Type=1 AND Name NOT LIKE 'MSys%'");
-                $tables = $tablesQuery->fetchAll(PDO::FETCH_COLUMN);
-
-                // Actualiza el progreso al 20%
-                Cache::put('upload_progress', 20);
-
-                foreach ($tables as $table) {
-                    if ($table === 'Switchboard Items') {
-                        continue;
-                    }
-
-                    try {
-                        $dataQuery = $accessDb->query("SELECT * FROM [$table]");
-                        $rows = $dataQuery->fetchAll(PDO::FETCH_ASSOC);
-                    } catch (PDOException $e) {
-                        continue;
-                    }
-
-                    if (!empty($rows)) {
-                        $columns = array_keys($rows[0]);
-                        $tableExistsQuery = $mysqli->query("SHOW TABLES LIKE '$table'");
-
-                        if ($tableExistsQuery->num_rows > 0) {
-                            $mysqli->query("ALTER TABLE `$table` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                            foreach ($columns as $column) {
-                                $mysqli->query("ALTER TABLE `$table` MODIFY `$column` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                            }
-                        } else {
-                            $columnsSQL = [];
-                            foreach ($columns as $column) {
-                                $columnsSQL[] = "`$column` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-                            }
-                            $createTableSQL = "CREATE TABLE `$table` (" . implode(', ', $columnsSQL) . ")";
-                            if (!$mysqli->query($createTableSQL)) {
-                                continue;
-                            }
-                        }
-
-                        $mysqli->query("DELETE FROM `$table`");
-
-                        foreach ($rows as &$row) {
-                            array_walk_recursive($row, function (&$value) {
-                                if (!mb_check_encoding($value, 'UTF-8')) {
-                                    $value = utf8_encode($value);
-                                }
-                            });
-
-                            $values = array_map(function ($value) use ($mysqli) {
-                                if (is_null($value)) {
-                                    return 'NULL';
-                                }
-                                $escapedValue = $mysqli->real_escape_string($value);
-                                return "'" . $escapedValue . "'";
-                            }, $row);
-
-                            $insertSQL = "INSERT INTO `$table` (" . implode(',', array_keys($row)) . ") VALUES (" . implode(',', $values) . ")";
-                            $mysqli->query($insertSQL);
-                        }
-                    }
-
-                    // Simula actualizar el progreso para cada tabla procesada
-                    // (Esto es solo un ejemplo; en un caso real, el porcentaje dependerá de tu lógica de procesamiento)
-                    $currentProgress = Cache::get('upload_progress', 0);
-                    // Incrementa el progreso en 10% por cada tabla procesada (ajusta según el número de tablas y la lógica)
-                    Cache::put('upload_progress', min($currentProgress + 10, 90));
-                }
-
-                $idmac_callao = $this->centro_mac()->idmac;
-                $fecha_inicio = $request->fecha_inicio;
-                $fecha_fin    = $request->fecha_fin;
-
-                $call_centro = DB::select("INSERT INTO M_ASISTENCIA (
-                                                    IDTIPO_ASISTENCIA,
-                                                    NUM_DOC,
-                                                    IDCENTRO_MAC,
-                                                    MES,
-                                                    AÑO,
-                                                    FECHA,
-                                                    HORA,
-                                                    FECHA_BIOMETRICO,
-                                                    NUM_BIOMETRICO,
-                                                    CORRELATIVO,
-                                                    CORRELATIVO_DIA
-                                                )
-                                                SELECT 
-                                                    2,
-                                                    ui.ssn AS DNI,
-                                                    $idmac_callao AS nom_mac,
-                                                    LPAD(MONTH(chk.CHECKTIME), 2, '0') AS mes,
-                                                    YEAR(chk.CHECKTIME) AS anio,
-                                                    DATE(chk.CHECKTIME) AS fecha,
-                                                    TIME_FORMAT(chk.CHECKTIME, '%H:%i:%s') AS hora,
-                                                    chk.CHECKTIME AS FECHA_BIOMETRICO,
-                                                    '', -- NUM_BIOMETRICO.
-                                                    '', -- CORRELATIVO.
-                                                    ''  -- CORRELATIVO_DIA.
-                                                FROM asistencia_callao.checkinout chk
-                                                JOIN asistencia_callao.userinfo ui ON ui.userid = chk.userid
-                                                WHERE ui.ssn IS NOT NULL
-                                                AND ui.ssn > 0
-                                                AND DATE(chk.CHECKTIME) BETWEEN '$fecha_inicio' AND '$fecha_fin'
-                                                AND NOT EXISTS (
-                                                        SELECT 2 
-                                                        FROM M_ASISTENCIA ma
-                                                        WHERE 
-                                                            ma.NUM_DOC = ui.ssn COLLATE utf8mb4_unicode_ci
-                                                            AND ma.IDCENTRO_MAC = $idmac_callao
-                                                            AND ma.FECHA = DATE(chk.CHECKTIME)
-                                                            AND ma.HORA = TIME_FORMAT(chk.CHECKTIME, '%H:%i:%s')
-                                                );");
-
-                // Finalmente, actualiza el progreso al 100% cuando termine todo el procesamiento
-                Cache::put('upload_progress', 100);
-
-                $responseData = ['success' => true, 'message' => 'Asistencias cargadas exitosamente.'];
-                array_walk_recursive($responseData, function (&$item) {
-                    if (!mb_check_encoding($item, 'UTF-8')) {
-                        $item = utf8_encode($item);
-                    }
-                });
-
-                return response()->json($responseData);
-            } catch (PDOException $e) {
-                return response()->json(['success' => false, 'message' => 'Error al procesar el archivo Access: ' . $e->getMessage()], 500);
-            }
-        } else {
-            return response()->json(['success' => false, 'message' => 'No se envió ningún archivo o hubo un error en la carga.'], 400);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+            'upload_token' => $uploadToken,
+        ]);
     }
 
     public function getUploadProgress(Request $request)
