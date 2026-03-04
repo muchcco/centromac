@@ -158,7 +158,8 @@ class ConfiguracionController extends Controller
 
         // dd($us_exist_array);
 
-        $entidad_completo = Entidad::whereNotIn('IDENTIDAD', $us_exist_array)->get();
+        // $entidad_completo = Entidad::whereNotIn('IDENTIDAD', $us_exist_array)->get();
+        $entidad_completo = Entidad::get();
 
         $modulos = DB::table('M_MODULO')->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD')->where('M_MODULO.IDCENTRO_MAC',  $idcentro_mac)->get();
         // dd($modulos);
@@ -169,6 +170,14 @@ class ConfiguracionController extends Controller
     public function addEntidad(Request $request)
     {
         try{
+
+            $exist = DB::table('M_MAC_ENTIDAD')->where('idcentro_mac', $request->idmac)->where('IDENTIDAD', $request->addEntidad)->get();
+
+            // dd($exist);
+
+            if($exist){
+                return response()->json(['message' => 'Entidad ya existe'], 400);
+            }
 
             $save = DB::table('M_MAC_ENTIDAD')->insert([
                 'IDCENTRO_MAC'      =>      $request->idmac,

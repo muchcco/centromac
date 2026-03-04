@@ -107,7 +107,7 @@
                                 <select name="addEntidad" id="addEntidad" class="select2 form-select ">
                                     <option value="">-- Seleccionar Entidad --</option>
                                     @foreach ($entidad_completo as $ent)
-                                        <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }}</option>
+                                        <option value="{{ $ent->IDENTIDAD }}">{{ $ent->NOMBRE_ENTIDAD }} - {{ $ent->ABREV_ENTIDAD }}</option>
                                     @endforeach
                                 </select>
                                 <span class="shadow-none col-3">
@@ -296,6 +296,34 @@ function btnAddEntidad() {
             $( "#datos" ).load(window.location.href + " #datos" ); 
             $( "#datos-mod-enc" ).load(window.location.href + " #datos-mod-enc" );
             // tabla_seccion();
+        },
+        error: function(xhr, status, error) {
+            document.getElementById("btn-guardar").innerHTML = 'Agregar';
+            document.getElementById("btn-guardar").disabled = false;
+
+            let mensaje = "Ocurrio un error al registrar la entidad.";
+
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                mensaje = xhr.responseJSON.message;
+            } else if (xhr.responseText) {
+                try {
+                    const respuesta = JSON.parse(xhr.responseText);
+                    if (respuesta.message) {
+                        mensaje = respuesta.message;
+                    }
+                } catch (e) {
+                    mensaje = xhr.responseText;
+                }
+            } else if (error) {
+                mensaje = error;
+            }
+
+            console.error("Error en addEntidad:", {
+                status: status,
+                error: error,
+                responseText: xhr.responseText
+            });
+            toastr.error(mensaje);
         }
     });
 
