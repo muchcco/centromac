@@ -78,6 +78,8 @@ class Puntualidad1Controller extends Controller
         $fecha_fin = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->endOfMonth()->format('Y-m-d');
         $numeroDias = Carbon::create($fecha_año, $fecha_mes, 1)->daysInMonth;
 
+        $hoy = Carbon::today()->format('Y-m-d');
+
         $modulos = DB::table('m_modulo')
             ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
             ->where('m_modulo.idcentro_mac', $idmac)
@@ -138,6 +140,12 @@ class Puntualidad1Controller extends Controller
             }
 
             $fecha = sprintf('%04d-%02d-%02d', $fecha_año, $fecha_mes, $dia);
+
+            // no consultar dias futuros
+            if ($fecha > $hoy) {
+                continue;
+            }
+
             $esFeriado = in_array($fecha, $feriados);
 
             $resultados = DB::select("

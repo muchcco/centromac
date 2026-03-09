@@ -91,6 +91,9 @@ class Ocupabilidad1Controller extends Controller
         $fecha_inicio = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->startOfMonth()->format('Y-m-d');
         $fecha_fin = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->endOfMonth()->format('Y-m-d');
 
+        // fecha actual
+        $hoy = Carbon::today()->format('Y-m-d');
+
         // array dias
         $dias = [];
 
@@ -163,6 +166,11 @@ class Ocupabilidad1Controller extends Controller
             $esFeriado = in_array($fecha, $feriados);
 
             $diaCerrado = in_array($fecha, $diasCerrados);
+
+            // si es dia futuro no consultar
+            if ($fecha > $hoy) {
+                continue;
+            }
 
             // si esta cerrado usar pivot
             if ($diaCerrado && isset($pivotDias[$dia])) {
