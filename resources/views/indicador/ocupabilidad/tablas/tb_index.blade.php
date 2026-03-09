@@ -54,7 +54,8 @@
                         if ($fechaActual === '2025-09-06' && $modulo->identidad == 6) {
                             $esFeriado = true;
                         }
-                        
+                        $diaCerrado = in_array($fechaActual, $diasCerrados);
+
                         $activo = $fechaActual >= $modulo->fechainicio && $fechaActual <= $modulo->fechafin;
                     @endphp
 
@@ -69,7 +70,17 @@
                             }
                         @endphp
                         <td
-                            style="min-width: 28px; @if ($mostrarSi) color: black !important; background: none @else background: #2F75B5; color: white !important @endif">
+                            style="min-width:28px;
+                                    @if ($diaCerrado) @if ($mostrarSi)
+                                            background:#ffffff; color:black;
+                                        @else
+                                            background:#2F75B5; color:white; @endif
+                                    @else
+                                    @if ($mostrarSi) background:#ffb3b3; color:black;
+                                        @else
+                                            background:#8b0000; color:white; @endif
+                                    @endif
+                                    ">
                             @if ($mostrarSi)
                                 <span class="text-center">SI</span>
                             @else
