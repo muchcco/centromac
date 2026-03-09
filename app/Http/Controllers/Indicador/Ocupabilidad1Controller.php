@@ -46,18 +46,8 @@ class Ocupabilidad1Controller extends Controller
 
     public function tb_index(Request $request)
     {
-        // obtener mac
-        $idmac = $request->input('mac');
+        $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
 
-        if (empty($idmac)) {
-            $idmac = auth()->user()->idcentro_mac;
-        }
-
-        if (empty($idmac)) {
-            $idmac = 11;
-        }
-
-        // nombre mac
         $mac = DB::table('M_CENTRO_MAC')
             ->where('IDCENTRO_MAC', $idmac)
             ->select('NOMBRE_MAC')
@@ -65,11 +55,9 @@ class Ocupabilidad1Controller extends Controller
 
         $nombreMac = $mac ? $mac->NOMBRE_MAC : 'Nombre no disponible';
 
-        // año y mes
         $fecha_año = $request->año ?: date('Y');
         $fecha_mes = $request->mes ?: date('m');
 
-        // nombre mes
         $meses = [
             '01' => 'Enero',
             '02' => 'Febrero',
@@ -87,28 +75,23 @@ class Ocupabilidad1Controller extends Controller
 
         $mesNombre = $meses[$fecha_mes];
 
-        // fechas rango
-        $fecha_inicio = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->startOfMonth()->format('Y-m-d');
-        $fecha_fin = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->endOfMonth()->format('Y-m-d');
+        $fecha_inicio = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->format('Y-m-d');
+        $fecha_fin    = Carbon::createFromDate($fecha_año, $fecha_mes, 1)->endOfMonth()->format('Y-m-d');
+        $numeroDias   = Carbon::create($fecha_año, $fecha_mes, 1)->daysInMonth;
 
-        // fecha actual
-        $hoy = Carbon::today()->format('Y-m-d');
+        $hoy = Carbon::now();
+        $diaActual = ($fecha_año == $hoy->year && $fecha_mes == $hoy->format('m')) ? $hoy->day : $numeroDias;
 
-        // array dias
-        $dias = [];
-
-        // modulos activos
         $modulos = DB::table('m_modulo')
             ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
             ->where('m_modulo.idcentro_mac', $idmac)
-            ->where(function ($query) use ($fecha_inicio, $fecha_fin) {
-                $query->where('m_modulo.fechainicio', '<=', $fecha_fin)
+            ->where('m_modulo.es_administrativo', 'NO')
+            ->where(function ($q) use ($fecha_inicio, $fecha_fin) {
+                $q->where('m_modulo.fechainicio', '<=', $fecha_fin)
                     ->where('m_modulo.fechafin', '>=', $fecha_inicio);
             })
-            ->where('m_modulo.es_administrativo', 'NO')
             ->select(
                 'm_modulo.idmodulo',
-                'm_modulo.identidad',
                 'm_modulo.n_modulo',
                 'm_entidad.nombre_entidad',
                 'm_modulo.fechainicio',
@@ -116,141 +99,102 @@ class Ocupabilidad1Controller extends Controller
             )
             ->get();
 
-        // feriados
         $feriados = DB::table('feriados')
             ->whereYear('fecha', $fecha_año)
             ->whereMonth('fecha', $fecha_mes)
-            ->where(function ($query) use ($idmac) {
-                $query->where('id_centromac', $idmac)
+            ->where(function ($q) use ($idmac) {
+                $q->where('id_centromac', $idmac)
                     ->orWhereNull('id_centromac');
             })
             ->pluck('fecha')
             ->toArray();
 
-        // dias del mes
-        $numeroDias = Carbon::create($fecha_año, $fecha_mes, 1)->daysInMonth;
+        $diasCerrados = DB::table('db_centro_mac_reporte.asistencia_resumen')
+            ->where('idmac', $idmac)
+            ->whereBetween('fecha_asistencia', [$fecha_inicio, $fecha_fin])
+            ->pluck(DB::raw('DAY(fecha_asistencia)'))
+            ->toArray();
 
-        // pivot mensual
-        $pivot = DB::select("
-        CALL db_centros_mac.SP_ASISTENCIA_PIVOT_MENSUAL_MAC(?, ?, ?)
-    ", [$idmac, $fecha_año, $fecha_mes]);
+        $spRaw = DB::select(
+            "CALL db_centro_mac_reporte.SP_OCUPABILIDAD_MENSUAL_PIVOT(?,?,?)",
+            [$idmac, $fecha_año, $fecha_mes]
+        );
 
-        $pivotDias = [];
+        $sp = [];
 
-        foreach ($pivot as $row) {
-
-            for ($d = 1; $d <= 31; $d++) {
-
-                $col = "D" . $d;
-
+        foreach ($spRaw as $row) {
+            for ($d = 1; $d <= $numeroDias; $d++) {
+                $col = 'd' . str_pad($d, 2, '0', STR_PAD_LEFT);
                 if (isset($row->$col)) {
-
-                    $pivotDias[$d][$row->IDMODULO] = $row->$col;
+                    $sp[$d][$row->idmodulo] = $row->$col;
                 }
             }
         }
 
-        // dias cerrados
-        $diasCerrados = DB::table('db_centro_mac_reporte.asistencia_resumen')
-            ->where('idmac', $idmac)
-            ->whereYear('fecha_asistencia', $fecha_año)
-            ->whereMonth('fecha_asistencia', $fecha_mes)
-            ->pluck('fecha_asistencia')
-            ->toArray();
+        $dias = [];
 
-        // recorrer dias
         for ($dia = 1; $dia <= $numeroDias; $dia++) {
 
-            $fecha = sprintf('%04d-%02d-%02d', $fecha_año, $fecha_mes, $dia);
+            if ($dia > $diaActual) {
+                continue;
+            }
 
+            if (in_array($dia, $diasCerrados)) {
+                continue;
+            }
+
+            $fecha = sprintf('%04d-%02d-%02d', $fecha_año, $fecha_mes, $dia);
             $esFeriado = in_array($fecha, $feriados);
 
-            $diaCerrado = in_array($fecha, $diasCerrados);
-
-            // si es dia futuro no consultar
-            if ($fecha > $hoy) {
-                continue;
-            }
-
-            // si esta cerrado usar pivot
-            if ($diaCerrado && isset($pivotDias[$dia])) {
-
-                foreach ($pivotDias[$dia] as $mod => $valor) {
-
-                    if ($valor > 0) {
-
-                        $dias[$dia][$mod] = [
-                            'idmodulo' => $mod,
-                            'hora_minima' => '08:00:00',
-                            'es_feriado' => $esFeriado
-                        ];
-                    }
-                }
-
-                continue;
-            }
-
-            // si no cerrado usar calculo normal
             $resultados = DB::select("
-            WITH CTE AS (
-                SELECT 
-                    pm.IDMODULO,
-                    p.NUM_DOC,
-                    a.HORA,
-                    pm.status
-                FROM m_personal_modulo pm
-                JOIN m_personal p ON pm.NUM_DOC=p.NUM_DOC
-                JOIN m_modulo m ON pm.IDMODULO=m.IDMODULO
-                INNER JOIN m_asistencia a 
-                    ON pm.NUM_DOC=a.NUM_DOC 
-                    AND a.FECHA=?
-                WHERE pm.status IN ('itinerante','fijo')
-                AND ? BETWEEN pm.fechainicio AND pm.fechafin
-                AND a.IDCENTRO_MAC=?
-            )
+        WITH CTE AS (
             SELECT 
-                IDMODULO,
-                MIN(CASE WHEN status='itinerante' THEN hora END) AS hora_minima_itinerante,
-                CASE 
-                    WHEN MIN(CASE WHEN status='itinerante' THEN hora END) IS NOT NULL 
-                    THEN NULL
-                    ELSE MIN(CASE WHEN status='fijo' THEN hora END)
-                END AS hora_minima_fijo,
-                CASE 
-                    WHEN MIN(CASE WHEN status='itinerante' THEN hora END) IS NOT NULL 
-                    THEN MIN(CASE WHEN status='itinerante' THEN hora END)
-                    ELSE MIN(CASE 
-                        WHEN status='fijo'
-                        AND NUM_DOC NOT IN (
-                            SELECT NUM_DOC FROM CTE WHERE status='itinerante'
-                        )
-                        THEN hora
-                    END)
-                END AS hora_minima,
-                CASE 
-                    WHEN MIN(CASE WHEN status='itinerante' THEN hora END) IS NOT NULL 
-                    THEN MAX(CASE WHEN status='itinerante' THEN NUM_DOC END)
-                    ELSE MAX(CASE 
-                        WHEN status='fijo'
-                        AND NUM_DOC NOT IN (
-                            SELECT NUM_DOC FROM CTE WHERE status='itinerante'
-                        )
-                        THEN NUM_DOC
-                    END)
-                END AS num_doc
-            FROM CTE
-            GROUP BY IDMODULO
-            HAVING hora_minima IS NOT NULL
-            ORDER BY IDMODULO
+                pm.IDMODULO,
+                p.NUM_DOC,
+                a.HORA,
+                pm.status
+            FROM m_personal_modulo pm
+            JOIN m_personal p ON pm.NUM_DOC = p.NUM_DOC
+            JOIN m_modulo m ON pm.IDMODULO = m.IDMODULO
+            JOIN m_asistencia a 
+                ON pm.NUM_DOC = a.NUM_DOC
+               AND a.FECHA = ?
+            WHERE pm.status IN ('itinerante','fijo')
+              AND ? BETWEEN pm.fechainicio AND pm.fechafin
+              AND a.IDCENTRO_MAC = ?
+        )
+        SELECT 
+            IDMODULO,
+            CASE 
+                WHEN MIN(CASE WHEN status='itinerante' THEN HORA END) IS NOT NULL
+                THEN MIN(CASE WHEN status='itinerante' THEN HORA END)
+                ELSE MIN(CASE WHEN status='fijo' THEN HORA END)
+            END AS hora_minima
+        FROM CTE
+        GROUP BY IDMODULO
+        HAVING hora_minima IS NOT NULL
         ", [$fecha, $fecha, $idmac]);
 
-            foreach ($resultados as $resultado) {
-
-                $dias[$dia][$resultado->IDMODULO] = [
-                    'idmodulo' => $resultado->IDMODULO,
-                    'hora_minima' => $resultado->hora_minima,
-                    'es_feriado' => $esFeriado
+            foreach ($resultados as $r) {
+                $dias[$dia][$r->IDMODULO] = [
+                    'hora_minima' => $r->hora_minima,
+                    'es_feriado'  => $esFeriado
                 ];
+            }
+        }
+
+        $final = [];
+
+        for ($dia = 1; $dia <= $numeroDias; $dia++) {
+            foreach ($modulos as $m) {
+
+                if (isset($sp[$dia][$m->idmodulo])) {
+                    $final[$dia][$m->idmodulo] = $sp[$dia][$m->idmodulo];
+                } elseif (isset($dias[$dia][$m->idmodulo])) {
+                    $final[$dia][$m->idmodulo] = $dias[$dia][$m->idmodulo]['hora_minima'];
+                } else {
+                    $final[$dia][$m->idmodulo] = null;
+                }
             }
         }
 
@@ -259,13 +203,13 @@ class Ocupabilidad1Controller extends Controller
             compact(
                 'mesNombre',
                 'nombreMac',
-                'dias',
+                'final',
                 'modulos',
                 'numeroDias',
                 'fecha_año',
                 'fecha_mes',
-                'feriados',
-                'diasCerrados'
+                'diasCerrados',
+                'feriados'
             )
         );
     }
