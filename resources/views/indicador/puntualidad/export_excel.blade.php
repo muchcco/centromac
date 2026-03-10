@@ -4,109 +4,187 @@
     </tr>
 </table>
 
-<table>
-    <tr>
-        <th style="border: 1px solid black" rowspan="3" colspan="3"></th>
-        <th style="border: 1px solid black" colspan="28" rowspan="2">
-            REPORTE CONSOLIDADO DE PUNTUALIDAD DE OCUPABILIDAD DE LOS MÓDULOS DE LAS ENTIDADES PARTICIPANTES POR
-            MES<br />
-            Período evaluado Enero a diciembre {{ $fecha_año }}
-        </th>
-        <th style="border: 1px solid black"> Código</th>
-        <th style="border: 1px solid black" colspan="2">ANS2</th>
-    </tr>
-    <tr>
-        <th style="border: 1px solid black">Versión</th>
-        <th style="border: 1px solid black" colspan="2">1.0.0</th>
-    </tr>
-    <tr>
-        <th style="border: 1px solid black" colspan="2">Centro MAC</th>
-        <th style="border: 1px solid rgb(0, 0, 0)" colspan="15">{{ $nombreMac }} </th>
-        <th style="border: 1px solid black" colspan="2">MES:</th>
-        <th style="border: 1px solid black" colspan="12">{{ $mesNombre }}</th>
-    </tr>
-</table>
+@php
+    $hoy = \Carbon\Carbon::today()->format('Y-m-d');
+@endphp
 
-<table>
-    <tr>
-        <td rowspan="2" colspan="2" style="text-align: end; border: none;">Leyenda</td>
-        <td style="border: 1px solid #2F75B5; text-align: center;">SI</td>
-        <td colspan="19" style="text-align: start !important; border: 1px solid #2F75B5;">Módulo ocupado 15 minutos
-            antes del inicio de atención al público del Centro MAC.</td>
-    </tr>
-    <tr>
-        <td style="color: white; border: 1px solid #2F75B5; background: #2F75B5; text-align: center;">NO</td>
-        <td colspan="19" style="text-align: start !important;border: 1px solid #2F75B5;">Módulo que no estuvo ocupado
-            15 minutos antes del inicio de atención al público del Centro MAC.</td>
-    </tr>
-</table>
 
-<table class="table table-bor" style="border: 1px solid black">
-    <thead style="background: #3D61B2; color:#fff;">
-        <tr style="border: 1px solid black; color: #fff;">
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4;">MODULOS</th>
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4;">NOMBRE DE LAS ENTIDADES</th>
-            @for ($i = 1; $i <= $numeroDias; $i++)
-                <th style="color: white; border: 1px solid black; background-color: #0B22B4;">{{ $i }}</th>
-            @endfor
-            <th style="color: white; border: 1px solid black; background-color: #0B22B4;">OBSERVACIONES O COMENTARIOS
-            </th>
-        </tr>
-    </thead>
+<table style="border-collapse:collapse;width:100%;font-family:Calibri,Arial;font-size:12px">
 
     <tbody>
-        @forelse ($modulos as $modulo)
-            <tr>
-                <td style="border: 1px solid #2F75B5">{{ $modulo->n_modulo }}</td>
-                <td style="border: 1px solid #2F75B5">{{ $modulo->nombre_entidad }}</td>
-                @for ($i = 1; $i <= $numeroDias; $i++)
-                    @php
-                        $fechaActual = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->format('Y-m-d');
-                        $esDomingo = Carbon\Carbon::create($fecha_año, $fecha_mes, $i)->isSunday();
-                        $esFeriado = in_array($fechaActual, $feriados);
-                        $esActivo = $fechaActual >= $modulo->fechainicio && $fechaActual <= $modulo->fechafin;
-                    @endphp
 
-                    @if ($esDomingo || $esFeriado)
-                        <td style="border: 1px solid #ffffff; min-width: 28px; background:#323232;">&nbsp;</td>
-                    @elseif ($esActivo)
-                        <td
-                            style="min-width: 28px; 
-                            @if (isset($dias[$i][$modulo->idmodulo]['hora_minima'])) @php
-                                    $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
-                                    $horaLimite = '08:16';
-                                    $horaRegistro = new DateTime($horaMinima);
-                                    $horaLimiteObj = new DateTime($horaLimite);
-                                    $esTarde = $horaRegistro >= $horaLimiteObj; // Cambié la comparación para incluir 08:16
-                            @endphp
-                                @if (!$esTarde) 
-                                    background: #FFFFFF; color: #000; /* SI */
-                                @else
-                                    background: #2F75B5; color: #fff; /* NO */ @endif
-@else
-background: #474747; color: #fff; /* - */
-                            @endif">
-                            @if (isset($dias[$i][$modulo->idmodulo]['hora_minima']))
-                                @php
-                                    $horaMinima = $dias[$i][$modulo->idmodulo]['hora_minima'];
-                                    $esTarde = new DateTime($horaMinima) >= new DateTime('08:16');
-                                @endphp
-                                <span class="text-center">{{ !$esTarde ? 'SI' : 'NO' }}</span>
-                            @else
-                                <span class="text-center">-</span> <!-- Si no hay registro y está activo -->
-                            @endif
-                        </td>
-                    @else
-                        <td style="border: 1px solid #2F75B5"></td> <!-- Celda vacía fuera del rango activo -->
-                    @endif
-                @endfor
-                <td style="border: 1px solid #2F75B5"></td> <!-- Columna de observaciones vacía -->
-            </tr>
-        @empty
-            <tr>
-                <td colspan="{{ $numeroDias + 3 }}" class="text-center">No hay datos disponibles</td>
-            </tr>
-        @endforelse
+        <tr>
+
+            <td rowspan="3" colspan="2" style="border:1px solid #000"></td>
+
+            <td colspan="{{ $numeroDias }}" rowspan="2"
+                style="border:1px solid #000;text-align:center;font-weight:bold;font-size:12px">
+
+                REPORTE CONSOLIDADO DE PUNTUALIDAD DE OCUPABILIDAD DE LOS MÓDULOS
+                DE LAS ENTIDADES PARTICIPANTES POR MES
+
+                <br>
+
+                <span style="color:#c00000">
+                    Período evaluado Enero a diciembre {{ $fecha_año }}
+                </span>
+
+            </td>
+
+            <td style="border:1px solid #000;text-align:center">Código</td>
+            <td style="border:1px solid #000;text-align:center">ANS2</td>
+
+        </tr>
+
+        <tr>
+
+            <td style="border:1px solid #000;text-align:center">Versión</td>
+            <td style="border:1px solid #000;text-align:center">1.0.0</td>
+
+        </tr>
+
+        <tr>
+
+            <td colspan="4" style="border:1px solid #000;text-align:center;font-weight:bold;background:#e7edf7">
+                Centro MAC
+            </td>
+
+            <td colspan="15" style="border:1px solid #000;text-align:center">
+                {{ $nombreMac }}
+            </td>
+
+            <td style="border:1px solid #000;text-align:center;font-weight:bold;background:#e7edf7">
+                MES
+            </td>
+
+            <td colspan="12" style="border:1px solid #000;text-align:center">
+                {{ $mesNombre }}
+            </td>
+
+        </tr>
 
     </tbody>
+</table>
+
+
+<table style="border-collapse:collapse;width:100%;border:1px solid #000;font-family:Calibri">
+
+    <thead>
+
+        <tr>
+
+            <th style="border:1px solid #000;background:#0B22B4;color:#fff;text-align:center;width:60px">
+                MODULOS
+            </th>
+
+            <th style="border:1px solid #000;background:#0B22B4;color:#fff;text-align:center;width:260px">
+                NOMBRE DE LAS ENTIDADES
+            </th>
+
+            @for ($i = 1; $i <= $numeroDias; $i++)
+                <th style="border:1px solid #000;background:#0B22B4;color:#fff;text-align:center;width:28px">
+                    {{ $i }}
+                </th>
+            @endfor
+
+            <th style="border:1px solid #000;background:#0B22B4;color:#fff;text-align:center;width:90px">
+                OBSERVACIONES
+            </th>
+
+        </tr>
+
+    </thead>
+
+
+    <tbody style="border:2px solid #173A7E">
+
+        @foreach ($modulos as $modulo)
+            <tr>
+
+                <td style="border:1px solid #173A7E;text-align:center">
+                    {{ $modulo->n_modulo }}
+                </td>
+
+                <td style="border:1px solid #173A7E;padding:4px;white-space:normal;word-wrap:break-word">
+                    {{ $modulo->nombre_entidad }}
+                </td>
+
+                @for ($d = 1; $d <= $numeroDias; $d++)
+                    @php
+
+                        $fechaObj = \Carbon\Carbon::create($fecha_año, $fecha_mes, $d);
+
+                        $fecha = $fechaObj->format('Y-m-d');
+
+                        $esFuturo = $fecha > $hoy;
+
+                        $esDomingo = $fechaObj->isSunday();
+
+                        $esFeriado = in_array($fecha, $feriados);
+
+                        $activo = $fecha >= $modulo->fechainicio && $fecha <= $modulo->fechafin;
+
+                        $cerrado = in_array($d, $diasCerrados);
+
+                        $hora = $final[$d][$modulo->idmodulo] ?? null;
+
+                        $estado = '-';
+
+                        if ($hora) {
+                            $estado = $hora < '08:16' ? 'SI' : 'NO';
+                        }
+
+                    @endphp
+
+
+                    {{-- FUTURO --}}
+                    @if ($esFuturo)
+                        <td style="border:1px solid #173A7E;background:#666;color:white;text-align:center">*</td>
+
+
+                        {{-- DOMINGO / FERIADO --}}
+                    @elseif($esDomingo || $esFeriado || !$activo)
+                        <td style="border:1px solid #173A7E;background:#8a8a8a;color:white;text-align:center">*</td>
+
+
+                        {{-- DIA CERRADO --}}
+                    @elseif($cerrado)
+                        <td
+                            style="
+border:1px solid #173A7E;
+background:
+{{ $estado == 'SI' ? '#ffffff' : ($estado == 'NO' ? '#2F75B5' : '#474747') }};
+color:{{ $estado == 'NO' ? 'white' : 'black' }};
+text-align:center;
+">
+
+                            {{ $estado }}
+
+                        </td>
+
+
+                        {{-- DIA ABIERTO --}}
+                    @else
+                        <td
+                            style="
+border:1px solid #173A7E;
+background:
+{{ $estado == 'SI' ? '#e9a2a9' : ($estado == 'NO' ? '#C00000' : '#474747') }};
+color:white;
+text-align:center;
+">
+
+                            {{ $estado }}
+
+                        </td>
+                    @endif
+                @endfor
+
+                <td style="border:1px solid #173A7E"></td>
+
+            </tr>
+        @endforeach
+
+    </tbody>
+
 </table>
