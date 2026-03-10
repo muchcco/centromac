@@ -1,10 +1,10 @@
 <?php
+
 namespace App\Exports;
 
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\Style;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -22,22 +22,33 @@ class IndicadorPuntualidadExport implements FromView, WithDefaultStyles, ShouldA
 
     protected $mesNombre;
     protected $nombreMac;
-    protected $dias;
+    protected $final;
     protected $modulos;
     protected $numeroDias;
     protected $fecha_año;
     protected $fecha_mes;
     protected $feriados;
+    protected $diasCerrados;
 
-    function __construct($mesNombre, $nombreMac, $dias,  $modulos, $numeroDias, $fecha_año, $fecha_mes, $feriados)
-    {
+    function __construct(
+        $mesNombre,
+        $nombreMac,
+        $final,
+        $modulos,
+        $numeroDias,
+        $fecha_año,
+        $fecha_mes,
+        $diasCerrados,
+        $feriados
+    ) {
         $this->mesNombre = $mesNombre;
         $this->nombreMac = $nombreMac;
-        $this->dias = $dias;
+        $this->final = $final;
         $this->modulos = $modulos;
         $this->numeroDias = $numeroDias;
         $this->fecha_año = $fecha_año;
         $this->fecha_mes = $fecha_mes;
+        $this->diasCerrados = $diasCerrados;
         $this->feriados = $feriados;
     }
 
@@ -46,12 +57,13 @@ class IndicadorPuntualidadExport implements FromView, WithDefaultStyles, ShouldA
         return view('indicador.puntualidad.export_excel', [
             'mesNombre' => $this->mesNombre,
             'nombreMac' => $this->nombreMac,
-            'dias' => $this->dias,
+            'final' => $this->final,
             'modulos' => $this->modulos,
             'numeroDias' => $this->numeroDias,
             'fecha_año' => $this->fecha_año,
             'fecha_mes' => $this->fecha_mes,
             'feriados' => $this->feriados,
+            'diasCerrados' => $this->diasCerrados
         ]);
     }
 
@@ -64,23 +76,42 @@ class IndicadorPuntualidadExport implements FromView, WithDefaultStyles, ShouldA
     {
         $drawing = new Drawing();
         $drawing->setName('Logo');
-        $drawing->setDescription('This is my logo');
+        $drawing->setDescription('Logo Centro MAC');
         $drawing->setPath(public_path('imagen/mac_logo_export.jpg'));
         $drawing->setHeight(50);
         $drawing->setCoordinates('A3');
 
-        return [$drawing];     
+        return [$drawing];
     }
 
     public function styles(Worksheet $sheet)
     {
-        // Aplicar estilo para centrar el texto en todas las celdas de la hoja
-        $sheet->getStyle($sheet->calculateWorksheetDimension())->applyFromArray([
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
+        $numeroDias = $this->numeroDias;
+
+        $colFinal = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($numeroDias + 3);
+
+        $filaHeader = 7;
+
+        $sheet->getStyle("A{$filaHeader}:{$colFinal}{$filaHeader}")->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF']
             ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '0B22B4']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER
+            ]
         ]);
+
+        // Ajuste texto entidad
+        $sheet->getStyle('B:B')->getAlignment()->setWrapText(true);
+
+        // Ancho columnas
+        $sheet->getColumnDimension('A')->setWidth(10);
+        $sheet->getColumnDimension('B')->setWidth(40);
     }
 
     public function title(): string

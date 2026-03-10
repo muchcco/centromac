@@ -29,16 +29,27 @@ class IndicadorOcupabilidadExport implements FromView, WithDefaultStyles, Should
     protected $fecha_año;
     protected $fecha_mes;
     protected $feriados;
-
-    function __construct($mesNombre, $nombreMac, $dias,  $modulos, $numeroDias, $fecha_año, $fecha_mes, $feriados)
-    {
+    protected $final;
+    protected $diasCerrados;
+    function __construct(
+        $mesNombre,
+        $nombreMac,
+        $final,
+        $modulos,
+        $numeroDias,
+        $fecha_año,
+        $fecha_mes,
+        $diasCerrados,
+        $feriados
+    ) {
         $this->mesNombre = $mesNombre;
         $this->nombreMac = $nombreMac;
-        $this->dias = $dias;
+        $this->final = $final;
         $this->modulos = $modulos;
         $this->numeroDias = $numeroDias;
         $this->fecha_año = $fecha_año;
         $this->fecha_mes = $fecha_mes;
+        $this->diasCerrados = $diasCerrados;
         $this->feriados = $feriados;
     }
 
@@ -53,6 +64,8 @@ class IndicadorOcupabilidadExport implements FromView, WithDefaultStyles, Should
             'fecha_año' => $this->fecha_año,
             'fecha_mes' => $this->fecha_mes,
             'feriados' => $this->feriados,
+            'final' => $this->final,
+            'diasCerrados' => $this->diasCerrados,
         ]);
     }
 
@@ -70,32 +83,34 @@ class IndicadorOcupabilidadExport implements FromView, WithDefaultStyles, Should
         $drawing->setHeight(50);
         $drawing->setCoordinates('A3');
 
-        return [$drawing];     
+        return [$drawing];
     }
 
     public function styles(Worksheet $sheet)
     {
-        // Centrar el texto en las celdas
-        $sheet->getStyle($sheet->calculateWorksheetDimension())->applyFromArray([
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-            ],
-        ]);
+        $numeroDias = $this->numeroDias;
 
-        // Ajustar los encabezados
-        $sheet->getStyle('A1:Z1')->applyFromArray([
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FFFFFFFF'], // Fondo azul
-            ],
+        $colFinal = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($numeroDias + 3);
+
+        $filaHeader = 7;
+
+        $sheet->getStyle("A{$filaHeader}:{$colFinal}{$filaHeader}")->applyFromArray([
             'font' => [
                 'bold' => true,
-                'color' => ['argb' => 'FFFFFFFF'], // Texto blanco
+                'color' => ['rgb' => 'FFFFFF']
             ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '0B22B4']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER
+            ]
         ]);
-    }
 
+        // ajuste de texto para entidad
+        $sheet->getStyle('B:B')->getAlignment()->setWrapText(true);
+    }
     public function title(): string
     {
         return $this->nombreMac;
