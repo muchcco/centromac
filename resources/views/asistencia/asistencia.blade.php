@@ -176,7 +176,7 @@
                                 $mesActual = date('Y-m'); // mes actual fijo (ejemplo: 2025-10)
                             @endphp
 
-                            @role('Administrador|Monitoreo')
+                            @role('Administrador|Moderador')
                                 @if (auth()->user()->hasAnyRole(['Administrador', 'Monitor', 'Monitoreo']))
                                     {{--  Admin, Monitor y Monitoreo: siempre pueden revertir --}}
                                     <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
