@@ -47,8 +47,7 @@ class OcupabilidadController extends Controller
         $nombreMac = $mac ? $mac->NOMBRE_MAC : 'Nombre no disponible';
 
         $fecha_año = $request->año ?: date('Y');
-        $fecha_mes = $request->mes ?: date('m');
-
+        $fecha_mes = str_pad($request->mes ?: date('m'), 2, '0', STR_PAD_LEFT);
         $meses = [
             '01' => 'Enero',
             '02' => 'Febrero',
@@ -183,106 +182,110 @@ class OcupabilidadController extends Controller
 
     public function tb_index_sp(Request $request)
     {
-        $idmac      = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
-        $anio       = $request->año ?: date('Y');
-        $mesTxt     = str_pad($request->mes ?: date('m'), 2, '0', STR_PAD_LEFT);
-        $mesNombre = [
-            '01' => 'Enero',
-            '02' => 'Febrero',
-            '03' => 'Marzo',
-            '04' => 'Abril',
-            '05' => 'Mayo',
-            '06' => 'Junio',
-            '07' => 'Julio',
-            '08' => 'Agosto',
-            '09' => 'Septiembre',
-            '10' => 'Octubre',
-            '11' => 'Noviembre',
-            '12' => 'Diciembre'
-        ][$mesTxt];
+        $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
 
-        $fechaInicio = Carbon::create($anio, $mesTxt, 1)->startOfMonth();
-        $fechaFin    = (Carbon::now()->year == $anio && Carbon::now()->month == $mesTxt)
-            ? Carbon::now()->startOfDay()
-            : $fechaInicio->copy()->endOfMonth();
-        $numeroDias  = $fechaFin->day;
+        $anio = $request->año ?: date('Y');
+        $mes  = str_pad($request->mes ?: date('m'), 2, '0', STR_PAD_LEFT);
 
-        $spHabiles = collect(
-            DB::select('CALL SP_DIASHABILES_MODULO(?, ?, ?)', [$anio, (int)$mesTxt, $idmac])
-        )->keyBy('IDMODULO');
+        // 🔥 FECHA INICIO
+        $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
 
-        $feriados = DB::table('feriados')
-            ->whereBetween('fecha', [$fechaInicio, $fechaFin])
-            ->where(fn($q) => $q->where('id_centromac', $idmac)->orWhereNull('id_centromac'))
-            ->pluck('fecha')->toArray();
-
-        $modulos = DB::table('m_modulo')
-            ->join('m_entidad', 'm_modulo.identidad', '=', 'm_entidad.identidad')
-            ->where('m_modulo.idcentro_mac', $idmac)
-            ->where(fn($q) => $q->where('m_modulo.fechainicio', '<=', $fechaFin)
-                ->where('m_modulo.fechafin', '>=', $fechaInicio))
-            ->where('m_modulo.es_administrativo', 'NO')
-            ->select(
-                'm_modulo.idmodulo',
-                'm_modulo.n_modulo',
-                'm_entidad.nombre_entidad',
-                'm_modulo.fechainicio',
-                'm_modulo.fechafin',
-                'm_modulo.identidad'
-            )
-            ->orderBy('m_modulo.n_modulo')
-            ->get();
-
-        $dias = [];
-        for ($d = 1; $d <= $numeroDias; $d++) {
-            $fecha     = sprintf('%04d-%02d-%02d', $anio, $mesTxt, $d);
-            $esFeriado = in_array($fecha, $feriados);
-
-            $resultados = DB::select("
-            WITH CTE AS (
-                SELECT pm.IDMODULO, p.NUM_DOC, a.HORA, pm.status
-                FROM m_personal_modulo pm
-                JOIN m_personal p  ON pm.NUM_DOC = p.NUM_DOC
-                JOIN m_modulo   m  ON pm.IDMODULO = m.IDMODULO
-                JOIN m_asistencia a ON pm.NUM_DOC = a.NUM_DOC AND a.FECHA = ?
-                WHERE pm.status IN ('itinerante','fijo')
-                  AND ? BETWEEN pm.fechainicio AND pm.fechafin
-                  AND a.IDCENTRO_MAC = ?
-            )
-            SELECT IDMODULO,
-                   CASE
-                     WHEN MIN(CASE WHEN status='itinerante' THEN hora END) IS NOT NULL
-                     THEN MIN(CASE WHEN status='itinerante' THEN hora END)
-                     ELSE MIN(CASE WHEN status='fijo'
-                                    AND NUM_DOC NOT IN (SELECT NUM_DOC FROM CTE WHERE status='itinerante')
-                                    THEN hora END)
-                   END AS hora_minima
-            FROM CTE
-            GROUP BY IDMODULO
-            HAVING hora_minima IS NOT NULL;
-        ", [$fecha, $fecha, $idmac]);
-
-            foreach ($resultados as $r) {
-                $dias[$d][$r->IDMODULO] = [
-                    'idmodulo'   => $r->IDMODULO,
-                    'hora_minima' => $r->hora_minima,
-                    'es_feriado' => $esFeriado
-                ];
-            }
+        // 🔥 FECHA FIN (para consulta)
+        if ((int)$anio === (int)now()->year && (int)$mes === (int)now()->month) {
+            $fechaFin = now(); // mes actual
+        } else {
+            $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
         }
 
-        $nombreMac = optional(DB::table('M_CENTRO_MAC')->where('IDCENTRO_MAC', $idmac)->first())->NOMBRE_MAC ?? 'MAC';
+        $fechaInicioStr = $fechaInicio->toDateString();
+        $fechaFinStr    = $fechaFin->toDateString();
 
+        // 🔥 SP (OCUPABILIDAD)
+        $data = collect(DB::select(
+            "CALL db_centro_mac_reporte.SP_RESUMEN_ASIST_HABILES_MODULO(?, ?, ?)",
+            [$idmac, $fechaInicioStr, $fechaFinStr]
+        ))
+            ->sortBy(fn($x) => (int)$x->N_MODULO)
+            ->values();
+
+        // =========================
+        // 🔥 KPI GENERAL
+        // =========================
+        $total = $data->count();
+
+        $totalMarcados = $data->sum('DIAS_ASISTENCIA');
+        $totalHabiles  = $data->sum('DIAS_HABILES');
+
+        $promedio = $totalHabiles > 0
+            ? round(($totalMarcados / $totalHabiles) * 100, 1)
+            : 0;
+
+        $cumplen = $data->filter(function ($r) {
+            return $r->DIAS_HABILES > 0
+                ? ($r->DIAS_ASISTENCIA / $r->DIAS_HABILES) >= 0.95
+                : false;
+        })->count();
+
+        $noCumplen = $data->filter(function ($r) {
+            return $r->DIAS_HABILES > 0
+                ? ($r->DIAS_ASISTENCIA / $r->DIAS_HABILES) < 0.85
+                : true;
+        })->count();
+
+        // =========================
+        // 🔥 NOMBRE MAC
+        // =========================
+        $nombreMac = optional(
+            DB::table('M_CENTRO_MAC')
+                ->where('IDCENTRO_MAC', $idmac)
+                ->first()
+        )->NOMBRE_MAC ?? 'MAC';
+
+        // =========================
+        // 🔥 MES ACTUAL
+        // =========================
+        $esMesActual = (
+            (int)$anio === (int)now()->year &&
+            (int)$mes  === (int)now()->month
+        );
+
+        // =========================
+        // 🔥 1. FECHA CIERRE REAL (DATA)
+        // =========================
+        $fechaCierre = DB::table('db_centro_mac_reporte.asistencia_resumen')
+            ->where('idmac', $idmac)
+            ->whereBetween('fecha_asistencia', [$fechaInicioStr, $fechaFinStr])
+            ->whereRaw('DAYOFWEEK(fecha_asistencia) != 1') // excluir domingo
+            ->max('fecha_asistencia');
+
+        $fechaCierreFmt = $fechaCierre
+            ? Carbon::parse($fechaCierre)->format('d/m/Y')
+            : null;
+
+        // =========================
+        // 🔥 2. FECHA HÁBIL (SIEMPRE AYER)
+        // =========================
+        $fechaHabiles = Carbon::yesterday()->format('d/m/Y');
+
+        // =========================
+        // 🔥 RETURN
+        // =========================
         return view('ocupabilidad.tablas.tb_index_sp', [
-            'mesNombre'  => $mesNombre,
-            'nombreMac'  => $nombreMac,
-            'dias'       => $dias,
-            'modulos'    => $modulos,
-            'numeroDias' => $numeroDias,
-            'fecha_año'  => $anio,
-            'fecha_mes'  => $mesTxt,
-            'feriados'   => $feriados,
-            'spHabiles'  => $spHabiles
+            'data'          => $data,
+            'nombreMac'     => $nombreMac,
+            'anio'          => $anio,
+            'mes'           => $mes,
+
+            // 🔥 CONTROL UX
+            'esMesActual'   => $esMesActual,
+            'fechaCierre'   => $fechaCierreFmt,
+            'fechaHabiles'  => $fechaHabiles,
+
+            // 🔥 KPIs
+            'total'         => $total,
+            'promedio'      => $promedio,
+            'cumplen'       => $cumplen,
+            'noCumplen'     => $noCumplen,
         ]);
     }
     public function tb_index_resumen(Request $request)

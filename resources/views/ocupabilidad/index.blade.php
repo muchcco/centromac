@@ -4,6 +4,7 @@
     <link href="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('nuevo/plugins/datatables/buttons.bootstrap5.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 @endsection
 
 @section('main')
@@ -13,7 +14,7 @@
             <div class="page-title-box">
                 <div class="row">
                     <div class="col">
-                        <h4 class="page-title">Reporte de Ocupabilidad</h4>
+                        <h4 class="page-title">Reporte de Ocupabilidadaaaa</h4>
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Inicio</a></li>
                             <li class="breadcrumb-item active">Ocupabilidad</li>
@@ -138,7 +139,8 @@
     <script src="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/datatables/dataTables.responsive.min.js') }}"></script>
     <script src="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <script>
         /* Poblar años */
         window.onload = () => {
@@ -159,17 +161,7 @@
                 return;
             }
 
-            let url = "{{ route('ocupabilidad.tablas.tb_index') }}"; // default: otros años
-
-            if (año === 2025) {
-                if (mes < 10) {
-                    // Enero a Julio 2025 → resumen
-                    url = "{{ route('ocupabilidad.tablas.tb_index_resumen') }}";
-                } else {
-                    // Agosto a Diciembre 2025 → tb_index_sp
-                    url = "{{ route('ocupabilidad.tablas.tb_index_sp') }}";
-                }
-            }
+            let url = "{{ route('ocupabilidad.tablas.tb_index_sp') }}";
 
             $.ajax({
                 type: 'GET',
@@ -185,16 +177,24 @@
                         .prop('disabled', true);
                 },
                 success: res => {
-                    $('#filtro').html('<i class="fa fa-search"></i> Buscar').prop('disabled', false);
+                    $('#filtro')
+                        .html('<i class="fa fa-search"></i> Buscar')
+                        .prop('disabled', false);
+
                     $('#table_data').html(res);
+                    $('#table_data script').each(function() {
+                        eval(this.innerText);
+                    });
                 },
                 error: () => {
                     alert('Error al filtrar.');
-                    $('#filtro').html('<i class="fa fa-search"></i> Buscar').prop('disabled', false);
+
+                    $('#filtro')
+                        .html('<i class="fa fa-search"></i> Buscar')
+                        .prop('disabled', false);
                 }
             });
         }
-
         /* Limpiar */
         const clear_filter = () => {
             $('#mes').val('');

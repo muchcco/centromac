@@ -213,26 +213,59 @@ class PuntualidadController extends Controller
     public function tb_index_sp(Request $request)
     {
         $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
-        $anio  = $request->año ?: date('Y');
-        $mes   = str_pad($request->mes ?: date('m'), 2, '0', STR_PAD_LEFT);
+
+        $anio = $request->año ?: date('Y');
+        $mes  = str_pad($request->mes ?: date('m'), 2, '0', STR_PAD_LEFT);
 
         $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth()->toDateString();
         $fechaFin    = Carbon::create($anio, $mes, 1)->endOfMonth()->toDateString();
 
+        // 🔥 SP + ORDEN NUMÉRICO
         $resultados = collect(DB::select(
             'CALL db_centro_mac_reporte.SP_RESUMEN_OCUPABILIDAD_PUNTUALIDAD_MODULO(?, ?, ?)',
             [$idmac, $fechaInicio, $fechaFin]
-        ));
+        ))
+            ->sortBy(fn($x) => (int)$x->N_MODULO)
+            ->values();
 
-        $nombreMac = optional(DB::table('M_CENTRO_MAC')
-            ->where('IDCENTRO_MAC', $idmac)
-            ->first())->NOMBRE_MAC ?? 'MAC';
+        // 🔹 Nombre MAC
+        $nombreMac = optional(
+            DB::table('M_CENTRO_MAC')->where('IDCENTRO_MAC', $idmac)->first()
+        )->NOMBRE_MAC ?? 'MAC';
+
+        // 🔥 KPIs (PUNTUALIDAD REAL)
+        $total = $resultados->count();
+
+        $totalMarcados = $resultados->sum('DIAS_ASISTENCIA');
+        $totalPuntuales816 = $resultados->sum('PUNTUALES_816');
+
+        $promedio = $totalMarcados > 0
+            ? round(($totalPuntuales816 / $totalMarcados) * 100, 1)
+            : 0;
+
+        $cumplen = $resultados->filter(function ($r) {
+            return $r->DIAS_ASISTENCIA > 0
+                ? ($r->PUNTUALES_816 / $r->DIAS_ASISTENCIA) >= 0.95
+                : false;
+        })->count();
+
+        $noCumplen = $resultados->filter(function ($r) {
+            return $r->DIAS_ASISTENCIA > 0
+                ? ($r->PUNTUALES_816 / $r->DIAS_ASISTENCIA) < 0.85
+                : true;
+        })->count();
 
         return view('puntualidad.tablas.tb_index_sp', [
             'resultados' => $resultados,
+            'nombreMac'  => $nombreMac,
             'anio'       => $anio,
             'mes'        => $mes,
-            'nombreMac'  => $nombreMac,
+
+            // 🔥 KPIs listos
+            'total'      => $total,
+            'promedio'   => $promedio,
+            'cumplen'    => $cumplen,
+            'noCumplen'  => $noCumplen,
         ]);
     }
 }

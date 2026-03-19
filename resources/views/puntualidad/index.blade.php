@@ -22,7 +22,37 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header" style="background-color:#132842">
+                    <h4 class="card-title text-white">Leyenda</h4>
+                </div><!--end card-header-->
+                <div class="card-body bootstrap-select-1">
+                    <div class="row">
+                        <div class="col-md-5 border-end">
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th class="text-center" style="background: #198754">≥ 95% </th>
+                                    <td>Cumple el % del ANS</td>
+                                </tr>
 
+                                <tr>
+                                    <th class="text-center" style="background: #ffc107">≥ 84% hasta < 95%</th>
+                                    <td>Cerca de cumplir el ANS</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-center" style="background: #dc3545">
+                                        < 84%</th>
+                                    <td>No cumple el % de ANS</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div><!-- end card-body -->
+            </div> <!-- end card -->
+        </div> <!-- end col -->
+    </div> <!-- end row -->
     <!-- Filtro de búsqueda -->
     <div class="row">
         <div class="col-lg-12">
@@ -94,37 +124,7 @@
         </div> <!-- end card -->
     </div> <!-- end col -->
 </div> <!-- end row -->
-<div class="row">
-    <div class="col-lg-12">
-        <div class="card">
-            <div class="card-header" style="background-color:#132842">
-                <h4 class="card-title text-white">Leyenda</h4>
-            </div><!--end card-header-->
-            <div class="card-body bootstrap-select-1">
-                <div class="row">
-                    <div class="col-md-5 border-end">
-                        <table class="table table-bordered">
-                            <tr>
-                                <th class="text-center" style="background: #198754">≥ 95% </th>
-                                <td>Cumple el % del ANS</td>
-                            </tr>
 
-                            <tr>
-                                <th class="text-center" style="background: #ffc107">≥ 84% hasta < 95%</th>
-                                <td>Cerca de cumplir el ANS</td>
-                            </tr>
-                            <tr>
-                                <th class="text-center" style="background: #dc3545">
-                                    < 84%</th>
-                                <td>No cumple el % de ANS</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div><!-- end card-body -->
-        </div> <!-- end card -->
-    </div> <!-- end col -->
-</div> <!-- end row -->
 <!-- Tabla de resultados -->
 <div class="row">
     <div class="col-lg-12">
@@ -178,18 +178,10 @@
             return;
         }
 
-        // Decidir qué ruta usar
-        let url = "{{ route('puntualidad.tablas.tb_index') }}"; // por defecto la manual
-
-        if (año === 2025 && mes < 9) {
-            url = "{{ route('puntualidad.tablas.tb_index_sp') }}"; // SP solo para enero-julio 2025
-        } else {
-            url = "{{ route('puntualidad.tablas.tb_index') }}"; // manual para agosto-diciembre 2025 y otros años
-        }
 
         $.ajax({
             type: 'GET',
-            url: url,
+            url: "{{ route('puntualidad.tablas.tb_index_sp') }}",
             data: {
                 mac: mac,
                 mes: mes,
