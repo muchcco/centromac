@@ -1,7 +1,7 @@
 <table>
     <tr>
         <th style="border: 1px solid black" rowspan="3" colspan="2"></th>
-        <th style="border: 1px solid black" colspan="8" rowspan="2">REPORTE DE ASISTENCIA</th>
+        <th style="border: 1px solid black" colspan="8" rowspan="2">REPORTE DE AsssssssssSISTENCIA</th>
         <th style="border: 1px solid black"> Código</th>
         <th style="border: 1px solid black" colspan="2">ANS2</th>
     </tr>
@@ -31,15 +31,19 @@
             <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">DNI</th>
             <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Fecha</th>
             <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Hora de
-                <br />Ingreso</th>
+                <br />Ingreso
+            </th>
             <th colspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; "
                 class="text-center">Refrigerio</th>
             <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Hora de
-                <br />Salida</th>
+                <br />Salida
+            </th>
             <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Ingreso
-                <br />programado</th>
+                <br />programado
+            </th>
             <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Salida
-                <br />Programada</th>
+                <br />Programada
+            </th>
             <th rowspan="2" style="color: white; border: 1px solid black; background-color: #0B22B4; ">Observación
             </th>
         </tr>
@@ -55,7 +59,7 @@
                 $horaInicial1 = strtotime('06:00:00');
                 $horaFinal1 = strtotime('10:00:00');
             @endphp
-            <tr>
+            <tr @if ($q->ESTADO == 'ABIERTO') style="color:red;" @endif>
                 <th style="border: 1px solid black">{{ $i + 1 }}</th>
                 <th style="border: 1px solid black;">{{ $datos_persona->NOMBRE_ENTIDAD }}
                 </th>

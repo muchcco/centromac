@@ -162,7 +162,11 @@
                                     <i class="fa fa-lock"></i> Cerrar Día
                                 </button>
                             @endrole
-
+                            @role('Administrador|Moderador')
+                                <button class="btn btn-secondary" onclick="btnExcepcionCierre()">
+                                    <i class="fa fa-unlock"></i> Habilitar Cierre Fuera de Plazo
+                                </button>
+                            @endrole
                             @role('Administrador')
                                 <button class="btn btn-dark" onclick="abrirModalCerrarMes()" id="btnCerrarMes">
                                     <i class="fa fa-calendar"></i> Cerrar Mes
@@ -172,7 +176,7 @@
                                 $mesActual = date('Y-m'); // mes actual fijo (ejemplo: 2025-10)
                             @endphp
 
-                            @role('Administrador|Monitor|Monitoreo|Especialista TIC|Coordinador')
+                            @role('Administrador|Monitoreo')
                                 @if (auth()->user()->hasAnyRole(['Administrador', 'Monitor', 'Monitoreo']))
                                     {{--  Admin, Monitor y Monitoreo: siempre pueden revertir --}}
                                     <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
@@ -209,6 +213,7 @@
 
     {{-- Ver Modales --}}
     <div class="modal fade" id="modal_show_modal" tabindex="-1" role="dialog"></div>
+
 @endsection
 
 @section('script')
@@ -270,7 +275,7 @@
                 url: "{{ route('asistencia.verificar_cierre') }}",
                 data: {
                     fecha: fecha,
-                     mac: mac
+                    mac: mac
                 },
                 success: function(resp) {
                     let urlTabla = resp.cerrado ?
@@ -954,10 +959,18 @@
                         .then(res => res.json())
                         .then(data => {
                             if (data.success) {
+
                                 Swal.fire('Éxito', data.message, 'success');
-                                tabla_seccion(fecha); // refrescar tabla
+                                tabla_seccion(fecha);
+
                             } else {
-                                Swal.fire('Error', data.message, 'error');
+
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: data.message,
+                                    html: data.detalle ? data.detalle : ''
+                                });
+
                             }
                         })
                         .catch(err => {
@@ -1090,6 +1103,114 @@
                         });
                 }
             });
+        }
+
+        function btnExcepcionCierre() {
+
+            let fecha = $('#fecha').val()
+            let mac = $('#mac').val()
+
+            $.ajax({
+
+                type: 'POST',
+                url: "{{ route('asistencia.md_excepcion_cierre') }}",
+                dataType: 'json',
+
+                data: {
+                    fecha: fecha,
+                    idmac: mac,
+                    _token: "{{ csrf_token() }}"
+                },
+
+                success: function(resp) {
+
+                    if (!resp.success) {
+
+                        Swal.fire(
+                            'No permitido',
+                            resp.msg,
+                            'warning'
+                        )
+
+                        return
+                    }
+
+                    $('#modal_show_modal').html(resp.html)
+                    $('#modal_show_modal').modal('show')
+
+                },
+
+                error: function() {
+
+                    Swal.fire(
+                        'Error',
+                        'No se pudo cargar el modal',
+                        'error'
+                    )
+
+                }
+
+            })
+
+        }
+
+        function guardarExcepcion() {
+            let fecha = $('#ex_fecha').val()
+            let mac = $('#ex_mac').val()
+            let motivo = $('#ex_motivo').val()
+            let valido = $('#ex_valido_hasta').val()
+            if (!fecha || !mac || !motivo) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos obligatorios',
+                    text: 'Debe completar todos los campos'
+                })
+                return
+            }
+            Swal.fire({
+                title: '¿Registrar excepción?',
+                text: 'Se habilitará cierre fuera de plazo',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Registrar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post(
+                        "{{ route('asistencia.guardar_excepcion_cierre') }}", {
+
+                            fecha: fecha,
+                            idmac: mac,
+                            motivo: motivo,
+                            valido_hasta: valido,
+
+                            _token: "{{ csrf_token() }}"
+
+                        },
+                        function(resp) {
+
+                            if (resp.ok) {
+
+                                Toastify({
+                                    text: resp.msg,
+                                    duration: 4000,
+                                    gravity: "top",
+                                    position: "right",
+                                    style: {
+                                        background: "#47B257"
+                                    }
+                                }).showToast()
+                                $('#modal_show_modal').modal('hide')
+                            } else {
+                                Swal.fire(
+                                    'Error',
+                                    resp.msg,
+                                    'error'
+                                )
+                            }
+                        }
+                    )
+                }
+            })
         }
     </script>
 @endsection

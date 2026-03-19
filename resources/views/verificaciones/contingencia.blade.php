@@ -1,128 +1,148 @@
 @extends('layouts.layout')
 
 @section('style')
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <style>
         .table thead th {
-            background-color: #233E99;
+            background: #233E99;
             color: white;
-            font-weight: bold;
-        }
-
-        .table tbody tr:nth-child(odd) {
-            background-color: #f9f9f9;
-        }
-
-        .table tbody tr:hover {
-            background-color: #e2e6ea;
-        }
-
-        .text-center {
+            font-size: 11px;
             text-align: center;
         }
 
-        .container {
-            margin-top: 20px;
-        }
-
-        .table-container {
-            overflow-x: auto;
-            margin-top: 20px;
-        }
-
         .table td {
-            padding: 10px;
+            text-align: center;
+            font-size: 11px;
+            padding: 4px;
         }
 
-        .table th {
-            padding: 10px;
-        }
-
-        .form-control {
-            border-radius: 0.25rem;
-            box-shadow: none;
-        }
-
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            border-radius: 0.25rem;
-        }
-
-        .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-        }
-
-        .header {
-            margin-bottom: 20px;
-        }
-
-        .header h2 {
-            font-size: 28px;
+        .ok {
+            color: #198754;
             font-weight: bold;
         }
 
-        .header a {
-            margin-left: 15px;
+        .fail {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .sticky {
+            position: sticky;
+            left: 0;
+            background: #fff;
+            font-weight: bold;
         }
     </style>
 @endsection
 
 @section('main')
     <div class="container">
-        <div class="header d-flex justify-content-between align-items-center">
-            <h2>Verificaciones Diarias</h2>
-            <a href="{{ route('verificaciones.index') }}" class="btn btn-secondary">Volver al Listado</a>
-        </div>
+        <!-- 🔷 HEADER ESTILO SISTEMA -->
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="page-title-box">
+                    <div class="row">
+                        <div class="col">
+                            <h4 class="page-title">Contingencia de Verificaciones</h4>
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('inicio') }}">Inicio</a>
+                                </li>
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('verificaciones.index') }}">Verificaciones</a>
+                                </li>
+                                <li class="breadcrumb-item active">Contingencia Mensual</li>
+                            </ol>
+                        </div>
 
-        <form method="GET" action="{{ route('verificaciones.filtrar') }}" class="mb-4">
-            @csrf
-            <div class="form-row">
-                <div class="col-md-5">
-                    <label for="fecha_inicio">Fecha de Inicio:</label>
-                    <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" required>
-                </div>
-                <div class="col-md-5">
-                    <label for="fecha_fin">Fecha de Fin:</label>
-                    <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" required>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">Buscar</button>
+                        <div class="col-auto">
+                            <a href="{{ route('verificaciones.index') }}" class="btn btn-secondary">
+                                <i class="fa fa-arrow-left"></i> Volver
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </form>
+        </div>
 
-        <div class="table-container">
-            <table class="table table-bordered table-hover">
+        <!-- 🔷 CARD FILTRO -->
+        <div class="card mb-3">
+            <div class="card-header" style="background-color:#132842">
+                <h4 class="card-title text-white mb-0">Filtro de Contingencia</h4>
+            </div>
+
+            <div class="card-body">
+                <form method="GET">
+                    <div class="row align-items-end">
+
+                        <!-- MES -->
+                        <div class="col-md-4">
+                            <label class="fw-bold text-dark mb-2">Mes:</label>
+                            <input type="month" name="mes" value="{{ $mes }}" class="form-control">
+                        </div>
+
+                        <!-- BOTÓN FILTRAR -->
+                        <div class="col-md-3 d-grid">
+                            <button class="btn btn-primary">
+                                <i class="fa fa-search"></i> Filtrar
+                            </button>
+                        </div>
+
+                        <!-- OPCIONAL (FUTURO) -->
+                        <div class="col-md-3 d-grid">
+                            <button type="button" class="btn btn-success" onclick="window.print()">
+                                <i class="fa fa-print"></i> Imprimir
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table class="table table-bordered">
+
                 <thead>
                     <tr>
-                        <th rowspan="2" class="text-center">Campo/Día</th>
-                        @foreach ($tablaContingencia as $fecha => $tipos)
-                            <th colspan="3" class="text-center">{{ $fecha }}</th> <!-- Cambiar a colspan="3" -->
-                        @endforeach
-                    </tr>
-                    <tr>
-                        @foreach ($tablaContingencia as $fecha => $tipos)
-                            <th class="text-center">Apertura</th>
-                            <th class="text-center">Relevo</th> <!-- Nueva columna para Relevo -->
-                            <th class="text-center">Cierre</th>
+                        <th class="sticky">Campo</th>
+
+                        @foreach (range(1, 31) as $d)
+                            <th>{{ $d }}</th>
                         @endforeach
                     </tr>
                 </thead>
+
                 <tbody>
+
                     @foreach ($campos as $campo)
+                        @php
+                            $nombre = preg_replace('/([a-z])([A-Z])/', '$1 $2', $campo);
+                        @endphp
+
                         <tr>
-                            <td>{{ $campo }}</td>
-                            @foreach ($tablaContingencia as $fecha => $tipos)
-                                <td class="text-center">{{ $tipos['Apertura'][$campo] ?? 'N/A' }}</td>
-                                <td class="text-center">{{ $tipos['Relevo'][$campo] ?? 'N/A' }}</td> <!-- Nueva celda para Relevo -->
-                                <td class="text-center">{{ $tipos['Cierre'][$campo] ?? 'N/A' }}</td>
+
+                            <td class="sticky">{{ $nombre }}</td>
+
+                            @foreach (range(1, 31) as $d)
+                                @php
+                                    $val = $matriz[$campo][$d] ?? '-';
+                                @endphp
+
+                                <td
+                                    class="
+                                {{ $val == '✔✔' ? 'ok' : ($val != '-' ? 'fail' : '') }}
+                            ">
+                                    {{ $val }}
+                                </td>
                             @endforeach
+
                         </tr>
                     @endforeach
+
                 </tbody>
+
             </table>
         </div>
+
     </div>
 @endsection

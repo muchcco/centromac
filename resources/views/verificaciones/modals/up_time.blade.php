@@ -1,35 +1,49 @@
-<div class="modal-dialog modal-lg" role="document">
+<div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Cambiar Horarios</h4>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <h5>Importante: requiere permiso de administrador, {{ $hora_inicio->id }} - {{ $hora_fin->id }}</h5>
-        <form id="formUpdateTime">
-          @csrf
-          <input type="hidden" name="id_inicio" value="{{ $hora_inicio->id }}">
-          <input type="hidden" name="id_fin"    value="{{ $hora_fin->id }}">
-          <input type="hidden" name="fecha_inicio"     value="{{ $hora_inicio->hora_registro }}">
-          <input type="hidden" name="fecha_fin"     value="{{ $hora_fin->hora_registro }}">
-          <div class="row mb-3">
-            <label class="col-3 col-form-label">Hora Inicio</label>
-            <div class="col-4">
-              <input type="time" class="form-control" name="hora_inicio"
-                value="{{ \Carbon\Carbon::parse($hora_inicio->hora_registro)->format('H:i:s') }}">
-            </div>
-            <label class="col-2 col-form-label text-center">Hora Fin</label>
-            <div class="col-3">
-              <input type="time" class="form-control" name="hora_fin"
-                value="{{ \Carbon\Carbon::parse($hora_fin->hora_registro)->format('H:i:s') }}">
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
-        <button id="btnEnviarForm" class="btn btn-outline-success">Guardar</button>
-      </div>
+        <div class="modal-header" style="background:#132842;color:white;">
+            <h4 class="modal-title">Cambiar Horarios</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            @if ($inicio && $fin)
+                <div class="alert alert-warning">
+                    ⚠️ Esta acción requiere permisos de administrador
+                </div>
+                <form id="formUpdateTime">
+                    @csrf
+                    <input type="hidden" name="id_inicio" value="{{ $inicio->id ?? '' }}">
+                    <input type="hidden" name="id_fin" value="{{ $fin->id ?? '' }}">
+                    <input type="hidden" name="fecha_inicio" value="{{ $inicio->fecha_formateada ?? '' }}">
+                    <input type="hidden" name="fecha_fin" value="{{ $fin->fecha_formateada ?? '' }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="fw-bold mb-2">Hora Inicio</label>
+                            <input type="time" id="hora_inicio" name="hora_inicio" class="form-control"
+                                value="{{ $inicio->hora_formateada ?? '' }}" required>
+                        </div>
+                                               <div class="col-md-6">
+                            <label class="fw-bold mb-2">Hora Fin</label>
+                            <input type="time" id="hora_fin" name="hora_fin" class="form-control"
+                                value="{{ $fin->hora_formateada ?? '' }}" required>
+                        </div>
+                    </div>
+                    <div id="alertaHoras" class="alert alert-danger mt-3 d-none">
+                        La hora inicio no puede ser mayor o igual a la hora fin
+                    </div>
+                </form>
+            @else
+                <div class="alert alert-danger">
+                    No existe apertura o cierre
+                </div>
+            @endif
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            @if ($inicio && $fin)
+                <button id="btnGuardar" class="btn btn-success">Guardar</button>
+            @endif
+        </div>
+
     </div>
-  </div>
-  
+</div>

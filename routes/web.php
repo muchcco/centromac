@@ -37,7 +37,7 @@ use App\Http\Controllers\ExternoController;
 use App\Http\Controllers\Indicador\Ocupabilidad1Controller;
 use App\Http\Controllers\Indicador\Puntualidad1Controller;
 use App\Http\Controllers\AuthController;
-
+use App\Http\Controllers\Modulo\HorarioDiferenciadoController;
 use App\Http\Controllers\Modulo\PuntualidadController;
 use App\Http\Controllers\Modulo\FeriadoController;
 use App\Http\Controllers\Modulo\ModuloController;
@@ -55,6 +55,8 @@ use App\Http\Controllers\Modulo\HorarioMacController;
 use App\Http\Controllers\Modulo\IncumplimientoController;
 use App\Http\Controllers\Modulo\MonitoreoAsistenciaController;
 use App\Http\Controllers\Modulo\ActualizacionesController;
+use App\Http\Controllers\Modulo\AnsCatalogoController;
+use Illuminate\Support\Facades\Mail;
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
 Route::get('validar.html5', [PagesController::class, 'validar'])->name('validar');
@@ -210,6 +212,8 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/upload-progress', [AsistenciaController::class, 'getUploadProgress'])->name('upload.progress');
         Route::post('/upload-cancel', [AsistenciaController::class, 'cancelUpload'])->name('upload.cancel');
+        Route::post('/md-excepcion-cierre', [AsistenciaController::class, 'md_excepcion_cierre'])->name('md_excepcion_cierre');
+        Route::post('/guardar-excepcion-cierre', [AsistenciaController::class, 'guardar_excepcion_cierre'])->name('guardar_excepcion_cierre');
     });
 
     /********************************************************** REGISTRO DE PERSONAL *******************************************************************/
@@ -645,7 +649,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('verificaciones/{fecha}', [VerificacionController::class, 'show'])->name('verificaciones.show');
     Route::get('/verificaciones/get-observations', [VerificacionController::class, 'getObservations'])->name('verificaciones.getObservations');
     Route::get('/verificaciones/observaciones/export', [VerificacionController::class, 'export'])->name('verificaciones.export');
-
+    Route::get('/verificaciones/verificar-fecha', [VerificacionController::class, 'verificarFecha'])->name('verificaciones.verificarFecha');
     /** permisos especiales para check list ***/
     Route::post('/verificaciones/modals/up_time', [VerificacionController::class, 'up_time'])->name('verificaciones.modals.up_time');
     Route::post('/verificaciones/update_time', [VerificacionController::class, 'update_time'])
@@ -669,4 +673,42 @@ Route::group(['middleware' => ['auth']], function () {
 
     // SE ALMACENA LOS ACCESOS A LAS PAGINAS EXTERNA QUE NO ES NECESARIO LOGGIN
     Route::get('/directorio', [PagesController::class, 'directorio'])->name('directorio');
+    Route::group(['prefix' => 'horario_diferenciado', 'as' => 'horario.'], function () {
+        Route::get('/index', [HorarioDiferenciadoController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [HorarioDiferenciadoController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_horario', [HorarioDiferenciadoController::class, 'md_add_horario'])->name('modals.md_add_horario');
+        Route::post('/modals/md_edit_horario', [HorarioDiferenciadoController::class, 'md_edit_horario'])->name('modals.md_edit_horario');
+        Route::post('/store_horario', [HorarioDiferenciadoController::class, 'store_horario'])->name('store_horario');
+        Route::post('/update_horario', [HorarioDiferenciadoController::class, 'update_horario'])->name('update_horario');
+        Route::post('/delete_horario', [HorarioDiferenciadoController::class, 'delete_horario'])->name('delete_horario');
+
+        /* 🔥 CASCADA */
+        Route::post('/get_modulos', [HorarioDiferenciadoController::class, 'get_modulos'])->name('get_modulos');
+        Route::post('/get_entidades', [HorarioDiferenciadoController::class, 'get_entidades'])->name('get_entidades');
+        Route::post('/get_entidades_modulo', [HorarioDiferenciadoController::class, 'get_entidades_modulo'])->name('get_entidades_modulo');
+    });
+
+    Route::get('/test-mail', function () {
+
+        Mail::raw('Correo de prueba desde Laravel SISMAC', function ($message) {
+            $message->to('dsoto@pcm.gob.pe')
+                ->subject('Prueba correo SISMAC');
+        });
+
+        return "Correo enviado";
+    });
+    Route::group(['prefix' => 'ans', 'as' => 'ans.'], function () {
+
+        Route::get('/index', [AnsCatalogoController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [AnsCatalogoController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add_servicio', [AnsCatalogoController::class, 'create'])->name('modals.md_add_servicio');
+        Route::post('/modals/md_edit_servicio', [AnsCatalogoController::class, 'edit'])->name('modals.md_edit_servicio');
+        Route::post('/store_servicio', [AnsCatalogoController::class, 'store'])->name('store_servicio');
+        Route::post('/update_servicio', [AnsCatalogoController::class, 'update'])->name('update_servicio');
+        Route::post('/delete_servicio', [AnsCatalogoController::class, 'destroy'])->name('delete_servicio');
+        Route::post('/modals/md_servicios_entidad', [AnsCatalogoController::class, 'md_servicios_entidad'])->name('modals.md_servicios_entidad');
+        Route::post('/update_tiempos_entidad', [AnsCatalogoController::class, 'update_tiempos_entidad'])->name('update_tiempos_entidad');
+        Route::post('/modals/md_cambiar_tiempos', [AnsCatalogoController::class, 'md_cambiar_tiempos'])->name('modals.md_cambiar_tiempos');
+        Route::post('/cambiar_tiempos_servicio', [AnsCatalogoController::class, 'cambiar_tiempos_servicio'])->name('cambiar_tiempos_servicio');
+    });
 });

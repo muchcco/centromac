@@ -177,22 +177,23 @@
                     $hora1 = strtotime($q->HORA_1); // Convierte la hora1 a un timestamp
                     $horaInicial1 = strtotime('06:00:00');
                     $horaFinal1 = strtotime('10:00:00');
+                    $color = $q->ESTADO == 'ABIERTO' ? 'color:red;' : '';
                 @endphp
                 <tr>
-                    <th style="border: 1px solid black;">{{ $i + 1 }}</th>
-                    <th style="border: 1px solid black;">{{ $q->NOMBRE_MAC }}</th>
-                    <th style="border: 1px solid black;">{{ $q->ABREV_ENTIDAD }}</th>
-                    <th style="border: 1px solid black;">{{ $q->NOMBREU }}</th>
-                    <th style="border: 1px solid black;">Asesor de Servicio</th>
-                    <th style="border: 1px solid black;">{{ $q->N_MODULO }}</th>
-                    <th style="border: 1px solid black;">{{ $q->NUM_DOC }}</th>
-                    <th style="border: 1px solid black;">
+                    <th style="border: 1px solid black;{{ $color }}">{{ $i + 1 }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">{{ $q->NOMBRE_MAC }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">{{ $q->ABREV_ENTIDAD }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">{{ $q->NOMBREU }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">Asesor de Servicio</th>
+                    <th style="border: 1px solid black;{{ $color }}">{{ $q->N_MODULO }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">{{ $q->NUM_DOC }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">
                         {{ date('d/m/Y', strtotime($q->FECHA)) }} </th>
-                    <th style="border: 1px solid black;">{{ $q->HORA_1 }}</th>
-                    <th style="border: 1px solid black;">{{ $q->HORA_2 }}</th>
-                    <th style="border: 1px solid black;">{{ $q->HORA_3 }}</th>
-                    <th style="border: 1px solid black;">{{ $q->HORA_4 }}</th>
-                    <th style="border: 1px solid black;">
+                    <th style="border: 1px solid black;{{ $color }}">{{ $q->HORA_1 }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">{{ $q->HORA_2 }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">{{ $q->HORA_3 }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">{{ $q->HORA_4 }}</th>
+                    <th style="border: 1px solid black;{{ $color }}">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es');
                         $FECHA = utf8_decode(strftime('%A', strtotime($q->FECHA))); ?>
                         @if ($FECHA == 's?bado')
@@ -201,7 +202,7 @@
                             {{ $hora_1->VALOR }}
                         @endif
                     </th>
-                    <th style="border: 1px solid black">
+                    <th style="border: 1px solid black;{{ $color }}">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es');
                         $FECHA = utf8_decode(strftime('%A', strtotime($q->FECHA))); ?>
 
@@ -211,7 +212,7 @@
                             {{ $hora_2->VALOR }}
                         @endif
                     </th>
-                    <th style="border: 1px solid black">
+                    <th style="border: 1px solid black;{{ $color }}">
                         <?php setlocale(LC_TIME, 'es_PE', 'es_ES', 'es');
                         $FECHA = utf8_decode(strftime('%A', strtotime($q->FECHA))); ?>
 
@@ -233,7 +234,7 @@
 
                     {{-- 
                     @if ($q->N_NUM_DOC > '2')
-                        <th style="border: 1px solid black; color: {{ strtotime($q->hora1) > strtotime('08:15:00') ? 'red' : 'black' }}">
+                        <th style="border: 1px solid black;{{ $color }} color: {{ strtotime($q->hora1) > strtotime('08:15:00') ? 'red' : 'black' }}">
                             {{ $q->hora1 }}
                         </th>
                 

@@ -2,7 +2,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h4 class="modal-title">
-                Manejo de observaciones
+                Manejo de Comentario
                 {{-- Mostrar conteo si quieres --}}
                 {{-- <span class="badge bg-primary">{{ $count_observaciones }}</span> --}}
             </h4>
@@ -23,12 +23,12 @@
                 </div>
 
                 <div class="mb-3">
-                    <h5>AGREGAR OBSERVACIÓN</h5>
-                    <textarea id="txtObservacion" class="form-control" rows="2" placeholder="Escribir aquí la observación…"></textarea>
+                    <h5>AGREGAR COMENTARIO</h5>
+                    <textarea id="txtObservacion" class="form-control" rows="2" placeholder="Escribir aquí la comentario…"></textarea>
 
                     <div class="d-grid gap-2 mt-2">
                         <button id="btnAddObs" class="btn btn-info" type="button">
-                            Añadir observación
+                            Añadir comentario
                         </button>
                     </div>
                 </div>
@@ -37,7 +37,7 @@
                     <thead>
                         <tr>
                             <th>N°</th>
-                            <th>Observación</th>
+                            <th>Comentario</th>
                             <th>Acción</th>
                         </tr>
                     </thead>
@@ -57,7 +57,7 @@
                         @empty
                             <tr>
                                 <td colspan="3" class="text-center text-danger">
-                                    No hay observaciones registradas.
+                                    No hay comentarios registradas.
                                 </td>
                             </tr>
                         @endforelse
@@ -129,7 +129,7 @@
                     }
                 })
                 .fail(function(err) {
-                    console.error('Error al agregar observación', err);
+                    console.error('Error al agregar comentario', err);
                 });
         });
     });
@@ -182,7 +182,7 @@
                 }
             })
             .fail(function(err) {
-                console.error('Error al eliminar observación', err);
+                console.error('Error al eliminar comentario', err);
             });
     });
 </script>

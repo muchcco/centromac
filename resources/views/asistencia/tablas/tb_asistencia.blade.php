@@ -17,6 +17,7 @@
         </tr>
     </thead>
     <tbody>
+
         @foreach ($datos as $i => $dato)
             @php
                 $esHoy = Carbon\Carbon::parse($dato->fecha_asistencia)->isToday();
@@ -33,7 +34,13 @@
                 $rowClass = '';
                 $rowTitle = '';
 
-                if (!empty($dato->flag_tardanza_grupal)) {
+                if (!$esHoy && !empty($dato->flag_retiro_anticipado)) {
+                    $rowClass = 'table-danger';
+                    $rowTitle = 'Retiro antes de la hora MAC';
+                } elseif (!$esHoy && !empty($dato->flag_llegada_fuera_rango)) {
+                    $rowClass = 'table-danger';
+                    $rowTitle = 'Tardanza';
+                } elseif (!empty($dato->flag_tardanza_grupal)) {
                     $rowClass = 'table-warning';
                     $rowTitle = 'Tardanza grupal del módulo';
                 } elseif (!empty($dato->flag_tarde)) {
@@ -41,9 +48,8 @@
                     $rowTitle = 'Tardanza';
                 } elseif (!empty($dato->flag_exceso)) {
                     $rowClass = 'table-danger';
-                    $rowTitle = 'Exceso de marcaciones';
+                    $rowTitle = 'Más de 4 marcaciones';
                 } elseif (!$esHoy && in_array($numHoras, [1, 3])) {
-                    // ❗ SOLO fechas PASADAS
                     $rowClass = 'table-primary';
                     $rowTitle = 'Marcaciones incompletas';
                 }
@@ -102,7 +108,30 @@
                 <td>{{ $dato->NOMBRE_MAC }}</td>
                 <td>{{ \Carbon\Carbon::parse($dato->fecha_asistencia)->format('d-m-Y') }}</td>
                 <td class="text-center">
-                    @if (!empty($dato->flag_tardanza_grupal))
+
+                    @php
+                        $requiereObs = ($dato->contador_obs ?? 0) == 0;
+                    @endphp
+
+                    @if (!$esHoy && !empty($dato->flag_retiro_anticipado))
+                        <span class="badge {{ $requiereObs ? 'bg-danger' : 'bg-secondary' }}"
+                            @if ($requiereObs) data-bs-toggle="tooltip"
+                             title="Requiere observación obligatoria" @endif>
+                            Retiro anticipado
+                            @if ($requiereObs)
+                                <i class="fa fa-exclamation-triangle ms-1"></i>
+                            @endif
+                        </span>
+                    @elseif (!$esHoy && !empty($dato->flag_llegada_fuera_rango))
+                        <span class="badge {{ $requiereObs ? 'bg-danger' : 'bg-secondary' }}"
+                            @if ($requiereObs) data-bs-toggle="tooltip"
+                             title="Requiere observación obligatoria" @endif>
+                            Tardanza
+                            @if ($requiereObs)
+                                <i class="fa fa-exclamation-triangle ms-1"></i>
+                            @endif
+                        </span>
+                    @elseif (!empty($dato->flag_tardanza_grupal))
                         <span class="badge bg-warning text-dark">
                             Tardanza grupal
                         </span>
@@ -112,9 +141,9 @@
                         </span>
                     @elseif (!empty($dato->flag_exceso))
                         <span class="badge bg-danger">
-                            Exceso de marcaciones
+                            + de 4 marcaciones
                         </span>
-                    @elseif (!$esHoy && in_array($numHoras, [1, 3]))
+                    @elseif (!$esHoy && !empty($dato->flag_incompleto))
                         <span class="badge bg-primary">
                             Marcación incompleta
                         </span>
@@ -124,7 +153,6 @@
                         </span>
                     @endif
                 </td>
-
                 <td>{{ $dato->HORA_1 }}</td>
                 <td>{{ $dato->HORA_2 }}</td>
                 <td>{{ $dato->HORA_3 }}</td>

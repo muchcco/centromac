@@ -1,85 +1,104 @@
-<table>
+<table style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 13px;">
     <thead>
-        <!-- Primer encabezado con título unificado para las 6 columnas -->
+
+        <!-- 🔷 TITULO -->
         <tr>
-            <th colspan="6" style="text-align: center; font-size: 16px; font-weight: bold; border: none; width: 100%;">
+            <th colspan="6"
+                style="text-align: center; font-size: 16px; font-weight: bold; border: none; padding: 10px;">
                 FORMATO 11 - PM 1.2.1 MONITOREO DE GESTION (CHECK LIST OPERATIVO)
             </th>
         </tr>
 
-        <!-- Segundo encabezado sin el logo (El logo se maneja desde el controlador) -->
+        <!-- 🔷 SUBTITULO + LOGO -->
         <tr>
-            <!-- Logo Celda con 100px de ancho y altura ajustada -->
-            <th
-                style="border: 1px solid black; width: 100px; height: 100px; text-align: center; vertical-align: middle;">
-                <!-- Logo se maneja desde el controlador -->
+            <th style="border: 1px solid black; width: 100px; height: 80px; text-align: center; vertical-align: middle;">
+                <!-- LOGO LO PONE EL EXPORT -->
             </th>
 
-            <!-- Texto de REGISTRO DE CHECK LIST OPERATIVO en las otras 5 celdas -->
             <th colspan="5"
-                style="text-align: center; font-size: 16px; font-weight: bold; border: 1px solid black; width: 100%; text-align: center; vertical-align: middle; height: 100px;">
+                style="text-align: center; font-size: 15px; font-weight: bold; border: 1px solid black; vertical-align: middle;">
                 REGISTRO DE CHECK LIST OPERATIVO
             </th>
         </tr>
-        <!-- Tercer encabezado con las 6 columnas del formato -->
+
+        <!-- 🔷 CABECERA -->
         <tr>
-            <th
-                style="background-color: #132842; color: white; border: 1px solid black; text-align: center; vertical-align: middle; height: 70px;">
+            <th style="background:#132842; color:white; border:1px solid black; text-align:center;">
                 TIPO DE EJECUCIÓN
             </th>
-            <th
-                style="background-color: #132842; color: white; border: 1px solid black; text-align: center; vertical-align: middle; height: 70px;">
+            <th style="background:#132842; color:white; border:1px solid black; text-align:center;">
                 OBSERVACIONES
             </th>
-            <th
-                style="background-color: #132842; color: white; border: 1px solid black; text-align: center; vertical-align: middle; height: 70px;">
+            <th style="background:#132842; color:white; border:1px solid black; text-align:center;">
                 FECHA
             </th>
-            <th
-                style="background-color: #132842; color: white; border: 1px solid black; text-align: center; vertical-align: middle; height: 70px;">
+            <th style="background:#132842; color:white; border:1px solid black; text-align:center;">
                 HORA
             </th>
-            <th
-                style="background-color: #132842; color: white; border: 1px solid black; text-align: center; vertical-align: middle; height: 70px;">
-                ACCIÓN RESULTADO
+            <th style="background:#132842; color:white; border:1px solid black; text-align:center;">
+                ACCIÓN / RESULTADO
             </th>
-            <th
-                style="background-color: #132842; color: white; border: 1px solid black; text-align: center; vertical-align: middle; height: 70px;">
+            <th style="background:#132842; color:white; border:1px solid black; text-align:center;">
                 RESPONSABLE
             </th>
-
         </tr>
+
     </thead>
+
     <tbody>
-    <tbody>
-        @foreach ($verificaciones as $verificacion)
+        @forelse ($verificaciones as $verificacion)
             <tr>
+
+                <td style="border:1px solid black; text-align:center; padding:5px;">
+                    {{ $verificacion['tipoEjecucion'] }}
+                </td>
+
+                <td style="border:1px solid black; padding:5px;">
+                    {{ $verificacion['observaciones'] }}
+                </td>
+
+                <td style="border:1px solid black; text-align:center;">
+                    {{ $verificacion['fecha'] }}
+                </td>
+
+                <td style="border:1px solid black; text-align:center;">
+                    {{ $verificacion['hora'] }}
+                </td>
+
+                <!-- 🔥 COLOR DINÁMICO -->
                 <td
-                    style="border: 1px solid black; text-align: center; vertical-align: middle; word-wrap: break-word; width: 180px;">
-                    {{ $verificacion['tipoEjecucion'] }}</td>
-                <td
-                    style="border: 1px solid black; text-align: center; vertical-align: middle; word-wrap: break-word; width: 180px;">
-                    {{ $verificacion['observaciones'] }}</td>
-                <td
-                    style="border: 1px solid black; text-align: center; vertical-align: middle; word-wrap: break-word; width: 180px;">
-                    {{ $verificacion['fecha'] }}</td>
-                <td
-                    style="border: 1px solid black; text-align: center; vertical-align: middle; word-wrap: break-word; width: 180px;">
-                    {{ $verificacion['hora'] }}</td>
-                <td
-                    style="border: 1px solid black; text-align: center; vertical-align: middle; word-wrap: break-word; width: 180px;">
-                    {{ $verificacion['porcentajeSi'] }}%</td>
-                <td
-                    style="border: 1px solid black; text-align: center; vertical-align: middle; word-wrap: break-word; width: 180px;">
-                    {{ $verificacion['responsable'] }}</td>
+                    style="border:1px solid black; text-align:center; font-weight:bold;
+                    color:
+                        {{ $verificacion['porcentajeSi'] >= 95
+                            ? '#198754'
+                            : ($verificacion['porcentajeSi'] >= 85
+                                ? '#ffc107'
+                                : '#dc3545') }}">
+                    {{ $verificacion['porcentajeSi'] }}%
+                </td>
+
+                <td style="border:1px solid black; text-align:center;">
+                    {{ $verificacion['responsable'] }}
+                </td>
+
             </tr>
-        @endforeach
+        @empty
+            <tr>
+                <td colspan="6" style="text-align:center; padding:10px;">
+                    No hay registros
+                </td>
+            </tr>
+        @endforelse
     </tbody>
 </table>
-<table>
+
+<br>
+
+<!-- 🔷 TOTAL -->
+<table style="width:100%;">
     <tr>
-        <td colspan="6" style="text-align: center; font-size: 16px; font-weight: bold;">
+        <td colspan="6" style="text-align: center; font-size: 14px; font-weight: bold; padding: 10px;">
             Total de registros: {{ $totalRegistros }}
         </td>
     </tr>
-</table>    
+</table>

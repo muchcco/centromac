@@ -78,7 +78,6 @@ class InterrupcionController extends Controller
         ));
     }
 
-
     public function tb_index(Request $request)
     {
         $user = auth()->user();
@@ -142,6 +141,21 @@ class InterrupcionController extends Controller
         }
 
         // --------------------------------------------------------------
+        // 🔹 Cargar horarios y feriados UNA SOLA VEZ
+        // --------------------------------------------------------------
+
+        $horariosMac = DB::table('m_horario_mac')
+            ->where('activo', 1)
+            ->get()
+            ->groupBy('idcentro_mac');
+
+        $feriadosMac = DB::table('feriados')
+            ->get()
+            ->groupBy(function ($f) {
+                return $f->id_centromac ?? 'nacional';
+            });
+
+        // --------------------------------------------------------------
         // 🔹 EJECUTAR CONSULTA Y CALCULAR TIEMPO DE INTERRUPCIÓN
         // --------------------------------------------------------------
 
@@ -149,13 +163,10 @@ class InterrupcionController extends Controller
             ->orderBy('fecha_inicio', 'desc')
             ->orderBy('hora_inicio', 'desc')
             ->get()
-            ->map(function ($item) {
+            ->map(function ($item) use ($horariosMac, $feriadosMac) {
 
-                // Solo si está cerrado
-                if (
-                    strtoupper($item->estado) !== 'CERRADO' ||
-                    !$item->fecha_fin || !$item->hora_fin
-                ) {
+                // 🔹 Solo calcular si tiene fecha y hora de fin
+                if (!$item->fecha_fin || !$item->hora_fin) {
                     $item->tiempo_horario = '-';
                     return $item;
                 }
@@ -168,20 +179,21 @@ class InterrupcionController extends Controller
                     return $item;
                 }
 
-                // ⏰ Horarios del MAC
-                $horarios = DB::table('m_horario_mac')
-                    ->where('idcentro_mac', $item->idcentro_mac)
-                    ->where('activo', 1)
-                    ->get();
+                // 🔹 Horarios del MAC desde memoria
+                $horarios = $horariosMac[$item->idcentro_mac] ?? collect();
 
-                // 📅 Feriados nacionales o por MAC
-                $feriados = DB::table('feriados')
-                    ->where(function ($q) use ($item) {
-                        $q->whereNull('id_centromac')
-                            ->orWhere('id_centromac', $item->idcentro_mac);
-                    })
-                    ->pluck('fecha')
-                    ->toArray();
+                // 🔹 Feriados nacionales + del MAC
+                $feriados = collect();
+
+                if (isset($feriadosMac['nacional'])) {
+                    $feriados = $feriados->merge($feriadosMac['nacional']);
+                }
+
+                if (isset($feriadosMac[$item->idcentro_mac])) {
+                    $feriados = $feriados->merge($feriadosMac[$item->idcentro_mac]);
+                }
+
+                $feriados = $feriados->pluck('fecha')->toArray();
 
                 $totalMin = 0;
                 $cursor = $inicio->copy()->startOfDay();
@@ -189,21 +201,21 @@ class InterrupcionController extends Controller
                 while ($cursor->lte($fin)) {
 
                     $dia = $cursor->format('Y-m-d');
-                    $diaIso = $cursor->dayOfWeekIso; // 1-7
+                    $diaIso = $cursor->dayOfWeekIso;
 
-                    // Domingo no atiende (7)
+                    // 🔹 Domingo no atiende
                     if ($diaIso == 7) {
                         $cursor->addDay();
                         continue;
                     }
 
-                    // Feriado no atiende
+                    // 🔹 Feriado no atiende
                     if (in_array($dia, $feriados)) {
                         $cursor->addDay();
                         continue;
                     }
 
-                    // Horario de ese día
+                    // 🔹 Horario de ese día
                     $h = $horarios->firstWhere('dia_semana', $diaIso);
 
                     if (!$h) {
@@ -214,7 +226,7 @@ class InterrupcionController extends Controller
                     $inicioDia = \Carbon\Carbon::parse("$dia {$h->hora_inicio}");
                     $finDia    = \Carbon\Carbon::parse("$dia {$h->hora_fin}");
 
-                    // Intersección con la interrupción
+                    // 🔹 Intersección con la interrupción
                     $desde = $inicioDia->max($inicio);
                     $hasta = $finDia->min($fin);
 

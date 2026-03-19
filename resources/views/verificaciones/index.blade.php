@@ -2,187 +2,230 @@
 
 @section('style')
     <link rel="stylesheet" href="{{ asset('Vendor/toastr/toastr.min.css') }}">
-    <!-- Plugins css -->
-    <link href="{{ asset('nuevo/plugins/select2/select2.min.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ asset('nuevo/plugins/huebee/huebee.min.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ asset('nuevo/plugins/timepicker/bootstrap-material-datetimepicker.css') }}" rel="stylesheet">
-    <link href="{{ asset('nuevo/plugins/bootstrap-touchspin/css/jquery.bootstrap-touchspin.min.css') }}" rel="stylesheet" />
-    <!-- DataTables -->
-    <link href="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ asset('nuevo/plugins/datatables/buttons.bootstrap5.min.css') }}" rel="stylesheet" type="text/css" />
-    <!-- Responsive datatable examples -->
-    <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('nuevo/plugins/select2/select2.min.css') }}" rel="stylesheet" />
+    <link href="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
+    <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" />
+
+    <style>
+        .card {
+            border-radius: 10px;
+        }
+
+        .card-header {
+            font-weight: 600;
+        }
+
+        .btn {
+            border-radius: 6px;
+        }
+    </style>
 @endsection
 
 @section('main')
-    <div class="container">
-        <div class="row">
-            <div class="col-sm-12">
-                <div class="page-title-box">
-                    <div class="row">
-                        <div class="col">
-                            <h4 class="page-title">Verificaciones</h4>
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item"><a href="{{ route('inicio') }}"><i data-feather="home"
-                                            class="align-self-center" style="height: 70%; display: block;"></i></a></li>
-                                <li class="breadcrumb-item"><a href="javascript:void(0);"
-                                        style="color: #7081b9;">Verificaciones</a></li>
-                            </ol>
-                        </div><!--end col-->
-                    </div><!--end row-->
-                </div><!--end page-title-box-->
-            </div><!--end col-->
-        </div><!--end row-->
-
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-header" style="background-color:#132842">
-                        <h4 class="card-title text-white">Filtro de Búsqueda</h4>
-                    </div><!--end card-header-->
-                    <div class="card-body bootstrap-select-1">
-                        <div class="mb-4 d-flex align-items-center gap-2">
-                            <form action="{{ route('verificaciones.create') }}" method="GET" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-primary">Crear Verificación</button>
-                            </form>
-                            <!-- Botón Formato -->
-                            <form action="{{ route('verificaciones.observaciones') }}" method="GET" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-info">Formato</button>
-                            </form>
-                            <!-- Botón Contingencia -->
-                            <form action="{{ route('verificaciones.contingencia') }}" method="GET" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-warning">Tabla</button>
-                            </form>
-                        </div>
-                        <!-- Formulario de Búsqueda por Rango de Fechas -->
-                        <form action="{{ route('verificaciones.index') }}" method="GET" class="mb-4">
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text">Fecha Inicio:</span>
-                                </div>
-                                <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text">Fecha Fin:</span>
-                                </div>
-                                <input type="date" name="fecha_fin" id="fecha_fin" class="form-control">
-                                <div class="input-group-append">
-                                    <button type="submit" class="btn btn-primary">Buscar</button>
-                                </div>
-                            </div>
-                        </form>
-                        <!-- Tabla de Verificaciones -->
-                        @if ($verificaciones->count() > 0)
-                            <div class="table-responsive">
-                                <table class="table table-striped" id="verificaciones-table">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Fecha</th>
-                                            <th>Apertura</th>
-                                            <th>Relevo</th>
-                                            <th>Cierre</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @php
-                                            $contador = 1;
-                                            $fechas = $verificaciones->pluck('Fecha')->unique()->toArray();
-                                        @endphp
-                                        @foreach ($fechas as $fecha)
-                                            <tr>
-                                                <td>{{ $contador++ }}</td>
-                                                <td>{{ date('d/m/Y', strtotime($fecha)) }}</td>
-                                                <td>
-                                                    @if ($verificaciones->where('Fecha', $fecha)->where('AperturaCierre', 0)->isNotEmpty())
-                                                        OK
-                                                    @else
-                                                        Falta
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if ($verificaciones->where('Fecha', $fecha)->where('AperturaCierre', 1)->isNotEmpty())
-                                                        OK
-                                                    @else
-                                                        Falta
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if ($verificaciones->where('Fecha', $fecha)->where('AperturaCierre', 2)->isNotEmpty())
-                                                        OK
-                                                    @else
-                                                        Falta
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @php
-                                                        $verificacion = $verificaciones
-                                                            ->where('Fecha', $fecha)
-                                                            ->first();
-                                                    @endphp
-                                                    @if ($verificacion)
-                                                        <!-- Opción para Ver -->
-                                                        <a href="{{ route('verificaciones.show', date('Y-m-d', strtotime($fecha))) }}"
-                                                            class="btn btn-secondary" title="Ver">
-                                                            <i class="fas fa-eye"></i> Ver
-                                                            <!-- Puedes personalizar la letra aquí si es necesario -->
-                                                        </a>
-                                                        <!-- Botón para Apertura -->
-                                                        @if ($verificaciones->where('Fecha', $fecha)->where('AperturaCierre', 0)->isNotEmpty())
-                                                            <a href="{{ route('verificaciones.edit', ['AperturaCierre' => 0, 'Fecha' => $verificacion->Fecha]) }}"
-                                                                class="btn btn-success" title="Editar Apertura">
-                                                                <i class="fas fa-pencil-alt"></i> Apertura
-                                                                <!-- Letra para Apertura -->
-                                                            </a>
-                                                        @endif
-
-                                                        <!-- Botón para Relevo -->
-                                                        @if ($verificaciones->where('Fecha', $fecha)->where('AperturaCierre', 1)->isNotEmpty())
-                                                            <a href="{{ route('verificaciones.edit', ['AperturaCierre' => 1, 'Fecha' => $verificacion->Fecha]) }}"
-                                                                class="btn btn-primary" title="Editar Relevo">
-                                                                <i class="fas fa-pencil-alt"></i> Relevo
-                                                                <!-- Letra para Relevo -->
-                                                            </a>
-                                                        @endif
-
-                                                        <!-- Botón para Cierre -->
-                                                        @if ($verificaciones->where('Fecha', $fecha)->where('AperturaCierre', 2)->isNotEmpty())
-                                                            <a href="{{ route('verificaciones.edit', ['AperturaCierre' => 2, 'Fecha' => $verificacion->Fecha]) }}"
-                                                                class="btn btn-danger" title="Editar Cierre">
-                                                                <i class="fas fa-pencil-alt"></i> Cierre
-                                                                <!-- Letra para Cierre -->
-                                                            </a>
-                                                        @endif
-                                                        @can('Update_basico_1')
-                                                            <button class="btn btn-info" title="Editar Horas" onclick="btnModalHora('{{ $verificacion->Fecha }}')">
-                                                                <span>
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" height="10" width="12.5" viewBox="0 0 640 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M128 72a24 24 0 1 1 0 48 24 24 0 1 1 0-48zm32 97.3c28.3-12.3 48-40.5 48-73.3c0-44.2-35.8-80-80-80S48 51.8 48 96c0 32.8 19.7 61 48 73.3L96 224l-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l256 0 0 54.7c-28.3 12.3-48 40.5-48 73.3c0 44.2 35.8 80 80 80s80-35.8 80-80c0-32.8-19.7-61-48-73.3l0-54.7 256 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0 0-54.7c28.3-12.3 48-40.5 48-73.3c0-44.2-35.8-80-80-80s-80 35.8-80 80c0 32.8 19.7 61 48 73.3l0 54.7-320 0 0-54.7zM488 96a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zM320 392a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>
-                                                                </span>
-                                                                Cambio hora
-                                                            </button>
-                                                        @endcan
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @else
-                            <p>No hay verificaciones registradas.</p>
-                        @endif
-
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="page-title-box">
+                <div class="row">
+                    <div class="col">
+                        <h4 class="page-title">Verificaciones</h4>
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('inicio') }}">
+                                    <i data-feather="home" style="height:70%"></i>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">Módulo de Verificaciones</li>
+                        </ol>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Ver Modales --}}
-    <div class="modal fade" id="modal_show_modal" tabindex="-1" role="dialog"></div>
+    <!-- 🔹 FILTRO -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow-sm">
+
+                <div class="card-header" style="background-color:#132842">
+                    <h4 class="card-title text-white mb-0">Filtro de Búsqueda</h4>
+                </div>
+
+                <div class="card-body bootstrap-select-1">
+
+                    <div class="row align-items-end">
+
+                        <div class="col-md-4">
+                            <label class="mb-2 fw-semibold">Fecha Inicio</label>
+                            <input type="date" id="fecha_inicio" class="form-control">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="mb-2 fw-semibold">Fecha Fin</label>
+                            <input type="date" id="fecha_fin" class="form-control">
+                        </div>
+
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-primary me-2" onclick="execute_filter()">
+                                <i class="fa fa-search"></i> Buscar
+                            </button>
+
+                            <button class="btn btn-dark" onclick="limpiarFiltro()">
+                                <i class="fa fa-undo"></i> Limpiar
+                            </button>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 LISTA -->
+    <div class="row">
+        <div class="col-lg-12">
+
+            <div class="card">
+
+                <div class="card-header" style="background-color:#132842">
+                    <h4 class="card-title text-white">
+                        LISTA DE VERIFICACIONES
+                    </h4>
+                </div>
+
+                <div class="card-body">
+
+                    <!-- 🔥 BOTONES IGUAL QUE ASISTENCIA -->
+                    <div class="mb-3">
+
+                        <form action="{{ route('verificaciones.create') }}" method="GET" class="d-inline">
+                            <button class="btn btn-primary">
+                                <i class="fa fa-plus"></i> Crear Verificación
+                            </button>
+                        </form>
+
+                        <form action="{{ route('verificaciones.observaciones') }}" method="GET" class="d-inline">
+                            <button class="btn btn-info">
+                                <i class="fa fa-file-alt"></i> Formato
+                            </button>
+                        </form>
+
+                        <form action="{{ route('verificaciones.contingencia') }}" method="GET" class="d-inline">
+                            <button class="btn btn-warning">
+                                <i class="fa fa-table"></i> Tabla
+                            </button>
+                        </form>
+
+                    </div>
+
+                    <!-- 🔴 TU TABLA (INTACTA) -->
+                    @if ($data->count() > 0)
+                        <div class="table-responsive">
+
+                            <table class="table table-striped" id="verificaciones-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Apertura</th>
+                                        <th>Relevo</th>
+                                        <th>Cierre</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach ($data as $fecha => $items)
+                                        <tr>
+                                            <td>{{ $loop->iteration }}</td>
+
+                                            <td>{{ date('d/m/Y', strtotime($fecha)) }}</td>
+
+                                            <td>
+                                                {{ $items->where('AperturaCierre', 0)->isNotEmpty() ? 'OK' : 'Falta' }}
+                                            </td>
+
+                                            <td>
+                                                {{ $items->where('AperturaCierre', 1)->isNotEmpty() ? 'OK' : 'Falta' }}
+                                            </td>
+
+                                            <td>
+                                                {{ $items->where('AperturaCierre', 2)->isNotEmpty() ? 'OK' : 'Falta' }}
+                                            </td>
+
+                                            <td>
+                                                @php
+                                                    $verificacion = $items->first();
+                                                @endphp
+
+                                                @if ($verificacion)
+                                                    <!-- VER -->
+                                                    <a href="{{ route('verificaciones.show', \Carbon\Carbon::parse($fecha)->format('Y-m-d')) }}"
+                                                        class="btn btn-secondary">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                    <!-- APERTURA -->
+                                                    @if ($items->where('AperturaCierre', 0)->isNotEmpty())
+                                                        <a href="{{ route('verificaciones.edit', [
+                                                            'AperturaCierre' => 0,
+                                                            'Fecha' => $fecha,
+                                                        ]) }}"
+                                                            class="btn btn-success">
+                                                            Apertura
+                                                        </a>
+                                                    @endif
+
+                                                    <!-- RELEVO -->
+                                                    @if ($items->where('AperturaCierre', 1)->isNotEmpty())
+                                                        <a href="{{ route('verificaciones.edit', [
+                                                            'AperturaCierre' => 1,
+                                                            'Fecha' => $fecha,
+                                                        ]) }}"
+                                                            class="btn btn-primary">
+                                                            Relevo
+                                                        </a>
+                                                    @endif
+
+                                                    <!-- CIERRE -->
+                                                    @if ($items->where('AperturaCierre', 2)->isNotEmpty())
+                                                        <a href="{{ route('verificaciones.edit', [
+                                                            'AperturaCierre' => 2,
+                                                            'Fecha' => $fecha,
+                                                        ]) }}"
+                                                            class="btn btn-danger">
+                                                            Cierre
+                                                        </a>
+                                                    @endif
+
+                                                    <!-- CAMBIO HORA -->
+                                                    @can('Update_basico_1')
+                                                        <button class="btn btn-info"
+                                                            onclick="btnModalHora('{{ $fecha }}')">
+                                                            Cambio hora
+                                                        </button>
+                                                    @endcan
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+
+                        </div>
+                    @else
+                        <div class="alert alert-warning text-center">
+                            No hay verificaciones registradas.
+                        </div>
+                    @endif
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal_show_modal"></div>
 @endsection
 
 @section('script')
@@ -197,93 +240,136 @@
     <script src="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.js') }}"></script>
 
     <script>
+        /* =========================
+       🔷 DATATABLE
+    ========================= */
         $(document).ready(function() {
-            $('#verificaciones-table').DataTable();
-            
+            $('#verificaciones-table').DataTable({
+                pageLength: 10,
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
+                }
+            });
         });
 
-        // Función para filtrar las verificaciones
-        function execute_filter() {
-            var fecha_inicio = $('#fecha_inicio').val();
-            var fecha_fin = $('#fecha_fin').val();
 
-            if (!fecha_inicio || !fecha_fin) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Faltan fechas',
-                    text: 'Por favor ingresa las fechas de inicio y fin.'
-                });
+        /* =========================
+           🔷 FILTRO (SIN AJAX)
+        ========================= */
+        function execute_filter() {
+
+            const fi = $('#fecha_inicio').val();
+            const ff = $('#fecha_fin').val();
+
+            if (!fi || !ff) {
+                Swal.fire('Atención', 'Selecciona ambas fechas', 'warning');
                 return;
             }
 
-            $.ajax({
-                type: 'GET',
-                url: "{{ route('verificaciones.index') }}",
-                data: {
-                    fecha_inicio: fecha_inicio,
-                    fecha_fin: fecha_fin
-                },
-                success: function(data) {
-                    $('#table_data').html(data);
-                },
-                error: function(xhr, status, error) {
-                    console.log("Error:", error);
-                }
-            });
+            window.location.href = "{{ route('verificaciones.index') }}" +
+                "?fecha_inicio=" + fi +
+                "&fecha_fin=" + ff;
         }
 
-        // Limpiar los campos de filtro
-        $("#limpiar").on("click", function() {
+
+        /* =========================
+           🔷 LIMPIAR FILTRO
+        ========================= */
+        function limpiarFiltro() {
             $('#fecha_inicio').val('');
             $('#fecha_fin').val('');
-            execute_filter(); // Cargar nuevamente todos los datos
-        });
-
-        function btnAddVerificacion() {
-            // Aquí puedes implementar la lógica para abrir un modal y agregar una nueva verificación
+            location.reload();
         }
 
-        function btnModalHora(fecha){
+
+        /* =========================
+           🔷 ABRIR MODAL CAMBIO HORA
+        ========================= */
+        function btnModalHora(fecha) {
             $.ajax({
-                type:'post',
+                type: 'POST',
                 url: "{{ route('verificaciones.modals.up_time') }}",
                 dataType: "json",
-                data:{"_token": "{{ csrf_token() }}", fecha : fecha},
-                success:function(data){
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    fecha: fecha
+                },
+                success: function(data) {
                     $("#modal_show_modal").html(data.html);
                     $("#modal_show_modal").modal('show');
+                },
+                error: function() {
+                    Swal.fire('Error', 'No se pudo cargar el modal', 'error');
                 }
             });
         }
-
-        $(document).on('click', '#btnEnviarForm', function(e) {
-            e.preventDefault();
-
-            let $form = $('#formUpdateTime');
-
-            $.ajax({
-            url: "{{ route('verificaciones.update_time') }}",
-            type: 'POST',
-            data: $form.serialize(),
-            success: function(res) {
-                if (res.success) {
-                toastr.success(res.message);
-                $('#modal_show_modal').modal('hide');
-                location.reload();
+        /* =========================
+           🔥 VALIDACIÓN EN VIVO
+        ========================= */
+        document.addEventListener('input', function(e) {
+            if (e.target.id === 'hora_inicio' || e.target.id === 'hora_fin') {
+                const hi = document.getElementById('hora_inicio')?.value;
+                const hf = document.getElementById('hora_fin')?.value;
+                if (!hi || !hf) return;
+                const alerta = document.getElementById('alertaHoras');
+                const btn = document.getElementById('btnGuardar');
+                if (hi >= hf) {
+                    alerta.classList.remove('d-none');
+                    btn.disabled = true;
                 } else {
-                toastr.error('Ocurrió un error al actualizar.');
+                    alerta.classList.add('d-none');
+                    btn.disabled = false;
                 }
-            },
-            error: function(xhr) {
-                let msg = 'Error al procesar la solicitud.';
-                if (xhr.responseJSON && xhr.responseJSON.errors) {
-                msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
-                }
-                toastr.error(msg);
             }
-            });
         });
 
-       
+        /* =========================
+           🔥 GUARDAR (AJAX FETCH PRO)
+        ========================= */
+        document.addEventListener('click', async function(e) {
+            if (e.target.id === 'btnGuardar') {
+                const btn = e.target;
+                const form = document.getElementById('formUpdateTime');
+                if (!form) return;
+                const formData = new FormData(form);
+                const hi = formData.get('hora_inicio');
+                const hf = formData.get('hora_fin');
+                if (hi >= hf) {
+                    Swal.fire('Error', 'La hora inicio debe ser menor que la hora fin', 'warning');
+                    return;
+                }
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Guardando...';
+                try {
+                    const res = await fetch("{{ route('verificaciones.update_time') }}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        }
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        await Swal.fire({
+                            title: 'Éxito',
+                            text: 'Horarios actualizados correctamente',
+                            icon: 'success'
+                        });
+                        // 🔥 cerrar modal
+                        const modalEl = document.querySelector('.modal.show');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        modal.hide();
+                        // 🔥 recargar tabla
+                        location.reload();
+                    } else {
+                        throw new Error();
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'No se pudo actualizar', 'error');
+                }
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-save"></i> Guardar';
+            }
+        });
     </script>
 @endsection

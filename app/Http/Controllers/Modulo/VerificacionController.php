@@ -10,746 +10,607 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Exports\VerificacionesExport;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class VerificacionController extends Controller
 {
+    private function camposChecklist()
+    {
+        return [
+            'ModuloDeRecepcion',
+            'OrdenadoresDeFila',
+            'SillasDeOrientadores',
+            'Ticketera',
+            'LectorDeCodBarras',
+            'ServicioDeTelefonia1800',
+            'InsumoRecepcion',
+            'SillaRuedas',
+            'TvZonaAtencion',
+            'SillasEspera',
+            'SillasAtencion',
+            'ModuloAtencion',
+            'PcAsesores',
+            'ImpresorasZonaAtencion',
+            'InsumoMateriales',
+            'ModuloOficina',
+            'SillaOficina',
+            'InsumoOficina',
+            'SistemaIluminaria',
+            'OrdenLimpieza',
+            'Senialeticas',
+            'EquipoAireAcondicionado',
+            'ServiciosHigienicos',
+            'Comedor',
+            'Internet',
+            'SistemasColas',
+            'SistemaDeCitas',
+            'SistemaAudio',
+            'SistemaVideovigilancia',
+            'CorreoElectronico',
+            'ActiveDirectory',
+            'FileServer',
+            'Antivirus',
+            'SillaAsesor'
+        ];
+    }
+
+    private function generarObservaciones($request)
+    {
+        $obs = '';
+        foreach ($this->camposChecklist() as $campo) {
+            $o = $request->input('observaciones_' . $campo);
+            if (!empty($o)) $obs .= "-Observación de {$campo}: {$o}\n";
+        }
+        return $obs;
+    }
+
     public function index(Request $request)
     {
-        $query = Verificacion::query();
-        $user = auth()->user();
+        $query = Verificacion::where('id_centromac', auth()->user()->idcentro_mac);
 
-        // Filtrar solo por id_centromac del usuario autenticado, sin importar el user_id
-        $query->where('id_centromac', $user->idcentro_mac);
-
-        // Filtrar por rango de fechas si se proporcionan
-        if ($request->has('fecha_inicio') && $request->has('fecha_fin')) {
-            $fechaInicio = $request->input('fecha_inicio');
-            $fechaFin = $request->input('fecha_fin');
-            $query->whereBetween('Fecha', [$fechaInicio, $fechaFin]);
+        if ($request->filled(['fecha_inicio', 'fecha_fin'])) {
+            $query->whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin]);
         }
 
-        // Obtener las verificaciones filtradas
-        $verificaciones = $query->orderBy('Fecha', 'desc')->get();
+        $data = $query
+            ->orderByDesc('Fecha')
+            ->get() // ⚠️ IMPORTANTE: NO paginate aquí
+            ->groupBy('Fecha');
 
-        // Pasar las verificaciones a la vista
-        return view('verificaciones.index', compact('verificaciones'));
+        return view('verificaciones.index', compact('data'));
     }
-
-
-    public function create()
+    public function verificarFecha(Request $request)
     {
-        return view('verificaciones.create');
-    }
+        $fecha = $request->fecha;
 
+        $registros = Verificacion::whereDate('Fecha', $fecha)
+            ->where('id_centromac', auth()->user()->idcentro_mac)
+            ->pluck('AperturaCierre')
+            ->toArray();
+
+        return response()->json([
+            'apertura' => in_array(0, $registros),
+            'relevo'   => in_array(1, $registros),
+            'cierre'   => in_array(2, $registros),
+        ]);
+    }
+    public function create(Request $request)
+    {
+        $fecha = $request->fecha ?? now()->format('Y-m-d');
+
+        $idmac = auth()->user()->idcentro_mac;
+
+        $registros = Verificacion::whereDate('Fecha', $fecha)
+            ->where('id_centromac', $idmac)
+            ->pluck('AperturaCierre')
+            ->toArray();
+
+        $centroMac = DB::table('m_centro_mac')
+            ->where('IDCENTRO_MAC', $idmac)
+            ->value('NOMBRE_MAC'); // 👈 SOLO TRAE EL NOMBRE
+
+        return view('verificaciones.create', [
+            'fecha' => $fecha,
+            'yaApertura' => in_array(0, $registros),
+            'yaRelevo' => in_array(1, $registros),
+            'yaCierre' => in_array(2, $registros),
+            'nombreMac' => $centroMac // 🔥 NUEVO
+        ]);
+    }
+    public function store(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'AperturaCierre' => 'required|in:0,1,2',
+                'Fecha' => [
+                    'required',
+                    'date',
+                    'before_or_equal:today',
+                    Rule::unique('m_verificacion')->where(function ($q) use ($request) {
+                        return $q->whereDate('Fecha', $request->Fecha)
+                            ->where('AperturaCierre', $request->AperturaCierre)
+                            ->where('id_centromac', auth()->user()->idcentro_mac);
+                    })
+                ],
+                'ModuloDeRecepcion' => 'required|boolean'
+            ], [
+                // 🔥 MENSAJE PERSONALIZADO
+                'Fecha.unique' => $this->mensajeTipo($request->AperturaCierre)
+            ]);
+
+            $v = new Verificacion();
+
+            // 🔹 Carga masiva
+            $v->fill($request->all());
+
+            // 🔥 NORMALIZAR FECHA
+            $v->Fecha = Carbon::parse($request->Fecha)->startOfDay();
+
+            // 🔹 Datos sistema
+            $v->hora_registro = now();
+            $v->user_id = auth()->id();
+            $v->id_centromac = auth()->user()->idcentro_mac;
+
+            // 🔹 Observaciones
+            $v->Observaciones = $this->generarObservaciones($request);
+
+            $v->save();
+
+            return redirect()
+                ->route('verificaciones.index')
+                ->with('success', 'Verificación registrada correctamente.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            return back()
+                ->withInput()
+                ->withErrors($e->validator);
+        } catch (\Exception $e) {
+
+            return back()
+                ->withInput()
+                ->with('error', 'Error al guardar: ' . $e->getMessage());
+        }
+    }
+    private function mensajeTipo($tipo)
+    {
+        return match ((int)$tipo) {
+            0 => 'La APERTURA ya fue registrada para esta fecha.',
+            1 => 'El RELEVO ya fue registrado para esta fecha.',
+            2 => 'El CIERRE ya fue registrado para esta fecha.',
+            default => 'Registro duplicado.'
+        };
+    }
     public function show($fecha)
     {
-        // Convertir la fecha a un objeto Carbon
+        // 🔴 Validar formato
         if (!Carbon::hasFormat($fecha, 'Y-m-d')) {
-            return redirect()->back()->with('error', 'Formato de fecha no válido.');
+            return back()->with('error', 'Formato inválido');
         }
 
-        // Convertir la fecha a un objeto Carbon
-        $fechaCarbon = Carbon::createFromFormat('Y-m-d', $fecha);
-        // Obtener el usuario autenticado
-        $user = auth()->user();
-        $idCentroMac = $user->idcentro_mac;
+        $fechaCarbon = Carbon::parse($fecha);
 
-        // Buscar el centro en la tabla m_centro_mac usando DB
-        $centroMac = DB::table('m_centro_mac')
-            ->where('idcentro_mac', $idCentroMac)
-            ->first();
-        // Filtrar por id_centromac del usuario autenticado
+        // 🔥 Traer verificaciones
         $verificaciones = Verificacion::with('user')
-            ->whereDate('Fecha', $fechaCarbon) // Filtra por la fecha
-            ->where('id_centromac', auth()->user()->idcentro_mac) // Filtra por id_centromac
-            ->get(); // Recuperar las verificaciones
+            ->whereDate('Fecha', $fechaCarbon)
+            ->where('id_centromac', auth()->user()->idcentro_mac)
+            ->get();
 
-        // Mapear los nombres completos de los campos
-        $campos = [
-            'ModuloDeRecepcion' => 'Modulo de Recepcion',
-            'OrdenadoresDeFila' => 'Ordenadores de Fila',
-            'SillasDeOrientadores' => 'Sillas de Orientadores',
-            'Ticketera' => 'Ticketera (Sistema de Colas)',
-            'LectorDeCodBarras' => 'Lector de Codigo de Barras',
-            'ServicioDeTelefonia1800' => 'Servicio de Telefonia 1800',
-            'InsumoRecepcion' => 'Insumos y Materiales Zona Recepción',
-            'SillaRuedas' => 'Sillas de Ruedas',
-            'TvZonaAtencion' => 'Televisores en Zona de Atencion',
-            'SillasEspera' => 'Sillas de Espera',
-            'SillaAsesor' => 'Sillas de Asesor',
-            'SillasAtencion' => 'Sillas de Atencion al Ciudadano',
-            'ModuloAtencion' => 'Modulo de Atencion',
-            'PcAsesores' => 'Computadoras de Asesores',
-            'ImpresorasZonaAtencion' => 'Impresoras en Zonas de Atencion',
-            'InsumoMateriales' => 'Insumos y Materiales Zona Atencion',
-            'ModuloOficina' => 'Modulo de Oficina',
-            'SillaOficina' => 'Sillas de Oficina',
-            'InsumoOficina' => 'Insumos y Material para Oficina',
-            'SistemaIluminaria' => 'Sistema de Iluminacion',
-            'OrdenLimpieza' => 'Orden y Limpieza',
-            'Senialeticas' => 'Señaleticas',
-            'EquipoAireAcondicionado' => 'Equipos de Aire Acondicionado',
-            'ServiciosHigienicos' => 'Servicios Higienicos',
-            'Comedor' => 'Comedor',
-            'Internet' => 'Internet',
-            'SistemasColas' => 'Sistema de Colas',
-            'SistemaDeCitas' => 'Sistema de Citas',
-            'SistemaAudio' => 'Sistema de Audio',
-            'SistemaVideovigilancia' => 'Sistema de VideoVigilancia',
-            'CorreoElectronico' => 'Correo Electronico',
-            'ActiveDirectory' => 'Active Directory',
-            'FileServer' => 'File Server',
-            'Antivirus' => 'Antivirus',
+        // 🔥 Separar por tipo (clave para la vista)
+        $verificacionesInfo = [
+            'apertura' => null,
+            'relevo'   => null,
+            'cierre'   => null,
         ];
 
-        // Inicializar arrays para las observaciones
+        foreach ($verificaciones as $v) {
+            if ($v->AperturaCierre == 0) $verificacionesInfo['apertura'] = $v;
+            if ($v->AperturaCierre == 1) $verificacionesInfo['relevo']   = $v;
+            if ($v->AperturaCierre == 2) $verificacionesInfo['cierre']   = $v;
+        }
+
+        // 🔥 Observaciones separadas
         $observacionesApertura = [];
-        $observacionesRelevo = [];
-        $observacionesCierre = [];
+        $observacionesRelevo   = [];
+        $observacionesCierre   = [];
 
-        foreach ($verificaciones as $verificacion) {
-            // Procesar observaciones
-            $observacionesArray = explode("\n", $verificacion->Observaciones);
-            foreach ($observacionesArray as $observacion) {
-                if (preg_match('/-Observación de (\w+): (.+)/', $observacion, $matches)) {
-                    $campo = $matches[1];
-                    $textoObservacion = $matches[2];
+        foreach ($verificaciones as $v) {
 
-                    // Clasificar las observaciones por el tipo de Apertura/Cierre
-                    switch ($verificacion->AperturaCierre) {
-                        case 0: // Apertura
-                            $observacionesApertura[$campo] = $textoObservacion;
-                            break;
-                        case 1: // Relevo
-                            $observacionesRelevo[$campo] = $textoObservacion;
-                            break;
-                        case 2: // Cierre
-                            $observacionesCierre[$campo] = $textoObservacion;
-                            break;
+            if (!$v->Observaciones) continue;
+
+            foreach (explode("\n", $v->Observaciones) as $obs) {
+
+                if (preg_match('/-Observación de (\w+): (.+)/', $obs, $m)) {
+
+                    if ($v->AperturaCierre == 0) {
+                        $observacionesApertura[$m[1]] = $m[2];
+                    }
+
+                    if ($v->AperturaCierre == 1) {
+                        $observacionesRelevo[$m[1]] = $m[2];
+                    }
+
+                    if ($v->AperturaCierre == 2) {
+                        $observacionesCierre[$m[1]] = $m[2];
                     }
                 }
             }
         }
 
-        // Retornar la vista con los datos
+        // 🔥 Centro MAC (tu vista lo usa)
+        $centroMac = DB::table('m_centro_mac')
+            ->where('IDCENTRO_MAC', auth()->user()->idcentro_mac)
+            ->first();
+
+        // 🔥 USAR TU FUNCIÓN (SIN DUPLICAR)
+        $campos = [
+            'ModuloDeRecepcion' => 'Modulo de Recepción',
+            'OrdenadoresDeFila' => 'Ordenadores de Fila',
+            'SillasDeOrientadores' => 'Sillas de Orientadores',
+            'Ticketera' => 'Ticketera',
+            'LectorDeCodBarras' => 'Lector de Código de Barras',
+            'ServicioDeTelefonia1800' => 'Telefonía 1800',
+            'InsumoRecepcion' => 'Insumos Recepción',
+            'SillaRuedas' => 'Silla de Ruedas',
+            'TvZonaAtencion' => 'TV Zona Atención',
+            'SillasEspera' => 'Sillas de Espera',
+            'SillaAsesor' => 'Silla de Asesor',
+            'SillasAtencion' => 'Sillas de Atención',
+            'ModuloAtencion' => 'Módulo de Atención',
+            'PcAsesores' => 'PC Asesores',
+            'ImpresorasZonaAtencion' => 'Impresoras',
+            'InsumoMateriales' => 'Insumos Materiales',
+            'ModuloOficina' => 'Módulo Oficina',
+            'SillaOficina' => 'Silla Oficina',
+            'InsumoOficina' => 'Insumo Oficina',
+            'SistemaIluminaria' => 'Iluminación',
+            'OrdenLimpieza' => 'Orden y Limpieza',
+            'Senialeticas' => 'Señaléticas',
+            'EquipoAireAcondicionado' => 'Aire Acondicionado',
+            'ServiciosHigienicos' => 'Servicios Higiénicos',
+            'Comedor' => 'Comedor',
+            'Internet' => 'Internet',
+            'SistemasColas' => 'Sistema de Colas',
+            'SistemaDeCitas' => 'Sistema de Citas',
+            'SistemaAudio' => 'Sistema Audio',
+            'SistemaVideovigilancia' => 'Videovigilancia',
+            'CorreoElectronico' => 'Correo',
+            'ActiveDirectory' => 'Active Directory',
+            'FileServer' => 'File Server',
+            'Antivirus' => 'Antivirus',
+        ];
+
         return view('verificaciones.show', compact(
             'verificaciones',
-            'campos',
+            'verificacionesInfo', // 🔥 evita errores
             'fechaCarbon',
             'observacionesApertura',
             'observacionesRelevo',
             'observacionesCierre',
-            'centroMac'
+            'centroMac',
+            'campos'
         ));
     }
 
-    public function store(Request $request)
-    {
-        // Validaciones iniciales
-        $request->validate([
-            'AperturaCierre' => 'required|in:0,1,2', // Cambiado para permitir 0, 1 y 2
-            'Fecha' => 'required|date',
-            'ModuloDeRecepcion' => 'required|boolean',
-            'Fecha' => [
-                Rule::unique('m_verificacion', 'Fecha')->where(function ($query) use ($request) {
-                    return $query->where('Fecha', $request->Fecha)
-                        ->where('AperturaCierre', $request->AperturaCierre)
-                        ->where('id_centromac', auth()->user()->idcentro_mac);  // Aquí agregamos la validación del id_centromac
-                }),
-            ],
-        ], [
-            'Fecha.unique' => 'Ya existe una verificación para esta fecha, tipo de apertura/cierre y centro.',
-            'AperturaCierre.in' => 'El campo Apertura/Cierre debe ser 0 (Apertura), 1 (Relevo) o 2 (Cierre).',
-        ]);
-
-
-        try {
-            // Crear y llenar el modelo de Verificación
-            $verificacion = new Verificacion();
-            $verificacion->fill($request->all());
-            $verificacion->hora_registro = now();  // Esto asigna la hora actual a la columna hora_registro
-
-            // Agregar el user_id
-            $verificacion->user_id = auth()->user()->id; // Asegúrate de que este es el campo correcto en tu tabla
-            // Asignar el id_centromac desde el usuario autenticado
-            $verificacion->id_centromac = auth()->user()->idcentro_mac;
-            // Recoger y concatenar observaciones
-            $observaciones = '';
-            $campos = [
-                'ModuloDeRecepcion',
-                'OrdenadoresDeFila',
-                'SillasDeOrientadores',
-                'Ticketera',
-                'LectorDeCodBarras',
-                'ServicioDeTelefonia1800',
-                'InsumoRecepcion',
-                'SillaRuedas',
-                'TvZonaAtencion',
-                'SillasEspera',
-                'SillasAtencion',
-                'ModuloAtencion',
-                'PcAsesores',
-                'ImpresorasZonaAtencion',
-                'InsumoMateriales',
-                'ModuloOficina',
-                'SillaOficina',
-                'InsumoOficina',
-                'SistemaIluminaria',
-                'OrdenLimpieza',
-                'Senialeticas',
-                'EquipoAireAcondicionado',
-                'ServiciosHigienicos',
-                'Comedor',
-                'Internet',
-                'SistemasColas',
-                'SistemaDeCitas',
-                'SistemaAudio',
-                'SistemaVideovigilancia',
-                'CorreoElectronico',
-                'ActiveDirectory',
-                'FileServer',
-                'Antivirus',
-                'SillaAsesor',
-            ];
-
-            foreach ($campos as $campo) {
-                $observacion = $request->input('observaciones_' . $campo);
-                if (!empty($observacion)) {
-                    $observaciones .= "-Observación de " . $campo . ": " . $observacion . "\n";
-                }
-            }
-
-            // Asignar las observaciones al modelo
-            $verificacion->Observaciones = $observaciones;
-
-            // Guardar el modelo
-            $verificacion->save();
-
-            // Redirigir con un mensaje de éxito
-            return redirect()->route('verificaciones.index')->with('success', 'Verificación creada exitosamente.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'No se pudo crear la verificación. Error: ' . $e->getMessage());
-        }
-    }
     public function edit(Request $request)
     {
-        // Obtener la fecha y el estado de Apertura/Cierre del request
-        $fecha = $request->input('Fecha');
-        $aperturaCierre = $request->input('AperturaCierre');
+        $idmac = auth()->user()->idcentro_mac;
 
-        // Obtener la verificación correspondiente a la fecha y estado
-        $verificacion = Verificacion::where(function ($query) use ($request) {
-            $query->where('Fecha', $request->Fecha)
-                ->where('AperturaCierre', $request->AperturaCierre)
-                ->where('id_centromac', auth()->user()->idcentro_mac);
-        })->first();
-        // Si no se encuentra la verificación, manejarlo según tu lógica
-        if (!$verificacion) {
-            return redirect()->route('verificaciones.index')->with('error', 'No se encontraron verificaciones para esta fecha y estado.');
-        }
+        $v = Verificacion::whereDate('Fecha', $request->Fecha)
+            ->where('AperturaCierre', $request->AperturaCierre)
+            ->where('id_centromac', $idmac)
+            ->firstOrFail();
 
-        // Obtener las verificaciones del día
-        $verificacionesDelDia = Verificacion::where('Fecha', $fecha)->get();
+        $nombreMac = DB::table('m_centro_mac')
+            ->where('IDCENTRO_MAC', $idmac)
+            ->value('NOMBRE_MAC');
 
-        // Separar observaciones por campo
         $observaciones = [];
-        $observacionesArray = explode("\n", $verificacion->Observaciones);
 
-        foreach ($observacionesArray as $observacion) {
-            if (preg_match('/-Observación de (\w+): (.+)/', $observacion, $matches)) {
-                $campo = $matches[1]; // El nombre del campo
-                $textoObservacion = $matches[2]; // El texto de la observación
-                $observaciones[$campo] = $textoObservacion; // Asignar la observación al campo correspondiente
+        if ($v->Observaciones) {
+            foreach (explode("\n", $v->Observaciones) as $obs) {
+
+                if (preg_match('/-Observación de (\w+): (.+)/', $obs, $m)) {
+                    $observaciones[$m[1]] = $m[2];
+                }
             }
         }
 
-        // Retornar la vista con los datos y las observaciones separadas
-        return view('verificaciones.edit', compact('verificacion', 'verificacionesDelDia', 'observaciones'));
+        return view('verificaciones.edit', [
+            'verificacion' => $v,
+            'observaciones' => $observaciones,
+            'nombreMac' => $nombreMac // 🔥 NUEVO
+        ]);
     }
 
     public function update(Request $request, Verificacion $verificacion)
     {
         try {
-            // Convertir la fecha a un objeto Carbon
-            $fecha = Carbon::createFromFormat('Y-m-d H:i:s', $request->Fecha . ' 00:00:00'); // Asegúrate de incluir la hora
-            if (!$fecha) {
-                return redirect()->back()->with('error', 'Formato de fecha no válido.');
-            }
-
-            // Recoger y concatenar observaciones
-            $observaciones = '';
-            $campos = [
-                'ModuloDeRecepcion',
-                'OrdenadoresDeFila',
-                'SillasDeOrientadores',
-                'Ticketera',
-                'LectorDeCodBarras',
-                'ServicioDeTelefonia1800',
-                'InsumoRecepcion',
-                'SillaRuedas',
-                'TvZonaAtencion',
-                'SillasEspera',
-                'SillasAtencion',
-                'ModuloAtencion',
-                'PcAsesores',
-                'ImpresorasZonaAtencion',
-                'InsumoMateriales',
-                'ModuloOficina',
-                'SillaOficina',
-                'InsumoOficina',
-                'SistemaIluminaria',
-                'OrdenLimpieza',
-                'Senialeticas',
-                'EquipoAireAcondicionado',
-                'ServiciosHigienicos',
-                'Comedor',
-                'Internet',
-                'SistemasColas',
-                'SistemaDeCitas',
-                'SistemaAudio',
-                'SistemaVideovigilancia',
-                'CorreoElectronico',
-                'ActiveDirectory',
-                'FileServer',
-                'Antivirus',
-                'SillaAsesor',
-            ];
-            foreach ($campos as $campo) {
-                $observacion = $request->input('observaciones_' . $campo);
-                if (!empty($observacion)) {
-                    $observaciones .= "-Observación de " . $campo . ": " . $observacion . "\n";
-                }
-            }
-
-            // Asignar los datos del formulario al modelo
-            $verificacion->fill($request->except(['observaciones_ModuloDeRecepcion', /* otros campos de observación */]));
-
-            // Asegúrate de que AperturaCierre sea un entero
+            $verificacion->fill($request->all());
             $verificacion->AperturaCierre = (int)$request->AperturaCierre;
-
-            // Asignar las observaciones al modelo
-            $verificacion->Observaciones = $observaciones;
-
-            // Actualizar la fecha en el modelo
-            $verificacion->Fecha = $fecha; // Asegúrate de asignar la fecha correctamente
-
-            // Guardar los cambios
+            $verificacion->Fecha = Carbon::parse($request->Fecha);
+            $verificacion->Observaciones = $this->generarObservaciones($request);
             $verificacion->save();
 
-            // Redirigir con un mensaje de éxito
-            return redirect()->route('verificaciones.index')->with('success', 'Verificación actualizada exitosamente.');
+            return redirect()->route('verificaciones.index')->with('success', 'Actualizado.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'No se pudo actualizar la verificación. Error: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 
     public function destroy(Verificacion $verificacion)
     {
         $verificacion->delete();
-        return redirect()->route('verificaciones.index')
-            ->with('success', 'Verificación eliminada exitosamente.');
+        return back()->with('success', 'Eliminado.');
     }
-    public function contingencia()
-    {
-        // Obtener el id_centromac del usuario autenticado
-        $idCentroMac = auth()->user()->idcentro_mac;
 
-        // Obtener todas las verificaciones del id_centromac del usuario ordenadas por fecha
-        $verificaciones = Verificacion::where('id_centromac', $idCentroMac)
-            ->orderBy('Fecha')
+    public function contingencia(Request $request)
+    {
+        // 🔥 mes seleccionado
+        $mes = $request->mes ?? now()->format('Y-m');
+
+        $year = substr($mes, 0, 4);
+        $month = substr($mes, 5, 2);
+
+        // 🔥 traer datos SOLO del mes
+        $verificaciones = Verificacion::where('id_centromac', auth()->user()->idcentro_mac)
+            ->whereYear('Fecha', $year)
+            ->whereMonth('Fecha', $month)
             ->get();
 
-        // Obtener la lista de campos
-        $campos = [
-            'ModuloDeRecepcion',
-            'OrdenadoresDeFila',
-            'SillasDeOrientadores',
-            'Ticketera',
-            'LectorDeCodBarras',
-            'ServicioDeTelefonia1800',
-            'InsumoRecepcion',
-            'SillaRuedas',
-            'TvZonaAtencion',
-            'SillasEspera',
-            'SillasAtencion',
-            'ModuloAtencion',
-            'PcAsesores',
-            'ImpresorasZonaAtencion',
-            'InsumoMateriales',
-            'ModuloOficina',
-            'SillaOficina',
-            'InsumoOficina',
-            'SistemaIluminaria',
-            'OrdenLimpieza',
-            'Senialeticas',
-            'EquipoAireAcondicionado',
-            'ServiciosHigienicos',
-            'Comedor',
-            'Internet',
-            'SistemasColas',
-            'SistemaDeCitas',
-            'SistemaAudio',
-            'SistemaVideovigilancia',
-            'CorreoElectronico',
-            'ActiveDirectory',
-            'FileServer',
-            'Antivirus',
-            'SillaAsesor', // Asegúrate de incluir "SillaAsesor" si es necesario
-        ];
+        $campos = $this->camposChecklist();
 
-        // Organizar las verificaciones por fecha y tipo (Apertura, Relevo, Cierre)
-        $tablaContingencia = [];
-        foreach ($verificaciones as $verificacion) {
-            $fecha = Carbon::parse($verificacion->Fecha)->format('Y-m-d'); // Formatear la fecha
-            $tipo = $verificacion->AperturaCierre; // Mantener el valor original (0, 1 o 2)
+        $tabla = [];
 
-            // Inicializar el array para la fecha si no existe
-            if (!isset($tablaContingencia[$fecha])) {
-                $tablaContingencia[$fecha] = ['Apertura' => [], 'Relevo' => [], 'Cierre' => []]; // Agregar Relevo aquí
+        foreach ($verificaciones as $v) {
+
+            // 🔥 día (1–31)
+            $dia = (int) Carbon::parse($v->Fecha)->format('d');
+
+            if (!isset($tabla[$dia])) {
+                $tabla[$dia] = [
+                    'Apertura' => [],
+                    'Relevo' => [],
+                    'Cierre' => []
+                ];
             }
 
-            // Transformar los valores booleanos a 'Sí' o 'No'
-            $verificacionData = $verificacion->only($campos);
-            foreach ($verificacionData as $key => $value) {
-                $verificacionData[$key] = $value ? 'Sí' : 'No';
-            }
+            // 🔥 CORRECCIÓN CLAVE (alinear campos)
+            $data = collect($campos)->mapWithKeys(function ($campo) use ($v) {
+                return [$campo => (int) $v->$campo];
+            })->toArray();
 
-            // Asignar los datos según el tipo de verificación
-            if ($tipo == 0) { // Apertura
-                $tablaContingencia[$fecha]['Apertura'] = $verificacionData;
-            } elseif ($tipo == 1) { // Relevo
-                $tablaContingencia[$fecha]['Relevo'] = $verificacionData;
-            } elseif ($tipo == 2) { // Cierre
-                $tablaContingencia[$fecha]['Cierre'] = $verificacionData;
+            if ($v->AperturaCierre == 0) $tabla[$dia]['Apertura'] = $data;
+            if ($v->AperturaCierre == 1) $tabla[$dia]['Relevo'] = $data;
+            if ($v->AperturaCierre == 2) $tabla[$dia]['Cierre'] = $data;
+        }
+
+        // 🔥 MATRIZ FINAL
+        $matriz = [];
+
+        foreach ($campos as $campo) {
+
+            foreach (range(1, 31) as $dia) {
+
+                $a = $tabla[$dia]['Apertura'][$campo] ?? null;
+                $c = $tabla[$dia]['Cierre'][$campo] ?? null;
+
+                if ($a === 1 && $c === 1) {
+                    $valor = '✅';
+                } elseif ($a !== 1 && $c === 1) {
+                    $valor = '❌A';
+                } elseif ($a === 1 && $c !== 1) {
+                    $valor = '❌C';
+                } elseif ($a !== null || $c !== null) {
+                    $valor = '❌'; // existe pero incompleto
+                } else {
+                    $valor = '-';
+                }
+
+                $matriz[$campo][$dia] = $valor;
             }
         }
 
-        // Retornar la vista con los datos
-        return view('verificaciones.contingencia', compact('tablaContingencia', 'campos'));
+        return view('verificaciones.contingencia', compact('matriz', 'mes', 'campos'));
     }
-
-
-    public function filtrar(Request $request)
-    {
-        // Validar los datos del formulario
-        $request->validate([
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-        ]);
-
-        // Obtener el id_centromac del usuario autenticado
-        $idCentroMac = auth()->user()->idcentro_mac;
-
-        // Obtener las verificaciones dentro del rango de fechas y que coincidan con el id_centromac del usuario
-        $verificaciones = Verificacion::where('id_centromac', $idCentroMac)
-            ->whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin])
-            ->orderBy('Fecha')
-            ->get();
-
-        // Obtener la lista de campos
-        $campos = [
-            'ModuloDeRecepcion',
-            'OrdenadoresDeFila',
-            'SillasDeOrientadores',
-            'Ticketera',
-            'LectorDeCodBarras',
-            'ServicioDeTelefonia1800',
-            'InsumoRecepcion',
-            'SillaRuedas',
-            'TvZonaAtencion',
-            'SillasEspera',
-            'SillasAtencion',
-            'ModuloAtencion',
-            'PcAsesores',
-            'ImpresorasZonaAtencion',
-            'InsumoMateriales',
-            'ModuloOficina',
-            'SillaOficina',
-            'InsumoOficina',
-            'SistemaIluminaria',
-            'OrdenLimpieza',
-            'Senialeticas',
-            'EquipoAireAcondicionado',
-            'ServiciosHigienicos',
-            'Comedor',
-            'Internet',
-            'SistemasColas',
-            'SistemaDeCitas',
-            'SistemaAudio',
-            'SistemaVideovigilancia',
-            'CorreoElectronico',
-            'ActiveDirectory',
-            'FileServer',
-            'Antivirus',
-        ];
-
-        // Organizar las verificaciones por fecha y tipo (Apertura/Cierre)
-        $tablaContingencia = [];
-        foreach ($verificaciones as $verificacion) {
-            $fecha = Carbon::createFromFormat('Y-m-d H:i:s', $verificacion->Fecha)->format('Y-m-d'); // Formatear la fecha
-            $tipo = $verificacion->AperturaCierre ? 'Apertura' : 'Cierre';
-            if (!isset($tablaContingencia[$fecha])) {
-                $tablaContingencia[$fecha] = ['Apertura' => [], 'Cierre' => []];
-            }
-
-            // Transformar los valores booleanos a 'Sí' o 'No'
-            $verificacionData = $verificacion->only($campos);
-            foreach ($verificacionData as $key => $value) {
-                $verificacionData[$key] = $value ? 'Sí' : 'No';
-            }
-
-            $tablaContingencia[$fecha][$tipo] = $verificacionData;
-        }
-
-        // Retornar la vista con los datos filtrados
-        return view('verificaciones.contingencia', compact('tablaContingencia', 'campos'));
-    }
-
     public function observaciones(Request $request)
     {
-        // Validar los datos del formulario
-        $request->validate([
-            'fecha_inicio' => 'nullable|date',
-            'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
-        ]);
+        $query = Verificacion::with('user')
+            ->where('id_centromac', auth()->user()->idcentro_mac);
 
-        // Obtener el id_centromac del usuario autenticado
-        $idCentroMac = auth()->user()->idcentro_mac;
-
-        // Depuración para verificar el id_centromac del usuario
-        // dd('id_centromac usuario: ' . $idCentroMac); // Esta línea solo la debes usar para verificar el valor.
-
-        // Si no se proporcionan fechas, obtener los últimos 20 registros del id_centromac del usuario
-        if (!$request->has('fecha_inicio') || !$request->has('fecha_fin')) {
-            $verificaciones = Verificacion::where('id_centromac', $idCentroMac)
-                ->orderBy('Fecha', 'desc')
-                ->take(20)
-                ->get();
+        // 🔍 FILTRO FECHAS
+        if ($request->filled(['fecha_inicio', 'fecha_fin'])) {
+            $query->whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin]);
         } else {
-            // Obtener las verificaciones dentro del rango de fechas para el id_centromac del usuario
-            $verificaciones = Verificacion::where('id_centromac', $idCentroMac)
-                ->whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin])
-                ->orderBy('Fecha')
-                ->get();
+            $query->latest('Fecha')->limit(20);
         }
 
-        // Si no se encuentran verificaciones para el id_centromac
-        if ($verificaciones->isEmpty()) {
-            return redirect()->back()->with('error', 'No se encontraron registros para este Centro MAC.');
-        }
+        $verificaciones = $query->get();
 
-        // Obtener la lista de campos
-        $campos = [
-            'ModuloDeRecepcion',
-            'OrdenadoresDeFila',
-            'SillasDeOrientadores',
-            'Ticketera',
-            'LectorDeCodBarras',
-            'ServicioDeTelefonia1800',
-            'InsumoRecepcion',
-            'SillaRuedas',
-            'TvZonaAtencion',
-            'SillasEspera',
-            'SillasAtencion',
-            'ModuloAtencion',
-            'PcAsesores',
-            'ImpresorasZonaAtencion',
-            'InsumoMateriales',
-            'ModuloOficina',
-            'SillaOficina',
-            'InsumoOficina',
-            'SistemaIluminaria',
-            'OrdenLimpieza',
-            'Senialeticas',
-            'EquipoAireAcondicionado',
-            'ServiciosHigienicos',
-            'Comedor',
-            'Internet',
-            'SistemasColas',
-            'SistemaDeCitas',
-            'SistemaAudio',
-            'SistemaVideovigilancia',
-            'CorreoElectronico',
-            'ActiveDirectory',
-            'FileServer',
-            'Antivirus',
-        ];
+        $verificacionesInfo = $verificaciones->map(function ($v) {
 
-        $verificacionesInfo = [];
-        foreach ($verificaciones as $verificacion) {
-            $fecha = Carbon::createFromFormat('Y-m-d H:i:s', $verificacion->Fecha)->format('Y-m-d');
+            // 🔹 Tipo ejecución
+            $tipo = ['Apertura', 'Relevo', 'Cierre'][$v->AperturaCierre] ?? 'X';
 
-            // Ajuste para tipo de ejecución
-            switch ($verificacion->AperturaCierre) {
-                case 0:
-                    $tipoEjecucion = 'Apertura';
-                    break;
-                case 1:
-                    $tipoEjecucion = 'Relevo';
-                    break;
-                case 2:
-                    $tipoEjecucion = 'Cierre';
-                    break;
-                default:
-                    $tipoEjecucion = 'Desconocido'; // Manejo de casos no esperados
-            }
+            // 🔹 Hora
+            $hora = $v->hora_registro
+                ? Carbon::parse($v->hora_registro)->format('H:i')
+                : '-';
 
-            // Obtener la hora real de registro
-            $hora = $verificacion->hora_registro ? Carbon::parse($verificacion->hora_registro)->format('H:i') : 'No registrada';
+            // 🔥 CAMPOS CHECKLIST
+            $campos = collect($v->only($this->camposChecklist()));
 
-            $observaciones = $verificacion->Observaciones; // Asumiendo que hay un campo Observaciones
+            $total = $campos->count();
 
-            // Calcular el porcentaje de 'Sí'
-            $totalCampos = count($campos);
-            $camposSi = count(array_filter($verificacion->only($campos), function ($value) {
-                return $value == 1;
-            }));
-            $porcentajeSi = ($camposSi / $totalCampos) * 100;
+            // ✅ SOLO contar los que son SI (1)
+            $ok = $campos->filter(fn($x) => (int)$x === 1)->count();
 
-            $verificacionesInfo[] = [
-                'tipoEjecucion' => $tipoEjecucion,
-                'observaciones' => $observaciones,
-                'fecha' => $fecha,
-                'hora' => $hora,
-                'porcentajeSi' => round($porcentajeSi, 2),
-                'responsable' => $verificacion->user->name, // Suponiendo que el nombre está en el modelo User
-            ];
-        }
+            // 🔥 PORCENTAJE REAL
+            $porcentaje = $total > 0
+                ? round(($ok * 100) / $total, 1)
+                : 0;
 
-        return view('verificaciones.observaciones', compact('verificacionesInfo'));
-    }
-    public function export(Request $request)
-    {
-        // Validar las fechas de inicio y fin
-        $request->validate([
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-        ]);
+            // 🔥 OBSERVACIONES BONITAS
+            $obs = $this->formatearObservaciones($v->Observaciones);
 
-        // Obtener las verificaciones dentro del rango de fechas y el id_centromac
-        $verificaciones = Verificacion::whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin])
-            ->where('id_centromac', auth()->user()->idcentro_mac)
-            ->orderBy('Fecha')
-            ->get();
-        // Contar el total de registros
-        $totalRegistros = $verificaciones->count();
-        // Obtener la lista de campos
-        $campos = [
-            'ModuloDeRecepcion',
-            'OrdenadoresDeFila',
-            'SillasDeOrientadores',
-            'Ticketera',
-            'LectorDeCodBarras',
-            'ServicioDeTelefonia1800',
-            'InsumoRecepcion',
-            'SillaRuedas',
-            'TvZonaAtencion',
-            'SillasEspera',
-            'SillasAtencion',
-            'ModuloAtencion',
-            'PcAsesores',
-            'ImpresorasZonaAtencion',
-            'InsumoMateriales',
-            'ModuloOficina',
-            'SillaOficina',
-            'InsumoOficina',
-            'SistemaIluminaria',
-            'OrdenLimpieza',
-            'Senialeticas',
-            'EquipoAireAcondicionado',
-            'ServiciosHigienicos',
-            'Comedor',
-            'Internet',
-            'SistemasColas',
-            'SistemaDeCitas',
-            'SistemaAudio',
-            'SistemaVideovigilancia',
-            'CorreoElectronico',
-            'ActiveDirectory',
-            'FileServer',
-            'Antivirus'
-        ];
-
-        // Preparamos los datos para el export
-        $exportData = $verificaciones->map(function ($verificacion) use ($campos) {
-            // Ajuste para tipo de ejecución
-            $tipoEjecucion = $verificacion->AperturaCierre == 0 ? 'Check list ejecutado en Apertura	' : ($verificacion->AperturaCierre == 1 ? 'Check list ejecutado en Relevo' : 'Check list ejecutado en Cierre');
-
-            // Calcular el porcentaje de 'Sí' en los campos
-            $totalCampos = count($campos);
-            $camposSi = count(array_filter($verificacion->only($campos), function ($value) {
-                return $value == 1;
-            }));
-
-            // Aseguramos que 'SistemaDeCitas' siempre esté marcado como 1
-            if ($verificacion->SistemaDeCitas == 0) {
-                $camposSi++;
-            }
-
-            // Calculamos el porcentaje
-            $porcentajeSi = ($camposSi / $totalCampos) * 100;
-
-            // Mapear los datos de la verificación
             return [
-                'tipoEjecucion' => $tipoEjecucion,
-                'observaciones' => $verificacion->Observaciones,
-                'fecha' => \Carbon\Carbon::parse($verificacion->Fecha)->format('d-m-Y'),
-                'hora' => \Carbon\Carbon::parse($verificacion->hora_registro)->format('H:i:s'),
-                'porcentajeSi' => round($porcentajeSi, 2),
-                'responsable' => $verificacion->user->name,
+                'tipoEjecucion' => $tipo,
+                'observaciones' => $obs,
+                'fecha' => Carbon::parse($v->Fecha)->format('Y-m-d'),
+                'hora' => $hora,
+                'porcentajeSi' => $porcentaje,
+                'responsable' => $v->user->name ?? '-'
             ];
         });
 
-        // Exportar a Excel
-        return Excel::download(new VerificacionesExport($exportData, $request->fecha_inicio, $request->fecha_fin,$totalRegistros), 'verificaciones_' . now()->format('Ymd_His') . '.xlsx');
+        return view('verificaciones.observaciones', compact('verificacionesInfo'));
+    }
+    private function formatearObservaciones($texto)
+    {
+        if (!$texto) return '-';
+
+        return collect(explode("\n", $texto))
+            ->filter()
+            ->map(function ($linea) {
+
+                if (preg_match('/-Observación de (\w+): (.+)/', $linea, $m)) {
+
+                    // 🔥 Separar palabras
+                    $campo = preg_replace('/([a-z])([A-Z])/', '$1 $2', $m[1]);
+
+                    // 🔥 minúsculas tipo "de"
+                    $campo = preg_replace('/\bDe\b/', 'de', $campo);
+
+                    $valor = $m[2];
+
+                    return "{$campo}: {$valor}";
+                }
+
+                return $linea;
+            })
+            ->implode("\n");
     }
 
-    /**** permisos especiales ****/
+    public function export(Request $request)
+    {
+        $request->validate([
+            'fecha_inicio' => 'required|date',
+            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio'
+        ]);
+
+        $idmac = auth()->user()->idcentro_mac;
+
+        $verificaciones = Verificacion::with('user')
+            ->whereBetween('Fecha', [$request->fecha_inicio, $request->fecha_fin])
+            ->where('id_centromac', $idmac)
+
+            // 🔥 ORDEN PERFECTO
+            ->orderBy('Fecha', 'asc')
+            ->orderBy('hora_registro', 'asc')
+            ->orderByRaw("FIELD(AperturaCierre, 0,1,2)")
+
+            ->get()
+            ->map(function ($v) {
+
+                // 🔹 Tipo ejecución
+                $tipo = ['Apertura', 'Relevo', 'Cierre'][$v->AperturaCierre] ?? 'X';
+
+                // 🔥 FECHA REAL (EXCEL)
+                $fecha = Date::PHPToExcel(
+                    \Carbon\Carbon::parse($v->Fecha)
+                );
+
+                // 🔥 HORA REAL (SOLO HORA)
+                $hora = $v->hora_registro
+                    ? Date::PHPToExcel(
+                        \Carbon\Carbon::parse($v->hora_registro)
+                    )
+                    : null;
+
+                // 🔥 CALCULO %
+                $campos = collect($v->only($this->camposChecklist()));
+                $total = $campos->count();
+
+                $ok = $campos->filter(fn($x) => (int)$x === 1)->count();
+
+                $porcentaje = $total > 0
+                    ? round(($ok * 100) / $total, 1)
+                    : 0;
+
+                // 🔥 OBSERVACIONES BONITAS
+                $obs = $this->formatearObservaciones($v->Observaciones);
+
+                return [
+                    'tipoEjecucion' => $tipo,
+                    'observaciones' => $obs ?: '-',
+                    'fecha' => $fecha,
+                    'hora' => $hora,
+                    'porcentajeSi' => $porcentaje,
+                    'responsable' => $v->user->name ?? '-'
+                ];
+            });
+
+        $total = $verificaciones->count();
+
+        return Excel::download(
+            new VerificacionesExport(
+                $verificaciones,
+                $request->fecha_inicio,
+                $request->fecha_fin,
+                $total
+            ),
+            'verificaciones_' . now()->format('Ymd_His') . '.xlsx'
+        );
+    }
     public function up_time(Request $request)
     {
-        $fecha_d = Carbon::parse($request->fecha)->format('Y-m-d');
+        $fecha = Carbon::parse($request->fecha)->format('Y-m-d');
+        $idmac = auth()->user()->idcentro_mac;
 
-        $hora_inicio = DB::table('m_verificacion')->whereDate('Fecha', $fecha_d)->where('AperturaCierre', 0)->first();
-        $hora_fin = DB::table('m_verificacion')->where('Fecha', $fecha_d)->where('AperturaCierre', 2)->first();
-        // dd($hora_inicio);
+        $inicio = DB::table('m_verificacion')
+            ->whereDate('Fecha', $fecha)
+            ->where('id_centromac', $idmac)
+            ->where('AperturaCierre', 0)
+            ->first();
 
-        $view = view('verificaciones.modals.up_time', compact('hora_inicio', 'hora_fin'))->render();
+        $fin = DB::table('m_verificacion')
+            ->whereDate('Fecha', $fecha)
+            ->where('id_centromac', $idmac)
+            ->where('AperturaCierre', 2)
+            ->first();
 
-        return response()->json(["html" => $view]);
-    }
+        // 🔥 FORMATEO
+        if ($inicio && $inicio->hora_registro) {
+            $inicio->hora_formateada = Carbon::parse($inicio->hora_registro)->format('H:i');
+            $inicio->fecha_formateada = Carbon::parse($inicio->hora_registro)->format('Y-m-d');
+        }
 
-    public function update_time(Request $request)
-    {
-        // Validación básica
-        $request->validate([
-            'id_inicio'   => 'required|integer',
-            'id_fin'      => 'required|integer',
-            'fecha_inicio'       => 'required|date',
-            'fecha_fin'       => 'required|date',
-            'hora_inicio' => 'required|date_format:H:i:s',
-            'hora_fin'    => 'required|date_format:H:i:s',
-        ]);
-        // dd($request->all());
-
-        // Formatea fecha y hora
-        $date_i = Carbon::parse($request->fecha_inicio)->format('Y-m-d');
-        $date_f = Carbon::parse($request->fecha_fin)->format('Y-m-d');
-        $fullInicio = "{$date_i} {$request->hora_inicio}";
-        $fullFin    = "{$date_f} {$request->hora_fin}";
-
-        // Actualiza Apertura
-        DB::table('m_verificacion')
-          ->where('id', $request->id_inicio)
-          ->update(['hora_registro' => $fullInicio]);
-
-        // Actualiza Cierre
-        DB::table('m_verificacion')
-          ->where('id', $request->id_fin)
-          ->update(['hora_registro' => $fullFin]);
+        if ($fin && $fin->hora_registro) {
+            $fin->hora_formateada = Carbon::parse($fin->hora_registro)->format('H:i');
+            $fin->fecha_formateada = Carbon::parse($fin->hora_registro)->format('Y-m-d');
+        }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Horarios actualizados correctamente.'
+            'html' => view('verificaciones.modals.up_time', compact('inicio', 'fin'))->render()
         ]);
+    }
+    public function update_time(Request $request)
+    {
+        $request->validate([
+            'id_inicio' => 'required',
+            'id_fin' => 'required',
+            'fecha_inicio' => 'required|date',
+            'fecha_fin' => 'required|date',
+            'hora_inicio' => 'required',
+            'hora_fin' => 'required'
+        ]);
+
+        DB::table('m_verificacion')->where('id', $request->id_inicio)
+            ->update(['hora_registro' => $request->fecha_inicio . ' ' . $request->hora_inicio]);
+
+        DB::table('m_verificacion')->where('id', $request->id_fin)
+            ->update(['hora_registro' => $request->fecha_fin . ' ' . $request->hora_fin]);
+
+        return response()->json(['success' => true]);
     }
 }

@@ -15,16 +15,16 @@
     <title>SISTEMA INTRANET CENTRO MAC - SSCS - PCM</title>
 
     <!-- App favicon -->
-    <link rel="shortcut icon" href="{{asset('favicon.ico')}}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
     <!-- jvectormap -->
-    <link href="{{asset('nuevo/plugins/jvectormap/jquery-jvectormap-2.0.2.css')}}" rel="stylesheet">
+    <link href="{{ asset('nuevo/plugins/jvectormap/jquery-jvectormap-2.0.2.css') }}" rel="stylesheet">
 
     <!-- App css -->
-    <link href="{{asset('nuevo/assets/css/bootstrap.min.css')}}" rel="stylesheet" type="text/css" />
-    <link href="{{asset('nuevo/assets/css/icons.min.css')}}" rel="stylesheet" type="text/css" />
-    <link href="{{asset('nuevo/assets/css/metisMenu.min.css')}}" rel="stylesheet" type="text/css" />
-    <link href="{{asset('nuevo/plugins/daterangepicker/daterangepicker.css')}}" rel="stylesheet" type="text/css" />
-    <link href="{{asset('nuevo/assets/css/app.min.css')}}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('nuevo/assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('nuevo/assets/css/icons.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('nuevo/assets/css/metisMenu.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('nuevo/plugins/daterangepicker/daterangepicker.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('nuevo/assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
 
     <!--STYLESHEET-->
     <!--=================================================-->
@@ -32,7 +32,7 @@
     <!--<link rel="stylesheet" href="{ asset('Style\css\datatable.min.css') }}">-->
     <!--Font Awesome [ OPTIONAL ]-->
     <!--  Font Awesome 4.7.0 by https://fontawesome.com/v4/icons/ -->
-    <link href="{{ asset('Vendor\plugins\font-awesome\css\font-awesome.min.css')}}" rel="stylesheet">
+    <link href="{{ asset('Vendor\plugins\font-awesome\css\font-awesome.min.css') }}" rel="stylesheet">
     <!--Bootstrap Datepicker [ OPTIONAL ]-->
     {{-- <script src="{{ asset('Vendor\bootstrap-datepicker\bootstrap-datepicker.min.css')}}"></script> --}}
     <!--Pace - Page Load Progress Par [OPTIONAL]-->
@@ -45,48 +45,54 @@
         body.dark-sidenav .left-sidenav {
             background-color: #5F3195;
         }*/
-        table.dataTable td.dataTables_empty, table.dataTable th.dataTables_empty {
+        table.dataTable td.dataTables_empty,
+        table.dataTable th.dataTables_empty {
             text-align: center;
             color: red;
         }
+
         .bg-soft-primary {
             background: linear-gradient(#B8F2FC, #16DFFF);
         }
-        .nav-logo{max-width: 100%;}
-    
-        thead{
-            background-color: #3656ac!important;
-    
+
+        .nav-logo {
+            max-width: 100%;
         }
-    
-        tr th{
+
+        thead {
+            background-color: #3656ac !important;
+
+        }
+
+        tr th {
             color: #fff !important;
             vertical-align: middle !important;
-            font-family: "Roboto",sans-serif;
+            font-family: "Roboto", sans-serif;
             font-size: 14px;
             line-height: 20px;
 
         }
-    
-        .sorting{
+
+        .sorting {
             color: #fff !important;
             vertical-align: middle !important;
         }
-    
-        tr td, td a{
+
+        tr td,
+        td a {
             color: #474747;
-            font-family: "Roboto",sans-serif;
+            font-family: "Roboto", sans-serif;
             font-size: 13px;
             line-height: 20px;
         }
-    
-        .form-control{
+
+        .form-control {
             border: 1px solid rgb(173, 173, 173);
         }
-    
-        .panel-inei{
+
+        .panel-inei {
             background: #112762;
-            color:#fff;
+            color: #fff;
         }
 
         .loader {
@@ -96,8 +102,8 @@
             align-items: center;
             position: fixed;
             text-align: center;
-            vertical-align: text-bottom	;                     
-            z-index:1;
+            vertical-align: text-bottom;
+            z-index: 1;
             height: 100vh;
             width: 100vw;
             /* background-color: #fff; */
@@ -109,24 +115,24 @@
             min-height: 80px;
         }
 
-        .nobtn{
-                background: none !important;
-                border: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                cursor: pointer;            
-                color: blue;
-                font-size: 1em;
+        .nobtn {
+            background: none !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            cursor: pointer;
+            color: blue;
+            font-size: 1em;
         }
 
-        .nobtn:hover{
-            text-decoration: underline; 
+        .nobtn:hover {
+            text-decoration: underline;
         }
 
-        .hasError{
+        .hasError {
             border: 1px solid #f00 !important;
         }
-    
+
         .loader {
             display: flex;
             flex-direction: column;
@@ -142,26 +148,46 @@
 
         .logo-container {
             position: relative;
-            animation: bounce 1.5s infinite ease-in-out; /* Movimiento de la imagen */
+            animation: bounce 1.5s infinite ease-in-out;
+            /* Movimiento de la imagen */
         }
 
         .logo_d {
-            width: 50px; /* Ajusta el tamaño de la imagen */
-            animation: pulse-colors 2s infinite; /* Parpadeo de colores */
+            width: 50px;
+            /* Ajusta el tamaño de la imagen */
+            animation: pulse-colors 2s infinite;
+            /* Parpadeo de colores */
         }
 
         @keyframes pulse-colors {
-            0% { filter: hue-rotate(0deg); }
-            25% { filter: hue-rotate(90deg); }
-            50% { filter: hue-rotate(180deg); }
-            75% { filter: hue-rotate(270deg); }
-            100% { filter: hue-rotate(360deg); }
+            0% {
+                filter: hue-rotate(0deg);
+            }
+
+            25% {
+                filter: hue-rotate(90deg);
+            }
+
+            50% {
+                filter: hue-rotate(180deg);
+            }
+
+            75% {
+                filter: hue-rotate(270deg);
+            }
+
+            100% {
+                filter: hue-rotate(360deg);
+            }
         }
 
         @keyframes bounce {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translateY(0);
             }
+
             50% {
                 transform: translateY(-10px);
             }
@@ -170,15 +196,19 @@
         .loading-text {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #007bff; /* Color azul */
+            color: #007bff;
+            /* Color azul */
             margin-top: 15px;
             animation: fade-in-out 1.5s infinite;
         }
 
         @keyframes fade-in-out {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 0.3;
             }
+
             50% {
                 opacity: 1;
             }
@@ -188,10 +218,28 @@
             text-transform: uppercase !important;
         }
 
-     </style>
+        .badge.bg-danger {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.08);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
 
 </head>
-    <body class="dark-sidenav">
+
+<body class="dark-sidenav">
     {{-- <div class="loader">
         <div class="spinner-border spinner-border-custom-4 text-primary" role="status"></div><br />
         <div>Cargando...</div>
@@ -203,70 +251,70 @@
         <div class="loading-text">Cargando...</div>
     </div>
 
-    
-        @include('secciones.sidebar')
-        <div id="app" style="width:100%; height: 100%;">
-            <div class="page-wrapper">
-                @include('secciones.header')
-                <!-- Page Content-->
-                <div class="page-content">
-                    @yield('main')
-                    @include('secciones.footer')
-                </div>
-                <!-- end page content -->
+
+    @include('secciones.sidebar')
+    <div id="app" style="width:100%; height: 100%;">
+        <div class="page-wrapper">
+            @include('secciones.header')
+            <!-- Page Content-->
+            <div class="page-content">
+                @yield('main')
+                @include('secciones.footer')
             </div>
+            <!-- end page content -->
         </div>
-        {{-- Ver Modales --}}
-        <div class="modal fade" id="modal_show_modal_pass" tabindex="-1" role="dialog" ></div>
-        <!-- jQuery  -->
-        <script src="{{asset('nuevo/assets/js/jquery.min.js')}}"></script>
-        <!-- end page-wrapper -->
-        {{-- <script src="{{ asset('js/app.js')}}"></script> --}}
-        <script src="{{asset('nuevo/assets/js/bootstrap.bundle.min.js')}}"></script>
-        <script src="{{asset('nuevo/assets/js/metismenu.min.js')}}"></script>
-        <script src="{{asset('nuevo/assets/js/waves.js')}}"></script>
-        <script src="{{asset('nuevo/assets/js/feather.min.js')}}"></script>
-        <script src="{{asset('nuevo/assets/js/simplebar.min.js')}}"></script>
-        <script src="{{asset('nuevo/assets/js/moment.js')}}"></script>
-        <script src="{{asset('nuevo/plugins/daterangepicker/daterangepicker.js')}}"></script>
+    </div>
+    {{-- Ver Modales --}}
+    <div class="modal fade" id="modal_show_modal_pass" tabindex="-1" role="dialog"></div>
+    <!-- jQuery  -->
+    <script src="{{ asset('nuevo/assets/js/jquery.min.js') }}"></script>
+    <!-- end page-wrapper -->
+    {{-- <script src="{{ asset('js/app.js')}}"></script> --}}
+    <script src="{{ asset('nuevo/assets/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('nuevo/assets/js/metismenu.min.js') }}"></script>
+    <script src="{{ asset('nuevo/assets/js/waves.js') }}"></script>
+    <script src="{{ asset('nuevo/assets/js/feather.min.js') }}"></script>
+    <script src="{{ asset('nuevo/assets/js/simplebar.min.js') }}"></script>
+    <script src="{{ asset('nuevo/assets/js/moment.js') }}"></script>
+    <script src="{{ asset('nuevo/plugins/daterangepicker/daterangepicker.js') }}"></script>
 
-        <!-- App js -->
-        <script src="{{asset('nuevo/assets/js/app.js')}}"></script>
-      
+    <!-- App js -->
+    <script src="{{ asset('nuevo/assets/js/app.js') }}"></script>
 
-        {{-- CARGA IMAGEN ANTES DE CARGAR PAGINA --}}
-        <script>
-         $(document).ready(function(){
+
+    {{-- CARGA IMAGEN ANTES DE CARGAR PAGINA --}}
+    <script>
+        $(document).ready(function() {
             mayuscular();
-           $(".loader").fadeOut();
-             $(window).resize(function(){    
-                 if (window.matchMedia("(max-width: 700px)").matches) {
-                     $('#divicnav1').addClass('col-3');
-                     $('#divicnav2').addClass('col-6');
-                     $('#divicnav3').addClass('col-3');
+            $(".loader").fadeOut();
+            $(window).resize(function() {
+                if (window.matchMedia("(max-width: 700px)").matches) {
+                    $('#divicnav1').addClass('col-3');
+                    $('#divicnav2').addClass('col-6');
+                    $('#divicnav3').addClass('col-3');
 
-                     $('#divicnav1').removeClass('col-1');
-                     $('#divicnav2').removeClass('col-10');
-                     $('#divicnav3').removeClass('col-1');
-                 } else {
-                     $('#divicnav1').addClass('col-1');
-                     $('#divicnav2').addClass('col-10');
-                     $('#divicnav3').addClass('col-1');
+                    $('#divicnav1').removeClass('col-1');
+                    $('#divicnav2').removeClass('col-10');
+                    $('#divicnav3').removeClass('col-1');
+                } else {
+                    $('#divicnav1').addClass('col-1');
+                    $('#divicnav2').addClass('col-10');
+                    $('#divicnav3').addClass('col-1');
 
-                     $('#divicnav1').removeClass('col-3');
-                     $('#divicnav2').removeClass('col-6');
-                     $('#divicnav3').removeClass('col-3');
-                 }
-             }).resize()// trigger on page load
-              
-         });
+                    $('#divicnav1').removeClass('col-3');
+                    $('#divicnav2').removeClass('col-6');
+                    $('#divicnav3').removeClass('col-3');
+                }
+            }).resize() // trigger on page load
 
-         function mayuscular(){
+        });
+
+        function mayuscular() {
             const nombresColumnIndex = 1; // Índice de la columna "NOMBRES" (comienza en 0)
             const centrosMacColumnIndex = 2; // Índice de la columna "CENTRO MAC"
 
             // Recorrer todas las filas del tbody
-            $('.table_asistencia').each(function () {
+            $('.table_asistencia').each(function() {
                 // Transformar NOMBRES a mayúsculas
                 const nombresCell = $(this).find('td').eq(nombresColumnIndex);
                 if (nombresCell.length) {
@@ -279,16 +327,18 @@
                     centrosMacCell.text(centrosMacCell.text().toUpperCase());
                 }
             });
-         }
+        }
 
-         function btnCambiarPass() {
+        function btnCambiarPass() {
 
             $.ajax({
-                type:'post',
+                type: 'post',
                 url: "{{ route('modal-password') }}",
                 dataType: "json",
-                data:{"_token": "{{ csrf_token() }}"},
-                success:function(data){
+                data: {
+                    "_token": "{{ csrf_token() }}"
+                },
+                success: function(data) {
                     $("#modal_show_modal_pass").html(data.html);
                     $("#modal_show_modal_pass").modal('show');
                 }
@@ -317,97 +367,97 @@
 
             // Si todo es válido, enviar la contraseña al servidor
             fetch('store-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.getElementById('_token').value,
-                },
-                body: JSON.stringify({ password }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'error') {
-                    alert(data.message); // Mostrar mensaje de error
-                } else {
-                    alert(data.message); // Contraseña actualizada correctamente
-                    // Opcional: cerrar el modal o recargar la página
-                    $("#modal_show_modal_pass").modal('hide');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        }
-
-
-        </script>
-
-        <script>
-
-        function ajaxRequest(url, type, data, successFunction){
-                $.ajax({
-                    url: url,
-                    method: type,
-                    data: data,
-                    success: successFunction
-                });
-
-                $.ajaxSetup({
-                headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.getElementById('_token').value,
+                    },
+                    body: JSON.stringify({
+                        password
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'error') {
+                        alert(data.message); // Mostrar mensaje de error
+                    } else {
+                        alert(data.message); // Contraseña actualizada correctamente
+                        // Opcional: cerrar el modal o recargar la página
+                        $("#modal_show_modal_pass").modal('hide');
                     }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                 });
+        }
+    </script>
 
-            }
-        </script>
-
-        <script>
-            // Esperar 8 segundos y recargar solo si la página no se ha cargado completamente
-            var cargaCompleta = false;
-
-            setTimeout(function() {
-                cargaCompleta = true;
-            }, 8000);
-
-            window.addEventListener('load', function() {
-                cargaCompleta = true;
+    <script>
+        function ajaxRequest(url, type, data, successFunction) {
+            $.ajax({
+                url: url,
+                method: type,
+                data: data,
+                success: successFunction
             });
 
-            // Verificar si la carga está completa después de 8 segundos y recargar si es necesario
-            setTimeout(function() {
-                if (!cargaCompleta) {
-                    window.location.reload();
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
-            }, 8000);
-        </script>
+            });
 
-        <!--JAVASCRIPT-->
-        <!--=================================================-->
-        <!--Tooltip [ RECOMENDADO ]-->
-        {{-- <script src="{{ asset('Script/tippyjs/popper.min.js')}}"></script>
+        }
+    </script>
+
+    <script>
+        // Esperar 8 segundos y recargar solo si la página no se ha cargado completamente
+        var cargaCompleta = false;
+
+        setTimeout(function() {
+            cargaCompleta = true;
+        }, 8000);
+
+        window.addEventListener('load', function() {
+            cargaCompleta = true;
+        });
+
+        // Verificar si la carga está completa después de 8 segundos y recargar si es necesario
+        setTimeout(function() {
+            if (!cargaCompleta) {
+                window.location.reload();
+            }
+        }, 8000);
+    </script>
+
+    <!--JAVASCRIPT-->
+    <!--=================================================-->
+    <!--Tooltip [ RECOMENDADO ]-->
+    {{-- <script src="{{ asset('Script/tippyjs/popper.min.js')}}"></script>
         <script src="{{ asset('Script/tippyjs/tippy-bundle.umd.js')}}"></script> --}}
 
-        <!--Datatable [ RECOMENDADO ]-->
-        <!--
+    <!--Datatable [ RECOMENDADO ]-->
+    <!--
         <script src="{ asset('Script/datatables/pdfmake.min.js') }}"></script>
         <script src="{ asset('Script/datatables/vfs_fonts.js') }}"></script>
         <script src="{ asset('Script/datatables/datatables.min.js') }}"></script>
         -->
-        <!--Bootstrap Datepicker [ OPTIONAL ]-->
-        <script src="{{ asset('Vendor\bootstrap-datepicker\bootstrap-datepicker.min.js')}}"></script>
-        <!-- Development -->
-        {{-- <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
+    <!--Bootstrap Datepicker [ OPTIONAL ]-->
+    <script src="{{ asset('Vendor\bootstrap-datepicker\bootstrap-datepicker.min.js') }}"></script>
+    <!-- Development -->
+    {{-- <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
         <script src="https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.js"></script> --}}
-        {{-- <script src="https://unpkg.com/popper.js@1"></script>
+    {{-- <script src="https://unpkg.com/popper.js@1"></script>
         <script src="https://unpkg.com/tippy.js@5"></script> --}}
-        <script src="{{ asset('js\tipify5\popper.js')}}"></script>
-        <script src="{{ asset('js\tipify5\tippy.js')}}"></script>
+    <script src="{{ asset('js\tipify5\popper.js') }}"></script>
+    <script src="{{ asset('js\tipify5\tippy.js') }}"></script>
 
-        <!-- CODIGO -->
-        @yield('script')
-        
+    <!-- CODIGO -->
+    @yield('script')
 
 
-        
-    </body>
+
+
+</body>
+
 </html>

@@ -52,6 +52,4 @@ class User extends Authenticatable
     {
         return $this->hasMany(Mac::class, 'IDCENTRO_MAC', 'id');
     }
-
-
 }
