@@ -57,7 +57,7 @@
         <tr>
             <th>MÓDULO</th>
             <th>ENTIDAD / MAC</th>
-            <th>PUNTUALES (8:16)</th>
+            <th>PUNTUALES</th>
             <th>DÍAS MARCADOS</th>
             <th>PORCENTAJE</th>
             <th>ESTADO</th>
@@ -85,7 +85,7 @@
                     <small class="text-muted">{{ $r->NOMBRE_MAC }}</small>
                 </td>
 
-                <td class="fw-bold text-success">
+                <td class="">
                     {{ $r->PUNTUALES_816 }}
                 </td>
 
