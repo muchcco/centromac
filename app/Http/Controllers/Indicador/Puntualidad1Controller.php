@@ -368,7 +368,7 @@ class Puntualidad1Controller extends Controller
             foreach ($resultados as $r) {
 
                 $dias[$dia][$r->IDMODULO] = [
-                    'hora_minima' => $r->hora_minima,
+                    'hora_minima' => $r->hora_modulo,
                     'es_feriado' => $esFeriado
                 ];
             }
