@@ -191,8 +191,9 @@ class OcupabilidadController extends Controller
         $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
 
         // 🔥 FECHA FIN (para consulta)
+        // 🔥 FECHA FIN CORRECTA
         if ((int)$anio === (int)now()->year && (int)$mes === (int)now()->month) {
-            $fechaFin = now(); // mes actual
+            $fechaFin = Carbon::yesterday(); // 🔥 clave
         } else {
             $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
         }
