@@ -160,7 +160,7 @@
 
                     @role('Administrador|Coordinador|Supervisor|Moderador')
                         <li class="">
-                            <a href="https://pcmgobperu-my.sharepoint.com/:x:/g/personal/sscs_powerbi_pcm_gob_pe/IQDLDRwmcsKrQqmCtHGBlwU3AS2ZNWpZ02uMxKqHHfRHVAE?e=Uiy60R"
+                            <a href="https://pcmgobperu-my.sharepoint.com/:x:/g/personal/sscs_powerbi_pcm_gob_pe/IQDLDRwmcsKrQqmCtHGBlwU3Af17ORB5i9JzO0NY2zR1D84?e=BswVrv"
                                 target="_blank">
                                 <i class="ti-control-record"></i><span>Módulos asignados</span>
                             </a>
