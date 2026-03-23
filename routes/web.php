@@ -649,7 +649,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('verificaciones/{fecha}', [VerificacionController::class, 'show'])->name('verificaciones.show');
     Route::get('/verificaciones/get-observations', [VerificacionController::class, 'getObservations'])->name('verificaciones.getObservations');
     Route::get('/verificaciones/observaciones/export', [VerificacionController::class, 'export'])->name('verificaciones.export');
-    Route::get('/verificaciones/verificar-fecha', [VerificacionController::class, 'verificarFecha'])->name('verificaciones.verificarFecha');
+
     /** permisos especiales para check list ***/
     Route::post('/verificaciones/modals/up_time', [VerificacionController::class, 'up_time'])->name('verificaciones.modals.up_time');
     Route::post('/verificaciones/update_time', [VerificacionController::class, 'update_time'])
@@ -685,7 +685,7 @@ Route::group(['middleware' => ['auth']], function () {
         /* 🔥 CASCADA */
         Route::post('/get_modulos', [HorarioDiferenciadoController::class, 'get_modulos'])->name('get_modulos');
         Route::post('/get_entidades', [HorarioDiferenciadoController::class, 'get_entidades'])->name('get_entidades');
-        Route::post('/get_entidades_modulo', [HorarioDiferenciadoController::class, 'get_entidades_modulo'])->name('get_entidades_modulo');
+        Route::post('/get_entidades_modulo',[HorarioDiferenciadoController::class,'get_entidades_modulo'])->name('get_entidades_modulo');
     });
 
     Route::get('/test-mail', function () {

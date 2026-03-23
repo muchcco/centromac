@@ -336,60 +336,107 @@
         }
 
         function guardarTiemposEntidad() {
-            var data = [];
+
+            let data = [];
+
             $(".espera").each(function() {
-                var id = $(this).data("id");
-                var espera = $(this).val();
-                var atencion = $(".atencion[data-id='" + id + "']").val();
-                var fecha_inicio = $(".fecha_inicio[data-id='" + id + "']").val();
-                var fecha_fin = $(".fecha_fin[data-id='" + id + "']").val();
-                var calcula = $(".calcula[data-id='" + id + "']").is(":checked") ? 1 : 0;
+                let id = $(this).data("id");
 
                 data.push({
                     id_servicio: id,
-                    fecha_inicio: fecha_inicio,
-                    fecha_fin: fecha_fin,
-                    limite_espera: espera,
-                    limite_atencion: atencion,
-                    se_calcula: calcula
+                    fecha_inicio: $(".fecha_inicio[data-id='" + id + "']").val(),
+                    fecha_fin: $(".fecha_fin[data-id='" + id + "']").val(),
+                    limite_espera: $(this).val(),
+                    limite_atencion: $(".atencion[data-id='" + id + "']").val(),
+                    se_calcula: $(".calcula[data-id='" + id + "']").is(":checked") ? 1 : 0
                 });
             });
-            $.ajax({
-                type: 'POST',
-                url: "{{ route('ans.update_tiempos_entidad') }}",
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    data: data
-                },
 
-                beforeSend: function() {
-                    Swal.fire({
-                        title: 'Guardando',
-                        text: 'Actualizando tiempos...',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-                },
+            // 🔥 CONFIG
+            let chunkSize = 50;
+            let concurrency = 3;
 
-                success: function() {
-                    $("#modal_show_modal").modal('hide');
-                    tabla_servicios();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Actualizado',
-                        text: 'Los tiempos fueron actualizados correctamente'
-                    });
-                },
-                error: function() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No se pudo actualizar'
-                    });
-                }
+            let chunks = [];
+            for (let i = 0; i < data.length; i += chunkSize) {
+                chunks.push(data.slice(i, i + chunkSize));
+            }
+
+            let totalChunks = chunks.length;
+            let procesados = 0;
+            let index = 0;
+
+            // 🔥 UI
+            Swal.fire({
+                title: 'Guardando servicios...',
+                html: `
+            <div style="width:100%;background:#eee;border-radius:6px;height:25px;">
+                <div id="barra_progreso"
+                    style="width:0%;height:100%;background:linear-gradient(90deg,#28a745,#20c997);
+                    color:white;text-align:center;line-height:25px;border-radius:6px;">
+                    0%
+                </div>
+            </div>
+            <small id="texto_progreso">Bloques 0 de ${totalChunks}</small>
+        `,
+                allowOutsideClick: false,
+                showConfirmButton: false
             });
+
+            function procesarCola() {
+
+                if (index >= totalChunks) return;
+
+                let chunk = chunks[index];
+                index++;
+
+                $.ajax({
+                    type: 'POST',
+                    url: "{{ route('ans.update_tiempos_entidad') }}",
+                    data: {
+                        "_token": "{{ csrf_token() }}",
+                        data: chunk
+                    },
+                    success: function() {
+
+                        procesados++;
+
+                        let porcentaje = Math.round((procesados / totalChunks) * 100);
+
+                        $("#barra_progreso").css("width", porcentaje + "%");
+                        $("#barra_progreso").text(porcentaje + "%");
+
+                        $("#texto_progreso").text(`Bloques ${procesados} de ${totalChunks}`);
+
+                        if (procesados === totalChunks) {
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Completado',
+                                text: 'Todo guardado correctamente 🚀'
+                            });
+
+                            $("#modal_show_modal").modal('hide');
+                            tabla_servicios();
+                            return;
+                        }
+
+                        procesarCola();
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Falló un bloque'
+                        });
+                    }
+                });
+            }
+
+            // 🚀 INICIAR PARALELO
+            for (let i = 0; i < concurrency; i++) {
+                procesarCola();
+            }
+
         }
 
         function abrirCambioTiempos() {
@@ -464,6 +511,31 @@
                     });
                 }
             });
+        }
+
+        function activarCalculoTodos() {
+            $(".calcula").prop("checked", true);
+        }
+
+        function quitarCalculoTodos() {
+
+            Swal.fire({
+                title: "¿Seguro?",
+                text: "Se quitará el cálculo a todos los servicios",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Sí, quitar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    $(".calcula").prop("checked", false);
+
+                }
+
+            });
+
         }
     </script>
 @endsection

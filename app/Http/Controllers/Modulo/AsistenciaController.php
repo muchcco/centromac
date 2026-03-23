@@ -2165,6 +2165,10 @@ class AsistenciaController extends Controller
             $q->NUM_DOC = $q->NUM_DOC ?? $q->dni ?? '';
             $q->FECHA = $q->FECHA ?? $q->fecha ?? $q->fecha_asistencia ?? null;
             $q->N_MODULO = $q->N_MODULO ?? $q->nombre_modulo ?? null;
+            $q->observaciones = $q->observaciones ?? '';
+            $q->contador_obs = isset($q->observaciones) && $q->observaciones != ''
+                ? count(array_filter(explode(';', $q->observaciones)))
+                : 0;
             $q->ESTADO = $estado;
             return $q;
         };
