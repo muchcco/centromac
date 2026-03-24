@@ -172,23 +172,11 @@
                                     <i class="fa fa-calendar"></i> Cerrar Mes
                                 </button>
                             @endrole
-                            @php
-                                $mesActual = date('Y-m'); // mes actual fijo (ejemplo: 2025-10)
-                            @endphp
-
-                            @role('Administrador|Moderador')
-                                @if (auth()->user()->hasAnyRole(['Administrador', 'Monitor', 'Monitoreo']))
-                                    {{--  Admin, Monitor y Monitoreo: siempre pueden revertir --}}
-                                    <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
-                                        <i class="fa fa-undo"></i> Revertir Día
-                                    </button>
-                                @elseif (auth()->user()->hasRole('Especialista TIC|Coordinador') && date('Y-m') === $mesActual)
-                                    {{-- ⚙️ Especialista TIC: solo puede revertir durante el mes actual --}}
-                                    <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
-                                        <i class="fa fa-undo"></i> Revertir Día
-                                    </button>
-                                @endif
-                            @endrole
+                            @hasanyrole('Administrador|Moderador')
+                                <button class="btn btn-warning" onclick="btnRevertirDia()" id="btnRevertirDia">
+                                    <i class="fa fa-undo"></i> Revertir Día
+                                </button>
+                            @endhasanyrole
 
                         </div>
                     </div>

@@ -276,34 +276,27 @@ class ModuloController extends Controller
             ], 400);
         }
     }
-
     public function destroy(Request $request)
     {
-        // Inicia una transacción para asegurar la integridad de la operación
+        if (!auth()->user()->hasRole('Administrador')) {
+            return response()->json([
+                'ok' => false,
+                'msg' => 'No tienes permisos para eliminar módulos.'
+            ], 403);
+        }
         DB::beginTransaction();
-
         try {
-            // Encuentra el módulo utilizando Eloquent para mayor seguridad
             $modulo = Modulo::findOrFail($request->id);
-
-            // Elimina el módulo
             $modulo->delete();
-
-            // Si todo ha ido bien, confirma la transacción
             DB::commit();
-
             return response()->json([
                 'message' => 'Módulo eliminado exitosamente'
-            ], 200); // Respuesta exitosa con mensaje
-
+            ], 200);
         } catch (\Exception $e) {
-            // En caso de error, revierte la transacción
-            DB::rollback();
-
-            // Regresa una respuesta de error con el mensaje de excepción
+            DB::rollBack();
             return response()->json([
                 'error' => $e->getMessage()
-            ], 400); // Código de estado HTTP para errores de cliente
+            ], 400);
         }
     }
     public function modalCambiarEntidad(Request $request)

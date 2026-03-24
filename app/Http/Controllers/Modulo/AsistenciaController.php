@@ -735,19 +735,11 @@ class AsistenciaController extends Controller
     public function md_excepcion_cierre(Request $request)
     {
 
-        $idmac = $request->idmac;
+        $idmac = $request->mac ?? $request->idmac;
         $fecha = $request->fecha;
-
-        /*
-    ==========================================
-    VALIDAR SI EL DÍA YA ESTÁ CERRADO
-    ==========================================
-    */
-
-        $cerrado = DB::table('db_centros_mac.cierre_asistencia_log')
-            ->where('tipo_cierre', 'DIA')
+        $cerrado = DB::table('db_centro_mac_reporte.asistencia_resumen')
             ->where('idmac', $idmac)
-            ->whereDate('fecha', $fecha)
+            ->whereDate('fecha_asistencia', $fecha)
             ->exists();
 
         if ($cerrado) {
@@ -757,13 +749,6 @@ class AsistenciaController extends Controller
                 'msg' => 'Ese día ya se encuentra cerrado.'
             ]);
         }
-
-        /*
-    ==========================================
-    CARGAR MACs
-    ==========================================
-    */
-
         $macs = DB::table('m_centro_mac')
             ->select('IDCENTRO_MAC as id', 'NOMBRE_MAC as nom')
             ->orderBy('NOMBRE_MAC')
@@ -781,39 +766,20 @@ class AsistenciaController extends Controller
     }
     public function guardar_excepcion_cierre(Request $request)
     {
-
         try {
-
             $fecha = $request->fecha;
-            $idmac = $request->idmac;
-
-            /*
-        ======================================
-        VALIDAR SI EL DÍA YA ESTÁ CERRADO
-        ======================================
-        */
-
-            $cerrado = DB::table('db_centros_mac.cierre_asistencia_log')
-                ->where('tipo_cierre', 'DIA')
+            $idmac = $request->mac ?? $request->idmac;
+            $cerrado = DB::table('db_centro_mac_reporte.asistencia_resumen')
                 ->where('idmac', $idmac)
-                ->whereDate('fecha', $fecha)
+                ->whereDate('fecha_asistencia', $fecha)
                 ->exists();
 
             if ($cerrado) {
-
                 return response()->json([
                     'ok' => false,
                     'msg' => 'Ese día ya se encuentra cerrado. No se puede registrar excepción.'
                 ]);
             }
-
-
-            /*
-        ======================================
-        VALIDAR SI YA EXISTE EXCEPCIÓN
-        ======================================
-        */
-
             $existe = DB::table('D_ASISTENCIA_EXCEPCION_CIERRE')
                 ->where('IDCENTRO_MAC', $idmac)
                 ->whereDate('FECHA_ASISTENCIA', $fecha)
@@ -821,45 +787,26 @@ class AsistenciaController extends Controller
                 ->exists();
 
             if ($existe) {
-
                 return response()->json([
                     'ok' => false,
                     'msg' => 'Ya existe una excepción registrada para ese día.'
                 ]);
             }
-
-
-            /*
-        ======================================
-        REGISTRAR EXCEPCIÓN
-        ======================================
-        */
-
             DB::table('D_ASISTENCIA_EXCEPCION_CIERRE')->insert([
-
                 'IDCENTRO_MAC' => $idmac,
                 'FECHA_ASISTENCIA' => $fecha,
-
                 'SOLICITADO_POR' => auth()->user()->id,
                 'NOMBRE_SOLICITANTE' => auth()->user()->name,
-
                 'MOTIVO' => $request->motivo,
-
                 'VALIDO_HASTA' => $request->valido_hasta,
-
                 'FECHA_SOLICITUD' => now(),
-
                 'ESTADO' => 'ACTIVO'
-
             ]);
-
-
             return response()->json([
                 'ok' => true,
                 'msg' => 'Excepción registrada correctamente.'
             ]);
         } catch (\Exception $e) {
-
             return response()->json([
                 'ok' => false,
                 'msg' => 'Error al registrar excepción.',

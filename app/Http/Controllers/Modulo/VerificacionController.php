@@ -120,39 +120,31 @@ class VerificacionController extends Controller
     public function store(Request $request)
     {
         try {
-
+            $fecha = Carbon::parse($request->Fecha)->startOfDay();
             $request->validate([
                 'AperturaCierre' => 'required|in:0,1,2',
-                'Fecha' => [
-                    'required',
-                    'date',
-                    'before_or_equal:today',
-                    Rule::unique('m_verificacion')->where(function ($q) use ($request) {
-                        return $q->whereDate('Fecha', $request->Fecha)
-                            ->where('AperturaCierre', $request->AperturaCierre)
-                            ->where('id_centromac', auth()->user()->idcentro_mac);
-                    })
-                ],
+                'Fecha' => 'required|date|before_or_equal:today',
                 'ModuloDeRecepcion' => 'required|boolean'
-            ], [
-                // 🔥 MENSAJE PERSONALIZADO
-                'Fecha.unique' => $this->mensajeTipo($request->AperturaCierre)
             ]);
+            $idmac = auth()->user()->idcentro_mac;
+            $existe = Verificacion::where('id_centromac', $idmac)
+                ->where('AperturaCierre', $request->AperturaCierre)
+                ->whereDate('Fecha', $fecha)
+                ->exists();
 
+            if ($existe) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'Fecha' => $this->mensajeTipo($request->AperturaCierre)
+                    ]);
+            }
             $v = new Verificacion();
-
-            // 🔹 Carga masiva
             $v->fill($request->all());
-
-            // 🔥 NORMALIZAR FECHA
-            $v->Fecha = Carbon::parse($request->Fecha)->startOfDay();
-
-            // 🔹 Datos sistema
+            $v->Fecha = $fecha;
             $v->hora_registro = now();
             $v->user_id = auth()->id();
-            $v->id_centromac = auth()->user()->idcentro_mac;
-
-            // 🔹 Observaciones
+            $v->id_centromac = $idmac;
             $v->Observaciones = $this->generarObservaciones($request);
 
             $v->save();
@@ -160,16 +152,23 @@ class VerificacionController extends Controller
             return redirect()
                 ->route('verificaciones.index')
                 ->with('success', 'Verificación registrada correctamente.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == 23000) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'Fecha' => $this->mensajeTipo($request->AperturaCierre)
+                    ]);
+            }
 
             return back()
                 ->withInput()
-                ->withErrors($e->validator);
+                ->with('error', 'Error BD: ' . $e->getMessage());
         } catch (\Exception $e) {
 
             return back()
                 ->withInput()
-                ->with('error', 'Error al guardar: ' . $e->getMessage());
+                ->with('error', 'Error: ' . $e->getMessage());
         }
     }
     private function mensajeTipo($tipo)
@@ -328,7 +327,7 @@ class VerificacionController extends Controller
         try {
             $verificacion->fill($request->all());
             $verificacion->AperturaCierre = (int)$request->AperturaCierre;
-            $verificacion->Fecha = Carbon::parse($request->Fecha);
+            $verificacion->Fecha = Carbon::parse($request->Fecha)->startOfDay();
             $verificacion->Observaciones = $this->generarObservaciones($request);
             $verificacion->save();
 
