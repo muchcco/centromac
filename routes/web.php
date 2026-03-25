@@ -56,6 +56,7 @@ use App\Http\Controllers\Modulo\IncumplimientoController;
 use App\Http\Controllers\Modulo\MonitoreoAsistenciaController;
 use App\Http\Controllers\Modulo\ActualizacionesController;
 use App\Http\Controllers\Modulo\AnsCatalogoController;
+use App\Http\Controllers\Modulo\EntidadCatalogoController;
 use Illuminate\Support\Facades\Mail;
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -685,7 +686,7 @@ Route::group(['middleware' => ['auth']], function () {
         /* 🔥 CASCADA */
         Route::post('/get_modulos', [HorarioDiferenciadoController::class, 'get_modulos'])->name('get_modulos');
         Route::post('/get_entidades', [HorarioDiferenciadoController::class, 'get_entidades'])->name('get_entidades');
-        Route::post('/get_entidades_modulo',[HorarioDiferenciadoController::class,'get_entidades_modulo'])->name('get_entidades_modulo');
+        Route::post('/get_entidades_modulo', [HorarioDiferenciadoController::class, 'get_entidades_modulo'])->name('get_entidades_modulo');
     });
 
     Route::get('/test-mail', function () {
@@ -710,5 +711,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/update_tiempos_entidad', [AnsCatalogoController::class, 'update_tiempos_entidad'])->name('update_tiempos_entidad');
         Route::post('/modals/md_cambiar_tiempos', [AnsCatalogoController::class, 'md_cambiar_tiempos'])->name('modals.md_cambiar_tiempos');
         Route::post('/cambiar_tiempos_servicio', [AnsCatalogoController::class, 'cambiar_tiempos_servicio'])->name('cambiar_tiempos_servicio');
+    });
+    Route::group(['prefix' => 'ans/entidades', 'as' => 'ans.entidades.'], function () {
+        Route::get('/index', [EntidadCatalogoController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [EntidadCatalogoController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::post('/modals/md_add', [EntidadCatalogoController::class, 'create'])->name('modals.md_add');
+        Route::post('/modals/md_edit', [EntidadCatalogoController::class, 'edit'])->name('modals.md_edit');
+        Route::post('/store', [EntidadCatalogoController::class, 'store'])->name('store');
+        Route::post('/update', [EntidadCatalogoController::class, 'update'])->name('update');
+        Route::get('/show/{id}', [EntidadCatalogoController::class, 'show'])->name('show');
+        Route::post('/delete', [EntidadCatalogoController::class, 'destroy'])->name('delete');
     });
 });
