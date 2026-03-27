@@ -149,32 +149,39 @@ class Puntualidad1Controller extends Controller
             $esFeriado = in_array($fecha, $feriados);
 
             $resultados = DB::select("
-        WITH CTE AS (
+            WITH base AS (
+                SELECT 
+                    pm.IDMODULO,
+                    pm.NUM_DOC,
+                    a.HORA,
+                    pm.status,
+                    pm.fechainicio,
+                    pm.fechafin
+                FROM m_personal_modulo pm
+                JOIN m_asistencia a 
+                    ON pm.NUM_DOC = a.NUM_DOC
+                AND a.FECHA = ?
+                WHERE pm.status IN ('itinerante','fijo')
+                AND ? BETWEEN pm.fechainicio AND pm.fechafin
+                AND a.IDCENTRO_MAC = ?
+            ),
+
+            priorizado AS (
+                SELECT *,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NUM_DOC 
+                        ORDER BY 
+                            CASE WHEN status = 'itinerante' THEN 1 ELSE 2 END
+                    ) AS rn
+                FROM base
+            )
+
             SELECT 
-                pm.IDMODULO,
-                p.NUM_DOC,
-                a.HORA,
-                pm.status
-            FROM m_personal_modulo pm
-            JOIN m_personal p ON pm.NUM_DOC = p.NUM_DOC
-            JOIN m_modulo m ON pm.IDMODULO = m.IDMODULO
-            JOIN m_asistencia a 
-                ON pm.NUM_DOC = a.NUM_DOC
-               AND a.FECHA = ?
-            WHERE pm.status IN ('itinerante','fijo')
-              AND ? BETWEEN pm.fechainicio AND pm.fechafin
-              AND a.IDCENTRO_MAC = ?
-        )
-        SELECT 
-            IDMODULO,
-            CASE
-                WHEN MIN(CASE WHEN status='itinerante' THEN HORA END) IS NOT NULL
-                THEN MIN(CASE WHEN status='itinerante' THEN HORA END)
-                ELSE MIN(CASE WHEN status='fijo' THEN HORA END)
-            END AS hora_minima
-        FROM CTE
-        GROUP BY IDMODULO
-        HAVING hora_minima IS NOT NULL
+                IDMODULO,
+                MIN(HORA) AS hora_minima
+            FROM priorizado
+            WHERE rn = 1
+            GROUP BY IDMODULO
         ", [$fecha, $fecha, $idmac]);
 
             foreach ($resultados as $r) {

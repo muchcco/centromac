@@ -10,7 +10,7 @@
                 <img src="{{ asset('imagen/mac_logo_export.jpg') }}" width="230px">
             </td>
             <td style="border:1px solid black" colspan="8" rowspan="2">
-                REPORTE CONSOLIDADO DE OCUPABILIDAD DE LOS MÓDULOS DE LAS ENTIDADES PARTICIPANTES POR MES<br>
+                REPORTE CONSOLIDADO DE OCUPABILIDAD DE LOS MÓDULOS DE LASaaaaaaa ENTIDADES PARTICIPANTES POR MES<br>
                 <span class="text-danger">
                     Período evaluado Enero a diciembre {{ $fecha_año }}
                 </span>
