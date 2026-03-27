@@ -1769,134 +1769,118 @@ class AsistenciaController extends Controller
     public function exportgroup_excel_general(Request $request)
     {
         setlocale(LC_TIME, 'es_ES', 'es_PE', 'es');
-
         $fecha = Carbon::create(null, $request->mes, 1);
         $nombreMES = $fecha->formatLocalized('%B');
-
-        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-            $idmac = $this->centro_mac()->idmac;
-        } else {
-            $idmac = $request->mac ?? 0;
-        }
-
-        $name_mac = $idmac == 0 ? 'TODOS LOS MACs' : (Mac::where('IDCENTRO_MAC', $idmac)->value('NOMBRE_MAC') ?? 'MAC DESCONOCIDO');
-
-        $anio = $request->input('año');
-        $mes = $request->input('mes');
-
-        if ($request->fecha_inicio && $request->fecha_fin) {
-            $fecha_inicio = Carbon::parse($request->fecha_inicio)->format('Y-m-d');
-            $fecha_fin = Carbon::parse($request->fecha_fin)->format('Y-m-d');
-        } else {
-            $fecha_inicio = Carbon::create($anio, $mes, 1)->startOfMonth()->format('Y-m-d');
-            $fecha_fin = Carbon::create($anio, $mes, 1)->endOfMonth()->format('Y-m-d');
-        }
-
-        $fechaInicio = Carbon::parse($fecha_inicio);
-        $fechaFin = Carbon::parse($fecha_fin);
-
-        $meses = ['01' => 'enero', '02' => 'febrero', '03' => 'marzo', '04' => 'abril', '05' => 'mayo', '06' => 'junio', '07' => 'julio', '08' => 'agosto', '09' => 'septiembre', '10' => 'octubre', '11' => 'noviembre', '12' => 'diciembre'];
-
-        $fecha_ini_desc = $fechaInicio->format('d') . ' de ' . $meses[$fechaInicio->format('m')] . ' del ' . $fechaInicio->format('Y');
-        $fecha_fin_desc = $fechaFin->format('d') . ' de ' . $meses[$fechaFin->format('m')] . ' del ' . $fechaFin->format('Y');
-
         $hora_1 = Configuracion::where('PARAMETRO', 'HORA_1')->first();
         $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
         $hora_3 = Configuracion::where('PARAMETRO', 'HORA_3')->first();
         $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
         $hora_5 = Configuracion::where('PARAMETRO', 'HORA_5')->first();
-
-        $tipo_desc = '2';
-        $fecha_inicial = $fecha_ini_desc;
-        $fecha_fin_desc_txt = $fecha_fin_desc;
-
-        $identidad = 0;
-
-        // 🔥 CERRADOS (AHORA EXCLUYE ABIERTOS)
-        $cerrados = DB::table('M_ASISTENCIA as MA')
-            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-            ->join('M_CENTRO_MAC as MC', 'MC.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
-            ->leftJoin('M_PERSONAL_MODULO as MPM', function ($join) use ($idmac) {
-                $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')->where('MPM.STATUS', '!=', 'eliminado');
-                if ($idmac != 0) {
-                    $join->where('MPM.IDCENTRO_MAC', '=', $idmac);
-                }
-            })
-            ->leftJoin('M_MODULO as MM', 'MM.IDMODULO', '=', 'MPM.IDMODULO')
-            ->leftJoin('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
-            ->leftJoin('D_ASISTENCIA_OBSERVACION as DAO', function ($join) {
-                $join->on('DAO.NUM_DOC', '=', 'MA.NUM_DOC')
-                    ->on('DAO.FECHA', '=', 'MA.FECHA')
-                    ->on('DAO.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC');
-            })
-            // 👇 CLAVE PARA NO DUPLICAR
-            ->leftJoin('db_centro_mac_reporte.asistencia_resumen as AR', function ($join) {
-                $join->on('AR.idmac', '=', 'MA.IDCENTRO_MAC')
-                    ->on('AR.fecha_asistencia', '=', 'MA.FECHA');
-            })
-            ->select(
-                'MA.FECHA',
-                DB::raw('MAX(MA.IDASISTENCIA) as idAsistencia'),
-                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(MA.HORA,'%H:%i:%s') ORDER BY MA.HORA) AS horas"),
-                'MA.NUM_DOC',
-                DB::raw('UPPER(CONCAT(MP.APE_PAT," ",MP.APE_MAT,", ",MP.NOMBRE)) AS NOMBREU'),
-                'ME.ABREV_ENTIDAD',
-                'MC.NOMBRE_MAC',
-                'MM.N_MODULO',
-                DB::raw("GROUP_CONCAT(DISTINCT DAO.OBSERVACION ORDER BY DAO.ID_ASISTENCIA_OBV SEPARATOR ';') AS observaciones"),
-                DB::raw('COUNT(IF(DAO.flag=1,DAO.id_asistencia_obv,NULL)) as contador_obs')
-            )
-            ->whereBetween('MA.FECHA', [$fecha_inicio, $fecha_fin])
-            ->whereNotNull('AR.idmac') // 👈 SOLO CERRADOS
-            ->when($idmac != 0, function ($q) use ($idmac) {
-                $q->where('MA.IDCENTRO_MAC', $idmac);
-            })
-            ->groupBy('MA.FECHA', 'MP.IDPERSONAL', 'MA.NUM_DOC', 'ME.ABREV_ENTIDAD', 'MC.NOMBRE_MAC', 'MM.N_MODULO')
-            ->get();
-
-        // 🔥 ABIERTOS (YA EXCLUYE CERRADOS)
-        $abiertos = DB::select(
-            'CALL db_centros_mac.SP_ASISTENCIA_DIARIA_MAC_RANGO(?, ?, ?, ?, ?)',
-            [$idmac, $fecha_inicio, $fecha_fin, $identidad, 1]
-        );
-
+        if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
+            $idmac = $this->centro_mac()->idmac;
+        } else {
+            $idmac = $request->mac ?? 0;
+        }
+        $name_mac = ($idmac == 0) ? 'TODOS LOS MACs' : Mac::where('IDCENTRO_MAC', $idmac)->value('NOMBRE_MAC');
+        if ($request->fecha_inicio && $request->fecha_fin) {
+            $fecha_inicio = Carbon::parse($request->fecha_inicio)->format('Y-m-d');
+            $fecha_fin = Carbon::parse($request->fecha_fin)->format('Y-m-d');
+            $nombreMES = Carbon::parse($fecha_inicio)->formatLocalized('%B');
+        } else {
+            $fecha_inicio = Carbon::create($request->año, $request->mes, 1)->startOfMonth()->format('Y-m-d');
+            $fecha_fin = Carbon::create($request->año, $request->mes, 1)->endOfMonth()->format('Y-m-d');
+            $nombreMES = Carbon::create(null, $request->mes, 1)->formatLocalized('%B');
+        }
+        $identidad = $request->identidad ?? 0;
+        $cerrados = DB::select('CALL db_centro_mac_reporte.SP_REPORTE_ASISTENCIA_DETALLADO(?, ?, ?, ?)', [$fecha_inicio, $fecha_fin, $idmac, $identidad]);
+        $abiertos = DB::select('CALL db_centros_mac.SP_ASISTENCIA_DIARIA_MAC_RANGO(?, ?, ?, ?, ?)', [$idmac, $fecha_inicio, $fecha_fin, $identidad, 1]);
         $mapear = function ($q, $estado) {
-            $horas = explode(',', $q->horas ?? '');
-            $q->HORA_1 = $horas[0] ?? null;
-            $q->HORA_2 = $horas[1] ?? null;
-            $q->HORA_3 = $horas[2] ?? null;
-            $q->HORA_4 = $horas[3] ?? null;
-            $q->FECHA = $q->FECHA ?? $q->fecha_asistencia;
-            $q->NOMBREU = $q->NOMBREU ?? $q->nombre;
+            // =======================
+            // 1. SI ES DÍA CERRADO
+            // =======================
+            if (!empty($q->hora_ingreso) || !empty($q->hora_salida)) {
+
+                $horas = array_filter([
+                    $q->hora_ingreso,
+                    $q->salida_refrigerio,
+                    $q->ingreso_refrigerio,
+                    $q->hora_salida
+                ]);
+
+                $horas = array_values($horas);
+
+                // =======================
+                // 2. SI ES DÍA ABIERTO
+                // =======================
+            } else {
+
+                $horas_raw = explode(',', $q->horas ?? ($q->fecha_biometrico ?? ''));
+
+                $horas = array_values(array_filter(array_map('trim', $horas_raw)));
+
+                sort($horas); // 🔥 clave
+            }
+
+            // =======================
+            // 3. NORMALIZAR (AMBOS CASOS)
+            // =======================
+            $horas = array_slice($horas, 0, 4);
+
+            $q->HORA_1 = null;
+            $q->HORA_2 = null;
+            $q->HORA_3 = null;
+            $q->HORA_4 = null;
+
+            $count = count($horas);
+
+            if ($count == 1) {
+                $q->HORA_1 = $horas[0];
+            } elseif ($count == 2) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_4 = $horas[1];
+            } elseif ($count == 3) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_4 = $horas[2];
+            } elseif ($count >= 4) {
+                $q->HORA_1 = $horas[0];
+                $q->HORA_2 = $horas[1];
+                $q->HORA_3 = $horas[2];
+                $q->HORA_4 = $horas[3];
+            }
+            $q->NOMBRE_MAC = $q->NOMBRE_MAC ?? $q->centro_mac ?? '';
+            $q->ABREV_ENTIDAD = $q->ABREV_ENTIDAD ?? $q->entidad ?? '';
+            $q->NOMBREU = $q->NOMBREU ?? $q->colaborador ?? $q->nombre ?? '';
+            $q->NUM_DOC = $q->NUM_DOC ?? $q->dni ?? '';
+            $q->FECHA = $q->FECHA ?? $q->fecha ?? $q->fecha_asistencia ?? null;
+            $q->N_MODULO = $q->N_MODULO ?? $q->nombre_modulo ?? null;
             $q->observaciones = $q->observaciones ?? '';
-            $q->contador_obs = $q->contador_obs ?? 0;
+            $q->contador_obs = isset($q->observaciones) && $q->observaciones != ''
+                ? count(array_filter(explode(';', $q->observaciones)))
+                : 0;
             $q->ESTADO = $estado;
             return $q;
         };
-
-        $cerrados = array_map(fn($q) => $mapear($q, 'CERRADO'), $cerrados->toArray());
+        $cerrados = array_map(fn($q) => $mapear($q, 'CERRADO'), $cerrados);
         $abiertos = array_map(fn($q) => $mapear($q, 'ABIERTO'), $abiertos);
-
         $data = array_merge($cerrados, $abiertos);
-
         usort($data, function ($a, $b) {
             if ($a->FECHA != $b->FECHA) {
                 return strcmp($a->FECHA, $b->FECHA);
             }
-            if (($a->N_MODULO ?? '') != ($b->N_MODULO ?? '')) {
+            if ($a->N_MODULO != $b->N_MODULO) {
                 return strcmp($a->N_MODULO ?? '', $b->N_MODULO ?? '');
             }
             return strcmp($a->NOMBREU ?? '', $b->NOMBREU ?? '');
         });
-
         return Excel::download(
             new AsistenciaGroupExport(
                 $data,
                 $name_mac,
                 $nombreMES,
-                $tipo_desc,
-                $fecha_inicial,
-                $fecha_fin_desc_txt,
+                '1',
+                $fecha_inicio,
+                $fecha_fin,
                 $hora_1,
                 $hora_2,
                 $hora_3,
