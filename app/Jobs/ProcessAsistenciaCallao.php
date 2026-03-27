@@ -47,8 +47,10 @@ class ProcessAsistenciaCallao implements ShouldQueue
     private function getExistingColumns($connection, string $table): array
     {
         return $connection->table('information_schema.columns')
+            ->selectRaw('COLUMN_NAME AS column_name')
             ->where('table_schema', $connection->getDatabaseName())
             ->where('table_name', $table)
+            ->get()
             ->pluck('column_name')
             ->all();
     }
