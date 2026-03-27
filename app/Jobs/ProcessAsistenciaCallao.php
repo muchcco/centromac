@@ -31,6 +31,28 @@ class ProcessAsistenciaCallao implements ShouldQueue
         $this->fechaFin = $fechaFin;
     }
 
+    private function wrapIdentifier(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    private function tableExists($connection, string $table): bool
+    {
+        return $connection->table('information_schema.tables')
+            ->where('table_schema', $connection->getDatabaseName())
+            ->where('table_name', $table)
+            ->exists();
+    }
+
+    private function getExistingColumns($connection, string $table): array
+    {
+        return $connection->table('information_schema.columns')
+            ->where('table_schema', $connection->getDatabaseName())
+            ->where('table_name', $table)
+            ->pluck('column_name')
+            ->all();
+    }
+
     public function handle(): void
     {
         $progressKey = 'upload_progress:' . $this->uploadToken;
@@ -73,19 +95,28 @@ class ProcessAsistenciaCallao implements ShouldQueue
 
                 if (!empty($rows)) {
                     $columns = array_keys($rows[0]);
-                    $tableExists = $callaoDb->select("SHOW TABLES LIKE ?", [$table]);
+                    $wrappedTable = $this->wrapIdentifier($table);
 
-                    if (!empty($tableExists)) {
-                        $callaoDb->statement("ALTER TABLE `$table` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                    if ($this->tableExists($callaoDb, $table)) {
+                        $existingColumns = $this->getExistingColumns($callaoDb, $table);
+                        $callaoDb->statement("ALTER TABLE {$wrappedTable} CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
                         foreach ($columns as $column) {
-                            $callaoDb->statement("ALTER TABLE `$table` MODIFY `$column` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                            $wrappedColumn = $this->wrapIdentifier($column);
+
+                            if (in_array($column, $existingColumns, true)) {
+                                $callaoDb->statement("ALTER TABLE {$wrappedTable} MODIFY {$wrappedColumn} LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL");
+                                continue;
+                            }
+
+                            $callaoDb->statement("ALTER TABLE {$wrappedTable} ADD {$wrappedColumn} LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL");
                         }
                     } else {
                         $columnsSQL = [];
                         foreach ($columns as $column) {
-                            $columnsSQL[] = "`$column` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+                            $columnsSQL[] = $this->wrapIdentifier($column) . " LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL";
                         }
-                        $createTableSQL = "CREATE TABLE `$table` (" . implode(', ', $columnsSQL) . ")";
+                        $createTableSQL = "CREATE TABLE {$wrappedTable} (" . implode(', ', $columnsSQL) . ")";
                         $callaoDb->statement($createTableSQL);
                     }
 
@@ -93,7 +124,7 @@ class ProcessAsistenciaCallao implements ShouldQueue
 
                     foreach ($rows as &$row) {
                         array_walk_recursive($row, function (&$value) {
-                            if (!mb_check_encoding($value, 'UTF-8')) {
+                            if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
                                 $value = mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1');
                             }
                         });
