@@ -149,41 +149,52 @@ class Puntualidad1Controller extends Controller
             $esFeriado = in_array($fecha, $feriados);
 
             $resultados = DB::select("
-            WITH base AS (
+                WITH base AS (
+                    SELECT 
+                        pm.IDMODULO,
+                        pm.NUM_DOC,
+                        STR_TO_DATE(a.HORA, '%H:%i:%s') AS HORA, 
+                        pm.status,
+                        pm.fechainicio,
+                        pm.fechafin
+                    FROM m_personal_modulo pm
+                    JOIN m_asistencia a 
+                        ON pm.NUM_DOC = a.NUM_DOC
+                        AND a.FECHA = ?
+                    WHERE pm.status IN ('itinerante','fijo')
+                    AND ? BETWEEN pm.fechainicio AND pm.fechafin
+                    AND a.IDCENTRO_MAC = ?
+                ),
+
+                prioridad AS (
+                    SELECT 
+                        NUM_DOC,
+                        MIN(CASE 
+                            WHEN status = 'itinerante' THEN 1 
+                            ELSE 2 
+                        END) AS prioridad
+                    FROM base
+                    GROUP BY NUM_DOC
+                ),
+
+                filtrado AS (
+                    SELECT b.*
+                    FROM base b
+                    JOIN prioridad p 
+                        ON b.NUM_DOC = p.NUM_DOC
+                    WHERE 
+                        (p.prioridad = 1 AND b.status = 'itinerante')
+                        OR
+                        (p.prioridad = 2 AND b.status = 'fijo')
+                )
+
                 SELECT 
-                    pm.IDMODULO,
-                    pm.NUM_DOC,
-                    a.HORA,
-                    pm.status,
-                    pm.fechainicio,
-                    pm.fechafin
-                FROM m_personal_modulo pm
-                JOIN m_asistencia a 
-                    ON pm.NUM_DOC = a.NUM_DOC
-                AND a.FECHA = ?
-                WHERE pm.status IN ('itinerante','fijo')
-                AND ? BETWEEN pm.fechainicio AND pm.fechafin
-                AND a.IDCENTRO_MAC = ?
-            ),
-
-            priorizado AS (
-                SELECT *,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY NUM_DOC 
-                        ORDER BY 
-                            CASE WHEN status = 'itinerante' THEN 1 ELSE 2 END
-                    ) AS rn
-                FROM base
-            )
-
-            SELECT 
-                IDMODULO,
-                MIN(HORA) AS hora_minima
-            FROM priorizado
-            WHERE rn = 1
-            GROUP BY IDMODULO
-        ", [$fecha, $fecha, $idmac]);
-
+                    IDMODULO,
+                    MIN(HORA) AS hora_minima
+                FROM filtrado
+                GROUP BY IDMODULO
+                ORDER BY IDMODULO
+            ", [$fecha, $fecha, $idmac]);
             foreach ($resultados as $r) {
                 $dias[$dia][$r->IDMODULO] = [
                     'hora_minima' => $r->hora_minima,
@@ -332,45 +343,53 @@ class Puntualidad1Controller extends Controller
 
             $esFeriado = in_array($fecha, $feriados);
 
-            $resultados = DB::select("
-            WITH asistencia AS (
-                SELECT
-                        mm.IDMODULO,
-                        mm.N_MODULO,
-                        MIN(ma.HORA) AS hora_asesor
+        $resultados = DB::select("
+                WITH base AS (
+                    SELECT 
+                        pm.IDMODULO,
+                        pm.NUM_DOC,
+                        STR_TO_DATE(a.HORA, '%H:%i:%s') AS HORA, 
+                        pm.status,
+                        pm.fechainicio,
+                        pm.fechafin
+                    FROM m_personal_modulo pm
+                    JOIN m_asistencia a 
+                        ON pm.NUM_DOC = a.NUM_DOC
+                        AND a.FECHA = ?
+                    WHERE pm.status IN ('itinerante','fijo')
+                    AND ? BETWEEN pm.fechainicio AND pm.fechafin
+                    AND a.IDCENTRO_MAC = ?
+                ),
 
-                FROM m_asistencia ma
+                prioridad AS (
+                    SELECT 
+                        NUM_DOC,
+                        MIN(CASE 
+                            WHEN status = 'itinerante' THEN 1 
+                            ELSE 2 
+                        END) AS prioridad
+                    FROM base
+                    GROUP BY NUM_DOC
+                ),
 
-                JOIN m_personal mp 
-                    ON mp.NUM_DOC = ma.NUM_DOC
-
-                LEFT JOIN m_personal_modulo mpm
-                    ON mpm.NUM_DOC = ma.NUM_DOC
-                AND mpm.IDCENTRO_MAC = ma.IDCENTRO_MAC
-                AND mpm.STATUS IN ('itinerante','fijo')
-                AND ? BETWEEN mpm.FECHAINICIO AND mpm.FECHAFIN
-
-                LEFT JOIN m_modulo mm 
-                    ON mm.IDMODULO = mpm.IDMODULO
-
-                WHERE ma.FECHA = ?
-                AND ma.IDCENTRO_MAC = ?
-
-                GROUP BY
-                    mm.IDMODULO,
-                    mp.NUM_DOC
+                filtrado AS (
+                    SELECT b.*
+                    FROM base b
+                    JOIN prioridad p 
+                        ON b.NUM_DOC = p.NUM_DOC
+                    WHERE 
+                        (p.prioridad = 1 AND b.status = 'itinerante')
+                        OR
+                        (p.prioridad = 2 AND b.status = 'fijo')
                 )
 
-                SELECT
+                SELECT 
                     IDMODULO,
-                    N_MODULO,
-                    MIN(hora_asesor) AS hora_modulo
-                FROM asistencia
-                GROUP BY
-                    IDMODULO,
-                    N_MODULO
-                ORDER BY
-                N_MODULO;", [$fecha, $fecha, $idmac]);
+                    MIN(HORA) AS hora_minima
+                FROM filtrado
+                GROUP BY IDMODULO
+                ORDER BY IDMODULO
+            ", [$fecha, $fecha, $idmac]);
 
             foreach ($resultados as $r) {
 
