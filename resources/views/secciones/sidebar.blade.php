@@ -11,9 +11,9 @@
     <div class="brand">
         <a href="{{ route('inicio') }}" class="logo">
             <span>
-                <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-light"
+                <img src="{{ asset('imagen/logo-programa.jpg') }}" alt="PROGRAMA Logo" class="logo-lg logo-light"
                     style="max-width: 80%;height: 40px;">
-                <img src="{{ asset('imagen/logo-pcm.png') }}" alt="PCM Logo" class="logo-lg logo-dark"
+                <img src="{{ asset('imagen/logo-programa.jpg') }}" alt="PROGRAMA Logo" class="logo-lg logo-dark"
                     style="max-width: 80%;height: 40px;">
             </span>
         </a>
