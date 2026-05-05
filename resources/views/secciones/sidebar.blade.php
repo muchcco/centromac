@@ -85,7 +85,7 @@
 <!-- Dashboard-->
 
                         @if ($dashboard->VALOR == '1')
-                <li class="menu-label mt-0">Tableros de Información - MAC</li>
+                <li class="menu-label mt-0" style="font-weight: bolder;color: white;"><strong>Tableros de Información - MAC</strong></li>
 
                 <li>
 
@@ -136,7 +136,7 @@
             @endif
 
           <hr class="hr-dashed hr-menu">
-                <li class="menu-label mt-0">REGISTROS, CONTROLES E INDICADORES</li>
+                <li class="menu-label mt-0" style="font-weight: bolder;color: white;">REGISTROS, CONTROLES E INDICADORES</li>
 
 
                     <li class="@if (Request::is('indicador.ocupabilidad*')) mm-active @endif">
@@ -174,7 +174,7 @@
 
 
           <hr class="hr-dashed hr-menu">
-                <li class="menu-label mt-0">GESTIÓN OPERATIVA</li>
+                <li class="menu-label mt-0" style="font-weight: bolder;color: white;">GESTIÓN OPERATIVA</li>
 
             @if ($ocupablidad_k->VALOR == '1')
                 {{-- <li class="menu-label mt-0">GESTIÓN OPERATIVA</li> --}}
@@ -329,7 +329,7 @@
 
           <hr class="hr-dashed hr-menu">
 
-            <li class="menu-label mt-0">Enlaces de interes</li>
+            <li class="menu-label mt-0" style="font-weight: bolder;color: white;">Enlaces de interes</li>
 
 
             @if ($externos->VALOR == '1')
@@ -352,7 +352,7 @@
             @endif
           <hr class="hr-dashed hr-menu">
                 <!-- Nueva sección DIRECTORIO -->
-                <li class="menu-label mt-0">DIRECTORIO</li>
+                <li class="menu-label mt-0" style="font-weight: bolder;color: white;">DIRECTORIO</li>
 
 
             <!--<li>
@@ -387,7 +387,7 @@
 
                 <hr class="hr-dashed hr-menu">
                 <!--Nombre de la Categoria-->
-                <li class="menu-label my-2">Configuración</li>
+                <li class="menu-label my-2" style="font-weight: bolder;color: white;">Configuración</li>
 
                 @if ($centros_mac->VALOR == '1')
                     <li class="@if (Request::is('configuracion*')) active @endif">
@@ -424,7 +424,7 @@
             @endrole
            @role('Administrador|Especialista_TIC')
                 @if ($almacen->VALOR == '1')
-                    <li class="menu-label mt-0">PARÁMETROS</li>
+                    <li class="menu-label mt-0" style="font-weight: bolder;color: white;">PARÁMETROS</li>
 
                     <li class="@if (Request::is('almacen*')) mm-active @endif">
                         <a href="{{ route('almacen.index') }}" class="@if (Request::is('almacen*')) active @endif">
@@ -451,7 +451,7 @@
 
                 <hr class="hr-dashed hr-menu">
                 <!--Nombre de la Categoria-->
-                <li class="menu-label my-2">Accesos</li>
+                <li class="menu-label my-2" style="font-weight: bolder;color: white;">Accesos</li>
                 @if ($usuario->VALOR == '1')
                     <li class="@if (Request::is('usuarios*')) active @endif">
                         <a href="{{ route('usuarios.index') }}"><i data-feather="box"
@@ -470,7 +470,7 @@
 
             {{-- Observaciones (solo para Supervisor, Coordinador, Especialista_TIC) --}}
             @role('Supervisor|Coordinador|Especialista_TIC|Moderador|Administrador')
-                            <li class="menu-label mt-0">Obsoletos</li>
+                            <li class="menu-label mt-0" style="font-weight: bolder;color: white;">Obsoletos</li>
                 <li class="@if (Request::is('observacion*')) mm-active @endif">
                     <a href="{{ route('observacion.index') }}"
                         class="@if (Request::is('observacion/index*')) active @endif d-flex align-items-center justify-content-between">
