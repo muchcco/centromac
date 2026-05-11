@@ -7,6 +7,7 @@
 /public/storage
 /storage/*.key
 /vendor
+db_centros_mac.sql
 .env
 .env.backup
 .phpunit.result.cache
