@@ -2769,6 +2769,13 @@ class AsistenciaController extends Controller
 
     public function md_asignacion_horario(Request $request)
     {
+        if ($request->boolean('editar') && !$request->filled('id')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se recibio el ID del horario para editar.',
+            ], 422);
+        }
+
         $idmac = $this->asignacionIdMac($request);
         $nameMac = $this->asignacionNombreMac($idmac);
         $horario = null;

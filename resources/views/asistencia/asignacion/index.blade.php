@@ -453,7 +453,12 @@
             return `${date.getFullYear()}-${month}-${day}`;
         }
 
-        function abrirModalAsignacion(id = '') {
+        function abrirModalAsignacion(id = '', editar = false) {
+            if (editar && !id) {
+                Swal.fire('Error', 'No se recibio el ID del horario para editar.', 'error');
+                return;
+            }
+
             $.ajax({
                 type: 'POST',
                 url: "{{ route('asistencia.asignacion.modal_horario') }}",
@@ -461,6 +466,7 @@
                 data: {
                     mac: $('#mac').val(),
                     id: id,
+                    editar: editar ? 1 : 0,
                     fecha_inicio: $('#fecha_inicio').val()
                 },
                 beforeSend: function() {
@@ -472,8 +478,9 @@
                     $('#modal_show_modal').html(res.html);
                     $('#modal_show_modal').modal('show');
                 },
-                error: function() {
-                    Swal.fire('Error', 'No se pudo abrir el modal.', 'error');
+                error: function(xhr) {
+                    $('#modal_show_modal').modal('hide').html('');
+                    Swal.fire('Error', xhr.responseJSON?.message || 'No se pudo abrir el modal.', 'error');
                 }
             });
         }

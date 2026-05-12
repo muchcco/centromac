@@ -25,7 +25,7 @@
                 </td>
                 <td class="text-center">
                     <button type="button" class="nobtn bandejTool me-2" data-tippy-content="Editar"
-                        onclick="abrirModalAsignacion('{{ $h->id }}')">
+                        onclick="abrirModalAsignacion('{{ $h->id }}', true)">
                         <i class="las la-pen text-success font-16"></i>
                     </button>
                     <button type="button" class="nobtn bandejTool" data-tippy-content="Eliminar"
