@@ -215,6 +215,22 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/upload-cancel', [AsistenciaController::class, 'cancelUpload'])->name('upload.cancel');
         Route::post('/md-excepcion-cierre', [AsistenciaController::class, 'md_excepcion_cierre'])->name('md_excepcion_cierre');
         Route::post('/guardar-excepcion-cierre', [AsistenciaController::class, 'guardar_excepcion_cierre'])->name('guardar_excepcion_cierre');
+
+        // ASIGNACION PERSONAL PCM ASISTENCIA
+        Route::get('/asignacion', [AsistenciaController::class, 'asignacion'])->name('asignacion.index');
+        Route::get('/asignacion/horarios', [AsistenciaController::class, 'tb_asignacion_horarios'])->name('asignacion.horarios');
+        Route::get('/asignacion/dias-especiales', [AsistenciaController::class, 'tb_asignacion_dias_especiales'])->name('asignacion.dias_especiales');
+        Route::get('/asignacion/calendario-horario', [AsistenciaController::class, 'calendario_asignacion_horario'])->name('asignacion.calendario_horario');
+        Route::get('/asignacion/personas-asignadas', [AsistenciaController::class, 'personas_asignadas'])->name('asignacion.personas_asignadas');
+        Route::get('/asignacion/reporte', [AsistenciaController::class, 'tb_asignacion_reporte'])->name('asignacion.reporte');
+        Route::get('/asignacion/buscar-personal', [AsistenciaController::class, 'buscar_personal_asignacion'])->name('asignacion.buscar_personal');
+        Route::post('/asignacion/modal-horario', [AsistenciaController::class, 'md_asignacion_horario'])->name('asignacion.modal_horario');
+        Route::post('/asignacion/store-horario', [AsistenciaController::class, 'store_asignacion_horario'])->name('asignacion.store_horario');
+        Route::post('/asignacion/store-dia-especial', [AsistenciaController::class, 'store_asignacion_dia_especial'])->name('asignacion.store_dia_especial');
+        Route::post('/asignacion/sync-sabados', [AsistenciaController::class, 'sync_asignacion_sabados'])->name('asignacion.sync_sabados');
+        Route::post('/asignacion/delete-dia-especial', [AsistenciaController::class, 'delete_asignacion_dia_especial'])->name('asignacion.delete_dia_especial');
+        Route::post('/asignacion/delete-horario', [AsistenciaController::class, 'delete_asignacion_horario'])->name('asignacion.delete_horario');
+        Route::get('/asignacion/export-excel', [AsistenciaController::class, 'export_asignacion_excel'])->name('asignacion.export_excel');
     });
 
     /********************************************************** REGISTRO DE PERSONAL *******************************************************************/

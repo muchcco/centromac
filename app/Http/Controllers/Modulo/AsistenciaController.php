@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Modulo;
 
 use App\Exports\AsistenciaDetalleExport;
+use App\Exports\AsistenciaAsignacionExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 
@@ -15,6 +16,7 @@ use App\Models\Mac;
 use App\Jobs\ProcessAsistenciaTxt;
 use App\Jobs\ProcessAsistenciaCallao;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Queue;
 use App\Imports\AsistenciaImport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -2226,6 +2228,1019 @@ class AsistenciaController extends Controller
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Exports\AsistenciaResumenExport($query, $name_mac, $nombreMES),
             'REPORTE_RESUMEN_ASISTENCIA_' . $name_mac . '_' . $nombreMES . '.xlsx'
+        );
+    }
+
+    private function asignacionIdMac(Request $request): int
+    {
+        $user = auth()->user();
+
+        if ($user->hasRole(['Administrador', 'Moderador'])) {
+            return (int) ($request->input('mac') ?: $user->idcentro_mac);
+        }
+
+        return (int) $user->idcentro_mac;
+    }
+
+    private function asignacionFechas(Request $request): array
+    {
+        $fechaInicio = $request->input('fecha_inicio')
+            ? Carbon::parse($request->input('fecha_inicio'))->format('Y-m-d')
+            : Carbon::now()->startOfMonth()->format('Y-m-d');
+
+        $fechaFin = $request->input('fecha_fin')
+            ? Carbon::parse($request->input('fecha_fin'))->format('Y-m-d')
+            : Carbon::now()->format('Y-m-d');
+
+        if ($fechaInicio > $fechaFin) {
+            [$fechaInicio, $fechaFin] = [$fechaFin, $fechaInicio];
+        }
+
+        return [$fechaInicio, $fechaFin];
+    }
+
+    private function asignacionNombreMac(int $idmac): string
+    {
+        return DB::table('m_centro_mac')
+            ->where('IDCENTRO_MAC', $idmac)
+            ->value('NOMBRE_MAC') ?: 'Centro MAC';
+    }
+
+    private function asignacionMacs()
+    {
+        $user = auth()->user();
+
+        if ($user->hasRole(['Administrador', 'Moderador'])) {
+            return DB::table('m_centro_mac')
+                ->select('IDCENTRO_MAC as id', 'NOMBRE_MAC as nom')
+                ->orderBy('NOMBRE_MAC')
+                ->get();
+        }
+
+        return DB::table('m_centro_mac')
+            ->select('IDCENTRO_MAC as id', 'NOMBRE_MAC as nom')
+            ->where('IDCENTRO_MAC', $user->idcentro_mac)
+            ->get();
+    }
+
+    private function aplicarFiltroPersonalMac($query, int $idmac)
+    {
+        return $query->where(function ($q) use ($idmac) {
+            $q->where('p.IDMAC', $idmac)
+                ->orWhereExists(function ($sq) use ($idmac) {
+                    $sq->select(DB::raw(1))
+                        ->from('d_personal_mac as dpm')
+                        ->whereColumn('dpm.idpersonal', 'p.IDPERSONAL')
+                        ->where('dpm.idcentro_mac', $idmac)
+                        ->whereIn('dpm.STATUS', [1, 2]);
+                });
+        });
+    }
+
+    private function personalPerteneceMac(int $idpersonal, int $idmac): bool
+    {
+        $query = DB::table('m_personal as p')
+            ->where('p.IDPERSONAL', $idpersonal);
+
+        return $this->aplicarFiltroPersonalMac($query, $idmac)->exists();
+    }
+
+    private function personalParaAsignacion(int $idmac, ?string $term = null, int $limit = 25)
+    {
+        $query = DB::table('m_personal as p')
+            ->leftJoin('m_entidad as e', 'e.IDENTIDAD', '=', 'p.IDENTIDAD')
+            ->select(
+                'p.IDPERSONAL',
+                'p.NUM_DOC',
+                DB::raw('UPPER(CONCAT(p.APE_PAT, " ", p.APE_MAT, ", ", p.NOMBRE)) as nombre_completo'),
+                DB::raw('COALESCE(e.ABREV_ENTIDAD, e.NOMBRE_ENTIDAD, "-") as entidad')
+            )
+            ->whereIn('p.FLAG', [1, 2, 3])
+            ->when($term, function ($q) use ($term) {
+                $like = '%' . trim($term) . '%';
+
+                $q->where(function ($sub) use ($like) {
+                    $sub->where('p.NUM_DOC', 'like', $like)
+                        ->orWhere('p.NOMBRE', 'like', $like)
+                        ->orWhere('p.APE_PAT', 'like', $like)
+                        ->orWhere('p.APE_MAT', 'like', $like)
+                        ->orWhereRaw('CONCAT(p.APE_PAT, " ", p.APE_MAT, " ", p.NOMBRE) like ?', [$like]);
+                });
+            })
+            ->orderBy('p.APE_PAT')
+            ->orderBy('p.APE_MAT')
+            ->orderBy('p.NOMBRE')
+            ->limit($limit);
+
+        return $this->aplicarFiltroPersonalMac($query, $idmac)->get();
+    }
+
+    private function horariosAsignadosData(int $idmac)
+    {
+        $query = DB::table('d_personal_asistencia as dpa')
+            ->join('m_personal as p', 'p.IDPERSONAL', '=', 'dpa.idpersonal')
+            ->leftJoin('m_entidad as e', 'e.IDENTIDAD', '=', 'p.IDENTIDAD')
+            ->select(
+                'dpa.id',
+                'dpa.idpersonal',
+                'dpa.hora_ingreso',
+                'dpa.hora_salida',
+                'dpa.fecha_inicio',
+                'dpa.fecha_fin',
+                'dpa.sin_fin',
+                'p.NUM_DOC',
+                DB::raw('UPPER(CONCAT(p.APE_PAT, " ", p.APE_MAT, ", ", p.NOMBRE)) as nombre_completo'),
+                DB::raw('COALESCE(e.ABREV_ENTIDAD, e.NOMBRE_ENTIDAD, "-") as entidad')
+            )
+            ->orderBy('dpa.fecha_inicio', 'desc')
+            ->orderBy('nombre_completo');
+
+        return $this->aplicarFiltroPersonalMac($query, $idmac)->get();
+    }
+
+    private function personasAsignadasData(int $idmac)
+    {
+        $query = DB::table('d_personal_asistencia as dpa')
+            ->join('m_personal as p', 'p.IDPERSONAL', '=', 'dpa.idpersonal')
+            ->select(
+                'p.IDPERSONAL',
+                'p.NUM_DOC',
+                DB::raw('UPPER(CONCAT(p.APE_PAT, " ", p.APE_MAT, ", ", p.NOMBRE)) as nombre_completo')
+            )
+            ->groupBy(
+                'p.IDPERSONAL',
+                'p.NUM_DOC',
+                'p.APE_PAT',
+                'p.APE_MAT',
+                'p.NOMBRE'
+            )
+            ->orderBy('p.APE_PAT')
+            ->orderBy('p.APE_MAT')
+            ->orderBy('p.NOMBRE');
+
+        return $this->aplicarFiltroPersonalMac($query, $idmac)->get();
+    }
+
+    private function asignacionDiasEspecialesDisponible(): bool
+    {
+        return Schema::hasTable('d_personal_asistencia_dia');
+    }
+
+    private function asignacionFeriadosDisponible(): bool
+    {
+        return Schema::hasTable('feriados');
+    }
+
+    private function asignacionFeriadosData(int $idmac, string $fechaInicio, string $fechaFin)
+    {
+        if (!$this->asignacionFeriadosDisponible()) {
+            return collect();
+        }
+
+        return DB::table('feriados')
+            ->select('id', 'name', 'fecha', 'id_centromac')
+            ->whereBetween('fecha', [$fechaInicio, $fechaFin])
+            ->where(function ($q) use ($idmac) {
+                $q->where('id_centromac', $idmac)
+                    ->orWhereNull('id_centromac');
+            })
+            ->orderByRaw('CASE WHEN id_centromac = ? THEN 1 ELSE 0 END', [$idmac])
+            ->get()
+            ->keyBy(function ($feriado) {
+                return Carbon::parse($feriado->fecha)->format('Y-m-d');
+            });
+    }
+
+    private function asignacionEsFeriado(int $idmac, string $fecha): bool
+    {
+        if (!$this->asignacionFeriadosDisponible()) {
+            return false;
+        }
+
+        return DB::table('feriados')
+            ->whereDate('fecha', $fecha)
+            ->where(function ($q) use ($idmac) {
+                $q->where('id_centromac', $idmac)
+                    ->orWhereNull('id_centromac');
+            })
+            ->exists();
+    }
+
+    private function horarioAsignacionEnMac(int $idAsignacion, int $idmac)
+    {
+        $horario = DB::table('d_personal_asistencia')
+            ->where('id', $idAsignacion)
+            ->first();
+
+        if (!$horario || !$this->personalPerteneceMac((int) $horario->idpersonal, $idmac)) {
+            return null;
+        }
+
+        return $horario;
+    }
+
+    private function diasEspecialesAsignacionData(int $idAsignacion, int $idmac)
+    {
+        if (!$this->asignacionDiasEspecialesDisponible()) {
+            return collect();
+        }
+
+        if (!$this->horarioAsignacionEnMac($idAsignacion, $idmac)) {
+            return collect();
+        }
+
+        return DB::table('d_personal_asistencia_dia')
+            ->where('id_asignacion', $idAsignacion)
+            ->where('activo', 1)
+            ->orderBy('fecha', 'desc')
+            ->get();
+    }
+
+    private function calendarioAsignacionData($horario, int $idmac, string $mes): array
+    {
+        $month = Carbon::createFromFormat('Y-m', $mes)->startOfMonth();
+        $inicioMes = $month->copy()->startOfMonth();
+        $finMes = $month->copy()->endOfMonth();
+        $inicioAsignacion = Carbon::parse($horario->fecha_inicio)->startOfDay();
+        $finAsignacion = ((int) $horario->sin_fin === 1 || !$horario->fecha_fin)
+            ? $finMes->copy()
+            : Carbon::parse($horario->fecha_fin)->endOfDay();
+
+        $inicio = $inicioAsignacion->greaterThan($inicioMes) ? $inicioAsignacion : $inicioMes;
+        $fin = $finAsignacion->lessThan($finMes) ? $finAsignacion : $finMes;
+
+        if ($inicio->greaterThan($fin)) {
+            return [
+                'normales' => [],
+                'sabados' => [],
+                'feriados' => [],
+            ];
+        }
+
+        $feriados = $this->asignacionFeriadosData($idmac, $inicio->format('Y-m-d'), $fin->format('Y-m-d'));
+        $diasEspeciales = $this->asignacionDiasEspecialesDisponible()
+            ? DB::table('d_personal_asistencia_dia')
+                ->where('id_asignacion', $horario->id)
+                ->where('activo', 1)
+                ->whereBetween('fecha', [$inicio->format('Y-m-d'), $fin->format('Y-m-d')])
+                ->get()
+                ->keyBy(function ($dia) {
+                    return Carbon::parse($dia->fecha)->format('Y-m-d');
+                })
+            : collect();
+
+        $nombresDia = [
+            Carbon::MONDAY => 'Lun',
+            Carbon::TUESDAY => 'Mar',
+            Carbon::WEDNESDAY => 'Mie',
+            Carbon::THURSDAY => 'Jue',
+            Carbon::FRIDAY => 'Vie',
+            Carbon::SATURDAY => 'Sab',
+        ];
+        $normales = [];
+        $sabados = [];
+
+        foreach (CarbonPeriod::create($inicio, $fin) as $dia) {
+            $fecha = $dia->format('Y-m-d');
+            $feriado = $feriados->get($fecha);
+            $base = [
+                'fecha' => $fecha,
+                'dia' => $dia->format('d'),
+                'label' => $dia->format('d/m'),
+                'nombre_dia' => $nombresDia[$dia->dayOfWeek] ?? '',
+                'es_feriado' => (bool) $feriado,
+                'feriado' => $feriado ? $feriado->name : null,
+            ];
+
+            if ($dia->isWeekday()) {
+                $normales[] = $base;
+                continue;
+            }
+
+            if ($dia->isSaturday()) {
+                $especial = $diasEspeciales->get($fecha);
+                $sabados[] = array_merge($base, [
+                    'seleccionado' => (bool) $especial,
+                    'hora_ingreso' => $especial ? substr($especial->hora_ingreso, 0, 5) : '08:15',
+                    'hora_salida' => $especial ? substr($especial->hora_salida, 0, 5) : '13:30',
+                ]);
+            }
+        }
+
+        return [
+            'normales' => $normales,
+            'sabados' => $sabados,
+            'feriados' => $feriados->values(),
+        ];
+    }
+
+    private function formatoMinutos(int $minutos): string
+    {
+        $horas = intdiv($minutos, 60);
+        $resto = $minutos % 60;
+
+        return sprintf('%02d:%02d', $horas, $resto);
+    }
+
+    private function asignacionReporteData(int $idmac, string $fechaInicio, string $fechaFin, ?int $idpersonal = null)
+    {
+        $usaDiasEspeciales = $this->asignacionDiasEspecialesDisponible();
+        $ingresoProgramado = $usaDiasEspeciales
+            ? 'COALESCE(dpd.hora_ingreso, dpa.hora_ingreso)'
+            : 'dpa.hora_ingreso';
+        $salidaProgramada = $usaDiasEspeciales
+            ? 'COALESCE(dpd.hora_salida, dpa.hora_salida)'
+            : 'dpa.hora_salida';
+        $tipoProgramacion = $usaDiasEspeciales
+            ? 'CASE WHEN dpd.id IS NOT NULL THEN "Dia especial" ELSE "Lunes a viernes" END'
+            : '"Lunes a viernes"';
+
+        $query = DB::table('d_personal_asistencia as dpa')
+            ->join('m_personal as p', 'p.IDPERSONAL', '=', 'dpa.idpersonal')
+            ->join('m_asistencia as a', function ($join) {
+                $join->on('a.NUM_DOC', '=', 'p.NUM_DOC')
+                    ->whereColumn('a.FECHA', '>=', 'dpa.fecha_inicio')
+                    ->whereRaw('(dpa.sin_fin = 1 OR dpa.fecha_fin IS NULL OR a.FECHA <= dpa.fecha_fin)');
+            })
+            ->leftJoin('m_centro_mac as cm', 'cm.IDCENTRO_MAC', '=', 'a.IDCENTRO_MAC')
+            ->leftJoin('m_entidad as e', 'e.IDENTIDAD', '=', 'p.IDENTIDAD')
+            ->leftJoin('m_modulo as m', 'm.IDMODULO', '=', 'p.IDMODULO')
+            ->where('a.IDCENTRO_MAC', $idmac)
+            ->whereBetween('a.FECHA', [$fechaInicio, $fechaFin])
+            ->whereRaw('DAYOFWEEK(a.FECHA) <> 1')
+            ->when($idpersonal, function ($q) use ($idpersonal) {
+                $q->where('p.IDPERSONAL', $idpersonal);
+            });
+
+        if ($this->asignacionFeriadosDisponible()) {
+            $query->whereNotExists(function ($sq) use ($idmac) {
+                $sq->select(DB::raw(1))
+                    ->from('feriados as fer')
+                    ->whereColumn('fer.fecha', 'a.FECHA')
+                    ->where(function ($q) use ($idmac) {
+                        $q->where('fer.id_centromac', $idmac)
+                            ->orWhereNull('fer.id_centromac');
+                    });
+            });
+        }
+
+        if ($usaDiasEspeciales) {
+            $query->leftJoin('d_personal_asistencia_dia as dpd', function ($join) {
+                $join->on('dpd.id_asignacion', '=', 'dpa.id')
+                    ->whereColumn('dpd.fecha', 'a.FECHA')
+                    ->where('dpd.activo', 1);
+            })
+                ->whereRaw('(DAYOFWEEK(a.FECHA) BETWEEN 2 AND 6 OR dpd.id IS NOT NULL)');
+        } else {
+            $query->whereRaw('DAYOFWEEK(a.FECHA) BETWEEN 2 AND 6');
+        }
+
+        $query->select(
+                'dpa.id as id_asignacion',
+                'dpa.idpersonal',
+                DB::raw($ingresoProgramado . ' as ingreso_programado'),
+                DB::raw($salidaProgramada . ' as salida_programada'),
+                DB::raw($tipoProgramacion . ' as tipo_programacion'),
+                'dpa.fecha_inicio as asignacion_inicio',
+                'dpa.fecha_fin as asignacion_fin',
+                'dpa.sin_fin',
+                'p.NUM_DOC',
+                'a.FECHA',
+                'a.IDCENTRO_MAC',
+                DB::raw('DAYOFWEEK(a.FECHA) as dia_semana'),
+                DB::raw('UPPER(CONCAT(p.APE_PAT, " ", p.APE_MAT, ", ", p.NOMBRE)) as nombre_completo'),
+                DB::raw('COALESCE(cm.NOMBRE_MAC, "-") as nombre_mac'),
+                DB::raw('COALESCE(e.ABREV_ENTIDAD, e.NOMBRE_ENTIDAD, "-") as entidad'),
+                DB::raw('COALESCE(m.N_MODULO, p.NUMERO_MODULO, "-") as modulo'),
+                DB::raw('MIN(a.HORA) as asistencia_ingreso'),
+                DB::raw('CASE WHEN COUNT(a.IDASISTENCIA) > 1 THEN MAX(a.HORA) ELSE NULL END as asistencia_salida'),
+                DB::raw('COUNT(a.IDASISTENCIA) as total_marcaciones'),
+                DB::raw('CASE WHEN COUNT(a.IDASISTENCIA) > 1 THEN GREATEST(TIMESTAMPDIFF(MINUTE, CONCAT(a.FECHA, " ", ' . $salidaProgramada . '), CONCAT(a.FECHA, " ", MAX(a.HORA))), 0) ELSE 0 END as minutos_extra')
+            )
+            ->groupBy(
+                'dpa.id',
+                'dpa.idpersonal',
+                'dpa.hora_ingreso',
+                'dpa.hora_salida',
+                'dpa.fecha_inicio',
+                'dpa.fecha_fin',
+                'dpa.sin_fin',
+                'p.NUM_DOC',
+                'p.NOMBRE',
+                'p.APE_PAT',
+                'p.APE_MAT',
+                'p.NUMERO_MODULO',
+                'a.FECHA',
+                'a.IDCENTRO_MAC',
+                'cm.NOMBRE_MAC',
+                'e.ABREV_ENTIDAD',
+                'e.NOMBRE_ENTIDAD',
+                'm.N_MODULO'
+            );
+
+        if ($usaDiasEspeciales) {
+            $query->groupBy('dpd.id', 'dpd.hora_ingreso', 'dpd.hora_salida');
+        }
+
+        $rows = $query
+            ->orderBy('a.FECHA', 'desc')
+            ->orderBy('nombre_completo')
+            ->get();
+
+        foreach ($rows as $row) {
+            $row->minutos_extra = (int) $row->minutos_extra;
+            $row->horas_extra = $this->formatoMinutos($row->minutos_extra);
+        }
+
+        return $rows;
+    }
+
+    private function resumenAsignacionReporte($rows): array
+    {
+        $totalMinutos = (int) collect($rows)->sum('minutos_extra');
+
+        return [
+            'total_minutos' => $totalMinutos,
+            'total_horas' => $this->formatoMinutos($totalMinutos),
+            'registros_extra' => collect($rows)->where('minutos_extra', '>', 0)->count(),
+            'personas' => collect($rows)->pluck('idpersonal')->unique()->count(),
+            'registros' => collect($rows)->count(),
+        ];
+    }
+
+    // ASIGNACION PERSONAL PCM ASISTENCIA
+    public function asignacion(Request $request)
+    {
+        $idmac = $this->asignacionIdMac($request);
+        $name_mac = $this->asignacionNombreMac($idmac);
+        $macs = $this->asignacionMacs();
+        [$fecha_inicio, $fecha_fin] = $this->asignacionFechas($request);
+
+        return view('asistencia.asignacion.index', compact(
+            'idmac',
+            'name_mac',
+            'macs',
+            'fecha_inicio',
+            'fecha_fin'
+        ));
+    }
+
+    public function tb_asignacion_horarios(Request $request)
+    {
+        $idmac = $this->asignacionIdMac($request);
+        $horarios = $this->horariosAsignadosData($idmac);
+
+        return view('asistencia.asignacion.tablas.tb_horarios', compact('horarios'));
+    }
+
+    public function tb_asignacion_dias_especiales(Request $request)
+    {
+        $request->validate([
+            'id_asignacion' => 'required|integer',
+        ]);
+
+        $idmac = $this->asignacionIdMac($request);
+        $idAsignacion = (int) $request->input('id_asignacion');
+        $disponible = $this->asignacionDiasEspecialesDisponible();
+        $dias = collect();
+
+        if ($disponible) {
+            $dias = $this->diasEspecialesAsignacionData($idAsignacion, $idmac);
+        }
+
+        return view('asistencia.asignacion.tablas.tb_dias_especiales', compact(
+            'dias',
+            'disponible'
+        ));
+    }
+
+    public function calendario_asignacion_horario(Request $request)
+    {
+        $request->validate([
+            'id_asignacion' => 'required|integer',
+            'mes' => 'required|date_format:Y-m',
+        ]);
+
+        $idmac = $this->asignacionIdMac($request);
+        $horario = $this->horarioAsignacionEnMac((int) $request->input('id_asignacion'), $idmac);
+
+        if (!$horario) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontro la asignacion del horario.',
+            ], 404);
+        }
+
+        return response()->json(array_merge([
+            'success' => true,
+        ], $this->calendarioAsignacionData($horario, $idmac, $request->input('mes'))));
+    }
+
+    public function personas_asignadas(Request $request)
+    {
+        $idmac = $this->asignacionIdMac($request);
+        $personas = $this->personasAsignadasData($idmac)
+            ->map(function ($p) {
+                return [
+                    'id' => $p->IDPERSONAL,
+                    'text' => $p->NUM_DOC . ' - ' . $p->nombre_completo,
+                ];
+            });
+
+        return response()->json(['results' => $personas]);
+    }
+
+    public function tb_asignacion_reporte(Request $request)
+    {
+        $idmac = $this->asignacionIdMac($request);
+        [$fechaInicio, $fechaFin] = $this->asignacionFechas($request);
+        $idpersonal = $request->input('idpersonal') ? (int) $request->input('idpersonal') : null;
+
+        $rows = $this->asignacionReporteData($idmac, $fechaInicio, $fechaFin, $idpersonal);
+        $summary = $this->resumenAsignacionReporte($rows);
+
+        return view('asistencia.asignacion.tablas.tb_reporte', compact(
+            'rows',
+            'summary',
+            'fechaInicio',
+            'fechaFin'
+        ));
+    }
+
+    public function md_asignacion_horario(Request $request)
+    {
+        $idmac = $this->asignacionIdMac($request);
+        $nameMac = $this->asignacionNombreMac($idmac);
+        $horario = null;
+        $selectedPersonal = null;
+        $diasEspecialesDisponible = $this->asignacionDiasEspecialesDisponible();
+        $mesCalendario = $request->input('fecha_inicio')
+            ? Carbon::parse($request->input('fecha_inicio'))->format('Y-m')
+            : Carbon::now()->format('Y-m');
+
+        if ($request->filled('id')) {
+            $horario = DB::table('d_personal_asistencia as dpa')
+                ->join('m_personal as p', 'p.IDPERSONAL', '=', 'dpa.idpersonal')
+                ->select(
+                    'dpa.*',
+                    'p.NUM_DOC',
+                    DB::raw('UPPER(CONCAT(p.APE_PAT, " ", p.APE_MAT, ", ", p.NOMBRE)) as nombre_completo')
+                )
+                ->where('dpa.id', $request->input('id'))
+                ->first();
+
+            if (!$horario || !$this->personalPerteneceMac((int) $horario->idpersonal, $idmac)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontro la asignacion solicitada.',
+                ], 404);
+            }
+
+            $selectedPersonal = [
+                'id' => $horario->idpersonal,
+                'text' => $horario->NUM_DOC . ' - ' . $horario->nombre_completo,
+            ];
+
+            $ultimoDiaEspecial = $diasEspecialesDisponible
+                ? DB::table('d_personal_asistencia_dia')
+                    ->where('id_asignacion', $horario->id)
+                    ->where('activo', 1)
+                    ->orderBy('fecha', 'desc')
+                    ->value('fecha')
+                : null;
+
+            if ($ultimoDiaEspecial) {
+                $mesCalendario = Carbon::parse($ultimoDiaEspecial)->format('Y-m');
+            } elseif ($request->filled('fecha_inicio')) {
+                $mesCalendario = Carbon::parse($request->input('fecha_inicio'))->format('Y-m');
+            } elseif (Carbon::parse($horario->fecha_inicio)->greaterThan(Carbon::now())) {
+                $mesCalendario = Carbon::parse($horario->fecha_inicio)->format('Y-m');
+            }
+        }
+
+        return response()->json([
+            'html' => view('asistencia.asignacion.modals.md_asignacion_horario', compact(
+                'idmac',
+                'nameMac',
+                'horario',
+                'selectedPersonal',
+                'diasEspecialesDisponible',
+                'mesCalendario'
+            ))->render()
+        ]);
+    }
+
+    public function buscar_personal_asignacion(Request $request)
+    {
+        $idmac = $this->asignacionIdMac($request);
+        $term = trim((string) $request->input('q', ''));
+
+        if (strlen($term) < 2) {
+            return response()->json(['results' => []]);
+        }
+
+        $personal = $this->personalParaAsignacion($idmac, $term, 20)
+            ->map(function ($p) {
+                return [
+                    'id' => $p->IDPERSONAL,
+                    'text' => $p->NUM_DOC . ' - ' . $p->nombre_completo,
+                ];
+            });
+
+        return response()->json(['results' => $personal]);
+    }
+
+    public function store_asignacion_horario(Request $request)
+    {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'id' => 'nullable|integer',
+            'mac' => 'nullable|integer',
+            'idpersonal' => 'required|integer',
+            'hora_ingreso' => 'required|date_format:H:i',
+            'hora_salida' => 'required|date_format:H:i',
+            'fecha_inicio' => 'required|date',
+            'fecha_fin' => 'nullable|date',
+            'sin_fin' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Revise los campos obligatorios.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $idmac = $this->asignacionIdMac($request);
+        $id = $request->input('id') ? (int) $request->input('id') : null;
+        $esEdicion = (bool) $id;
+        $idpersonal = (int) $request->input('idpersonal');
+
+        if ($id) {
+            $horarioActual = DB::table('d_personal_asistencia')->where('id', $id)->first();
+
+            if (!$horarioActual || !$this->personalPerteneceMac((int) $horarioActual->idpersonal, $idmac)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tiene permisos para editar esta asignacion.',
+                ], 403);
+            }
+        }
+
+        if (!$this->personalPerteneceMac($idpersonal, $idmac)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El personal seleccionado no pertenece al Centro MAC filtrado.',
+            ], 403);
+        }
+
+        if ($request->input('hora_ingreso') >= $request->input('hora_salida')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La hora de salida debe ser mayor a la hora de ingreso.',
+            ], 422);
+        }
+
+        $sinFin = $request->boolean('sin_fin');
+        $fechaInicio = Carbon::parse($request->input('fecha_inicio'))->format('Y-m-d');
+        $fechaFin = $sinFin ? null : ($request->input('fecha_fin') ? Carbon::parse($request->input('fecha_fin'))->format('Y-m-d') : null);
+
+        if (!$sinFin && !$fechaFin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ingrese fecha fin o marque Sin fin.',
+            ], 422);
+        }
+
+        if ($fechaFin && $fechaFin < $fechaInicio) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La fecha fin no puede ser menor a la fecha inicio.',
+            ], 422);
+        }
+
+        $fechaFinComparacion = $fechaFin ?: '9999-12-31';
+        $cruce = DB::table('d_personal_asistencia')
+            ->where('idpersonal', $idpersonal)
+            ->when($id, function ($q) use ($id) {
+                $q->where('id', '<>', $id);
+            })
+            ->whereRaw('fecha_inicio <= ?', [$fechaFinComparacion])
+            ->whereRaw('COALESCE(fecha_fin, "9999-12-31") >= ?', [$fechaInicio])
+            ->exists();
+
+        if ($cruce) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ya existe una asignacion de horario que se cruza con ese rango.',
+            ], 409);
+        }
+
+        $data = [
+            'idpersonal' => $idpersonal,
+            'hora_ingreso' => $request->input('hora_ingreso') . ':00',
+            'hora_salida' => $request->input('hora_salida') . ':00',
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
+            'sin_fin' => $sinFin ? 1 : 0,
+        ];
+
+        if ($id) {
+            DB::table('d_personal_asistencia')->where('id', $id)->update($data);
+        } else {
+            $id = DB::table('d_personal_asistencia')->insertGetId($data);
+        }
+
+        return response()->json([
+            'success' => true,
+            'id' => $id,
+            'message' => $esEdicion ? 'Horario actualizado correctamente.' : 'Horario asignado correctamente.',
+        ]);
+    }
+
+    public function store_asignacion_dia_especial(Request $request)
+    {
+        if (!$this->asignacionDiasEspecialesDisponible()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Primero cree la tabla d_personal_asistencia_dia.',
+            ], 409);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'id_asignacion' => 'required|integer',
+            'mac' => 'nullable|integer',
+            'fecha' => 'required|date',
+            'hora_ingreso' => 'required|date_format:H:i',
+            'hora_salida' => 'required|date_format:H:i',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Revise la fecha y las horas del dia especial.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $idmac = $this->asignacionIdMac($request);
+        $idAsignacion = (int) $request->input('id_asignacion');
+        $horario = $this->horarioAsignacionEnMac($idAsignacion, $idmac);
+
+        if (!$horario) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontro la asignacion del horario.',
+            ], 404);
+        }
+
+        if ($request->input('hora_ingreso') >= $request->input('hora_salida')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La hora de salida debe ser mayor a la hora de ingreso.',
+            ], 422);
+        }
+
+        $fecha = Carbon::parse($request->input('fecha'))->format('Y-m-d');
+
+        if (Carbon::parse($fecha)->dayOfWeek === Carbon::SUNDAY) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Los domingos no se contabilizan para horas compensables.',
+            ], 422);
+        }
+
+        if ($this->asignacionEsFeriado($idmac, $fecha)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La fecha seleccionada esta registrada como feriado o dia no laborable.',
+            ], 422);
+        }
+
+        $fechaFin = ((int) $horario->sin_fin === 1 || !$horario->fecha_fin)
+            ? null
+            : Carbon::parse($horario->fecha_fin)->format('Y-m-d');
+
+        if ($fecha < Carbon::parse($horario->fecha_inicio)->format('Y-m-d') || ($fechaFin && $fecha > $fechaFin)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La fecha especial esta fuera de la vigencia del horario base.',
+            ], 422);
+        }
+
+        $existe = DB::table('d_personal_asistencia_dia')
+            ->where('id_asignacion', $idAsignacion)
+            ->where('fecha', $fecha)
+            ->first();
+
+        $data = [
+            'hora_ingreso' => $request->input('hora_ingreso') . ':00',
+            'hora_salida' => $request->input('hora_salida') . ':00',
+            'activo' => 1,
+            'updated_at' => now(),
+        ];
+
+        if ($existe) {
+            DB::table('d_personal_asistencia_dia')->where('id', $existe->id)->update($data);
+        } else {
+            $data['id_asignacion'] = $idAsignacion;
+            $data['fecha'] = $fecha;
+            $data['created_at'] = now();
+            DB::table('d_personal_asistencia_dia')->insert($data);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dia especial guardado correctamente.',
+        ]);
+    }
+
+    public function sync_asignacion_sabados(Request $request)
+    {
+        if (!$this->asignacionDiasEspecialesDisponible()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Primero cree la tabla d_personal_asistencia_dia.',
+            ], 409);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'id_asignacion' => 'required|integer',
+            'mac' => 'nullable|integer',
+            'mes' => 'required|date_format:Y-m',
+            'fechas' => 'nullable|array',
+            'fechas.*' => 'date_format:Y-m-d',
+            'hora_ingreso' => 'required|date_format:H:i',
+            'hora_salida' => 'required|date_format:H:i',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Revise el mes, las fechas y el horario de sabado.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        if ($request->input('hora_ingreso') >= $request->input('hora_salida')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La hora de salida debe ser mayor a la hora de ingreso.',
+            ], 422);
+        }
+
+        $idmac = $this->asignacionIdMac($request);
+        $idAsignacion = (int) $request->input('id_asignacion');
+        $horario = $this->horarioAsignacionEnMac($idAsignacion, $idmac);
+
+        if (!$horario) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontro la asignacion del horario.',
+            ], 404);
+        }
+
+        $mes = $request->input('mes');
+        $calendario = $this->calendarioAsignacionData($horario, $idmac, $mes);
+        $permitidas = collect($calendario['sabados'])
+            ->reject(fn($dia) => $dia['es_feriado'])
+            ->pluck('fecha')
+            ->values();
+        $fechasSolicitadas = collect($request->input('fechas', []))
+            ->filter()
+            ->unique()
+            ->values();
+        $fechasInvalidas = $fechasSolicitadas->diff($permitidas);
+
+        if ($fechasInvalidas->isNotEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hay sabados fuera de vigencia o registrados como feriados.',
+            ], 422);
+        }
+
+        $inicioMes = Carbon::createFromFormat('Y-m', $mes)->startOfMonth()->format('Y-m-d');
+        $finMes = Carbon::createFromFormat('Y-m', $mes)->endOfMonth()->format('Y-m-d');
+
+        DB::transaction(function () use ($idAsignacion, $inicioMes, $finMes, $fechasSolicitadas, $request) {
+            DB::table('d_personal_asistencia_dia')
+                ->where('id_asignacion', $idAsignacion)
+                ->whereBetween('fecha', [$inicioMes, $finMes])
+                ->whereRaw('DAYOFWEEK(fecha) = 7')
+                ->delete();
+
+            foreach ($fechasSolicitadas as $fecha) {
+                DB::table('d_personal_asistencia_dia')->insert([
+                    'id_asignacion' => $idAsignacion,
+                    'fecha' => $fecha,
+                    'hora_ingreso' => $request->input('hora_ingreso') . ':00',
+                    'hora_salida' => $request->input('hora_salida') . ':00',
+                    'activo' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sabados programados actualizados.',
+        ]);
+    }
+
+    public function delete_asignacion_dia_especial(Request $request)
+    {
+        if (!$this->asignacionDiasEspecialesDisponible()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La tabla de dias especiales no existe.',
+            ], 409);
+        }
+
+        $request->validate([
+            'id' => 'required|integer',
+        ]);
+
+        $idmac = $this->asignacionIdMac($request);
+        $dia = DB::table('d_personal_asistencia_dia as dpd')
+            ->join('d_personal_asistencia as dpa', 'dpa.id', '=', 'dpd.id_asignacion')
+            ->select('dpd.*', 'dpa.idpersonal')
+            ->where('dpd.id', $request->input('id'))
+            ->first();
+
+        if (!$dia) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El dia especial no existe.',
+            ], 404);
+        }
+
+        if (!$this->personalPerteneceMac((int) $dia->idpersonal, $idmac)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tiene permisos para eliminar este dia especial.',
+            ], 403);
+        }
+
+        DB::table('d_personal_asistencia_dia')->where('id', $dia->id)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dia especial eliminado.',
+        ]);
+    }
+
+    public function delete_asignacion_horario(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+        ]);
+
+        $idmac = $this->asignacionIdMac($request);
+        $horario = DB::table('d_personal_asistencia')->where('id', $request->input('id'))->first();
+
+        if (!$horario) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La asignacion no existe.',
+            ], 404);
+        }
+
+        if (!$this->personalPerteneceMac((int) $horario->idpersonal, $idmac)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tiene permisos para eliminar esta asignacion.',
+            ], 403);
+        }
+
+        if ($this->asignacionDiasEspecialesDisponible()) {
+            DB::table('d_personal_asistencia_dia')
+                ->where('id_asignacion', $horario->id)
+                ->delete();
+        }
+
+        DB::table('d_personal_asistencia')->where('id', $horario->id)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Asignacion eliminada.',
+        ]);
+    }
+
+    public function export_asignacion_excel(Request $request)
+    {
+        $idmac = $this->asignacionIdMac($request);
+        [$fechaInicio, $fechaFin] = $this->asignacionFechas($request);
+        $idpersonal = $request->input('idpersonal') ? (int) $request->input('idpersonal') : null;
+
+        $rows = $this->asignacionReporteData($idmac, $fechaInicio, $fechaFin, $idpersonal);
+        $summary = $this->resumenAsignacionReporte($rows);
+        $nameMac = $this->asignacionNombreMac($idmac);
+        $fileMac = preg_replace('/[^A-Za-z0-9_-]+/', '_', $nameMac);
+
+        return Excel::download(
+            new AsistenciaAsignacionExport($rows, $summary, $nameMac, $fechaInicio, $fechaFin),
+            'REPORTE_HORAS_COMPENSABLES_' . $fileMac . '_' . $fechaInicio . '_' . $fechaFin . '.xlsx'
         );
     }
 }
