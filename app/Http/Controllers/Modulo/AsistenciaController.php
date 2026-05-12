@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Modulo;
 
 use App\Exports\AsistenciaDetalleExport;
 use App\Exports\AsistenciaAsignacionExport;
+use App\Exports\AsistenciaAsignacionReporteExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 
@@ -2542,6 +2543,32 @@ class AsistenciaController extends Controller
         return sprintf('%02d:%02d', $horas, $resto);
     }
 
+    private function asignacionConsumosAprobadosData(int $idmac, string $fechaInicio, string $fechaFin, ?int $idpersonal = null)
+    {
+        if (!Schema::hasTable('d_personal_asistencia_consumo') || !Schema::hasTable('d_personal_asistencia_consumo_det')) {
+            return collect();
+        }
+
+        return DB::table('d_personal_asistencia_consumo_det as det')
+            ->join('d_personal_asistencia_consumo as c', 'c.id', '=', 'det.id_consumo')
+            ->where('c.idcentro_mac', $idmac)
+            ->where('c.estado', 'APROBADO')
+            ->whereBetween('det.fecha_origen', [$fechaInicio, $fechaFin])
+            ->when($idpersonal, function ($q) use ($idpersonal) {
+                $q->where('c.idpersonal', $idpersonal);
+            })
+            ->select(
+                'c.idpersonal',
+                'det.fecha_origen',
+                DB::raw('SUM(det.minutos_usados) as minutos_usados')
+            )
+            ->groupBy('c.idpersonal', 'det.fecha_origen')
+            ->get()
+            ->keyBy(function ($row) {
+                return $row->idpersonal . '|' . Carbon::parse($row->fecha_origen)->format('Y-m-d');
+            });
+    }
+
     private function asignacionReporteData(int $idmac, string $fechaInicio, string $fechaFin, ?int $idpersonal = null)
     {
         $usaDiasEspeciales = $this->asignacionDiasEspecialesDisponible();
@@ -2646,10 +2673,17 @@ class AsistenciaController extends Controller
             ->orderBy('a.FECHA', 'desc')
             ->orderBy('nombre_completo')
             ->get();
+        $consumosAprobados = $this->asignacionConsumosAprobadosData($idmac, $fechaInicio, $fechaFin, $idpersonal);
 
         foreach ($rows as $row) {
             $row->minutos_extra = (int) $row->minutos_extra;
+            $fecha = Carbon::parse($row->FECHA)->format('Y-m-d');
+            $consumo = $consumosAprobados->get($row->idpersonal . '|' . $fecha);
+            $row->minutos_usados_aprobados = (int) ($consumo->minutos_usados ?? 0);
+            $row->minutos_saldo_disponible = max(0, $row->minutos_extra - $row->minutos_usados_aprobados);
             $row->horas_extra = $this->formatoMinutos($row->minutos_extra);
+            $row->horas_usadas_aprobadas = $this->formatoMinutos($row->minutos_usados_aprobados);
+            $row->horas_saldo_disponible = $this->formatoMinutos($row->minutos_saldo_disponible);
         }
 
         return $rows;
@@ -2658,10 +2692,16 @@ class AsistenciaController extends Controller
     private function resumenAsignacionReporte($rows): array
     {
         $totalMinutos = (int) collect($rows)->sum('minutos_extra');
+        $minutosUsados = (int) collect($rows)->sum('minutos_usados_aprobados');
+        $minutosSaldo = (int) collect($rows)->sum('minutos_saldo_disponible');
 
         return [
             'total_minutos' => $totalMinutos,
             'total_horas' => $this->formatoMinutos($totalMinutos),
+            'usadas_minutos' => $minutosUsados,
+            'usadas_horas' => $this->formatoMinutos($minutosUsados),
+            'saldo_minutos' => $minutosSaldo,
+            'saldo_horas' => $this->formatoMinutos($minutosSaldo),
             'registros_extra' => collect($rows)->where('minutos_extra', '>', 0)->count(),
             'personas' => collect($rows)->pluck('idpersonal')->unique()->count(),
             'registros' => collect($rows)->count(),
@@ -2765,6 +2805,314 @@ class AsistenciaController extends Controller
             'fechaInicio',
             'fechaFin'
         ));
+    }
+
+    private function asignacionRegimenLaboral($tvlId, ?string $otro = null): string
+    {
+        return match ((int) $tvlId) {
+            1 => 'Decreto legislativo 1057-CAS',
+            2 => 'Decreto Legislativo N°276',
+            3 => 'Decreto Legislativo N°728',
+            4 => 'Servicios no Personales-SNP',
+            5 => 'OS',
+            6 => 'Tercerización',
+            7 => $otro ?: 'OTRO',
+            default => '-',
+        };
+    }
+
+    private function asignacionNombreDia(Carbon $fecha): string
+    {
+        return [
+            Carbon::MONDAY => 'LUNES',
+            Carbon::TUESDAY => 'MARTES',
+            Carbon::WEDNESDAY => 'MIERCOLES',
+            Carbon::THURSDAY => 'JUEVES',
+            Carbon::FRIDAY => 'VIERNES',
+            Carbon::SATURDAY => 'SABADO',
+            Carbon::SUNDAY => 'DOMINGO',
+        ][$fecha->dayOfWeek] ?? '';
+    }
+
+    private function asignacionFechaLarga(string $fecha): string
+    {
+        $meses = [
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Setiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre',
+        ];
+        $date = Carbon::parse($fecha);
+
+        return $date->format('d') . ' de ' . $meses[$date->month] . ' ' . $date->format('Y');
+    }
+
+    private function minutosJornadaNeta(?string $horaInicio, ?string $horaFin, string $fecha): int
+    {
+        if (!$horaInicio || !$horaFin) {
+            return 0;
+        }
+
+        $inicio = Carbon::parse($fecha . ' ' . $horaInicio);
+        $fin = Carbon::parse($fecha . ' ' . $horaFin);
+
+        if ($fin->lessThanOrEqualTo($inicio)) {
+            return 0;
+        }
+
+        $minutos = $inicio->diffInMinutes($fin);
+
+        if ($minutos >= 360 && !Carbon::parse($fecha)->isSaturday()) {
+            $minutos -= 60;
+        }
+
+        return max(0, $minutos);
+    }
+
+    private function asignacionPermisosAprobadosData(int $idmac, string $fechaInicio, string $fechaFin, ?int $idpersonal = null)
+    {
+        if (!Schema::hasTable('d_personal_asistencia_consumo')) {
+            return collect();
+        }
+
+        $select = [
+            'c.idpersonal',
+            'c.fecha_consumo',
+            'c.tipo_consumo',
+            'c.hora_inicio',
+            'c.hora_fin',
+            'c.motivo',
+        ];
+
+        if (Schema::hasColumn('d_personal_asistencia_consumo', 'observacion')) {
+            $select[] = 'c.observacion';
+        }
+
+        return DB::table('d_personal_asistencia_consumo as c')
+            ->select($select)
+            ->where('c.idcentro_mac', $idmac)
+            ->where('c.estado', 'APROBADO')
+            ->whereBetween('c.fecha_consumo', [$fechaInicio, $fechaFin])
+            ->when($idpersonal, function ($q) use ($idpersonal) {
+                $q->where('c.idpersonal', $idpersonal);
+            })
+            ->get()
+            ->groupBy(function ($row) {
+                return $row->idpersonal . '|' . Carbon::parse($row->fecha_consumo)->format('Y-m-d');
+            });
+    }
+
+    private function asignacionReporteAsistenciaData(int $idmac, string $fechaInicio, string $fechaFin, ?int $idpersonal = null)
+    {
+        $query = DB::table('d_personal_asistencia as dpa')
+            ->join('m_personal as p', 'p.IDPERSONAL', '=', 'dpa.idpersonal')
+            ->leftJoin('D_PERSONAL_CARGO as dpc', 'dpc.IDCARGO_PERSONAL', '=', 'p.IDCARGO_PERSONAL')
+            ->leftJoin('m_modulo as m', 'm.IDMODULO', '=', 'p.IDMODULO')
+            ->select(
+                'dpa.id',
+                'dpa.idpersonal',
+                'dpa.hora_ingreso',
+                'dpa.hora_salida',
+                'dpa.fecha_inicio',
+                'dpa.fecha_fin',
+                'dpa.sin_fin',
+                'p.NUM_DOC',
+                'p.TVL_ID',
+                'p.TVL_OTRO',
+                DB::raw('UPPER(CONCAT(p.APE_PAT, " ", p.APE_MAT, ", ", p.NOMBRE)) as nombre_completo'),
+                DB::raw('COALESCE(dpc.NOMBRE_CARGO, p.DLP_CARGO, m.N_MODULO, p.NUMERO_MODULO, "-") as cargo')
+            )
+            ->where('dpa.fecha_inicio', '<=', $fechaFin)
+            ->whereRaw('(dpa.sin_fin = 1 OR dpa.fecha_fin IS NULL OR dpa.fecha_fin >= ?)', [$fechaInicio])
+            ->when($idpersonal, function ($q) use ($idpersonal) {
+                $q->where('dpa.idpersonal', $idpersonal);
+            })
+            ->orderBy('p.APE_PAT')
+            ->orderBy('p.APE_MAT')
+            ->orderBy('p.NOMBRE');
+
+        $asignaciones = $this->aplicarFiltroPersonalMac($query, $idmac)->get();
+
+        if ($asignaciones->isEmpty()) {
+            return collect();
+        }
+
+        $docs = $asignaciones->pluck('NUM_DOC')->filter()->unique()->values();
+        $asistencias = DB::table('m_asistencia')
+            ->where('IDCENTRO_MAC', $idmac)
+            ->whereIn('NUM_DOC', $docs->all())
+            ->whereBetween('FECHA', [$fechaInicio, $fechaFin])
+            ->select(
+                'NUM_DOC',
+                'FECHA',
+                DB::raw('MIN(HORA) as ingreso_real'),
+                DB::raw('CASE WHEN COUNT(IDASISTENCIA) > 1 THEN MAX(HORA) ELSE NULL END as salida_real'),
+                DB::raw('COUNT(IDASISTENCIA) as total_marcaciones')
+            )
+            ->groupBy('NUM_DOC', 'FECHA')
+            ->get()
+            ->keyBy(function ($row) {
+                return $row->NUM_DOC . '|' . Carbon::parse($row->FECHA)->format('Y-m-d');
+            });
+
+        $diasEspeciales = collect();
+        if ($this->asignacionDiasEspecialesDisponible()) {
+            $diasEspeciales = DB::table('d_personal_asistencia_dia')
+                ->whereIn('id_asignacion', $asignaciones->pluck('id')->all())
+                ->where('activo', 1)
+                ->whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->get()
+                ->keyBy(function ($row) {
+                    return $row->id_asignacion . '|' . Carbon::parse($row->fecha)->format('Y-m-d');
+                });
+        }
+
+        $feriados = $this->asignacionFeriadosData($idmac, $fechaInicio, $fechaFin);
+        $permisos = $this->asignacionPermisosAprobadosData($idmac, $fechaInicio, $fechaFin, $idpersonal);
+        $nombreMac = $this->asignacionNombreMac($idmac);
+        $rows = collect();
+
+        foreach ($asignaciones as $asignacion) {
+            $inicio = Carbon::parse(max($fechaInicio, Carbon::parse($asignacion->fecha_inicio)->format('Y-m-d')));
+            $finAsignacion = ((int) $asignacion->sin_fin === 1 || !$asignacion->fecha_fin)
+                ? $fechaFin
+                : Carbon::parse($asignacion->fecha_fin)->format('Y-m-d');
+            $fin = Carbon::parse(min($fechaFin, $finAsignacion));
+
+            if ($inicio->greaterThan($fin)) {
+                continue;
+            }
+
+            foreach (CarbonPeriod::create($inicio, $fin) as $dia) {
+                $fecha = $dia->format('Y-m-d');
+
+                if ($dia->isSunday() || $feriados->has($fecha)) {
+                    continue;
+                }
+
+                $especial = $diasEspeciales->get($asignacion->id . '|' . $fecha);
+
+                if ($dia->isSaturday() && !$especial) {
+                    continue;
+                }
+
+                $ingresoProgramado = $especial ? $especial->hora_ingreso : $asignacion->hora_ingreso;
+                $salidaProgramada = $especial ? $especial->hora_salida : $asignacion->hora_salida;
+                $asistencia = $asistencias->get($asignacion->NUM_DOC . '|' . $fecha);
+                $permisosDia = $permisos->get($asignacion->idpersonal . '|' . $fecha, collect());
+                $observaciones = [];
+
+                if (!$asistencia) {
+                    $observaciones[] = 'SIN REGISTRO';
+                } elseif (!$asistencia->salida_real) {
+                    $observaciones[] = 'SIN MARCACION DE SALIDA';
+                }
+
+                if ($permisosDia->isNotEmpty()) {
+                    foreach ($permisosDia as $permiso) {
+                        $texto = $permiso->motivo ?: 'PERMISO';
+                        if (!empty($permiso->observacion)) {
+                            $texto .= ': ' . $permiso->observacion;
+                        }
+                        $observaciones[] = $texto;
+                    }
+                }
+
+                $minutosProgramados = $this->minutosJornadaNeta($ingresoProgramado, $salidaProgramada, $fecha);
+                $minutosTrabajados = $asistencia && $asistencia->salida_real
+                    ? $this->minutosJornadaNeta($asistencia->ingreso_real, $asistencia->salida_real, $fecha)
+                    : 0;
+
+                $rows->push((object) [
+                    'idpersonal' => $asignacion->idpersonal,
+                    'dni' => $asignacion->NUM_DOC,
+                    'nombre_completo' => $asignacion->nombre_completo,
+                    'regimen_laboral' => $this->asignacionRegimenLaboral($asignacion->TVL_ID, $asignacion->TVL_OTRO),
+                    'centro_mac' => $nombreMac,
+                    'cargo' => $asignacion->cargo,
+                    'dia' => $this->asignacionNombreDia($dia),
+                    'fecha' => $fecha,
+                    'fecha_excel' => $dia->format('d/m/Y'),
+                    'ingreso_programado' => substr($ingresoProgramado, 0, 5),
+                    'ingreso_real' => $asistencia && $asistencia->ingreso_real ? substr($asistencia->ingreso_real, 0, 5) : '',
+                    'salida_programada' => substr($salidaProgramada, 0, 5),
+                    'salida_real' => $asistencia && $asistencia->salida_real ? substr($asistencia->salida_real, 0, 5) : '',
+                    'minutos_programados' => $minutosProgramados,
+                    'minutos_trabajados' => $minutosTrabajados,
+                    'horas_programadas' => $this->formatoMinutos($minutosProgramados),
+                    'horas_trabajadas' => $this->formatoMinutos($minutosTrabajados),
+                    'observaciones' => implode(' | ', array_unique($observaciones)),
+                    'total_marcaciones' => $asistencia ? (int) $asistencia->total_marcaciones : 0,
+                    'tiene_permiso' => $permisosDia->isNotEmpty(),
+                ]);
+            }
+        }
+
+        return $rows
+            ->sortBy(fn($row) => $row->fecha . '|' . $row->nombre_completo)
+            ->values();
+    }
+
+    private function resumenReporteAsistencias($rows): array
+    {
+        $rows = collect($rows);
+
+        return [
+            'registros' => $rows->count(),
+            'personas' => $rows->pluck('idpersonal')->unique()->count(),
+            'sin_registro' => $rows->filter(fn($row) => $row->total_marcaciones === 0)->count(),
+            'sin_salida' => $rows->filter(fn($row) => $row->total_marcaciones === 1)->count(),
+            'con_permiso' => $rows->where('tiene_permiso', true)->count(),
+            'horas_programadas' => $this->formatoMinutos((int) $rows->sum('minutos_programados')),
+            'horas_trabajadas' => $this->formatoMinutos((int) $rows->sum('minutos_trabajados')),
+        ];
+    }
+
+    public function reporte_asistencias_asignacion(Request $request)
+    {
+        $idmac = $this->asignacionIdMac($request);
+        $name_mac = $this->asignacionNombreMac($idmac);
+        $macs = $this->asignacionMacs();
+        [$fechaInicio, $fechaFin] = $this->asignacionFechas($request);
+        $idpersonal = $request->input('idpersonal') ? (int) $request->input('idpersonal') : null;
+        $personalAsignado = $this->personasAsignadasData($idmac);
+        $rows = $this->asignacionReporteAsistenciaData($idmac, $fechaInicio, $fechaFin, $idpersonal);
+        $summary = $this->resumenReporteAsistencias($rows);
+
+        return view('asistencia.asignacion.reporte_asistencias.index', compact(
+            'idmac',
+            'name_mac',
+            'macs',
+            'fechaInicio',
+            'fechaFin',
+            'idpersonal',
+            'personalAsignado',
+            'rows',
+            'summary'
+        ));
+    }
+
+    public function export_reporte_asistencias_asignacion(Request $request)
+    {
+        $idmac = $this->asignacionIdMac($request);
+        [$fechaInicio, $fechaFin] = $this->asignacionFechas($request);
+        $idpersonal = $request->input('idpersonal') ? (int) $request->input('idpersonal') : null;
+        $rows = $this->asignacionReporteAsistenciaData($idmac, $fechaInicio, $fechaFin, $idpersonal);
+        $nameMac = $this->asignacionNombreMac($idmac);
+        $fileMac = preg_replace('/[^A-Za-z0-9_-]+/', '_', $nameMac);
+
+        return Excel::download(
+            new AsistenciaAsignacionReporteExport($rows, $nameMac, $fechaInicio, $fechaFin),
+            'CONTROL_ASISTENCIA_' . $fileMac . '_' . $fechaInicio . '_' . $fechaFin . '.xlsx'
+        );
     }
 
     public function md_asignacion_horario(Request $request)

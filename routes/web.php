@@ -57,6 +57,7 @@ use App\Http\Controllers\Modulo\MonitoreoAsistenciaController;
 use App\Http\Controllers\Modulo\ActualizacionesController;
 use App\Http\Controllers\Modulo\AnsCatalogoController;
 use App\Http\Controllers\Modulo\EntidadCatalogoController;
+use App\Http\Controllers\Modulo\MiAsistenciaController;
 use Illuminate\Support\Facades\Mail;
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -158,6 +159,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('modal-password', [PagesController::class, 'modalPassword'])->name('modal-password');
     Route::post('store-password', [PagesController::class, 'storePassword'])->name('store-password');
 
+    Route::get('/miasistencia', [MiAsistenciaController::class, 'index'])->name('miasistencia.index');
+    Route::post('/miasistencia/store', [MiAsistenciaController::class, 'store'])->name('miasistencia.store');
+    Route::post('/miasistencia/validar', [MiAsistenciaController::class, 'validar'])->name('miasistencia.validar');
+
     /******************************************************   EXTERNO *****************************************************************************/
 
     // SE ALMACENA LOS ACCESOS A LAS PAGINAS EXTERNA QUE NO ES NECESARIO LOGGIN
@@ -218,6 +223,8 @@ Route::group(['middleware' => ['auth']], function () {
 
         // ASIGNACION PERSONAL PCM ASISTENCIA
         Route::get('/asignacion', [AsistenciaController::class, 'asignacion'])->name('asignacion.index');
+        Route::get('/asignacion/reporte-asistencias', [AsistenciaController::class, 'reporte_asistencias_asignacion'])->name('asignacion.reporte_asistencias.index');
+        Route::get('/asignacion/reporte-asistencias/export', [AsistenciaController::class, 'export_reporte_asistencias_asignacion'])->name('asignacion.reporte_asistencias.export');
         Route::get('/asignacion/horarios', [AsistenciaController::class, 'tb_asignacion_horarios'])->name('asignacion.horarios');
         Route::get('/asignacion/dias-especiales', [AsistenciaController::class, 'tb_asignacion_dias_especiales'])->name('asignacion.dias_especiales');
         Route::get('/asignacion/calendario-horario', [AsistenciaController::class, 'calendario_asignacion_horario'])->name('asignacion.calendario_horario');

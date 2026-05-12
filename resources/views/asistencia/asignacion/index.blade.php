@@ -18,7 +18,7 @@
 
         .metric-strip {
             display: grid;
-            grid-template-columns: repeat(4, minmax(130px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: .75rem;
             margin-bottom: 1rem;
         }
@@ -219,6 +219,9 @@
                                 </button>
                                 <button type="button" class="btn btn-success" onclick="exportarAsignacion()">
                                     <i class="fa fa-file-excel-o"></i> Excel
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="abrirReporteAsistencias()">
+                                    <i class="fa fa-table"></i> Reporte asistencia
                                 </button>
                             </div>
                         </div>
@@ -545,6 +548,11 @@
         function exportarAsignacion() {
             const params = $.param(filtrosAsignacion());
             window.location.href = "{{ route('asistencia.asignacion.export_excel') }}" + '?' + params;
+        }
+
+        function abrirReporteAsistencias() {
+            const params = $.param(filtrosAsignacion());
+            window.location.href = "{{ route('asistencia.asignacion.reporte_asistencias.index') }}" + '?' + params;
         }
     </script>
 @endsection

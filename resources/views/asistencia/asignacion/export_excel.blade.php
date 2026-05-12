@@ -1,25 +1,27 @@
 <table>
     <tr>
-        <th colspan="14" style="font-weight: bold; font-size: 16px;">REPORTE DE HORAS COMPENSABLES</th>
+        <th colspan="18" style="font-weight: bold; font-size: 16px;">REPORTE DE HORAS COMPENSABLES</th>
     </tr>
     <tr>
         <td colspan="2" style="font-weight: bold;">Centro MAC</td>
         <td colspan="4">{{ $nameMac }}</td>
         <td colspan="2" style="font-weight: bold;">Rango</td>
-        <td colspan="6">{{ date('d/m/Y', strtotime($fechaInicio)) }} al {{ date('d/m/Y', strtotime($fechaFin)) }}</td>
+        <td colspan="10">{{ date('d/m/Y', strtotime($fechaInicio)) }} al {{ date('d/m/Y', strtotime($fechaFin)) }}</td>
     </tr>
     <tr>
-        <td colspan="2" style="font-weight: bold;">Horas compensables</td>
+        <td colspan="2" style="font-weight: bold;">Horas generadas</td>
         <td colspan="2">{{ $summary['total_horas'] }}</td>
+        <td colspan="2" style="font-weight: bold;">Usadas aprobadas</td>
+        <td colspan="2">{{ $summary['usadas_horas'] }}</td>
+        <td colspan="2" style="font-weight: bold;">Saldo disponible</td>
+        <td colspan="2">{{ $summary['saldo_horas'] }}</td>
         <td colspan="2" style="font-weight: bold;">Dias con extra</td>
         <td colspan="2">{{ $summary['registros_extra'] }}</td>
-        <td colspan="2" style="font-weight: bold;">Personas</td>
-        <td colspan="2">{{ $summary['personas'] }}</td>
         <td style="font-weight: bold;">Registros</td>
         <td>{{ $summary['registros'] }}</td>
     </tr>
     <tr>
-        <td colspan="14"></td>
+        <td colspan="18"></td>
     </tr>
     <tr>
         <th style="border: 1px solid black; background-color: #132842; color: white;">N</th>
@@ -35,7 +37,11 @@
         <th style="border: 1px solid black; background-color: #132842; color: white;">Salida real</th>
         <th style="border: 1px solid black; background-color: #132842; color: white;">Marcaciones</th>
         <th style="border: 1px solid black; background-color: #132842; color: white;">Horas extra</th>
+        <th style="border: 1px solid black; background-color: #132842; color: white;">Horas usadas aprobadas</th>
+        <th style="border: 1px solid black; background-color: #132842; color: white;">Saldo disponible</th>
         <th style="border: 1px solid black; background-color: #132842; color: white;">Minutos extra</th>
+        <th style="border: 1px solid black; background-color: #132842; color: white;">Minutos usados aprobados</th>
+        <th style="border: 1px solid black; background-color: #132842; color: white;">Minutos saldo</th>
     </tr>
     @forelse ($rows as $i => $row)
         <tr>
@@ -52,11 +58,15 @@
             <td style="border: 1px solid black;">{{ $row->asistencia_salida ? substr($row->asistencia_salida, 0, 5) : '-' }}</td>
             <td style="border: 1px solid black;">{{ $row->total_marcaciones }}</td>
             <td style="border: 1px solid black;">{{ $row->horas_extra }}</td>
+            <td style="border: 1px solid black;">{{ $row->horas_usadas_aprobadas }}</td>
+            <td style="border: 1px solid black;">{{ $row->horas_saldo_disponible }}</td>
             <td style="border: 1px solid black;">{{ $row->minutos_extra }}</td>
+            <td style="border: 1px solid black;">{{ $row->minutos_usados_aprobados }}</td>
+            <td style="border: 1px solid black;">{{ $row->minutos_saldo_disponible }}</td>
         </tr>
     @empty
         <tr>
-            <td colspan="14" style="border: 1px solid black;">Sin datos para el rango seleccionado.</td>
+            <td colspan="18" style="border: 1px solid black;">Sin datos para el rango seleccionado.</td>
         </tr>
     @endforelse
 </table>

@@ -47,7 +47,7 @@ class AsistenciaAsignacionExport implements FromView, ShouldAutoSize, WithStyles
             ],
         ]);
 
-        $sheet->getStyle('A5:N5')->applyFromArray([
+        $sheet->getStyle('A5:R5')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
