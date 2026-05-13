@@ -52,9 +52,26 @@
             background: #fff;
         }
 
-        .mi-source-row:has(input:checked) {
+        .mi-source-row:not(.is-consumed):has(input:checked) {
             border-color: #198754;
             background: #edf8f1;
+        }
+
+        .mi-source-row.is-partial {
+            border-color: #f0ad4e;
+            background: #fff8e6;
+        }
+
+        .mi-source-row.is-consumed {
+            background: #f1f3f5;
+            border-color: #98a2b3;
+            color: #667085;
+            cursor: not-allowed;
+        }
+
+        .mi-source-row.is-consumed:has(input:checked) {
+            background: #eef1f4;
+            border-color: #98a2b3;
         }
 
         .mi-source-list {
@@ -183,6 +200,12 @@
         </div>
     @endif
 
+    @if ($tablaDisponible && !$rangoFechasDisponible)
+        <div class="alert alert-warning">
+            Falta agregar <strong>fecha_inicio_consumo</strong> y <strong>fecha_fin_consumo</strong>. El formulario calcula rangos, pero la base solo guardara la fecha inicial hasta aplicar el SQL.
+        </div>
+    @endif
+
     @if (!$personal)
         <div class="alert alert-danger">
             Su usuario no esta vinculado a un registro de personal. Revise el campo <strong>users.idpersonal</strong>.
@@ -190,11 +213,19 @@
     @endif
 
     @php
-        $puedeRegistrar = $tablaDisponible && $tablaDetalleDisponible && $personal && $fuentesDisponibles->isNotEmpty();
+        $puedeRegistrar = $tablaDisponible && $personal;
         $detalleHorasModal = $solicitudes
             ->concat($solicitudesRevision)
             ->unique('id')
             ->mapWithKeys(function ($s) use ($detalleSolicitudes) {
+                $fechaInicioConsumo = $s->fecha_inicio_consumo ?? $s->fecha_consumo;
+                $fechaFinConsumo = $s->fecha_fin_consumo ?? $s->fecha_consumo;
+                $periodoConsumo = date('d-m-Y', strtotime($fechaInicioConsumo));
+
+                if ($fechaInicioConsumo !== $fechaFinConsumo) {
+                    $periodoConsumo .= ' al ' . date('d-m-Y', strtotime($fechaFinConsumo));
+                }
+
                 $detalles = ($detalleSolicitudes[$s->id] ?? collect())
                     ->map(function ($det) {
                         return [
@@ -210,7 +241,9 @@
                         'personal' => $s->nombre_completo ?? 'Mi solicitud',
                         'documento' => $s->NUM_DOC ?? '',
                         'entidad' => $s->entidad ?? '',
-                        'fecha' => date('d-m-Y', strtotime($s->fecha_consumo)),
+                        'fecha' => $periodoConsumo,
+                        'fecha_inicio' => $fechaInicioConsumo,
+                        'fecha_fin' => $fechaFinConsumo,
                         'tipo' => $s->tipo_consumo === 'DIA' ? 'Dia completo' : 'Por horas',
                         'horario' => substr($s->hora_inicio, 0, 5) . ' - ' . substr($s->hora_fin, 0, 5),
                         'horas' => sprintf('%02d:%02d', intdiv((int) $s->minutos_solicitados, 60), (int) $s->minutos_solicitados % 60),
@@ -277,7 +310,7 @@
             <strong>{{ $summary['generadas_total'] }}</strong>
         </div>
         <div class="mi-metric">
-            <span>Pendiente/aprobado</span>
+            <span>Compensacion pendiente/aprob.</span>
             <strong>{{ $summary['comprometidas'] }}</strong>
         </div>
         <div class="mi-metric">
@@ -304,9 +337,17 @@
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Fecha a compensar</label>
-                            <input type="date" name="fecha_consumo" class="form-control" {{ !$puedeRegistrar ? 'disabled' : '' }}>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Fecha inicio</label>
+                                <input type="date" name="fecha_inicio_consumo" id="fecha_inicio_consumo" class="form-control"
+                                    {{ !$puedeRegistrar ? 'disabled' : '' }}>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Fecha fin</label>
+                                <input type="date" name="fecha_fin_consumo" id="fecha_fin_consumo" class="form-control"
+                                    {{ !$puedeRegistrar ? 'disabled' : '' }}>
+                            </div>
                         </div>
 
                         <div id="bloque_horas" class="row">
@@ -321,10 +362,20 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">Motivo</label>
+                            <select name="motivo" id="motivo_consumo" class="form-control" {{ !$puedeRegistrar ? 'disabled' : '' }} required>
+                                <option value="">Seleccione un motivo</option>
+                                @foreach ($motivosConsumo as $motivo)
+                                    <option value="{{ $motivo }}">{{ $motivo }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-3 d-none" id="bloque_fuentes_origen">
                             <label class="form-label fw-semibold">Dias origen a consumir</label>
                             <div id="fechas_origen_inputs"></div>
                             <button type="button" class="btn btn-outline-primary w-100" onclick="abrirModalFuentesOrigen()"
-                                {{ !$puedeRegistrar ? 'disabled' : '' }}>
+                                {{ !$puedeRegistrar || !$tablaDetalleDisponible || $fuentesDisponibles->isEmpty() ? 'disabled' : '' }}>
                                 Seleccionar horas disponibles
                             </button>
                             <div class="border rounded p-2 mt-2" id="resumen_fuentes_origen">
@@ -334,16 +385,11 @@
                                 Solo se muestran horas disponibles de los ultimos 3 meses. Seleccionado:
                                 <strong id="total_fuente_seleccionada">00:00</strong>
                             </small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Motivo</label>
-                            <select name="motivo" class="form-control" {{ !$puedeRegistrar ? 'disabled' : '' }} required>
-                                <option value="">Seleccione un motivo</option>
-                                @foreach ($motivosConsumo as $motivo)
-                                    <option value="{{ $motivo }}">{{ $motivo }}</option>
-                                @endforeach
-                            </select>
+                            @if (!$tablaDetalleDisponible)
+                                <div class="text-warning font-13 mt-2">Falta la tabla de detalle para consumir horas compensables.</div>
+                            @elseif ($fuentesDisponibles->isEmpty())
+                                <div class="text-warning font-13 mt-2">No hay horas disponibles para consumir.</div>
+                            @endif
                         </div>
 
                         <div class="mb-3">
@@ -376,7 +422,7 @@
                         <table class="table table-sm table-hover table-bordered table-striped mi-table-compact" id="table_mis_solicitudes">
                             <thead class="tenca">
                                 <tr>
-                                    <th>Fecha</th>
+                                    <th>Periodo</th>
                                     <th>Tipo</th>
                                     <th>Horas</th>
                                     <th>Estado</th>
@@ -387,8 +433,17 @@
                             </thead>
                             <tbody>
                                 @foreach ($solicitudes as $s)
+                                    @php
+                                        $fechaInicioConsumo = $s->fecha_inicio_consumo ?? $s->fecha_consumo;
+                                        $fechaFinConsumo = $s->fecha_fin_consumo ?? $s->fecha_consumo;
+                                        $periodoConsumo = date('d-m-Y', strtotime($fechaInicioConsumo));
+
+                                        if ($fechaInicioConsumo !== $fechaFinConsumo) {
+                                            $periodoConsumo .= ' al ' . date('d-m-Y', strtotime($fechaFinConsumo));
+                                        }
+                                    @endphp
                                     <tr>
-                                        <td data-order="{{ $s->fecha_consumo }}">{{ date('d-m-Y', strtotime($s->fecha_consumo)) }}</td>
+                                        <td data-order="{{ $fechaInicioConsumo }}">{{ $periodoConsumo }}</td>
                                         <td>
                                             <span class="badge bg-light text-dark border">
                                                 {{ $s->tipo_consumo === 'DIA' ? 'Dia' : 'Horas' }}
@@ -439,7 +494,7 @@
                                     <tr>
                                         <th>Personal</th>
                                         <th>DNI</th>
-                                        <th>Fecha</th>
+                                        <th>Periodo</th>
                                         <th>Tipo</th>
                                         <th>Horas</th>
                                         <th>Estado</th>
@@ -450,13 +505,22 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($solicitudesRevision as $s)
+                                        @php
+                                            $fechaInicioConsumo = $s->fecha_inicio_consumo ?? $s->fecha_consumo;
+                                            $fechaFinConsumo = $s->fecha_fin_consumo ?? $s->fecha_consumo;
+                                            $periodoConsumo = date('d-m-Y', strtotime($fechaInicioConsumo));
+
+                                            if ($fechaInicioConsumo !== $fechaFinConsumo) {
+                                                $periodoConsumo .= ' al ' . date('d-m-Y', strtotime($fechaFinConsumo));
+                                            }
+                                        @endphp
                                         <tr>
                                             <td class="mi-cell-wrap">
                                                 <div class="mi-person-line">{{ $s->nombre_completo }}</div>
                                                 <span class="mi-muted-line">{{ $s->entidad }}</span>
                                             </td>
                                             <td>{{ $s->NUM_DOC }}</td>
-                                            <td data-order="{{ $s->fecha_consumo }}">{{ date('d-m-Y', strtotime($s->fecha_consumo)) }}</td>
+                                            <td data-order="{{ $fechaInicioConsumo }}">{{ $periodoConsumo }}</td>
                                             <td>
                                                 <span class="badge bg-light text-dark border">
                                                     {{ $s->tipo_consumo === 'DIA' ? 'Dia' : 'Horas' }}
@@ -560,7 +624,7 @@
 
                     <div class="mi-detail-grid">
                         <div class="mi-detail-item">
-                            <span>Fecha</span>
+                            <span>Periodo</span>
                             <strong id="detalle_fecha">-</strong>
                         </div>
                         <div class="mi-detail-item">
@@ -577,7 +641,7 @@
                         </div>
                     </div>
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="detalle_fuentes_wrap">
                         <table class="table table-sm table-bordered mb-0 mi-table-compact">
                             <thead class="tenca">
                                 <tr>
@@ -636,24 +700,39 @@
                     </div>
 
                     <div class="mi-source-list">
-                        @forelse ($fuentesDisponibles as $fuente)
-                            <label class="mi-source-row d-flex align-items-center justify-content-between">
+                        @forelse ($fuentesCompensacion as $fuente)
+                            @php
+                                $agotado = (int) $fuente->minutos_disponibles <= 0;
+                                $parcial = (int) $fuente->minutos_consumidos > 0 && !$agotado;
+                            @endphp
+                            <label class="mi-source-row d-flex align-items-center justify-content-between {{ $agotado ? 'is-consumed' : ($parcial ? 'is-partial' : '') }}">
                                 <span>
-                                    <input type="checkbox" class="me-2 fuente-origen-modal"
-                                        value="{{ $fuente->fecha_origen }}"
-                                        data-minutos="{{ $fuente->minutos_disponibles }}"
-                                        data-label="{{ date('d-m-Y', strtotime($fuente->fecha_origen)) }}"
-                                        data-horas="{{ $fuente->horas_disponibles }}"
-                                        {{ !$puedeRegistrar ? 'disabled' : '' }}>
+                                    @if ($agotado)
+                                        <input type="checkbox" class="me-2" checked disabled>
+                                    @else
+                                        <input type="checkbox" class="me-2 fuente-origen-modal"
+                                            value="{{ $fuente->fecha_origen }}"
+                                            data-minutos="{{ $fuente->minutos_disponibles }}"
+                                            data-label="{{ date('d-m-Y', strtotime($fuente->fecha_origen)) }}"
+                                            data-horas="{{ $fuente->horas_disponibles }}"
+                                            {{ !$puedeRegistrar ? 'disabled' : '' }}>
+                                    @endif
                                     {{ date('d-m-Y', strtotime($fuente->fecha_origen)) }}
+                                    @if ($agotado)
+                                        <small class="text-muted d-block ms-4">Consumido completo</small>
+                                    @elseif ($parcial)
+                                        <small class="text-warning d-block ms-4">Ya usado: {{ $fuente->horas_consumidas }}</small>
+                                    @endif
                                 </span>
                                 <span class="text-end">
-                                    <strong>{{ $fuente->horas_disponibles }}</strong>
-                                    <small class="text-muted d-block">disp. de {{ $fuente->horas_extra }}</small>
+                                    <strong>{{ $agotado ? '00:00' : $fuente->horas_disponibles }}</strong>
+                                    <small class="text-muted d-block">
+                                        {{ $agotado ? 'usado de' : 'disp. de' }} {{ $fuente->horas_extra }}
+                                    </small>
                                 </span>
                             </label>
                         @empty
-                            <div class="text-muted border rounded p-3">No hay horas disponibles en los ultimos 3 meses.</div>
+                            <div class="text-muted border rounded p-3">No hay horas generadas en los ultimos 3 meses.</div>
                         @endforelse
                     </div>
                 </div>
@@ -681,6 +760,7 @@
         });
 
         const detalleHorasSolicitudes = @json($detalleHorasModal);
+        const motivoCompensacion = 'COMPENSACION DE HORAS / DIA';
 
         $(document).ready(function() {
             const dataTableBase = {
@@ -720,6 +800,15 @@
                 $('#bloque_horas').toggle($(this).val() === 'HORAS');
             }).trigger('change');
 
+            $('#motivo_consumo').on('change', actualizarBloqueFuentesOrigen).trigger('change');
+
+            $('#fecha_inicio_consumo').on('change', function() {
+                if (!$('#fecha_fin_consumo').val() || $('#fecha_fin_consumo').val() < $(this).val()) {
+                    $('#fecha_fin_consumo').val($(this).val());
+                }
+                $('#fecha_fin_consumo').attr('min', $(this).val());
+            });
+
             $('.fuente-origen-modal').on('change', actualizarTotalFuente);
             actualizarTotalFuente();
         });
@@ -730,6 +819,27 @@
             const resto = String(minutos % 60).padStart(2, '0');
 
             return `${horas}:${resto}`;
+        }
+
+        function requiereConsumirHoras() {
+            return $('#motivo_consumo').val() === motivoCompensacion;
+        }
+
+        function limpiarFuentesOrigen() {
+            $('.fuente-origen-modal').prop('checked', false);
+            $('#fechas_origen_inputs').html('');
+            $('#resumen_fuentes_origen').html('<span class="text-muted">No hay dias seleccionados.</span>');
+            actualizarTotalFuente();
+        }
+
+        function actualizarBloqueFuentesOrigen() {
+            const requiere = requiereConsumirHoras();
+
+            $('#bloque_fuentes_origen').toggleClass('d-none', !requiere);
+
+            if (!requiere) {
+                limpiarFuentesOrigen();
+            }
         }
 
         function escapeHtml(value) {
@@ -757,6 +867,7 @@
             $('#detalle_horario').text(detalle.horario || '-');
             $('#detalle_horas').text(detalle.horas || '00:00');
             $('#detalle_motivo').text(detalle.motivo || '-');
+            $('#detalle_fuentes_wrap').toggleClass('d-none', detalle.motivo !== motivoCompensacion);
 
             let filas = '';
             (detalle.detalles || []).forEach(function(item) {
@@ -836,13 +947,29 @@
 
         function guardarMiAsistencia() {
             const form = document.getElementById('formMiAsistencia');
-            const formData = new FormData(form);
             const btn = $('#btnGuardarMiAsistencia');
+            const requiereFuentes = requiereConsumirHoras();
 
-            if ($('#fechas_origen_inputs input[name="fechas_origen[]"]').length === 0) {
+            if (!requiereFuentes) {
+                limpiarFuentesOrigen();
+            }
+
+            if (requiereFuentes && $('#fechas_origen_inputs input[name="fechas_origen[]"]').length === 0) {
                 Swal.fire('Error', 'Seleccione al menos un dia origen para consumir horas.', 'error');
                 return;
             }
+
+            if (!$('#fecha_inicio_consumo').val() || !$('#fecha_fin_consumo').val()) {
+                Swal.fire('Error', 'Ingrese fecha inicio y fecha fin para la compensacion.', 'error');
+                return;
+            }
+
+            if ($('#fecha_fin_consumo').val() < $('#fecha_inicio_consumo').val()) {
+                Swal.fire('Error', 'La fecha fin no puede ser menor que la fecha inicio.', 'error');
+                return;
+            }
+
+            const formData = new FormData(form);
 
             btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Guardando');
 

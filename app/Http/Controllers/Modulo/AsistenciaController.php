@@ -2553,6 +2553,7 @@ class AsistenciaController extends Controller
             ->join('d_personal_asistencia_consumo as c', 'c.id', '=', 'det.id_consumo')
             ->where('c.idcentro_mac', $idmac)
             ->where('c.estado', 'APROBADO')
+            ->where('c.motivo', 'COMPENSACION DE HORAS / DIA')
             ->whereBetween('det.fecha_origen', [$fechaInicio, $fechaFin])
             ->when($idpersonal, function ($q) use ($idpersonal) {
                 $q->where('c.idpersonal', $idpersonal);
@@ -2883,6 +2884,8 @@ class AsistenciaController extends Controller
             return collect();
         }
 
+        $tieneRango = Schema::hasColumn('d_personal_asistencia_consumo', 'fecha_inicio_consumo')
+            && Schema::hasColumn('d_personal_asistencia_consumo', 'fecha_fin_consumo');
         $select = [
             'c.idpersonal',
             'c.fecha_consumo',
@@ -2892,22 +2895,52 @@ class AsistenciaController extends Controller
             'c.motivo',
         ];
 
+        if ($tieneRango) {
+            $select[] = DB::raw('COALESCE(c.fecha_inicio_consumo, c.fecha_consumo) as fecha_inicio_consumo');
+            $select[] = DB::raw('COALESCE(c.fecha_fin_consumo, c.fecha_consumo) as fecha_fin_consumo');
+        }
+
         if (Schema::hasColumn('d_personal_asistencia_consumo', 'observacion')) {
             $select[] = 'c.observacion';
         }
 
-        return DB::table('d_personal_asistencia_consumo as c')
+        $permisos = DB::table('d_personal_asistencia_consumo as c')
             ->select($select)
             ->where('c.idcentro_mac', $idmac)
             ->where('c.estado', 'APROBADO')
-            ->whereBetween('c.fecha_consumo', [$fechaInicio, $fechaFin])
+            ->when($tieneRango, function ($q) use ($fechaInicio, $fechaFin) {
+                $q->whereRaw('COALESCE(c.fecha_inicio_consumo, c.fecha_consumo) <= ?', [$fechaFin])
+                    ->whereRaw('COALESCE(c.fecha_fin_consumo, c.fecha_consumo) >= ?', [$fechaInicio]);
+            }, function ($q) use ($fechaInicio, $fechaFin) {
+                $q->whereBetween('c.fecha_consumo', [$fechaInicio, $fechaFin]);
+            })
             ->when($idpersonal, function ($q) use ($idpersonal) {
                 $q->where('c.idpersonal', $idpersonal);
             })
-            ->get()
-            ->groupBy(function ($row) {
+            ->get();
+
+        if (!$tieneRango) {
+            return $permisos->groupBy(function ($row) {
                 return $row->idpersonal . '|' . Carbon::parse($row->fecha_consumo)->format('Y-m-d');
             });
+        }
+
+        $expandido = collect();
+
+        foreach ($permisos as $permiso) {
+            $inicio = Carbon::parse(max($fechaInicio, Carbon::parse($permiso->fecha_inicio_consumo)->format('Y-m-d')));
+            $fin = Carbon::parse(min($fechaFin, Carbon::parse($permiso->fecha_fin_consumo)->format('Y-m-d')));
+
+            foreach (CarbonPeriod::create($inicio, $fin) as $dia) {
+                $item = clone $permiso;
+                $item->fecha_consumo = $dia->format('Y-m-d');
+                $expandido->push($item);
+            }
+        }
+
+        return $expandido->groupBy(function ($row) {
+            return $row->idpersonal . '|' . Carbon::parse($row->fecha_consumo)->format('Y-m-d');
+        });
     }
 
     private function asignacionReporteAsistenciaData(int $idmac, string $fechaInicio, string $fechaFin, ?int $idpersonal = null)

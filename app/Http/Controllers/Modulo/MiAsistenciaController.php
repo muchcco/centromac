@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modulo;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -15,6 +16,7 @@ class MiAsistenciaController extends Controller
     private const ESTADO_PENDIENTE = 'PENDIENTE';
     private const ESTADO_APROBADO = 'APROBADO';
     private const ESTADO_RECHAZADO = 'RECHAZADO';
+    private const MOTIVO_COMPENSACION = 'COMPENSACION DE HORAS / DIA';
 
     private function tienePermisoRevision(): bool
     {
@@ -31,16 +33,28 @@ class MiAsistenciaController extends Controller
         return Schema::hasTable('d_personal_asistencia_consumo_det');
     }
 
+    private function consumoTieneRangoFechas(): bool
+    {
+        return Schema::hasTable('d_personal_asistencia_consumo')
+            && Schema::hasColumn('d_personal_asistencia_consumo', 'fecha_inicio_consumo')
+            && Schema::hasColumn('d_personal_asistencia_consumo', 'fecha_fin_consumo');
+    }
+
     private function motivosConsumo(): array
     {
         return [
-            'COMPENSACION DE HORAS / DIA',
+            self::MOTIVO_COMPENSACION,
             'VACACIONES',
             'DESCANSO MEDICO',
             'PERMISO PERSONAL',
             'COMISION DE SERVICIO',
             'OTRO',
         ];
+    }
+
+    private function esMotivoCompensacion(?string $motivo): bool
+    {
+        return $motivo === self::MOTIVO_COMPENSACION;
     }
 
     private function idPersonalUsuario(): ?int
@@ -102,6 +116,92 @@ class MiAsistenciaController extends Controller
         $minutos = max(0, $minutos);
 
         return sprintf('%02d:%02d', intdiv($minutos, 60), $minutos % 60);
+    }
+
+    private function minutosJornadaCompleta(string $fecha, string $horaInicio, string $horaFin): int
+    {
+        $minutos = Carbon::parse($fecha . ' ' . $horaInicio)
+            ->diffInMinutes(Carbon::parse($fecha . ' ' . $horaFin));
+
+        return max(0, $minutos - 60);
+    }
+
+    private function periodoConsumo(Request $request): array
+    {
+        $fechaInicio = $request->input('fecha_inicio_consumo') ?: $request->input('fecha_consumo');
+        $fechaFin = $request->input('fecha_fin_consumo') ?: $fechaInicio;
+
+        $fechaInicio = Carbon::parse($fechaInicio)->format('Y-m-d');
+        $fechaFin = Carbon::parse($fechaFin)->format('Y-m-d');
+
+        if ($fechaInicio > $fechaFin) {
+            [$fechaInicio, $fechaFin] = [$fechaFin, $fechaInicio];
+        }
+
+        return [$fechaInicio, $fechaFin];
+    }
+
+    private function calcularConsumoSolicitado(int $idmac, int $idpersonal, string $fechaInicio, string $fechaFin, Request $request): array
+    {
+        $tipo = $request->input('tipo_consumo');
+        $minutosSolicitados = 0;
+        $diasValidos = 0;
+        $fechasNoProgramadas = [];
+        $fechasFeriadas = [];
+        $horaInicioRegistro = null;
+        $horaFinRegistro = null;
+
+        if ($tipo === 'HORAS' && $request->input('hora_inicio') >= $request->input('hora_fin')) {
+            return [
+                'success' => false,
+                'message' => 'La hora fin debe ser mayor a la hora inicio.',
+            ];
+        }
+
+        foreach (CarbonPeriod::create($fechaInicio, $fechaFin) as $dia) {
+            $fecha = $dia->format('Y-m-d');
+
+            if ($this->feriadoExiste($idmac, $fecha)) {
+                $fechasFeriadas[] = $dia->format('d-m-Y');
+                continue;
+            }
+
+            $horario = $this->horarioProgramadoParaFecha($idpersonal, $fecha);
+
+            if (!$horario) {
+                $fechasNoProgramadas[] = $dia->format('d-m-Y');
+                continue;
+            }
+
+            if ($tipo === 'DIA') {
+                $minutosSolicitados += $this->minutosJornadaCompleta($fecha, $horario->hora_ingreso, $horario->hora_salida);
+                $horaInicioRegistro ??= substr($horario->hora_ingreso, 0, 5);
+                $horaFinRegistro ??= substr($horario->hora_salida, 0, 5);
+            } else {
+                $horaInicioRegistro = $request->input('hora_inicio');
+                $horaFinRegistro = $request->input('hora_fin');
+                $minutosSolicitados += Carbon::parse($fecha . ' ' . $horaInicioRegistro)
+                    ->diffInMinutes(Carbon::parse($fecha . ' ' . $horaFinRegistro));
+            }
+
+            $diasValidos++;
+        }
+
+        if ($diasValidos === 0) {
+            return [
+                'success' => false,
+                'message' => 'El rango seleccionado no tiene dias programados para registrar la solicitud.',
+            ];
+        }
+
+        return [
+            'success' => true,
+            'minutos' => $minutosSolicitados,
+            'hora_inicio' => $horaInicioRegistro,
+            'hora_fin' => $horaFinRegistro,
+            'dias' => $diasValidos,
+            'omitidos' => array_merge($fechasFeriadas, $fechasNoProgramadas),
+        ];
     }
 
     private function persona(int $idpersonal)
@@ -294,6 +394,7 @@ class MiAsistenciaController extends Controller
         return (int) DB::table('d_personal_asistencia_consumo')
             ->where('idpersonal', $idpersonal)
             ->whereIn('estado', [self::ESTADO_PENDIENTE, self::ESTADO_APROBADO])
+            ->where('motivo', self::MOTIVO_COMPENSACION)
             ->sum('minutos_solicitados');
     }
 
@@ -307,12 +408,13 @@ class MiAsistenciaController extends Controller
             ->join('d_personal_asistencia_consumo as c', 'c.id', '=', 'det.id_consumo')
             ->where('c.idpersonal', $idpersonal)
             ->whereIn('c.estado', [self::ESTADO_PENDIENTE, self::ESTADO_APROBADO])
+            ->where('c.motivo', self::MOTIVO_COMPENSACION)
             ->select('det.fecha_origen', DB::raw('SUM(det.minutos_usados) as minutos_usados'))
             ->groupBy('det.fecha_origen')
             ->pluck('minutos_usados', 'fecha_origen');
     }
 
-    private function fuentesDisponibles(int $idmac, int $idpersonal)
+    private function fuentesCompensacion(int $idmac, int $idpersonal, bool $soloDisponibles)
     {
         $inicioAsignacion = DB::table('d_personal_asistencia')
             ->where('idpersonal', $idpersonal)
@@ -326,7 +428,7 @@ class MiAsistenciaController extends Controller
         $inicio = max(Carbon::parse($inicioAsignacion)->format('Y-m-d'), $inicioLimite);
         $consumidos = $this->minutosConsumidosPorFecha($idpersonal);
 
-        return $this->reporteHorasCompensables($idmac, $inicio, Carbon::now()->format('Y-m-d'), $idpersonal)
+        $fuentes = $this->reporteHorasCompensables($idmac, $inicio, Carbon::now()->format('Y-m-d'), $idpersonal)
             ->filter(fn($row) => $row->minutos_extra > 0)
             ->sortBy('FECHA')
             ->map(function ($row) use ($consumidos) {
@@ -339,8 +441,20 @@ class MiAsistenciaController extends Controller
 
                 return $row;
             })
-            ->filter(fn($row) => $row->minutos_disponibles > 0)
             ->values();
+
+        if ($soloDisponibles) {
+            return $fuentes
+                ->filter(fn($row) => $row->minutos_disponibles > 0)
+                ->values();
+        }
+
+        return $fuentes;
+    }
+
+    private function fuentesDisponibles(int $idmac, int $idpersonal)
+    {
+        return $this->fuentesCompensacion($idmac, $idpersonal, true);
     }
 
     private function horarioProgramadoParaFecha(int $idpersonal, string $fecha)
@@ -408,6 +522,7 @@ class MiAsistenciaController extends Controller
     {
         $tablaDisponible = $this->tablaConsumoDisponible();
         $tablaDetalleDisponible = $this->tablaDetalleConsumoDisponible();
+        $rangoFechasDisponible = $this->consumoTieneRangoFechas();
         $idpersonal = $this->idPersonalUsuario();
         $idmac = $this->idMac($request);
         [$fechaInicio, $fechaFin] = $this->fechas($request);
@@ -417,6 +532,7 @@ class MiAsistenciaController extends Controller
             ? $this->reporteHorasCompensables($idmac, $fechaInicio, $fechaFin, $idpersonal)
             : collect();
         $fuentesDisponibles = $idpersonal ? $this->fuentesDisponibles($idmac, $idpersonal) : collect();
+        $fuentesCompensacion = $idpersonal ? $this->fuentesCompensacion($idmac, $idpersonal, false) : collect();
         $minutosGeneradosRango = (int) $rowsCompensables->sum('minutos_extra');
         $minutosGeneradosTotal = $idpersonal ? $this->minutosGenerados($idmac, $idpersonal) : 0;
         $minutosComprometidos = $idpersonal ? $this->minutosSolicitadosNoRechazados($idpersonal) : 0;
@@ -441,6 +557,7 @@ class MiAsistenciaController extends Controller
         return view('asistencia.miasistencia.index', compact(
             'tablaDisponible',
             'tablaDetalleDisponible',
+            'rangoFechasDisponible',
             'idmac',
             'macs',
             'fechaInicio',
@@ -448,6 +565,7 @@ class MiAsistenciaController extends Controller
             'personal',
             'rowsCompensables',
             'fuentesDisponibles',
+            'fuentesCompensacion',
             'summary',
             'solicitudes',
             'solicitudesRevision',
@@ -465,7 +583,9 @@ class MiAsistenciaController extends Controller
             ], 409);
         }
 
-        if (!$this->tablaDetalleConsumoDisponible()) {
+        $debeConsumirHoras = $this->esMotivoCompensacion($request->input('motivo'));
+
+        if ($debeConsumirHoras && !$this->tablaDetalleConsumoDisponible()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Falta crear la tabla d_personal_asistencia_consumo_det.',
@@ -474,10 +594,11 @@ class MiAsistenciaController extends Controller
 
         $validator = Validator::make($request->all(), [
             'tipo_consumo' => 'required|in:HORAS,DIA',
-            'fecha_consumo' => 'required|date',
+            'fecha_inicio_consumo' => 'required|date',
+            'fecha_fin_consumo' => 'required|date',
             'hora_inicio' => 'nullable|required_if:tipo_consumo,HORAS|date_format:H:i',
             'hora_fin' => 'nullable|required_if:tipo_consumo,HORAS|date_format:H:i',
-            'fechas_origen' => 'required|array|min:1',
+            'fechas_origen' => 'nullable|array',
             'fechas_origen.*' => 'date_format:Y-m-d',
             'motivo' => 'required|string|in:' . implode(',', $this->motivosConsumo()),
             'observacion' => 'nullable|string|max:1500',
@@ -492,6 +613,15 @@ class MiAsistenciaController extends Controller
             ], 422);
         }
 
+        $debeConsumirHoras = $this->esMotivoCompensacion($request->input('motivo'));
+
+        if ($debeConsumirHoras && collect($request->input('fechas_origen', []))->filter()->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Seleccione al menos un dia origen para consumir horas compensables.',
+            ], 422);
+        }
+
         $idpersonal = $this->idPersonalUsuario();
         $personal = $idpersonal ? $this->persona($idpersonal) : null;
 
@@ -503,68 +633,48 @@ class MiAsistenciaController extends Controller
         }
 
         $idmac = (int) auth()->user()->idcentro_mac;
-        $fecha = Carbon::parse($request->input('fecha_consumo'))->format('Y-m-d');
+        [$fechaInicioConsumo, $fechaFinConsumo] = $this->periodoConsumo($request);
+        $calculoConsumo = $this->calcularConsumoSolicitado($idmac, $idpersonal, $fechaInicioConsumo, $fechaFinConsumo, $request);
 
-        if ($this->feriadoExiste($idmac, $fecha)) {
+        if (!$calculoConsumo['success']) {
             return response()->json([
                 'success' => false,
-                'message' => 'La fecha seleccionada esta registrada como feriado.',
+                'message' => $calculoConsumo['message'],
             ], 422);
         }
 
-        $horario = $this->horarioProgramadoParaFecha($idpersonal, $fecha);
+        $minutosSolicitados = (int) $calculoConsumo['minutos'];
+        $horaInicio = $calculoConsumo['hora_inicio'];
+        $horaFin = $calculoConsumo['hora_fin'];
 
-        if (!$horario) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No existe horario programado para la fecha seleccionada.',
-            ], 422);
-        }
+        $fuentesSeleccionadas = collect();
 
-        if ($request->input('tipo_consumo') === 'DIA') {
-            $minutosSolicitados = Carbon::parse($fecha . ' ' . $horario->hora_ingreso)
-                ->diffInMinutes(Carbon::parse($fecha . ' ' . $horario->hora_salida));
-            $minutosSolicitados = max(0, $minutosSolicitados - 60);
-            $horaInicio = substr($horario->hora_ingreso, 0, 5);
-            $horaFin = substr($horario->hora_salida, 0, 5);
-        } else {
-            if ($request->input('hora_inicio') >= $request->input('hora_fin')) {
+        if ($debeConsumirHoras) {
+            $fechasOrigen = collect($request->input('fechas_origen', []))->unique()->values();
+            $fuentesSeleccionadas = $this->fuentesDisponibles($idmac, $idpersonal)
+                ->whereIn('fecha_origen', $fechasOrigen->all())
+                ->values();
+            $saldoSeleccionado = (int) $fuentesSeleccionadas->sum('minutos_disponibles');
+
+            if ($minutosSolicitados > $saldoSeleccionado) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'La hora fin debe ser mayor a la hora inicio.',
+                    'message' => 'Las fechas origen seleccionadas suman ' . $this->formatoMinutos($saldoSeleccionado) . ', pero la solicitud requiere ' . $this->formatoMinutos($minutosSolicitados) . '.',
+                    'minutos_requeridos' => $minutosSolicitados,
+                    'minutos_seleccionados' => $saldoSeleccionado,
                 ], 422);
             }
-
-            $horaInicio = $request->input('hora_inicio');
-            $horaFin = $request->input('hora_fin');
-            $minutosSolicitados = Carbon::parse($fecha . ' ' . $horaInicio)
-                ->diffInMinutes(Carbon::parse($fecha . ' ' . $horaFin));
-        }
-
-        $fechasOrigen = collect($request->input('fechas_origen', []))->unique()->values();
-        $fuentesSeleccionadas = $this->fuentesDisponibles($idmac, $idpersonal)
-            ->whereIn('fecha_origen', $fechasOrigen->all())
-            ->values();
-        $saldoSeleccionado = (int) $fuentesSeleccionadas->sum('minutos_disponibles');
-
-        if ($minutosSolicitados > $saldoSeleccionado) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Las fechas origen seleccionadas suman ' . $this->formatoMinutos($saldoSeleccionado) . ', pero la solicitud requiere ' . $this->formatoMinutos($minutosSolicitados) . '.',
-                'minutos_requeridos' => $minutosSolicitados,
-                'minutos_seleccionados' => $saldoSeleccionado,
-            ], 422);
         }
 
         $archivo = $this->guardarArchivo($request);
 
-        DB::transaction(function () use ($idpersonal, $idmac, $fecha, $horaInicio, $horaFin, $minutosSolicitados, $request, $archivo, $fuentesSeleccionadas) {
+        DB::transaction(function () use ($idpersonal, $idmac, $fechaInicioConsumo, $fechaFinConsumo, $horaInicio, $horaFin, $minutosSolicitados, $request, $archivo, $fuentesSeleccionadas, $debeConsumirHoras) {
             $dataConsumo = [
                 'idpersonal' => $idpersonal,
                 'idcentro_mac' => $idmac,
                 'fecha_solicitud' => Carbon::now()->format('Y-m-d'),
                 'tipo_consumo' => $request->input('tipo_consumo'),
-                'fecha_consumo' => $fecha,
+                'fecha_consumo' => $fechaInicioConsumo,
                 'hora_inicio' => $horaInicio . ':00',
                 'hora_fin' => $horaFin . ':00',
                 'minutos_solicitados' => $minutosSolicitados,
@@ -576,14 +686,22 @@ class MiAsistenciaController extends Controller
                 'updated_at' => now(),
             ];
 
+            if ($this->consumoTieneRangoFechas()) {
+                $dataConsumo['fecha_inicio_consumo'] = $fechaInicioConsumo;
+                $dataConsumo['fecha_fin_consumo'] = $fechaFinConsumo;
+            }
+
             if (Schema::hasColumn('d_personal_asistencia_consumo', 'observacion')) {
                 $dataConsumo['observacion'] = $request->input('observacion');
             }
 
             $idConsumo = DB::table('d_personal_asistencia_consumo')->insertGetId($dataConsumo);
 
-            $pendiente = $minutosSolicitados;
+            if (!$debeConsumirHoras) {
+                return;
+            }
 
+            $pendiente = $minutosSolicitados;
             foreach ($fuentesSeleccionadas as $fuente) {
                 if ($pendiente <= 0) {
                     break;
