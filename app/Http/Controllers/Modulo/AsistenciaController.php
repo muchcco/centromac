@@ -195,11 +195,11 @@ class AsistenciaController extends Controller
                     'detalle' => '
                 Debe comunicarse con los encargados:<br><br>
                 <strong>Para:</strong>
-                <li>jretamozo@pcm.gob.pe</li>
+                <li>yrojas@pcm.gob.pe</li>
                 <strong>Cc:</strong>
-                <li>mramirezr@pcm.gob.pe</li>
                 <li>dalfaro@pcm.gob.pe</li>
-                <li>yrojas@pcm.gob.pe</li>'
+                <li>mramirezr@pcm.gob.pe</li>
+                <li>jretamozo@pcm.gob.pe</li>'
                 ], 400);
             }
 
