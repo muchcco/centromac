@@ -321,14 +321,10 @@ class AsistenciaController extends Controller
                 $allowedCentrosMac = [9, 10, 12, 13, 14, 19];
                 $userCentroMac = auth()->user()->idcentro_mac;
 
-                $personal = DB::table('m_personal')
-                    ->when(!in_array($userCentroMac, $allowedCentrosMac), function ($q) use ($userIdMac) {
-                        return $q->where('IDMAC', $userIdMac);
-                    }, function ($q) use ($allowedCentrosMac) {
-                        return $q->whereIn('IDMAC', $allowedCentrosMac);
-                    })
-                    ->where('NUM_DOC', $request->input('DNI'))
-                    ->first();
+                $personal = DB::table('m_personal as p')
+                                ->join('d_personal_mac as dpm', 'dpm.idpersonal', '=', 'p.idpersonal')
+                                ->where('p.NUM_DOC', $request->input('DNI'))
+                                ->first();
 
                 if ($personal) {
                     $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
@@ -355,15 +351,20 @@ class AsistenciaController extends Controller
             $allowedCentrosMac = [9, 10, 12, 13, 14, 19];
             $userCentroMac = auth()->user()->idcentro_mac;
 
+            // $personal = DB::table('m_personal as p')
+            //     ->join('d_personal_mac as dpm', 'dpm.idpersonal', '=', 'p.idpersonal')
+            //     ->when(!in_array($userCentroMac, $allowedCentrosMac), function ($q) use ($userIdMac) {
+            //         return $q->where('dpm.idcentro_mac', $userIdMac);
+            //     }, function ($q) use ($allowedCentrosMac) {
+            //         return $q->whereIn('dpm.idcentro_mac', $allowedCentrosMac);
+            //     })
+            //     ->where('p.NUM_DOC', $request->input('DNI'))
+            //     ->first();
+
             $personal = DB::table('m_personal as p')
-                ->join('d_personal_mac as dpm', 'dpm.idpersonal', '=', 'p.idpersonal')
-                ->when(!in_array($userCentroMac, $allowedCentrosMac), function ($q) use ($userIdMac) {
-                    return $q->where('dpm.idcentro_mac', $userIdMac);
-                }, function ($q) use ($allowedCentrosMac) {
-                    return $q->whereIn('dpm.idcentro_mac', $allowedCentrosMac);
-                })
-                ->where('p.NUM_DOC', $request->input('DNI'))
-                ->first();
+                    ->join('d_personal_mac as dpm', 'dpm.idpersonal', '=', 'p.idpersonal')
+                    ->where('p.NUM_DOC', $request->input('DNI'))
+                    ->first();
 
             if (!$personal) {
                 return response()->json([
