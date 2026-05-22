@@ -318,7 +318,7 @@ class AsistenciaController extends Controller
 
         if ($request->has('DNI') && !$request->has('fecha')) {
             try {
-                $allowedCentrosMac = [10, 12, 13, 14, 19];
+                $allowedCentrosMac = [9, 10, 12, 13, 14, 19];
                 $userCentroMac = auth()->user()->idcentro_mac;
 
                 $personal = DB::table('m_personal')
@@ -352,7 +352,7 @@ class AsistenciaController extends Controller
         ]);
 
         try {
-            $allowedCentrosMac = [10, 12, 13, 14, 19];
+            $allowedCentrosMac = [9, 10, 12, 13, 14, 19];
             $userCentroMac = auth()->user()->idcentro_mac;
 
             $personal = DB::table('m_personal as p')
