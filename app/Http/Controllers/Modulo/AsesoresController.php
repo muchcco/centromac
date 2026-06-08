@@ -21,7 +21,7 @@ class AsesoresController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -39,23 +39,23 @@ class AsesoresController extends Controller
 
     public function tb_asesores(Request $request)
     {
-        $query = DB::table('M_PERSONAL as MP')->distinct()
+        $query = DB::table('m_personal as MP')->distinct()
             ->leftJoin(DB::raw('(
                             SELECT *, ROW_NUMBER() OVER (PARTITION BY NUM_DOC ORDER BY FIELD(STATUS, "Itinerante", "Fijo")) as rn
-                            FROM M_PERSONAL_MODULO
+                            FROM m_personal_modulo
                             WHERE FECHAINICIO <= NOW() AND FECHAFIN >= NOW()
                         ) as MPM'), function ($join) {
                 $join->on('MP.NUM_DOC', '=', 'MPM.NUM_DOC')
                     ->where('MPM.rn', '=', 1);
             })
-            ->leftJoin('M_MODULO as MMOD', function ($join) {
+            ->leftJoin('m_modulo as MMOD', function ($join) {
                 $join->on('MMOD.IDMODULO', '=', 'MPM.IDMODULO');
             })
-            ->leftJoin('M_ENTIDAD as ME', function ($join) {
+            ->leftJoin('m_entidad as ME', function ($join) {
                 $join->on('ME.IDENTIDAD', '=', 'MMOD.IDENTIDAD');
             })
-            ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
-            ->join('D_PERSONAL_TIPODOC as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
+            ->join('m_centro_mac as MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+            ->join('d_personal_tipodoc as DPT', 'DPT.IDTIPO_DOC', '=', 'MP.IDTIPO_DOC')
             ->leftJoin('d_personal_mac', 'd_personal_mac.idpersonal', '=', 'MP.idpersonal')
             ->join(DB::raw('(
                             SELECT 
@@ -81,7 +81,7 @@ class AsesoresController extends Controller
                                     CASE WHEN DLP_CARGO IS NULL THEN 1 ELSE 0 END + 
                                     CASE WHEN DLP_TELEFONO IS NULL THEN 1 ELSE 0 END 
                                 ) AS CAMPOS_NULL
-                            FROM M_PERSONAL
+                            FROM m_personal
                         ) as CONT'), 'CONT.IDPERSONAL', '=', 'MP.IDPERSONAL')
             ->select(
                 'MP.IDPERSONAL',
@@ -91,13 +91,13 @@ class AsesoresController extends Controller
                 DB::raw('CONCAT(MP.APE_PAT, " ", MP.APE_MAT, ", ", MP.NOMBRE) AS NOMBREU'),
                 'DPT.TIPODOC_ABREV',
                 'MP.NUM_DOC',
-                DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM M_ENTIDAD WHERE M_ENTIDAD.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
-                DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM M_MODULO WHERE M_MODULO.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
+                DB::raw('COALESCE(ME.NOMBRE_ENTIDAD, (SELECT NOMBRE_ENTIDAD FROM m_entidad WHERE m_entidad.IDENTIDAD = MP.IDENTIDAD)) AS NOMBRE_ENTIDAD'),
+                DB::raw('COALESCE(MMOD.N_MODULO, (SELECT N_MODULO FROM m_modulo WHERE m_modulo.IDMODULO = MP.IDMODULO)) AS N_MODULO'),
                 DB::raw('COALESCE(
                                 (
                                     SELECT GROUP_CONCAT(DISTINCT MCM2.NOMBRE_MAC SEPARATOR ", ")
                                     FROM d_personal_mac AS DPM
-                                    JOIN M_CENTRO_MAC AS MCM2 
+                                    JOIN m_centro_mac AS MCM2 
                                         ON MCM2.IDCENTRO_MAC = DPM.idcentro_mac
                                     WHERE DPM.idpersonal = MP.idpersonal
                                 ),
@@ -107,7 +107,7 @@ class AsesoresController extends Controller
                                 (
                                     SELECT GROUP_CONCAT(DISTINCT MCM2.NOMBRE_MAC SEPARATOR ", ")
                                     FROM d_personal_mac AS DPM
-                                    JOIN M_CENTRO_MAC AS MCM2 
+                                    JOIN m_centro_mac AS MCM2 
                                         ON MCM2.IDCENTRO_MAC = DPM.idcentro_mac
                                     WHERE DPM.idpersonal = MP.idpersonal
                                 ),
@@ -120,14 +120,14 @@ class AsesoresController extends Controller
                                 SELECT COUNT(*) 
                                 FROM information_schema.columns
                                 WHERE table_schema = 'db_centros_mac'
-                                AND table_name = 'M_PERSONAL'
+                                AND table_name = 'm_personal'
                             ) AS TOTAL_CAMPOS"),
                 DB::raw("(
                                 (
                                     SELECT COUNT(*) 
                                     FROM information_schema.columns
                                     WHERE table_schema = 'db_centros_mac'
-                                    AND table_name = 'M_PERSONAL'
+                                    AND table_name = 'm_personal'
                                 ) - CONT.CAMPOS_NULL
                             ) AS DIFERENCIA_CAMPOS")
             )
@@ -153,8 +153,8 @@ class AsesoresController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')
+            ->where('m_centro_mac.IDCENTRO_MAC', $us_id)
             ->first();
 
         $idmac = $user->IDCENTRO_MAC;
@@ -162,9 +162,9 @@ class AsesoresController extends Controller
         /*================================================================================================================*/
 
         // Modificación: Obtener `n_modulo` y `n_entidad` juntos
-        $modulos_entidades = DB::table('db_centros_mac.M_MODULO as MM')
-            ->join('db_centros_mac.M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
-            ->join('db_centros_mac.M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MM.IDCENTRO_MAC')
+        $modulos_entidades = DB::table('db_centros_mac.m_modulo as MM')
+            ->join('db_centros_mac.m_entidad as ME', 'ME.IDENTIDAD', '=', 'MM.IDENTIDAD')
+            ->join('db_centros_mac.m_centro_mac as MCM', 'MCM.IDCENTRO_MAC', '=', 'MM.IDCENTRO_MAC')
             ->where('MCM.IDCENTRO_MAC', $idmac)
             ->select(
                 DB::raw('CONCAT(MM.N_MODULO, " - ", ME.NOMBRE_ENTIDAD) as nombre_completo'),
@@ -181,11 +181,11 @@ class AsesoresController extends Controller
 
     public function md_cambiar_entidad(Request $request)
     {
-        $entidad = DB::table('M_MAC_ENTIDAD')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
-            ->orderBy('M_ENTIDAD.NOMBRE_ENTIDAD', 'ASC')
+        $entidad = DB::table('m_mac_entidad')
+            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+            ->where('m_mac_entidad.IDCENTRO_MAC', $this->centro_mac()->idmac)
+            ->orderBy('m_entidad.NOMBRE_ENTIDAD', 'ASC')
             ->get();
 
         $personal = Personal::where('IDPERSONAL', $request->idpersonal)->first();
@@ -201,15 +201,15 @@ class AsesoresController extends Controller
 
         // dd($personal);
 
-        $modulo = DB::table('M_MODULO')
-            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MODULO.IDCENTRO_MAC')
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac)
+        $modulo = DB::table('m_modulo')
+            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_modulo.IDENTIDAD')
+            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_modulo.IDCENTRO_MAC')
+            ->where('m_centro_mac.IDCENTRO_MAC', $this->centro_mac()->idmac)
             ->where(function ($query) {
-                $query->whereDate('M_MODULO.FECHAINICIO', '<=', now()->format('Y-m-d')) // Comparar con la fecha actual en formato 'YYYY-MM-DD'
-                    ->whereDate('M_MODULO.FECHAFIN', '>=', now()->format('Y-m-d'));    // Comparar con la fecha actual en formato 'YYYY-MM-DD'
+                $query->whereDate('m_modulo.FECHAINICIO', '<=', now()->format('Y-m-d')) // Comparar con la fecha actual en formato 'YYYY-MM-DD'
+                    ->whereDate('m_modulo.FECHAFIN', '>=', now()->format('Y-m-d'));    // Comparar con la fecha actual en formato 'YYYY-MM-DD'
             })
-            ->orderBy('M_MODULO.N_MODULO', 'ASC')
+            ->orderBy('m_modulo.N_MODULO', 'ASC')
             ->get();
 
         // dd($modulo);
@@ -231,14 +231,14 @@ class AsesoresController extends Controller
 
     public function md_cambio_mac(Request $request)
     {
-        $centromac = DB::table('M_CENTRO_MAC')
+        $centromac = DB::table('m_centro_mac')
             ->orderBy('NOMBRE_MAC', 'ASC')
             ->get();
 
         $idmac = $request->mac;
 
         $detalle_mac = DB::table('d_personal_mac')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'd_personal_mac.idcentro_mac')
+            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'd_personal_mac.idcentro_mac')
             ->where('d_personal_mac.idpersonal', $request->idpersonal)
             ->get();
 
@@ -380,7 +380,7 @@ class AsesoresController extends Controller
             ]);
 
             // Extraer idmodulo e identidad
-            $modulo_entidad = DB::table('M_MODULO')
+            $modulo_entidad = DB::table('m_modulo')
                 ->where('IDMODULO', $request->modulos_entidades)
                 ->select('IDMODULO', 'IDENTIDAD')
                 ->first();
@@ -405,7 +405,7 @@ class AsesoresController extends Controller
                 }
 
                 if ($persona_existe->IDMAC === NULL) {
-                    $usuario = DB::table('M_PERSONAL')->where('NUM_DOC', $persona_existe->NUM_DOC)->first();
+                    $usuario = DB::table('m_personal')->where('NUM_DOC', $persona_existe->NUM_DOC)->first();
                     if (!$usuario) {
                         return response()->json([
                             'data' => null,
@@ -421,7 +421,7 @@ class AsesoresController extends Controller
                     $personal->save();
 
                     // Extraer idmodulo e identidad
-                    $modulo_entidad = DB::table('M_MODULO')
+                    $modulo_entidad = DB::table('m_modulo')
                         ->where('IDMODULO', $request->modulos_entidades)
                         ->select('IDMODULO', 'IDENTIDAD')
                         ->first();
@@ -442,7 +442,7 @@ class AsesoresController extends Controller
                     ]);
 
                     // Guardar en `m_personal_modulo`
-                    DB::table('M_PERSONAL_MODULO')->insert([
+                    DB::table('m_personal_modulo')->insert([
                         'NUM_DOC' => $usuario->NUM_DOC,
                         'IDMODULO' => $modulo_entidad->IDMODULO,
                         'IDCENTRO_MAC' => $this->centro_mac()->idmac,
@@ -455,7 +455,7 @@ class AsesoresController extends Controller
                         'message' => 'Asesor registrado correctamente.'
                     ], 200);
                 } else {
-                    $persona_e_m = Personal::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')->where('NUM_DOC', $request->dni)->first();
+                    $persona_e_m = Personal::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_personal.IDMAC')->where('NUM_DOC', $request->dni)->first();
                     return response()->json([
                         'data' => null,
                         'message' => "El personal esta registrado en el centro MAC " . $persona_e_m->NOMBRE_MAC,
@@ -492,7 +492,7 @@ class AsesoresController extends Controller
             ]);
 
             // Guardar en `m_personal_modulo`
-            DB::table('M_PERSONAL_MODULO')->insert([
+            DB::table('m_personal_modulo')->insert([
                 'NUM_DOC' => $request->dni,
                 'IDMODULO' => $modulo_entidad->IDMODULO,
                 'IDCENTRO_MAC' => $user->idcentro_mac,
@@ -517,7 +517,7 @@ class AsesoresController extends Controller
     public function store_asesores_more(Request $request)
     {
         try {
-            $usuario = DB::table('M_PERSONAL')->where('NUM_DOC', $request->dni)->first();
+            $usuario = DB::table('m_personal')->where('NUM_DOC', $request->dni)->first();
             if (!$usuario) {
                 return response()->json([
                     'data' => null,
@@ -528,7 +528,7 @@ class AsesoresController extends Controller
             }
 
             // Extraer idmodulo e identidad
-            $modulo_entidad = DB::table('M_MODULO')
+            $modulo_entidad = DB::table('m_modulo')
                 ->where('IDMODULO', $request->modulos_entidades)
                 ->select('IDMODULO', 'IDENTIDAD')
                 ->first();
@@ -549,7 +549,7 @@ class AsesoresController extends Controller
             ]);
 
             // Guardar en `m_personal_modulo`
-            DB::table('M_PERSONAL_MODULO')->insert([
+            DB::table('m_personal_modulo')->insert([
                 'NUM_DOC' => $usuario->NUM_DOC,
                 'IDMODULO' => $modulo_entidad->IDMODULO,
                 'IDCENTRO_MAC' => $this->centro_mac()->idmac,

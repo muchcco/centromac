@@ -9,7 +9,7 @@ class Almacen extends Model
 {
     use HasFactory;
 
-    protected $table = 'M_ALMACEN';
+    protected $table = 'm_almacen';
 
     protected $primaryKey = 'IDALMACEN';
 

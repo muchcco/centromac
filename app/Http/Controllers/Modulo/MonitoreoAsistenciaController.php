@@ -16,9 +16,9 @@ class MonitoreoAsistenciaController extends Controller
     private function centro_mac()
     {
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)
-            ->select('M_CENTRO_MAC.IDCENTRO_MAC', 'M_CENTRO_MAC.NOMBRE_MAC')
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')
+            ->where('m_centro_mac.IDCENTRO_MAC', $us_id)
+            ->select('m_centro_mac.IDCENTRO_MAC', 'm_centro_mac.NOMBRE_MAC')
             ->first();
 
         return (object) [

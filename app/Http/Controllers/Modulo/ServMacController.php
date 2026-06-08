@@ -13,7 +13,7 @@ class ServMacController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -26,10 +26,10 @@ class ServMacController extends Controller
 
     public function index()
     {
-        $entidad = DB::table('M_MAC_ENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                        ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
+        $entidad = DB::table('m_mac_entidad')
+                        ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+                        ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                        ->where('m_mac_entidad.IDCENTRO_MAC', $this->centro_mac()->idmac)
                         ->get();
 
         return view('serv_mac.index', compact('entidad'));    
@@ -38,28 +38,28 @@ class ServMacController extends Controller
     public function tb_index(Request $request)
     {        
         // dd($this->centro_mac());
-        $servicios = DB::table('M_ENTIDAD AS ME')
+        $servicios = DB::table('m_entidad AS ME')
                             ->select('ME.NOMBRE_ENTIDAD', 'SERV.NOMBRE_SERVICIO', 'SERV.REQUISITO_SERVICIO', 'SERV.REQ_CITA', 'SERV.TIPO_SER', 'SERV.COSTO_SERV','SERV.NOMBRE_MAC','ME.IDENTIDAD', 'SERV.TRAMITE', 'SERV.ORIENTACION', 'SERV.IDENT_SERV', 'SERV.IDSERVICIOS')
                             ->join(DB::raw('(SELECT 
-                                                D_ENTIDAD_SERVICIOS.IDSERVICIOS,
-                                                D_ENTIDAD_SERVICIOS.NOMBRE_SERVICIO,
-                                                D_ENTIDAD_SERVICIOS.REQUISITO_SERVICIO,
-                                                D_ENTIDAD_SERVICIOS.REQ_CITA,
-                                                D_ENTIDAD_SERVICIOS.TIPO_SER,
-                                                D_ENTIDAD_SERVICIOS.TRAMITE,
-                                                D_ENTIDAD_SERVICIOS.ORIENTACION,
-                                                D_ENT_SERV.IDENTIDAD,
-                                                D_ENTIDAD_SERVICIOS.`COSTO_SERV`,
+                                                d_entidad_servicios.IDSERVICIOS,
+                                                d_entidad_servicios.NOMBRE_SERVICIO,
+                                                d_entidad_servicios.REQUISITO_SERVICIO,
+                                                d_entidad_servicios.REQ_CITA,
+                                                d_entidad_servicios.TIPO_SER,
+                                                d_entidad_servicios.TRAMITE,
+                                                d_entidad_servicios.ORIENTACION,
+                                                d_ent_serv.IDENTIDAD,
+                                                d_entidad_servicios.`COSTO_SERV`,
                                                 MCM.IDCENTRO_MAC,
                                                 MCM.NOMBRE_MAC,
-                                                D_ENT_SERV.IDENT_SERV,
-                                                D_ENTIDAD_SERVICIOS.FLAG 
+                                                d_ent_serv.IDENT_SERV,
+                                                d_entidad_servicios.FLAG 
                                             FROM
-                                                D_ENT_SERV 
-                                                JOIN D_ENTIDAD_SERVICIOS 
-                                                ON D_ENTIDAD_SERVICIOS.IDSERVICIOS = D_ENT_SERV.IDSERVICIOS 
-                                                JOIN M_CENTRO_MAC MCM 
-                                                ON MCM.IDCENTRO_MAC = D_ENT_SERV.IDMAC) SERV'), function ($join) {
+                                                d_ent_serv 
+                                                JOIN d_entidad_servicios 
+                                                ON d_entidad_servicios.IDSERVICIOS = d_ent_serv.IDSERVICIOS 
+                                                JOIN m_centro_mac MCM 
+                                                ON MCM.IDCENTRO_MAC = d_ent_serv.IDMAC) SERV'), function ($join) {
                                 $join->on('SERV.IDENTIDAD', '=', 'ME.IDENTIDAD');
                             })
                             ->where('SERV.FLAG', '=', '1')
@@ -76,28 +76,28 @@ class ServMacController extends Controller
 
     public function md_add_servicios(Request $request)
     {                   
-        $servicios = DB::table('M_ENTIDAD AS ME')
+        $servicios = DB::table('m_entidad AS ME')
                             ->select('ME.NOMBRE_ENTIDAD', 'SERV.NOMBRE_SERVICIO', 'SERV.REQUISITO_SERVICIO', 'SERV.REQ_CITA', 'SERV.TIPO_SER', 'SERV.COSTO_SERV','SERV.NOMBRE_MAC','ME.IDENTIDAD', 'SERV.TRAMITE', 'SERV.ORIENTACION', 'SERV.IDENT_SERV', 'SERV.IDSERVICIOS')
                             ->join(DB::raw('(SELECT 
-                                                D_ENTIDAD_SERVICIOS.IDSERVICIOS,
-                                                D_ENTIDAD_SERVICIOS.NOMBRE_SERVICIO,
-                                                D_ENTIDAD_SERVICIOS.REQUISITO_SERVICIO,
-                                                D_ENTIDAD_SERVICIOS.REQ_CITA,
-                                                D_ENTIDAD_SERVICIOS.TIPO_SER,
-                                                D_ENTIDAD_SERVICIOS.TRAMITE,
-                                                D_ENTIDAD_SERVICIOS.ORIENTACION,
-                                                D_ENT_SERV.IDENTIDAD,
-                                                D_ENTIDAD_SERVICIOS.`COSTO_SERV`,
+                                                d_entidad_servicios.IDSERVICIOS,
+                                                d_entidad_servicios.NOMBRE_SERVICIO,
+                                                d_entidad_servicios.REQUISITO_SERVICIO,
+                                                d_entidad_servicios.REQ_CITA,
+                                                d_entidad_servicios.TIPO_SER,
+                                                d_entidad_servicios.TRAMITE,
+                                                d_entidad_servicios.ORIENTACION,
+                                                d_ent_serv.IDENTIDAD,
+                                                d_entidad_servicios.`COSTO_SERV`,
                                                 MCM.IDCENTRO_MAC,
                                                 MCM.NOMBRE_MAC,
-                                                D_ENT_SERV.IDENT_SERV,
-                                                D_ENTIDAD_SERVICIOS.FLAG 
+                                                d_ent_serv.IDENT_SERV,
+                                                d_entidad_servicios.FLAG 
                                             FROM
-                                                D_ENT_SERV 
-                                                JOIN D_ENTIDAD_SERVICIOS 
-                                                ON D_ENTIDAD_SERVICIOS.IDSERVICIOS = D_ENT_SERV.IDSERVICIOS 
-                                                JOIN M_CENTRO_MAC MCM 
-                                                ON MCM.IDCENTRO_MAC = D_ENT_SERV.IDMAC) SERV'), function ($join) {
+                                                d_ent_serv 
+                                                JOIN d_entidad_servicios 
+                                                ON d_entidad_servicios.IDSERVICIOS = d_ent_serv.IDSERVICIOS 
+                                                JOIN m_centro_mac MCM 
+                                                ON MCM.IDCENTRO_MAC = d_ent_serv.IDMAC) SERV'), function ($join) {
                                 $join->on('SERV.IDENTIDAD', '=', 'ME.IDENTIDAD');
                             })
                             ->where('SERV.FLAG', '=', '1')
@@ -157,7 +157,7 @@ class ServMacController extends Controller
             $servicio->REQ_CITA = $request->req_cita;
             $servicio->save();
 
-            $enl_serv = DB::table('D_ENT_SERV')->insert([
+            $enl_serv = DB::table('d_ent_serv')->insert([
                 'IDENTIDAD'     =>  $request->entidad,
                 'IDSERVICIOS'   =>  $servicio->IDSERVICIOS,
                 'IDMAC'         =>  $this->centro_mac()->idmac,
@@ -180,7 +180,7 @@ class ServMacController extends Controller
 
     public function delete_servicio(Request $request)
     {
-        $delete_ent_ser = DB::table('D_ENT_SERV')->where('IDENT_SERV', $request->ident_serv)->delete();
+        $delete_ent_ser = DB::table('d_ent_serv')->where('IDENT_SERV', $request->ident_serv)->delete();
 
         return $delete_ent_ser;
     }
@@ -191,28 +191,28 @@ class ServMacController extends Controller
 
         $entidad = Entidad::where('IDENTIDAD', $request->entidad)->first();
 
-        $servicios = DB::table('M_ENTIDAD AS ME')
+        $servicios = DB::table('m_entidad AS ME')
                             ->select('ME.NOMBRE_ENTIDAD', 'SERV.NOMBRE_SERVICIO', 'SERV.REQUISITO_SERVICIO', 'SERV.REQ_CITA', 'SERV.TIPO_SER', 'SERV.COSTO_SERV','SERV.NOMBRE_MAC','ME.IDENTIDAD', 'SERV.TRAMITE', 'SERV.ORIENTACION', 'SERV.IDENT_SERV', 'SERV.IDSERVICIOS')
                             ->join(DB::raw('(SELECT 
-                                                D_ENTIDAD_SERVICIOS.IDSERVICIOS,
-                                                D_ENTIDAD_SERVICIOS.NOMBRE_SERVICIO,
-                                                D_ENTIDAD_SERVICIOS.REQUISITO_SERVICIO,
-                                                D_ENTIDAD_SERVICIOS.REQ_CITA,
-                                                D_ENTIDAD_SERVICIOS.TIPO_SER,
-                                                D_ENTIDAD_SERVICIOS.TRAMITE,
-                                                D_ENTIDAD_SERVICIOS.ORIENTACION,
-                                                D_ENT_SERV.IDENTIDAD,
-                                                D_ENTIDAD_SERVICIOS.`COSTO_SERV`,
+                                                d_entidad_servicios.IDSERVICIOS,
+                                                d_entidad_servicios.NOMBRE_SERVICIO,
+                                                d_entidad_servicios.REQUISITO_SERVICIO,
+                                                d_entidad_servicios.REQ_CITA,
+                                                d_entidad_servicios.TIPO_SER,
+                                                d_entidad_servicios.TRAMITE,
+                                                d_entidad_servicios.ORIENTACION,
+                                                d_ent_serv.IDENTIDAD,
+                                                d_entidad_servicios.`COSTO_SERV`,
                                                 MCM.IDCENTRO_MAC,
                                                 MCM.NOMBRE_MAC,
-                                                D_ENT_SERV.IDENT_SERV,
-                                                D_ENTIDAD_SERVICIOS.FLAG 
+                                                d_ent_serv.IDENT_SERV,
+                                                d_entidad_servicios.FLAG 
                                             FROM
-                                                D_ENT_SERV 
-                                                JOIN D_ENTIDAD_SERVICIOS 
-                                                ON D_ENTIDAD_SERVICIOS.IDSERVICIOS = D_ENT_SERV.IDSERVICIOS 
-                                                JOIN M_CENTRO_MAC MCM 
-                                                ON MCM.IDCENTRO_MAC = D_ENT_SERV.IDMAC) SERV'), function ($join) {
+                                                d_ent_serv 
+                                                JOIN d_entidad_servicios 
+                                                ON d_entidad_servicios.IDSERVICIOS = d_ent_serv.IDSERVICIOS 
+                                                JOIN m_centro_mac MCM 
+                                                ON MCM.IDCENTRO_MAC = d_ent_serv.IDMAC) SERV'), function ($join) {
                                 $join->on('SERV.IDENTIDAD', '=', 'ME.IDENTIDAD');
                             })
                             ->where('SERV.FLAG', '=', '1')

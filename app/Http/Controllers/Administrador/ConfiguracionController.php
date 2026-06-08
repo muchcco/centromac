@@ -17,7 +17,7 @@ class ConfiguracionController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -35,14 +35,14 @@ class ConfiguracionController extends Controller
 
     public function tb_nuevo_mac(Request $request)
     {
-        // $mac = DB::table('M_CENTRO_MAC')->where('FLAG', 1)->get();
-        $mac = Mac::leftJoin('DISTRITO as D', 'M_CENTRO_MAC.UBICACION', '=', 'D.IDDISTRITO')
-            ->leftJoin('PROVINCIA as P', 'D.PROVINCIA_ID', '=', 'P.IDPROVINCIA')
-            ->leftJoin('DEPARTAMENTO as DEP', 'D.DEPARTAMENTO_ID', '=', 'DEP.IDDEPARTAMENTO')
-            ->select('M_CENTRO_MAC.*', 'D.*', 'P.*', 'DEP.*')
+        // $mac = DB::table('m_centro_mac')->where('FLAG', 1)->get();
+        $mac = Mac::leftJoin('DISTRITO as D', 'm_centro_mac.UBICACION', '=', 'D.IDDISTRITO')
+            ->leftJoin('provincia as P', 'D.PROVINCIA_ID', '=', 'P.IDPROVINCIA')
+            ->leftJoin('departamento as DEP', 'D.DEPARTAMENTO_ID', '=', 'DEP.IDDEPARTAMENTO')
+            ->select('m_centro_mac.*', 'D.*', 'P.*', 'DEP.*')
             ->where(function ($query) {
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                    $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                    $query->where('m_centro_mac.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
                 }
             })
             ->where('FLAG', 1)
@@ -54,7 +54,7 @@ class ConfiguracionController extends Controller
 
     public function md_add_mac(Request $request)
     {
-        $departamento = DB::table('DEPARTAMENTO')->get();
+        $departamento = DB::table('departamento')->get();
 
         $view = view('configuracion.modals.md_add_mac', compact('departamento'))->render();
 
@@ -89,18 +89,18 @@ class ConfiguracionController extends Controller
 
     public function md_edit_mac(Request $request)
     {
-        $mac = Mac::leftJoin('DISTRITO as D', 'M_CENTRO_MAC.UBICACION', '=', 'D.IDDISTRITO')
-            ->leftJoin('PROVINCIA as P', 'D.PROVINCIA_ID', '=', 'P.IDPROVINCIA')
-            ->leftJoin('DEPARTAMENTO as DEP', 'D.DEPARTAMENTO_ID', '=', 'DEP.IDDEPARTAMENTO')
-            ->select('M_CENTRO_MAC.*', 'D.*', 'P.*', 'DEP.*')
+        $mac = Mac::leftJoin('DISTRITO as D', 'm_centro_mac.UBICACION', '=', 'D.IDDISTRITO')
+            ->leftJoin('provincia as P', 'D.PROVINCIA_ID', '=', 'P.IDPROVINCIA')
+            ->leftJoin('departamento as DEP', 'D.DEPARTAMENTO_ID', '=', 'DEP.IDDEPARTAMENTO')
+            ->select('m_centro_mac.*', 'D.*', 'P.*', 'DEP.*')
             ->where('FLAG', 1)
             ->where('IDCENTRO_MAC', $request->idcentro_mac)
             ->first();
         // dd($mac->IDDEPARTAMENTO);
 
-        $departamento = DB::table('DEPARTAMENTO')->get();
-        $provincia = DB::table('PROVINCIA')->get();
-        $distrito = DB::table('DISTRITO')->get();
+        $departamento = DB::table('departamento')->get();
+        $provincia = DB::table('provincia')->get();
+        $distrito = DB::table('distrito')->get();
 
         $view = view('configuracion.modals.md_edit_mac', compact('mac', 'departamento', 'provincia', 'distrito'))->render();
 
@@ -144,9 +144,9 @@ class ConfiguracionController extends Controller
     {
         $mac = Mac::where('IDCENTRO_MAC', $idcentro_mac)->first();
 
-        $entidad = DB::table('M_MAC_ENTIDAD as MME')
-            ->join('M_CENTRO_MAC as MCM', 'MME.IDCENTRO_MAC', '=', 'MCM.IDCENTRO_MAC')
-            ->join('M_ENTIDAD as ME', 'MME.IDENTIDAD', '=', 'ME.IDENTIDAD')
+        $entidad = DB::table('m_mac_entidad as MME')
+            ->join('m_centro_mac as MCM', 'MME.IDCENTRO_MAC', '=', 'MCM.IDCENTRO_MAC')
+            ->join('m_entidad as ME', 'MME.IDENTIDAD', '=', 'ME.IDENTIDAD')
             ->where('MCM.IDCENTRO_MAC', $idcentro_mac)
             ->get();
 
@@ -160,7 +160,7 @@ class ConfiguracionController extends Controller
         // $entidad_completo = Entidad::whereNotIn('IDENTIDAD', $us_exist_array)->get();
         $entidad_completo = Entidad::get();
 
-        $modulos = DB::table('M_MODULO')->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MODULO.IDENTIDAD')->where('M_MODULO.IDCENTRO_MAC',  $idcentro_mac)->get();
+        $modulos = DB::table('m_modulo')->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_modulo.IDENTIDAD')->where('m_modulo.IDCENTRO_MAC',  $idcentro_mac)->get();
         // dd($modulos);
 
         return view('configuracion.reg_tablas', compact('mac', 'entidad', 'entidad_completo', 'modulos'));
@@ -170,7 +170,7 @@ class ConfiguracionController extends Controller
     {
         try {
 
-            $exist = DB::table('M_MAC_ENTIDAD')
+            $exist = DB::table('m_mac_entidad')
                 ->where('IDCENTRO_MAC', $request->idmac)
                 ->where('IDENTIDAD', $request->addEntidad)
                 ->exists();
@@ -180,7 +180,7 @@ class ConfiguracionController extends Controller
                 return response()->json(['message' => 'Entidad ya existe'], 400);
             }
 
-            $save = DB::table('M_MAC_ENTIDAD')->insert([
+            $save = DB::table('m_mac_entidad')->insert([
                 'IDCENTRO_MAC'      =>      $request->idmac,
                 'IDENTIDAD'         =>      $request->addEntidad,
                 'LOG_US'            =>      auth()->user()->id,
@@ -201,7 +201,7 @@ class ConfiguracionController extends Controller
 
     public function deleteEntidad(Request $request)
     {
-        $delete = DB::table('M_MAC_ENTIDAD')->where('IDMAC_ENTIDAD', $request->id)->delete();
+        $delete = DB::table('m_mac_entidad')->where('IDMAC_ENTIDAD', $request->id)->delete();
 
         return $delete;
     }
@@ -211,7 +211,7 @@ class ConfiguracionController extends Controller
 
         try {
 
-            $save = DB::table('M_MODULO')->insert([
+            $save = DB::table('m_modulo')->insert([
                 'IDCENTRO_MAC'      =>      $request->idmac,
                 'IDENTIDAD'         =>      $request->addModEnt,
                 'N_MODULO'            =>      $request->n_modulo,
@@ -233,7 +233,7 @@ class ConfiguracionController extends Controller
 
     public function deleteModulo(Request $request)
     {
-        $delete = DB::table('M_MODULO')->where('IDMODULO', $request->id)->delete();
+        $delete = DB::table('m_modulo')->where('IDMODULO', $request->id)->delete();
 
         return $delete;
     }

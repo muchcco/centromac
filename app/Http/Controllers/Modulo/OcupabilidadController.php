@@ -12,8 +12,8 @@ class OcupabilidadController extends Controller
 {
     private function centro_mac(): object
     {
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', auth()->user()->idcentro_mac)
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')
+            ->where('m_centro_mac.IDCENTRO_MAC', auth()->user()->idcentro_mac)
             ->first();
 
         return (object)[
@@ -24,7 +24,7 @@ class OcupabilidadController extends Controller
 
     public function index()
     {
-        $mac = DB::table('M_CENTRO_MAC')
+        $mac = DB::table('m_centro_mac')
             ->when(
                 auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador'),
                 fn($q) => $q->where('IDCENTRO_MAC', $this->centro_mac()->idmac)
@@ -39,7 +39,7 @@ class OcupabilidadController extends Controller
     {
         $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
 
-        $mac = DB::table('M_CENTRO_MAC')
+        $mac = DB::table('m_centro_mac')
             ->where('IDCENTRO_MAC', '=', $idmac)
             ->select('NOMBRE_MAC')
             ->first();
@@ -203,7 +203,7 @@ class OcupabilidadController extends Controller
 
         // 🔥 SP (OCUPABILIDAD)
         $data = collect(DB::select(
-            "CALL db_centro_mac_reporte.SP_RESUMEN_ASIST_HABILES_MODULO(?, ?, ?)",
+            "CALL db_centro_mac_reporte.sp_resumen_asist_habiles_modulo(?, ?, ?)",
             [$idmac, $fechaInicioStr, $fechaFinStr]
         ))
             ->sortBy(fn($x) => (int)$x->N_MODULO)
@@ -237,7 +237,7 @@ class OcupabilidadController extends Controller
         // 🔥 NOMBRE MAC
         // =========================
         $nombreMac = optional(
-            DB::table('M_CENTRO_MAC')
+            DB::table('m_centro_mac')
                 ->where('IDCENTRO_MAC', $idmac)
                 ->first()
         )->NOMBRE_MAC ?? 'MAC';
@@ -299,14 +299,14 @@ class OcupabilidadController extends Controller
         $fechaFin    = Carbon::create($anio, $mes, 1)->endOfMonth()->toDateString();
 
         $resultados = collect(
-            DB::select("CALL db_centro_mac_reporte.SP_RESUMEN_ASIST_HABILES_MODULO(?, ?, ?)", [
+            DB::select("CALL db_centro_mac_reporte.sp_resumen_asist_habiles_modulo(?, ?, ?)", [
                 $idmac,
                 $fechaInicio,
                 $fechaFin
             ])
         )->sortBy('N_MODULO')->values();  // ordena y reindexa
 
-        $nombreMac = optional(DB::table('M_CENTRO_MAC')->where('IDCENTRO_MAC', $idmac)->first())->NOMBRE_MAC ?? 'MAC';
+        $nombreMac = optional(DB::table('m_centro_mac')->where('IDCENTRO_MAC', $idmac)->first())->NOMBRE_MAC ?? 'MAC';
 
         return view('ocupabilidad.tablas.tb_index_resumen', [
             'nombreMac'  => $nombreMac,

@@ -17,7 +17,7 @@ class F02InicioPerController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -43,7 +43,7 @@ class F02InicioPerController extends Controller
 
         $fecha_sel = date("Y-m-d");
         
-        $resultado = DescripcionFormato::from('D_DESCRIPCION_FORMATOS as DDF')->select(
+        $resultado = DescripcionFormato::from('d_descripcion_formatos as DDF')->select(
                 'DDF.IDDESC_FORM',
                 'DDF.IDPADRE_F',
                 'DDF.DESCRIPCION_F',
@@ -52,7 +52,7 @@ class F02InicioPerController extends Controller
                 'DFI.OBSERVACION_F02'
             )
             ->leftJoin(DB::raw("(SELECT IDDESC_FORM, CONFORMIDAD_I, CONFORMIDAD_F, OBSERVACION_F02
-                                FROM F_MAC_03_VER_OPERACION
+                                FROM f_mac_03_ver_operacion
                                 WHERE FECHA = '$fecha_sel' AND IDCENTRO_MAC = $id_mac) as DFI"), 'DFI.IDDESC_FORM', '=', 'DDF.IDDESC_FORM')
             ->get();
 
@@ -158,8 +158,8 @@ class F02InicioPerController extends Controller
         $modelo = new FInicioOperacion();
 
         // Inicializar una instancia del constructor de consultas
-        $queryBuilder = $modelo->from('D_DESCRIPCION_FORMATOS as DDF')
-            //->leftJoin('F_MAC_03_VER_OPERACION AS DFI', 'DFI.IDDESC_FORM', '=', 'DDF.IDDESC_FORM')
+        $queryBuilder = $modelo->from('d_descripcion_formatos as DDF')
+            //->leftJoin('f_mac_03_ver_operacion AS DFI', 'DFI.IDDESC_FORM', '=', 'DDF.IDDESC_FORM')
             ->leftJoin(DB::raw("
                                 (SELECT
                                     IDDESC_FORM,
@@ -168,7 +168,7 @@ class F02InicioPerController extends Controller
                                     OBSERVACION_F02,
                                     FECHA
                                 FROM
-                                    F_MAC_03_VER_OPERACION
+                                    f_mac_03_ver_operacion
                                 WHERE
                                     FECHA BETWEEN '$fechaInicio' AND '$fechaFin'
                                     AND IDCENTRO_MAC = " . $this->centro_mac()->idmac . ") DFI

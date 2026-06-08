@@ -9,7 +9,7 @@ class AsigPersonal extends Model
 {
     use HasFactory;
 
-    protected $table = 'M_ASIG_PERSONAL';
+    protected $table = 'm_asig_personal';
 
     protected $primaryKey = 'IDASIG_PERSONAL';
 

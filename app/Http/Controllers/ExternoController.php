@@ -14,7 +14,7 @@ class ExternoController extends Controller
     {
         $macs = Mac::get();
 
-        $tip_doc = DB::table('D_PERSONAL_TIPODOC')->get();
+        $tip_doc = DB::table('d_personal_tipodoc')->get();
 
         return view('externo.cumpleaños.cumpleaño', compact('macs', 'tip_doc'));
 
@@ -41,17 +41,17 @@ class ExternoController extends Controller
                                 'NUM_DOC',
                                 DB::raw("(
                                     SELECT AP2.NOMBRE_ARCHIVO 
-                                    FROM A_PERSONAL AP2 
-                                    WHERE AP2.IDPERSONAL = M_PERSONAL.IDPERSONAL 
+                                    FROM a_personal AP2 
+                                    WHERE AP2.IDPERSONAL = m_personal.IDPERSONAL 
                                         AND LOWER(AP2.FORMATO_DOC) IN ('jpg','jpeg','png')
                                     LIMIT 1
                                 ) AS NOMBRE_ARCHIVO")
                             )
-                            ->join('M_ENTIDAD', 'M_PERSONAL.IDENTIDAD', '=', 'M_ENTIDAD.IDENTIDAD')
-                            ->addSelect('M_ENTIDAD.NOMBRE_ENTIDAD')
-                            ->where('M_PERSONAL.FLAG', 1)
-                            ->whereNotNull('M_PERSONAL.FECH_NACIMIENTO')
-                            ->where('M_PERSONAL.IDMAC', $request->idmac)
+                            ->join('m_entidad', 'm_personal.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')
+                            ->addSelect('m_entidad.NOMBRE_ENTIDAD')
+                            ->where('m_personal.FLAG', 1)
+                            ->whereNotNull('m_personal.FECH_NACIMIENTO')
+                            ->where('m_personal.IDMAC', $request->idmac)
                             ->get();
 
         $fecha_actual = Carbon::now();

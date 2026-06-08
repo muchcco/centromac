@@ -33,38 +33,38 @@
     @php
         // LOS MODULOS ACTIVOS SE DATAN POR BASE DE DATOS DONDE 0 ESTA EN DESARROLLO Y 1 EN PRODUCCION
 
-        $asistencia = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'ASISTENCIA')->first();
-        $per_asesores = Illuminate\Support\Facades\DB::table('ACTIVE')
+        $asistencia = Illuminate\Support\Facades\DB::table('active')->where('NOMBRE_MODULO', 'ASISTENCIA')->first();
+        $per_asesores = Illuminate\Support\Facades\DB::table('active')
             ->where('NOMBRE_MODULO', 'PERSONAL ASESORES')
             ->first();
-        $per_mac = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'PERSONAL MAC')->first();
-        $asignacion_bien = Illuminate\Support\Facades\DB::table('ACTIVE')
+        $per_mac = Illuminate\Support\Facades\DB::table('active')->where('NOMBRE_MODULO', 'PERSONAL MAC')->first();
+        $asignacion_bien = Illuminate\Support\Facades\DB::table('active')
             ->where('NOMBRE_MODULO', 'ASIGNACION BIEN')
             ->first();
-        $servicio_mac = Illuminate\Support\Facades\DB::table('ACTIVE')
+        $servicio_mac = Illuminate\Support\Facades\DB::table('active')
             ->where('NOMBRE_MODULO', 'SERVICIOS MAC')
             ->first();
-        $externos = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'PAGINAS EXTERNAS')->first();
-        $eval_mot = Illuminate\Support\Facades\DB::table('ACTIVE')
+        $externos = Illuminate\Support\Facades\DB::table('active')->where('NOMBRE_MODULO', 'PAGINAS EXTERNAS')->first();
+        $eval_mot = Illuminate\Support\Facades\DB::table('active')
             ->where('NOMBRE_MODULO', 'EVAL MOTIVACIONAL')
             ->first();
-        $inicio_oper = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'INICIO OPERA')->first();
-        $fecilitaciones = Illuminate\Support\Facades\DB::table('ACTIVE')
+        $inicio_oper = Illuminate\Support\Facades\DB::table('active')->where('NOMBRE_MODULO', 'INICIO OPERA')->first();
+        $fecilitaciones = Illuminate\Support\Facades\DB::table('active')
             ->where('NOMBRE_MODULO', 'FELICITACIONES')
             ->first();
-        $ocupablidad_k = Illuminate\Support\Facades\DB::table('ACTIVE')
+        $ocupablidad_k = Illuminate\Support\Facades\DB::table('active')
             ->where('NOMBRE_MODULO', 'OCUPABILIDAD K')
             ->first();
-        $puntualida_i = Illuminate\Support\Facades\DB::table('ACTIVE')
+        $puntualida_i = Illuminate\Support\Facades\DB::table('active')
             ->where('NOMBRE_MODULO', 'PUNTUALIDAD I')
             ->first();
-        $almacen = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'ALMACEN')->first();
-        $servicio_ent = Illuminate\Support\Facades\DB::table('ACTIVE')
+        $almacen = Illuminate\Support\Facades\DB::table('active')->where('NOMBRE_MODULO', 'ALMACEN')->first();
+        $servicio_ent = Illuminate\Support\Facades\DB::table('active')
             ->where('NOMBRE_MODULO', 'SERVICIOS ENT')
             ->first();
-        $dashboard = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'DASBOARD')->first();
-        $usuario = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'USUARIOS')->first();
-        $centros_mac = Illuminate\Support\Facades\DB::table('ACTIVE')->where('NOMBRE_MODULO', 'CENTROS MAC')->first();
+        $dashboard = Illuminate\Support\Facades\DB::table('active')->where('NOMBRE_MODULO', 'DASBOARD')->first();
+        $usuario = Illuminate\Support\Facades\DB::table('active')->where('NOMBRE_MODULO', 'USUARIOS')->first();
+        $centros_mac = Illuminate\Support\Facades\DB::table('active')->where('NOMBRE_MODULO', 'CENTROS MAC')->first();
 
     @endphp
     <div class="menu-content h-100" data-simplebar>

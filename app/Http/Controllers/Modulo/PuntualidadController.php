@@ -19,8 +19,8 @@ class PuntualidadController extends Controller
     private function centro_mac()
     {
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')
+            ->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -30,7 +30,7 @@ class PuntualidadController extends Controller
 
     public function index()
     {
-        $mac = DB::table('M_CENTRO_MAC')
+        $mac = DB::table('m_centro_mac')
             ->where(function ($query) {
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
                     $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
@@ -60,7 +60,7 @@ class PuntualidadController extends Controller
         }
 
         // Obtener el NOMBRE_MAC utilizando el idmac
-        $mac = DB::table('M_CENTRO_MAC')
+        $mac = DB::table('m_centro_mac')
             ->where('IDCENTRO_MAC', '=', $idmac) // Filtrar por el idmac
             ->select('NOMBRE_MAC') // Seleccionamos solo el campo NOMBRE_MAC
             ->first(); // Usamos first() porque esperamos solo un resultado
@@ -222,7 +222,7 @@ class PuntualidadController extends Controller
 
         // 🔥 SP + ORDEN NUMÉRICO
         $resultados = collect(DB::select(
-            'CALL db_centro_mac_reporte.SP_RESUMEN_OCUPABILIDAD_PUNTUALIDAD_MODULO(?, ?, ?)',
+            'CALL db_centro_mac_reporte.sp_resumen_ocupabilidad_puntualidad_modulo(?, ?, ?)',
             [$idmac, $fechaInicio, $fechaFin]
         ))
             ->sortBy(fn($x) => (int)$x->N_MODULO)
@@ -230,7 +230,7 @@ class PuntualidadController extends Controller
 
         // 🔹 Nombre MAC
         $nombreMac = optional(
-            DB::table('M_CENTRO_MAC')->where('IDCENTRO_MAC', $idmac)->first()
+            DB::table('m_centro_mac')->where('IDCENTRO_MAC', $idmac)->first()
         )->NOMBRE_MAC ?? 'MAC';
 
         // 🔥 KPIs (PUNTUALIDAD REAL)

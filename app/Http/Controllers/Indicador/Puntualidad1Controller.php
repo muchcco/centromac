@@ -18,7 +18,7 @@ class Puntualidad1Controller extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -31,7 +31,7 @@ class Puntualidad1Controller extends Controller
 
     public function index(Request $request)
     {
-        $mac = DB::table('M_CENTRO_MAC')
+        $mac = DB::table('m_centro_mac')
             ->where(function ($query) {
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
                     $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
@@ -47,7 +47,7 @@ class Puntualidad1Controller extends Controller
     {
         $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
 
-        $mac = DB::table('M_CENTRO_MAC')
+        $mac = DB::table('m_centro_mac')
             ->where('IDCENTRO_MAC', $idmac)
             ->select('NOMBRE_MAC')
             ->first();
@@ -114,7 +114,7 @@ class Puntualidad1Controller extends Controller
             ->toArray();
 
         $spRaw = DB::select(
-            "CALL db_centro_mac_reporte.SP_OCUPABILIDAD_MENSUAL_PIVOT(?,?,?)",
+            "CALL db_centro_mac_reporte.sp_ocupabilidad_mensual_pivot(?,?,?)",
             [$idmac, $fecha_año, $fecha_mes]
         );
 
@@ -238,7 +238,7 @@ class Puntualidad1Controller extends Controller
     {
         $idmac = $request->input('mac') ?: auth()->user()->idcentro_mac ?: 11;
 
-        $mac = DB::table('M_CENTRO_MAC')
+        $mac = DB::table('m_centro_mac')
             ->where('IDCENTRO_MAC', $idmac)
             ->select('NOMBRE_MAC')
             ->first();
@@ -307,7 +307,7 @@ class Puntualidad1Controller extends Controller
             ->toArray();
 
         $spRaw = DB::select(
-            "CALL db_centro_mac_reporte.SP_OCUPABILIDAD_MENSUAL_PIVOT(?,?,?)",
+            "CALL db_centro_mac_reporte.sp_ocupabilidad_mensual_pivot(?,?,?)",
             [$idmac, $fecha_año, $fecha_mes]
         );
 

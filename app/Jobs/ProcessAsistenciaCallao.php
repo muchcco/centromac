@@ -149,7 +149,7 @@ class ProcessAsistenciaCallao implements ShouldQueue
                 cache()->put($progressKey, min($currentProgress + 10, 90));
             }
 
-            DB::statement("INSERT INTO M_ASISTENCIA (
+            DB::statement("INSERT INTO m_asistencia (
                     IDTIPO_ASISTENCIA,
                     NUM_DOC,
                     IDCENTRO_MAC,
@@ -181,7 +181,7 @@ class ProcessAsistenciaCallao implements ShouldQueue
                 AND DATE(chk.CHECKTIME) BETWEEN ? AND ?
                 AND NOT EXISTS (
                         SELECT 2
-                        FROM M_ASISTENCIA ma
+                        FROM m_asistencia ma
                         WHERE
                             ma.NUM_DOC = ui.ssn COLLATE utf8mb4_unicode_ci
                             AND ma.IDCENTRO_MAC = ?

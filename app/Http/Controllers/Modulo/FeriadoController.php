@@ -20,7 +20,7 @@ class FeriadoController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -46,7 +46,7 @@ class FeriadoController extends Controller
         // Obtener el nombre del centro MAC para cada feriado
         foreach ($feriados as $feriado) {
             // Obtener el nombre del centro MAC correspondiente al id_centromac
-            $centroMac = DB::table('M_CENTRO_MAC')->where('IDCENTRO_MAC', $feriado->id_centromac)->first();
+            $centroMac = DB::table('m_centro_mac')->where('IDCENTRO_MAC', $feriado->id_centromac)->first();
 
             // Asignar el nombre del centro MAC o un valor predeterminado si no existe
             $feriado->nombre_centromac = $centroMac ? $centroMac->NOMBRE_MAC : 'TODOS';

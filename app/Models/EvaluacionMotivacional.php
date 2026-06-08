@@ -9,7 +9,7 @@ class EvaluacionMotivacional extends Model
 {
     use HasFactory;
 
-    protected $table = 'F_EVAL_MOTIVACIONAL';
+    protected $table = 'f_eval_motivacional';
 
     protected $primaryKey = 'IDEEVAL_MOTIVACIONAL';
 

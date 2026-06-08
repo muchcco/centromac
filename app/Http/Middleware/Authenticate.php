@@ -15,7 +15,7 @@ class Authenticate extends Middleware
     protected function redirectTo($request)
     {
         if (! $request->expectsJson()) {
-            return env('AUTH_SERVER_LOGIN_URL', '/login');
+            return config('sso.auth_server_login_url', '/login');
         }
     }
 }

@@ -19,7 +19,7 @@ class AsignacionController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -38,20 +38,20 @@ class AsignacionController extends Controller
     public function tb_index(Request $request)
     {
         $query = Personal::select([
-                                'M_PERSONAL.IDPERSONAL',
-                                DB::raw("CONCAT(M_PERSONAL.NOMBRE, ' ', M_PERSONAL.APE_PAT, ' ', M_PERSONAL.APE_MAT) as NOMBREU"),
-                                DB::raw("CONCAT(D_PERSONAL_TIPODOC.TIPODOC_ABREV, ': ', M_PERSONAL.NUM_DOC) as NUM_DOCUMENTO"),
-                                'M_ENTIDAD.NOMBRE_ENTIDAD',
+                                'm_personal.IDPERSONAL',
+                                DB::raw("CONCAT(m_personal.NOMBRE, ' ', m_personal.APE_PAT, ' ', m_personal.APE_MAT) as NOMBREU"),
+                                DB::raw("CONCAT(d_personal_tipodoc.TIPODOC_ABREV, ': ', m_personal.NUM_DOC) as NUM_DOCUMENTO"),
+                                'm_entidad.NOMBRE_ENTIDAD',
                                 DB::raw('IFNULL(CONT.CONT_ASIG, 0) as CONT_ASIG')
                             ])
-                            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
-                            ->join('D_PERSONAL_TIPODOC', 'D_PERSONAL_TIPODOC.IDTIPO_DOC', '=', 'M_PERSONAL.IDTIPO_DOC')
-                            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-                            ->leftJoin(DB::raw('(SELECT M_ASIGNACION_BIEN.IDPERSONAL, COUNT(*) AS CONT_ASIG
-                                                FROM M_ASIGNACION_BIEN
-                                                GROUP BY M_ASIGNACION_BIEN.IDPERSONAL) CONT'), 'CONT.IDPERSONAL', '=', 'M_PERSONAL.IDPERSONAL')
-                            ->where('M_PERSONAL.FLAG', 1)
-                            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac)
+                            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_personal.IDMAC')
+                            ->join('d_personal_tipodoc', 'd_personal_tipodoc.IDTIPO_DOC', '=', 'm_personal.IDTIPO_DOC')
+                            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_personal.IDENTIDAD')
+                            ->leftJoin(DB::raw('(SELECT m_asignacion_bien.IDPERSONAL, COUNT(*) AS CONT_ASIG
+                                                FROM m_asignacion_bien
+                                                GROUP BY m_asignacion_bien.IDPERSONAL) CONT'), 'CONT.IDPERSONAL', '=', 'm_personal.IDPERSONAL')
+                            ->where('m_personal.FLAG', 1)
+                            ->where('m_centro_mac.IDCENTRO_MAC', $this->centro_mac()->idmac)
                             ->get();
 
         return view('asignacion.tablas.tb_index', compact('query'));
@@ -62,9 +62,9 @@ class AsignacionController extends Controller
         $asignacion_estado = AsigPersonal::where('IDPERSONAL', $idpersonal)->first();
 
         if($asignacion_estado){
-            $datos_acepta = AsigPersonal::join('A_ASIGNACION_BIEN', 'A_ASIGNACION_BIEN.IDASIG_PERSONAL', '=', 'M_ASIG_PERSONAL.IDASIG_PERSONAL')
-                    ->join('D_ESTADO_ASIGNACION', 'D_ESTADO_ASIGNACION.IDESTADO_ASIG', '=', 'M_ASIG_PERSONAL.IDESTADO_ASIG')
-                    ->where('A_ASIGNACION_BIEN.IDASIG_PERSONAL', $asignacion_estado->IDASIG_PERSONAL)
+            $datos_acepta = AsigPersonal::join('a_asignacion_bien', 'a_asignacion_bien.IDASIG_PERSONAL', '=', 'm_asig_personal.IDASIG_PERSONAL')
+                    ->join('d_estado_asignacion', 'd_estado_asignacion.IDESTADO_ASIG', '=', 'm_asig_personal.IDESTADO_ASIG')
+                    ->where('a_asignacion_bien.IDASIG_PERSONAL', $asignacion_estado->IDASIG_PERSONAL)
                     ->get();  
         }else{
             $datos_acepta = NULL;
@@ -72,10 +72,10 @@ class AsignacionController extends Controller
         
               
 
-        $personal = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-                                ->join('D_PERSONAL_TIPODOC', 'D_PERSONAL_TIPODOC.IDTIPO_DOC', '=', 'M_PERSONAL.IDTIPO_DOC')
+        $personal = Personal::join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_personal.IDENTIDAD')
+                                ->join('d_personal_tipodoc', 'd_personal_tipodoc.IDTIPO_DOC', '=', 'm_personal.IDTIPO_DOC')
                                 ->where('IDPERSONAL', $idpersonal)
-                                ->where('M_PERSONAL.FLAG', 1)
+                                ->where('m_personal.FLAG', 1)
                                 ->first();
 
         return view('asignacion.asignacion_inventario', compact('personal', 'asignacion_estado', 'datos_acepta'));
@@ -83,9 +83,9 @@ class AsignacionController extends Controller
 
     public function tb_asignacion(Request $request)
     {
-        $query = Asignacion::join('M_ALMACEN', 'M_ALMACEN.IDALMACEN', '=', 'M_ASIGNACION_BIEN.IDALMACEN')
-                            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_ASIGNACION_BIEN.IDCENTRO_MAC')
-                            ->join('M_ASIG_PERSONAL', 'M_ASIG_PERSONAL.IDASIG_PERSONAL', '=', 'M_ASIGNACION_BIEN.IDASIG_PERSONAL')
+        $query = Asignacion::join('m_almacen', 'm_almacen.IDALMACEN', '=', 'm_asignacion_bien.IDALMACEN')
+                            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_asignacion_bien.IDCENTRO_MAC')
+                            ->join('m_asig_personal', 'm_asig_personal.IDASIG_PERSONAL', '=', 'm_asignacion_bien.IDASIG_PERSONAL')
                             ->get();
 
         return view('asignacion.tablas.tb_asignacion', compact('query'));
@@ -134,7 +134,7 @@ class AsignacionController extends Controller
     public function almacen_select(Request $request)
     {
         // dd($request->all());
-        $ids_encontrados = DB::select("SELECT GROUP_CONCAT(IDALMACEN SEPARATOR ', ') as NOMBRES FROM M_ASIGNACION_BIEN WHERE IDCENTRO_MAC = " . $this->centro_mac()->idmac . "");
+        $ids_encontrados = DB::select("SELECT GROUP_CONCAT(IDALMACEN SEPARATOR ', ') as NOMBRES FROM m_asignacion_bien WHERE IDCENTRO_MAC = " . $this->centro_mac()->idmac . "");
         // dd($ids_encontrados);
         if (isset($ids_encontrados[0]->NOMBRES) ) {
             $nombres = $ids_encontrados[0]->NOMBRES;
@@ -156,7 +156,7 @@ class AsignacionController extends Controller
                     ->get();
                 // dd($almacen);
             }else{
-                $almacen = DB::select("SELECT * FROM M_ALMACEN WHERE IDALMACEN NOT IN ($nombres) ");
+                $almacen = DB::select("SELECT * FROM m_almacen WHERE IDALMACEN NOT IN ($nombres) ");
             }            
         } else {
             // Manejar el caso cuando $ids_encontrados es un array vacío
@@ -228,7 +228,7 @@ class AsignacionController extends Controller
 
     public function borrador_pdf(Request $request, $idpersonal)
     {
-        $datos_persona = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD' ,'=','M_PERSONAL.IDENTIDAD')->where('M_PERSONAL.IDPERSONAL', $idpersonal)->first();
+        $datos_persona = Personal::join('m_entidad', 'm_entidad.IDENTIDAD' ,'=','m_personal.IDENTIDAD')->where('m_personal.IDPERSONAL', $idpersonal)->first();
 
         $centro_mac = $this->centro_mac()->name_mac;
 
@@ -237,7 +237,7 @@ class AsignacionController extends Controller
                     ->where('m_asignacion_bien.IDPERSONAL', $idpersonal)
                     ->get();
         
-        $count = DB::select("SELECT COUNT(*) AS NUM_C FROM M_ASIGNACION_BIEN WHERE IDPERSONAL = $idpersonal ");
+        $count = DB::select("SELECT COUNT(*) AS NUM_C FROM m_asignacion_bien WHERE IDPERSONAL = $idpersonal ");
 
         // dd($query);
 
@@ -270,7 +270,7 @@ class AsignacionController extends Controller
 
     public function orginal_pdf(Request $request, $idpersonal)
     {
-        $datos_persona = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD' ,'=','M_PERSONAL.IDENTIDAD')->where('M_PERSONAL.IDPERSONAL', $idpersonal)->first();
+        $datos_persona = Personal::join('m_entidad', 'm_entidad.IDENTIDAD' ,'=','m_personal.IDENTIDAD')->where('m_personal.IDPERSONAL', $idpersonal)->first();
 
         $centro_mac = $this->centro_mac()->name_mac;
 
@@ -279,7 +279,7 @@ class AsignacionController extends Controller
                     ->where('m_asignacion_bien.IDPERSONAL', $idpersonal)
                     ->get();
         
-        $count = DB::select("SELECT COUNT(*) AS NUM_C FROM M_ASIGNACION_BIEN WHERE IDPERSONAL = $idpersonal ");
+        $count = DB::select("SELECT COUNT(*) AS NUM_C FROM m_asignacion_bien WHERE IDPERSONAL = $idpersonal ");
 
         // dd($query);
 
@@ -291,8 +291,8 @@ class AsignacionController extends Controller
     {
         try{
 
-            $personal = AsigPersonal::join('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'M_ASIG_PERSONAL.IDPERSONAL')
-                                        ->where('M_ASIG_PERSONAL.IDASIG_PERSONAL', $request->asignacion_estado)
+            $personal = AsigPersonal::join('m_personal', 'm_personal.IDPERSONAL', '=', 'm_asig_personal.IDPERSONAL')
+                                        ->where('m_asig_personal.IDASIG_PERSONAL', $request->asignacion_estado)
                                         ->first();
 
             $estructura_carp = 'archivos\\'.$personal->NUM_DOC.'\\';            
@@ -310,7 +310,7 @@ class AsignacionController extends Controller
                 $archivoPDF->move($nameruta, $nombrePDF);
             }
 
-            $save = DB::table('A_ASIGNACION_BIEN')->insert([
+            $save = DB::table('a_asignacion_bien')->insert([
                 'IDASIG_PERSONAL'       =>  $request->asignacion_estado,
                 'NOMBRE_RUTA'           =>  $estructura_carp.$nombrePDF,
                 'NOMBRE_DOCUMENTO'      =>  $nombrePDF,

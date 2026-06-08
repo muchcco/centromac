@@ -9,7 +9,7 @@ class Configuracion extends Model
 {
     use HasFactory;
 
-    protected $table = 'CONFIGURACION_SIST';
+    protected $table = 'configuracion_sist';
 
     protected $primaryKey = 'IDCONFIGURACION';
 

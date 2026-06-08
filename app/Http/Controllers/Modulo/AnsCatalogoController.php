@@ -15,8 +15,8 @@ class AnsCatalogoController extends Controller
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
 
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')
+            ->where('m_centro_mac.IDCENTRO_MAC', $us_id)
             ->first();
 
         $idmac = $user->IDCENTRO_MAC;

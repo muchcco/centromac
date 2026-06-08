@@ -9,7 +9,7 @@ class DescripcionFormato extends Model
 {
     use HasFactory;
 
-    protected $table = 'D_DESCRIPCION_FORMATOS';
+    protected $table = 'd_descripcion_formatos';
 
     protected $primaryKey = 'IDDESC_FORM';
 

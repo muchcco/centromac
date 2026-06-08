@@ -14,8 +14,8 @@ class ReporteOcupabilidadController extends Controller
 {
     private function centro_mac(): object
     {
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', auth()->user()->idcentro_mac)
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')
+            ->where('m_centro_mac.IDCENTRO_MAC', auth()->user()->idcentro_mac)
             ->first();
 
         return (object)[
@@ -27,7 +27,7 @@ class ReporteOcupabilidadController extends Controller
     public function index()
     {
         // listar todos los MAC, sin filtro de rol
-        $mac = DB::table('M_CENTRO_MAC')
+        $mac = DB::table('m_centro_mac')
             ->orderBy('NOMBRE_MAC')
             ->get();
 
@@ -63,7 +63,7 @@ class ReporteOcupabilidadController extends Controller
         // Obtener todos los módulos con su MAC asociado
         $modulos = DB::table('m_modulo as m')
             ->join('m_entidad as e', 'm.identidad', '=', 'e.identidad')
-            ->join('M_CENTRO_MAC as cm', 'm.idcentro_mac', '=', 'cm.IDCENTRO_MAC')
+            ->join('m_centro_mac as cm', 'm.idcentro_mac', '=', 'cm.IDCENTRO_MAC')
             ->where('m.fechainicio', '<=', $fechaFin)
             ->where('m.fechafin', '>=', $fechaInicio)
             ->where('m.es_administrativo', 'NO')
@@ -187,7 +187,7 @@ class ReporteOcupabilidadController extends Controller
         // Obtener todos los módulos con su MAC asociado
         $modulos = DB::table('m_modulo as m')
             ->join('m_entidad as e', 'm.identidad', '=', 'e.identidad')
-            ->join('M_CENTRO_MAC as cm', 'm.idcentro_mac', '=', 'cm.IDCENTRO_MAC')
+            ->join('m_centro_mac as cm', 'm.idcentro_mac', '=', 'cm.IDCENTRO_MAC')
             ->where('m.fechainicio', '<=', $fechaFin)
             ->where('m.fechafin', '>=', $fechaInicio)
             ->where('m.es_administrativo', 'NO')
@@ -216,7 +216,7 @@ class ReporteOcupabilidadController extends Controller
 
         // --- AÑADIDO: llamar al SP para días hábiles por módulo y MAC ---
         $spData = collect(
-            DB::select('CALL SP_DIASHABILES_MODULO_ALL(?, ?)', [
+            DB::select('CALL sp_diashabiles_modulo_all(?, ?)', [
                 (int)$fecha_año,
                 (int)$fecha_mes,
             ])
@@ -313,7 +313,7 @@ class ReporteOcupabilidadController extends Controller
         // Obtener todos los módulos con su MAC asociado
         $modulos = DB::table('m_modulo as m')
             ->join('m_entidad as e', 'm.identidad', '=', 'e.identidad')
-            ->join('M_CENTRO_MAC as cm', 'm.idcentro_mac', '=', 'cm.IDCENTRO_MAC')
+            ->join('m_centro_mac as cm', 'm.idcentro_mac', '=', 'cm.IDCENTRO_MAC')
             ->where('m.fechainicio', '<=', $fechaFin)
             ->where('m.fechafin', '>=', $fechaInicio)
             ->where('m.es_administrativo', 'NO')
@@ -441,7 +441,7 @@ class ReporteOcupabilidadController extends Controller
         // Obtener todos los módulos con su MAC asociado
         $modulos = DB::table('m_modulo as m')
             ->join('m_entidad as e', 'm.identidad', '=', 'e.identidad')
-            ->join('M_CENTRO_MAC as cm', 'm.idcentro_mac', '=', 'cm.IDCENTRO_MAC')
+            ->join('m_centro_mac as cm', 'm.idcentro_mac', '=', 'cm.IDCENTRO_MAC')
             ->where('m.fechainicio', '<=', $fechaFin)
             ->where('m.fechafin', '>=', $fechaInicio)
             ->where('m.es_administrativo', 'NO')
@@ -470,7 +470,7 @@ class ReporteOcupabilidadController extends Controller
 
         // --- AÑADIDO: llamar al SP para días hábiles por módulo y MAC ---
         $spData = collect(
-            DB::select('CALL SP_DIASHABILES_MODULO_ALL(?, ?)', [
+            DB::select('CALL sp_diashabiles_modulo_all(?, ?)', [
                 (int)$fecha_año,
                 (int)$fecha_mes,
             ])

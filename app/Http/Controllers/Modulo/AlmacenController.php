@@ -16,7 +16,7 @@ class AlmacenController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -34,11 +34,11 @@ class AlmacenController extends Controller
 
     public function tb_index(Request $requet)
     {
-        $query = Almacen::from('M_ALMACEN as MA')
-                            ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
-                            ->leftJoin('ALM_CATEGORIA as AC', 'AC.IDCATEGORIA', '=', 'MA.IDCATEGORIA')
-                            ->leftJoin('ALM_MODELO as AM', 'AM.IDMODELO', '=', 'MA.IDMODELO')
-                            ->leftJoin('ALM_MARCA as AMM', 'AMM.IDMARCA', '=', 'AM.IDMARCA')
+        $query = Almacen::from('m_almacen as MA')
+                            ->join('m_centro_mac as MCM', 'MCM.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
+                            ->leftJoin('alm_categoria as AC', 'AC.IDCATEGORIA', '=', 'MA.IDCATEGORIA')
+                            ->leftJoin('alm_modelo as AM', 'AM.IDMODELO', '=', 'MA.IDMODELO')
+                            ->leftJoin('alm_marca as AMM', 'AMM.IDMARCA', '=', 'AM.IDMARCA')
                             ->where('MA.FLAG', 1)
                             ->where('MCM.IDCENTRO_MAC', $this->centro_mac()->idmac)
                             ->get();
@@ -48,18 +48,18 @@ class AlmacenController extends Controller
 
     public function tb_modelos(Request $request)
     {
-        $modelo = DB::table('ALM_MODELO')->join('ALM_MARCA', 'ALM_MARCA.IDMARCA', '=', 'ALM_MODELO.IDMARCA')->get();
+        $modelo = DB::table('alm_modelo')->join('alm_marca', 'alm_marca.IDMARCA', '=', 'alm_modelo.IDMARCA')->get();
 
         return view('almacen.tablas.tb_modelos', compact('modelo'));
     }
 
     public function md_add_item(Request $request)
     {
-        $categorias = DB::table('ALM_CATEGORIA')->get();
+        $categorias = DB::table('alm_categoria')->get();
 
-        $modelo = DB::table('ALM_MODELO')->join('ALM_MARCA', 'ALM_MARCA.IDMARCA', '=', 'ALM_MODELO.IDMARCA')->get();
+        $modelo = DB::table('alm_modelo')->join('alm_marca', 'alm_marca.IDMARCA', '=', 'alm_modelo.IDMARCA')->get();
 
-        $marca = DB::table('ALM_MARCA')->get();
+        $marca = DB::table('alm_marca')->get();
 
         $view = view('almacen.modals.md_add_item', compact('categorias', 'marca'))->render();
 
@@ -68,17 +68,17 @@ class AlmacenController extends Controller
 
     public function md_edit_item(Request $request, $id)
     {
-        $categorias = DB::table('ALM_CATEGORIA')->get();
+        $categorias = DB::table('alm_categoria')->get();
 
-        $marca = DB::table('ALM_MARCA')->get();
+        $marca = DB::table('alm_marca')->get();
 
-        // $almacen = DB::table('M_ALMACEN')->where('IDALMACEN', $id)->first();
+        // $almacen = DB::table('m_almacen')->where('IDALMACEN', $id)->first();
 
-        $almacen = Almacen::from('M_ALMACEN as MA')
-                        ->join('M_CENTRO_MAC as MCM', 'MCM.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
-                        ->leftJoin('ALM_CATEGORIA as AC', 'AC.IDCATEGORIA', '=', 'MA.IDCATEGORIA')
-                        ->leftJoin('ALM_MODELO as AM', 'AM.IDMODELO', '=', 'MA.IDMODELO')
-                        ->leftJoin('ALM_MARCA as AMM', 'AMM.IDMARCA', '=', 'AM.IDMARCA')
+        $almacen = Almacen::from('m_almacen as MA')
+                        ->join('m_centro_mac as MCM', 'MCM.IDCENTRO_MAC', '=', 'MA.IDCENTRO_MAC')
+                        ->leftJoin('alm_categoria as AC', 'AC.IDCATEGORIA', '=', 'MA.IDCATEGORIA')
+                        ->leftJoin('alm_modelo as AM', 'AM.IDMODELO', '=', 'MA.IDMODELO')
+                        ->leftJoin('alm_marca as AMM', 'AMM.IDMARCA', '=', 'AM.IDMARCA')
                         ->where('IDALMACEN', $id)
                         ->first();
         // dd($almacen);
@@ -97,7 +97,7 @@ class AlmacenController extends Controller
 
     public function md_categorias(Request $requet)
     {
-        $categorias = DB::table('ALM_CATEGORIA')->get();
+        $categorias = DB::table('alm_categoria')->get();
 
         $view = view('almacen.modals.md_categorias', compact('categorias'))->render();
 
@@ -106,8 +106,8 @@ class AlmacenController extends Controller
 
     public function md_modelo(Request $request)
     {
-        $modelo = DB::table('ALM_MODELO')->join('ALM_MARCA', 'ALM_MARCA.IDMARCA', '=', 'ALM_MODELO.IDMARCA')->get();
-        $marca = DB::table('ALM_MARCA')->get();
+        $modelo = DB::table('alm_modelo')->join('alm_marca', 'alm_marca.IDMARCA', '=', 'alm_modelo.IDMARCA')->get();
+        $marca = DB::table('alm_marca')->get();
 
         $view = view('almacen.modals.md_modelo', compact('modelo', 'marca'))->render();
 
@@ -117,7 +117,7 @@ class AlmacenController extends Controller
     public function searchMarca(Request $request)
     {
         $term = $request->get('term'); // Término ingresado
-        $marcas = DB::table('ALM_MARCA')
+        $marcas = DB::table('alm_marca')
                     ->where('NOMBRE_MARCA', 'LIKE', '%' . $term . '%')
                     ->pluck('NOMBRE_MARCA'); // Devuelve solo los nombres de las marcas
 
@@ -164,11 +164,11 @@ class AlmacenController extends Controller
             $nombreModelo = $request->input('idmodelo');
 
             // Busca si la marca ya existe
-            $marca = DB::table('ALM_MARCA')->where('NOMBRE_MARCA', $nombreMarca)->first();
+            $marca = DB::table('alm_marca')->where('NOMBRE_MARCA', $nombreMarca)->first();
 
             if (!$marca) {
                 // Inserta la marca si no existe
-                $idMarca = DB::table('ALM_MARCA')->insertGetId([
+                $idMarca = DB::table('alm_marca')->insertGetId([
                     'NOMBRE_MARCA' => $nombreMarca,
                     'ABREV_MARCA' => $nombreMarca
                 ]);
@@ -177,14 +177,14 @@ class AlmacenController extends Controller
             }
 
             // Verifica si el modelo ya existe
-            $modelo = DB::table('ALM_MODELO')
+            $modelo = DB::table('alm_modelo')
                 ->where('IDMARCA', $idMarca)
                 ->where('NOMBRE_MODELO', $nombreModelo)
                 ->first();
 
             if (!$modelo) {
                 // Inserta el modelo si no existe
-                $idModelo = DB::table('ALM_MODELO')->insertGetId([
+                $idModelo = DB::table('alm_modelo')->insertGetId([
                     'IDMARCA' => $idMarca,
                     'NOMBRE_MODELO' => $nombreModelo,
                     'ABREV_MODELO' => $nombreModelo, // Ajustar si necesitas una abreviación distinta
@@ -232,8 +232,8 @@ class AlmacenController extends Controller
                 'color' => 'nullable|string|max:255',
             ]);
 
-            // Insertar el nuevo registro en la tabla M_ALMACEN
-            DB::table('M_ALMACEN')->insert([
+            // Insertar el nuevo registro en la tabla m_almacen
+            DB::table('m_almacen')->insert([
                 'IDCENTRO_MAC' => $this->centro_mac()->idmac,
                 'IDCATEGORIA' => $request->input('idcategoria'),
                 'COD_INTERNO_PCM' => $request->input('cod_interno_pcm'),
@@ -285,7 +285,7 @@ class AlmacenController extends Controller
             ]);
     
             // Verificar si el item existe
-            $item = DB::table('M_ALMACEN')->where('IDALMACEN', $id)->first();
+            $item = DB::table('m_almacen')->where('IDALMACEN', $id)->first();
     
             if (!$item) {
                 return response()->json([
@@ -294,7 +294,7 @@ class AlmacenController extends Controller
             }
     
             // Actualizar el registro
-            DB::table('M_ALMACEN')->where('IDALMACEN', $id)->update([
+            DB::table('m_almacen')->where('IDALMACEN', $id)->update([
                 'IDCATEGORIA' => $request->input('idcategoria'),
                 'COD_INTERNO_PCM' => $request->input('cod_interno_pcm'),
                 'COD_SBN' => $request->input('cod_sbn'),
@@ -325,14 +325,14 @@ class AlmacenController extends Controller
 
     public function delete_item(Request $request)
     {
-        $delete = DB::table('M_ALMACEN')->where('IDALMACEN', $request->id)->delete();
+        $delete = DB::table('m_almacen')->where('IDALMACEN', $request->id)->delete();
 
         return $delete;
     }
 
     public function delete_masivo(Request $request)
     {
-        $delete = DB::table('M_ALMACEN')->where('IDCENTRO_MAC', $this->centro_mac()->idmac)->delete();
+        $delete = DB::table('m_almacen')->where('IDCENTRO_MAC', $this->centro_mac()->idmac)->delete();
 
         return $delete;
     }
@@ -342,7 +342,7 @@ class AlmacenController extends Controller
     {
         try {
             // Buscar el modelo por ID
-            $modelo = DB::table('ALM_MODELO')->where('IDMODELO', $id)->first();
+            $modelo = DB::table('alm_modelo')->where('IDMODELO', $id)->first();
     
             // Verificar si el modelo existe
             if (!$modelo) {
@@ -352,7 +352,7 @@ class AlmacenController extends Controller
             }
     
             // Eliminar el modelo
-            DB::table('ALM_MODELO')->where('IDMODELO', $id)->delete();
+            DB::table('alm_modelo')->where('IDMODELO', $id)->delete();
     
             return response()->json([
                 'message' => 'Modelo eliminado correctamente.',
@@ -369,7 +369,7 @@ class AlmacenController extends Controller
 
     public function modelo_marca($idmarca)
     {
-        $modelo = DB::table('ALM_MODELO')->where('IDMARCA', $idmarca)->get();
+        $modelo = DB::table('alm_modelo')->where('IDMARCA', $idmarca)->get();
 
         $options = '<option value="">Selecciona una opción</option>';
         foreach ($modelo as $prov) {

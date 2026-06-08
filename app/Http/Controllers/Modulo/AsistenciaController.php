@@ -42,7 +42,7 @@ class AsistenciaController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -60,18 +60,18 @@ class AsistenciaController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')
-            ->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')
+            ->where('m_centro_mac.IDCENTRO_MAC', $us_id)
             ->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
-        $entidad = DB::table('M_MAC_ENTIDAD')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idmac)
+        $entidad = DB::table('m_mac_entidad')
+            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+            ->where('m_mac_entidad.IDCENTRO_MAC', $idmac)
             ->get();
 
         // SOLO Administrador o Moderador pueden ver todos los MACs
@@ -178,7 +178,7 @@ class AsistenciaController extends Controller
                 $cursor->addDay();
             }
 
-            $excepcion = DB::table('D_ASISTENCIA_EXCEPCION_CIERRE')
+            $excepcion = DB::table('d_asistencia_excepcion_cierre')
                 ->where('IDCENTRO_MAC', $idmac)
                 ->whereDate('FECHA_ASISTENCIA', $fecha)
                 ->where('ESTADO', 'ACTIVO')
@@ -217,7 +217,7 @@ class AsistenciaController extends Controller
 
             // 🔹 DATA ASISTENCIA
             $datos = DB::select(
-                'CALL db_centros_mac.SP_ASISTENCIA_DIARIA_MAC(?, ?, ?)',
+                'CALL db_centros_mac.sp_asistencia_diaria_mac(?, ?, ?)',
                 [$idmac, $fecha, 0]
             );
 
@@ -241,7 +241,7 @@ class AsistenciaController extends Controller
 
             // 🔹 MARCAR EXCEPCIÓN
             if ($excepcion) {
-                DB::table('D_ASISTENCIA_EXCEPCION_CIERRE')
+                DB::table('d_asistencia_excepcion_cierre')
                     ->where('IDEXCEPCION', $excepcion->IDEXCEPCION)
                     ->update(['ESTADO' => 'USADO']);
             }
@@ -482,7 +482,7 @@ class AsistenciaController extends Controller
                 : '17:00:00';
         }
         $datos = DB::select(
-            'CALL db_centros_mac.SP_ASISTENCIA_DIARIA_MAC(?, ?, ?)',
+            'CALL db_centros_mac.sp_asistencia_diaria_mac(?, ?, ?)',
             [$idmac, $fecha, $identidad]
         );
 
@@ -672,7 +672,7 @@ class AsistenciaController extends Controller
         }
 
         try {
-            DB::statement("CALL SP_REVERTIR_ASISTENCIA_DIA(?, ?)", [
+            DB::statement("CALL sp_revertir_asistencia_dia(?, ?)", [
                 $request->fecha,
                 $request->idmac
             ]);
@@ -784,7 +784,7 @@ class AsistenciaController extends Controller
                     'msg' => 'Ese día ya se encuentra cerrado. No se puede registrar excepción.'
                 ]);
             }
-            $existe = DB::table('D_ASISTENCIA_EXCEPCION_CIERRE')
+            $existe = DB::table('d_asistencia_excepcion_cierre')
                 ->where('IDCENTRO_MAC', $idmac)
                 ->whereDate('FECHA_ASISTENCIA', $fecha)
                 ->where('ESTADO', 'ACTIVO')
@@ -796,7 +796,7 @@ class AsistenciaController extends Controller
                     'msg' => 'Ya existe una excepción registrada para ese día.'
                 ]);
             }
-            DB::table('D_ASISTENCIA_EXCEPCION_CIERRE')->insert([
+            DB::table('d_asistencia_excepcion_cierre')->insert([
                 'IDCENTRO_MAC' => $idmac,
                 'FECHA_ASISTENCIA' => $fecha,
                 'SOLICITADO_POR' => auth()->user()->id,
@@ -875,7 +875,7 @@ class AsistenciaController extends Controller
             $q->flag_llegada_fuera_rango = false;
             $q->hora_salida_oficial = $horaSalidaOficial;
 
-            $q->contador_obs = DB::table('D_ASISTENCIA_OBSERVACION')
+            $q->contador_obs = DB::table('d_asistencia_observacion')
                 ->where('NUM_DOC', $q->n_dni)
                 ->where('FECHA', $q->fecha_asistencia)
                 ->where('IDCENTRO_MAC', $q->idmac)
@@ -954,13 +954,13 @@ class AsistenciaController extends Controller
         $fecha_asistencia = $request->input('fecha_asistencia');
 
         // Obtener el nombre del asesor completo
-        $asesor = DB::table('M_PERSONAL')->where('NUM_DOC', $num_doc)->first();
+        $asesor = DB::table('m_personal')->where('NUM_DOC', $num_doc)->first();
         $nombre_asesor = $asesor ? $asesor->APE_PAT . " " . $asesor->APE_MAT . ", " . $asesor->NOMBRE : '';
 
-        // Obtener la entidad del asesor desde la tabla M_PERSONAL_MODULO según el rango de fechas
-        $entidad_id = DB::table('M_PERSONAL_MODULO as MPM')
-            ->join('M_MODULO as MM', 'MPM.IDMODULO', '=', 'MM.IDMODULO')
-            ->join('M_ENTIDAD as ME', 'MM.IDENTIDAD', '=', 'ME.IDENTIDAD')
+        // Obtener la entidad del asesor desde la tabla m_personal_modulo según el rango de fechas
+        $entidad_id = DB::table('m_personal_modulo as MPM')
+            ->join('m_modulo as MM', 'MPM.IDMODULO', '=', 'MM.IDMODULO')
+            ->join('m_entidad as ME', 'MM.IDENTIDAD', '=', 'ME.IDENTIDAD')
             ->where('MPM.NUM_DOC', $num_doc)
             ->whereDate('MPM.FECHAINICIO', '<=', $fecha_asistencia)
             ->whereDate('MPM.FECHAFIN', '>=', $fecha_asistencia)
@@ -1002,7 +1002,7 @@ class AsistenciaController extends Controller
             ->first();
 
         // 🔥 Consulta corregida — sin JOIN que duplica registros
-        $observacion = DB::table('D_ASISTENCIA_OBSERVACION')
+        $observacion = DB::table('d_asistencia_observacion')
             ->where('NUM_DOC', $request->NUM_DOC)
             ->where('FECHA', $request->FECHA)
             ->where('IDCENTRO_MAC', $request->IDCENTRO_MAC)
@@ -1039,7 +1039,7 @@ class AsistenciaController extends Controller
             'OBSERVACION' => 'required|string',
         ]);
 
-        $inserted = DB::table('D_ASISTENCIA_OBSERVACION')->insert([
+        $inserted = DB::table('d_asistencia_observacion')->insert([
             'num_doc'      => $request->NUM_DOC,
             'fecha'        => $request->FECHA,
             'idcentro_mac' => $this->centro_mac()->idmac,
@@ -1057,10 +1057,10 @@ class AsistenciaController extends Controller
     public function eliminarObservacion(Request $request)
     {
         $request->validate([
-            'id' => 'required|integer|exists:D_ASISTENCIA_OBSERVACION,id_asistencia_obv',
+            'id' => 'required|integer|exists:d_asistencia_observacion,id_asistencia_obv',
         ]);
 
-        $updated = DB::table('D_ASISTENCIA_OBSERVACION')
+        $updated = DB::table('d_asistencia_observacion')
             ->where('id_asistencia_obv', $request->id)
             ->update([
                 'flag'       => 0,
@@ -1214,7 +1214,7 @@ class AsistenciaController extends Controller
             DATE_FORMAT(HORA, '%H:%i:%s') AS HORAS,
             MAX(IDASISTENCIA) as IDASISTENCIA  
         FROM
-            M_ASISTENCIA
+            m_asistencia
         WHERE 
             FECHA = '$fecha_'
             AND NUM_DOC = '$dni_'
@@ -1302,18 +1302,18 @@ class AsistenciaController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
-        $datos_persona = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-            ->select('M_PERSONAL.NUM_DOC', DB::raw("CONCAT(M_PERSONAL.APE_PAT,' ',M_PERSONAL.APE_MAT,', ',M_PERSONAL.NOMBRE) as NOMBREU"), 'M_ENTIDAD.ABREV_ENTIDAD as NOMBRE_ENTIDAD', 'M_PERSONAL.SEXO', 'M_PERSONAL.TELEFONO', 'M_PERSONAL.FLAG', 'M_PERSONAL.IDPERSONAL')
+        $datos_persona = Personal::join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_personal.IDENTIDAD')
+            ->select('m_personal.NUM_DOC', DB::raw("CONCAT(m_personal.APE_PAT,' ',m_personal.APE_MAT,', ',m_personal.NOMBRE) as NOMBREU"), 'm_entidad.ABREV_ENTIDAD as NOMBRE_ENTIDAD', 'm_personal.SEXO', 'm_personal.TELEFONO', 'm_personal.FLAG', 'm_personal.IDPERSONAL')
             ->where('NUM_DOC', $request->num_doc)
             ->first();
 
-        $query = DB::table('M_ASISTENCIA')
+        $query = DB::table('m_asistencia')
             ->select('FECHA', 'NUM_DOC')
             ->selectRaw('MAX(CASE WHEN CORRELATIVO = ? THEN HORA ELSE NULL END) AS hora1', ['1'])
             ->selectRaw('MAX(CASE WHEN CORRELATIVO = ? THEN HORA ELSE NULL END) AS hora2', ['2'])
@@ -1363,21 +1363,21 @@ class AsistenciaController extends Controller
 
         // dd($nombreMES);
 
-        $datos_persona = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-            ->select('M_PERSONAL.NUM_DOC', DB::raw("CONCAT(M_PERSONAL.APE_PAT,' ',M_PERSONAL.APE_MAT,', ',M_PERSONAL.NOMBRE) as NOMBREU"), 'M_ENTIDAD.ABREV_ENTIDAD as NOMBRE_ENTIDAD', 'M_PERSONAL.SEXO', 'M_PERSONAL.TELEFONO', 'M_PERSONAL.FLAG', 'M_PERSONAL.IDPERSONAL')
+        $datos_persona = Personal::join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_personal.IDENTIDAD')
+            ->select('m_personal.NUM_DOC', DB::raw("CONCAT(m_personal.APE_PAT,' ',m_personal.APE_MAT,', ',m_personal.NOMBRE) as NOMBREU"), 'm_entidad.ABREV_ENTIDAD as NOMBRE_ENTIDAD', 'm_personal.SEXO', 'm_personal.TELEFONO', 'm_personal.FLAG', 'm_personal.IDPERSONAL')
             ->where('NUM_DOC', $request->num_doc)
             ->first();
 
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
-        $query = DB::table('M_ASISTENCIA')
+        $query = DB::table('m_asistencia')
             ->select('FECHA', 'NUM_DOC')
             ->selectRaw('MAX(CASE WHEN CORRELATIVO = ? THEN HORA ELSE NULL END) AS hora1', ['1'])
             ->selectRaw('MAX(CASE WHEN CORRELATIVO = ? THEN HORA ELSE NULL END) AS hora2', ['2'])
@@ -1437,18 +1437,18 @@ class AsistenciaController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
         /*================================================================================================================*/
 
-        $datos_persona = Personal::join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-            ->select('M_PERSONAL.NUM_DOC', DB::raw("CONCAT(M_PERSONAL.APE_PAT,' ',M_PERSONAL.APE_MAT,', ',M_PERSONAL.NOMBRE) as NOMBREU"), 'M_ENTIDAD.ABREV_ENTIDAD as NOMBRE_ENTIDAD', 'M_PERSONAL.SEXO', 'M_PERSONAL.TELEFONO', 'M_PERSONAL.FLAG', 'M_PERSONAL.IDPERSONAL')
+        $datos_persona = Personal::join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_personal.IDENTIDAD')
+            ->select('m_personal.NUM_DOC', DB::raw("CONCAT(m_personal.APE_PAT,' ',m_personal.APE_MAT,', ',m_personal.NOMBRE) as NOMBREU"), 'm_entidad.ABREV_ENTIDAD as NOMBRE_ENTIDAD', 'm_personal.SEXO', 'm_personal.TELEFONO', 'm_personal.FLAG', 'm_personal.IDPERSONAL')
             ->where('NUM_DOC', $request->num_doc)
             ->first();
 
-        $query = DB::table('M_ASISTENCIA')
+        $query = DB::table('m_asistencia')
             ->select('FECHA', 'NUM_DOC')
             ->selectRaw('MAX(CASE WHEN CORRELATIVO = ? THEN HORA ELSE NULL END) AS hora1', ['1'])
             ->selectRaw('MAX(CASE WHEN CORRELATIVO = ? THEN HORA ELSE NULL END) AS hora2', ['2'])
@@ -1490,7 +1490,7 @@ class AsistenciaController extends Controller
     public function det_entidad(Request $request)
     {
 
-        $mac = DB::table('M_CENTRO_MAC')
+        $mac = DB::table('m_centro_mac')
             ->where(function ($query) {
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
                     $query->where('IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
@@ -1508,7 +1508,7 @@ class AsistenciaController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -1519,40 +1519,40 @@ class AsistenciaController extends Controller
 
         $mac = $request->mac;
 
-        $data = DB::table('M_PERSONAL')
-            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+        $data = DB::table('m_personal')
+            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_personal.IDENTIDAD')
+            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_personal.IDMAC')
             ->select(
-                'M_ENTIDAD.IDENTIDAD',
-                'M_ENTIDAD.NOMBRE_ENTIDAD',
-                'M_ENTIDAD.ABREV_ENTIDAD',
-                DB::raw('COUNT(DISTINCT M_PERSONAL.IDPERSONAL) AS COUNT_PER')
+                'm_entidad.IDENTIDAD',
+                'm_entidad.NOMBRE_ENTIDAD',
+                'm_entidad.ABREV_ENTIDAD',
+                DB::raw('COUNT(DISTINCT m_personal.IDPERSONAL) AS COUNT_PER')
             )
             ->when(auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador'), function ($query) use ($idmac) {
-                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac);
+                $query->where('m_centro_mac.IDCENTRO_MAC', $idmac);
             })
             ->when(!auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador') && $mac != 0, function ($query) use ($mac) {
-                $query->where('M_CENTRO_MAC.IDCENTRO_MAC', $mac);
+                $query->where('m_centro_mac.IDCENTRO_MAC', $mac);
             })
-            ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_ENTIDAD.ABREV_ENTIDAD') // ❗️ no se agrupa por MAC
-            ->orderBy('M_ENTIDAD.ABREV_ENTIDAD', 'ASC')
+            ->groupBy('m_entidad.IDENTIDAD', 'm_entidad.NOMBRE_ENTIDAD', 'm_entidad.ABREV_ENTIDAD') // ❗️ no se agrupa por MAC
+            ->orderBy('m_entidad.ABREV_ENTIDAD', 'ASC')
             ->get();
-        $data_spcm = DB::table('M_PERSONAL')
-            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
-            ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC', DB::raw('COUNT(M_ENTIDAD.IDENTIDAD) AS COUNT_PER'))
-            ->groupBy('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD', 'M_CENTRO_MAC.IDCENTRO_MAC')
-            // ->where('M_CENTRO_MAC.IDCENTRO_MAC', $idmac)
+        $data_spcm = DB::table('m_personal')
+            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_personal.IDENTIDAD')
+            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_personal.IDMAC')
+            ->select('m_entidad.IDENTIDAD', 'm_entidad.NOMBRE_ENTIDAD', 'm_centro_mac.IDCENTRO_MAC', DB::raw('COUNT(m_entidad.IDENTIDAD) AS COUNT_PER'))
+            ->groupBy('m_entidad.IDENTIDAD', 'm_entidad.NOMBRE_ENTIDAD', 'm_centro_mac.IDCENTRO_MAC')
+            // ->where('m_centro_mac.IDCENTRO_MAC', $idmac)
             ->where(function ($query) use ($request) {
                 $mac = $request->mac;
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                    $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
+                    $query->where('m_centro_mac.IDCENTRO_MAC', '=', $this->centro_mac()->idmac);
                 } else {
-                    $query->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $mac);
+                    $query->where('m_centro_mac.IDCENTRO_MAC', '=', $mac);
                 }
             })
-            ->where('M_PERSONAL.FLAG', 1)
-            ->whereNot('M_ENTIDAD.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
+            ->where('m_personal.FLAG', 1)
+            ->whereNot('m_entidad.IDENTIDAD', 17) //QUITAMOS DEL REGISTRO A PERSONAL DE PCM
             ->get();
 
         return view('asistencia.tablas.tb_det_entidad', compact('data', 'data_spcm'));
@@ -1606,8 +1606,8 @@ class AsistenciaController extends Controller
         $fechasArray = [];
         if ($identidad == '17') {
             // 🔥 SE MANTIENE TU LÓGICA ORIGINAL (NO TOCAMOS PR)
-            $nom_ = Personal::from('M_PERSONAL as MP')
-                ->leftJoin('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
+            $nom_ = Personal::from('m_personal as MP')
+                ->leftJoin('d_personal_cargo as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
                 ->select('DPC.NOMBRE_CARGO', DB::raw('CONCAT(MP.APE_PAT," ",MP.APE_MAT,", ",MP.NOMBRE) AS NOMBREU'), 'MP.NUM_DOC', 'MP.IDENTIDAD')
                 ->where('MP.IDENTIDAD', 17)
                 ->where('MP.IDMAC', $this->centro_mac()->idmac)
@@ -1624,14 +1624,14 @@ class AsistenciaController extends Controller
             foreach ($nom_ as $encabezado) {
                 $detalle = $encabezado->asistencias()
                     ->select([
-                        'M_ASISTENCIA.FECHA',
-                        'M_ASISTENCIA.NUM_DOC',
+                        'm_asistencia.FECHA',
+                        'm_asistencia.NUM_DOC',
                         DB::raw('GROUP_CONCAT(DATE_FORMAT(HORA,"%H:%i:%s") ORDER BY HORA) AS HORAS'),
-                        DB::raw('COUNT(M_ASISTENCIA.NUM_DOC) AS N_NUM_DOC'),
+                        DB::raw('COUNT(m_asistencia.NUM_DOC) AS N_NUM_DOC'),
                     ])
-                    ->whereBetween(DB::raw('DATE(M_ASISTENCIA.FECHA)'), [$fecha_inicio, $fecha_fin])
-                    ->groupBy('M_ASISTENCIA.NUM_DOC', 'M_ASISTENCIA.FECHA')
-                    ->orderBy('M_ASISTENCIA.FECHA', 'asc')
+                    ->whereBetween(DB::raw('DATE(m_asistencia.FECHA)'), [$fecha_inicio, $fecha_fin])
+                    ->groupBy('m_asistencia.NUM_DOC', 'm_asistencia.FECHA')
+                    ->orderBy('m_asistencia.FECHA', 'asc')
                     ->get();
 
                 foreach ($detalle as $d) {
@@ -1651,12 +1651,12 @@ class AsistenciaController extends Controller
             // 🔥 USAR MISMO MODELO QUE EXPORT ORIGINAL
 
             $cerrados = DB::select(
-                'CALL db_centro_mac_reporte.SP_REPORTE_ASISTENCIA_DETALLADO(?, ?, ?, ?)',
+                'CALL db_centro_mac_reporte.sp_reporte_asistencia_detallado(?, ?, ?, ?)',
                 [$fecha_inicio, $fecha_fin, $idmac, $identidad ?? 0]
             );
 
             $abiertos = DB::select(
-                'CALL db_centros_mac.SP_ASISTENCIA_DIARIA_MAC_RANGO(?, ?, ?, ?, ?)',
+                'CALL db_centros_mac.sp_asistencia_diaria_mac_rango(?, ?, ?, ?, ?)',
                 [$idmac, $fecha_inicio, $fecha_fin, $identidad ?? 0, 1]
             );
 
@@ -1796,8 +1796,8 @@ class AsistenciaController extends Controller
             $nombreMES = Carbon::create(null, $request->mes, 1)->formatLocalized('%B');
         }
         $identidad = $request->identidad ?? 0;
-        $cerrados = DB::select('CALL db_centro_mac_reporte.SP_REPORTE_ASISTENCIA_DETALLADO(?, ?, ?, ?)', [$fecha_inicio, $fecha_fin, $idmac, $identidad]);
-        $abiertos = DB::select('CALL db_centros_mac.SP_ASISTENCIA_DIARIA_MAC_RANGO(?, ?, ?, ?, ?)', [$idmac, $fecha_inicio, $fecha_fin, $identidad, 1]);
+        $cerrados = DB::select('CALL db_centro_mac_reporte.sp_reporte_asistencia_detallado(?, ?, ?, ?)', [$fecha_inicio, $fecha_fin, $idmac, $identidad]);
+        $abiertos = DB::select('CALL db_centros_mac.sp_asistencia_diaria_mac_rango(?, ?, ?, ?, ?)', [$idmac, $fecha_inicio, $fecha_fin, $identidad, 1]);
         $mapear = function ($q, $estado) {
             // =======================
             // 1. SI ES DÍA CERRADO
@@ -1901,7 +1901,7 @@ class AsistenciaController extends Controller
     {
         try {
 
-            $insert = DB::select("CALL  SP_CARGA_ASISTENCIA();");
+            $insert = DB::select("CALL  sp_carga_asistencia();");
 
 
             return response()->json([
@@ -2096,8 +2096,8 @@ class AsistenciaController extends Controller
             $nombreMES = Carbon::create(null, $request->mes, 1)->formatLocalized('%B');
         }
         $identidad = $request->identidad ?? 0;
-        $cerrados = DB::select('CALL db_centro_mac_reporte.SP_REPORTE_ASISTENCIA_DETALLADO(?, ?, ?, ?)', [$fecha_inicio, $fecha_fin, $idmac, $identidad]);
-        $abiertos = DB::select('CALL db_centros_mac.SP_ASISTENCIA_DIARIA_MAC_RANGO(?, ?, ?, ?, ?)', [$idmac, $fecha_inicio, $fecha_fin, $identidad, 1]);
+        $cerrados = DB::select('CALL db_centro_mac_reporte.sp_reporte_asistencia_detallado(?, ?, ?, ?)', [$fecha_inicio, $fecha_fin, $idmac, $identidad]);
+        $abiertos = DB::select('CALL db_centros_mac.sp_asistencia_diaria_mac_rango(?, ?, ?, ?, ?)', [$idmac, $fecha_inicio, $fecha_fin, $identidad, 1]);
         $mapear = function ($q, $estado) {
             // =======================
             // 1. SI ES DÍA CERRADO
@@ -2948,7 +2948,7 @@ class AsistenciaController extends Controller
     {
         $query = DB::table('d_personal_asistencia as dpa')
             ->join('m_personal as p', 'p.IDPERSONAL', '=', 'dpa.idpersonal')
-            ->leftJoin('D_PERSONAL_CARGO as dpc', 'dpc.IDCARGO_PERSONAL', '=', 'p.IDCARGO_PERSONAL')
+            ->leftJoin('d_personal_cargo as dpc', 'dpc.IDCARGO_PERSONAL', '=', 'p.IDCARGO_PERSONAL')
             ->leftJoin('m_modulo as m', 'm.IDMODULO', '=', 'p.IDMODULO')
             ->select(
                 'dpa.id',

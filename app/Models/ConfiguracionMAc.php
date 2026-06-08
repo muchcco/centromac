@@ -11,9 +11,9 @@ class ConfiguracionMAc extends Model
 
     // protected $connection = 'mysql2';
 
-    protected $table = 'CONFIGURACION_MAC';
+    protected $table = 'configuracion_mac';
 
-    protected $primaryKey = 'IDCONFIGURACION_MAC';
+    protected $primaryKey = 'IDconfiguracion_mac';
 
     protected $fillable = [ 'DESCRIPCION', 'IP', 'HOST', 'VALOR', 'COMENTARIO', 'IDCENTRO_MAC'];
 

@@ -196,7 +196,22 @@ class AuthController extends Controller
 
     private function authServerLogoutNext(): string
     {
-        return (string) config('sso.auth_server_logout_next', 'https://sismac.mac.pe/centromac/public/login?noauto=1');
+        $next = (string) config('sso.auth_server_logout_next', '');
+        return $next !== '' ? $next : url('login?noauto=1');
+    }
+
+    private function callbackUrl(): string
+    {
+        $cb = (string) config('sso.callback_url', '');
+        return $cb !== '' ? $cb : url('/authenticate');
+    }
+
+    private function sessionClosedResponse(string $reason = '')
+    {
+        return response()->view('auth.session-closed', [
+            'loginUrl' => $this->authServerLoginUrl(),
+            'reason'   => $reason,
+        ]);
     }
 
     private function modelHasColumn(string $modelClass, string $column): bool
@@ -277,11 +292,14 @@ class AuthController extends Controller
     public function showLoginForm(Request $request)
     {
         Log::info('SSO: ingreso a showLoginForm', [
-            'has_token' => $request->filled('token'),
-            'has_rt' => $request->filled('rt'),
-            'has_noauto' => $request->boolean('noauto'),
-            'path' => $request->path(),
-            'ip' => $request->ip(),
+            'has_token'   => $request->filled('token'),
+            'has_rt'      => $request->filled('rt'),
+            'has_noauto'  => $request->boolean('noauto'),
+            'full_url'    => $request->fullUrl(),
+            'callback_url' => $this->callbackUrl(),
+            'logout_next' => $this->authServerLogoutNext(),
+            'path'        => $request->path(),
+            'ip'          => $request->ip(),
         ]);
 
         /*
@@ -315,16 +333,24 @@ class AuthController extends Controller
         }
 
         /*
-         * Evita loop después de logout.
+         * Landing post-logout o post-error de autenticación.
+         * No auto-redirige para evitar loops; muestra botón de login.
          */
         if ($request->boolean('noauto')) {
-            return response('Sesión cerrada. Vuelve a iniciar desde el Auth-Server.', 200);
+            return $this->sessionClosedResponse();
         }
 
         /*
          * Si alguien abre SISMAC directo, lo mandamos al Auth Server.
+         * Pasamos el callback URL para que el Auth Server sepa a dónde redirigir
+         * después de autenticar. El Auth Server también puede leerlo de su propia BD.
          */
-        return redirect()->away($this->authServerLoginUrl());
+        $loginUrl = $this->authServerLoginUrl()
+            . '?next=' . urlencode($this->callbackUrl());
+
+        Log::info('SSO: redirigiendo a Auth Server', ['login_url' => $loginUrl]);
+
+        return redirect()->away($loginUrl);
     }
 
     /* =========================
@@ -350,18 +376,14 @@ class AuthController extends Controller
 
         if ($token === '') {
             Log::warning('SSO: token faltante');
-
-            return redirect('login?noauto=1')
-                ->withErrors(['msg' => 'Token faltante']);
+            return $this->sessionClosedResponse('No se recibió token del servidor de autenticación.');
         }
 
         $secret = $this->ssoSecret();
 
         if ($secret === '') {
             Log::error('SSO: SSO_SHARED_SECRET vacío o no cargado');
-
-            return redirect('login?noauto=1')
-                ->withErrors(['msg' => 'SSO_SHARED_SECRET no configurado en SISMAC']);
+            return $this->sessionClosedResponse('Error de configuración interna (SSO_SHARED_SECRET).');
         }
 
         $payload = $this->verifyJwt(
@@ -373,23 +395,21 @@ class AuthController extends Controller
 
         if (!$payload) {
             Log::warning('SSO: token inválido o expirado', [
-                'jwt_error' => $this->jwtError,
-                'expected_issuer' => $this->expectedIssuer(),
+                'jwt_error'        => $this->jwtError,
+                'expected_issuer'  => $this->expectedIssuer(),
                 'expected_audience' => $this->expectedAudience(),
             ]);
-
-            return redirect('login?noauto=1')
-                ->withErrors(['msg' => 'Token inválido o expirado']);
+            return $this->sessionClosedResponse('Token inválido: ' . $this->jwtError);
         }
 
         Log::info('SSO: token válido', [
-            'uid' => $payload['uid'] ?? null,
-            'app' => $payload['app'] ?? null,
-            'email' => $payload['email'] ?? null,
-            'dni' => $payload['dni'] ?? null,
-            'iss' => $payload['iss'] ?? null,
-            'aud' => $payload['aud'] ?? null,
-            'roles' => $payload['roles'] ?? [],
+            'uid'         => $payload['uid'] ?? null,
+            'app'         => $payload['app'] ?? null,
+            'email'       => $payload['email'] ?? null,
+            'dni'         => $payload['dni'] ?? null,
+            'iss'         => $payload['iss'] ?? null,
+            'aud'         => $payload['aud'] ?? null,
+            'roles'       => $payload['roles'] ?? [],
             'permissions' => $payload['permissions'] ?? [],
         ]);
 
@@ -397,13 +417,14 @@ class AuthController extends Controller
 
         if (!$user) {
             Log::warning('SSO: usuario no encontrado en SISMAC', [
-                'email' => $payload['email'] ?? null,
-                'dni' => $payload['dni'] ?? null,
+                'email'   => $payload['email'] ?? null,
+                'dni'     => $payload['dni'] ?? null,
                 'num_doc' => $payload['num_doc'] ?? null,
             ]);
-
-            return redirect('login?noauto=1')
-                ->withErrors(['msg' => 'Usuario no encontrado en SISMAC']);
+            return $this->sessionClosedResponse(
+                'Tu usuario no está registrado en SISMAC. '
+                . 'Contacta al administrador.'
+            );
         }
 
         Auth::login($user);

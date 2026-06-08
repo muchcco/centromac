@@ -27,7 +27,7 @@ class AsistenciaImport implements ToModel, WithBatchInserts, WithChunkReading
         /*================================================================================================================*/
 
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $IDCENTRO_MAC = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -35,7 +35,7 @@ class AsistenciaImport implements ToModel, WithBatchInserts, WithChunkReading
         // dd($IDCENTRO_MAC);
         /*================================================================================================================*/
 
-        $IDTIP = DB::table('M_ASISTENCIA_TIPO')->where('IDCENTRO_MAC', $IDCENTRO_MAC)->first();
+        $IDTIP = DB::table('m_asistencia_tipo')->where('IDCENTRO_MAC', $IDCENTRO_MAC)->first();
 
 
         // dd($hora);

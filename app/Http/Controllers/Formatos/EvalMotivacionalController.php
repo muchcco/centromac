@@ -14,7 +14,7 @@ class EvalMotivacionalController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -48,7 +48,7 @@ class EvalMotivacionalController extends Controller
             $fecha_año = date('Y', strtotime($fecha_A));
         }
 
-        $query = DB::select("CALL SP_F_EVALUACIONMOT(:p_mes, :p_id_centro_mac, :p_anio, :idpersonalreg)", [
+        $query = DB::select("CALL sp_f_evaluacionmot(:p_mes, :p_id_centro_mac, :p_anio, :idpersonalreg)", [
             'p_mes' => $fecha_mes,
             'p_id_centro_mac' => $this->centro_mac()->idmac,
             'p_anio' => $fecha_año,
@@ -161,7 +161,7 @@ class EvalMotivacionalController extends Controller
     {
         // dd($request->all());
 
-        $del = DB::table('F_EVAL_MOTIVACIONAL')->where('IDEEVAL_MOTIVACIONAL', $request->id)->update([
+        $del = DB::table('f_eval_motivacional')->where('IDEEVAL_MOTIVACIONAL', $request->id)->update([
             'PROACTIVIDAD' => NULL,
             'CALIDAD_SERVICIO' => NULL,
             'COMPROMISO' => NULL,

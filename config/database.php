@@ -108,6 +108,20 @@ return [
             'engine' => null,
         ],
 
+        'auth_db' => [
+            'driver'    => 'mysql',
+            'host'      => env('AUTH_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port'      => env('AUTH_DB_PORT', env('DB_PORT', '3306')),
+            'database'  => env('AUTH_DB_DATABASE', 'auth_db'),
+            'username'  => env('AUTH_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password'  => env('AUTH_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'charset'   => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix'    => '',
+            'strict'    => false,
+            'engine'    => null,
+        ],
+
         'mysql2' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL2', config('database.connections.mysql2.url')),

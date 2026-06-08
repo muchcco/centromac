@@ -20,7 +20,7 @@ class FormFelicitacionesController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -38,7 +38,7 @@ class FormFelicitacionesController extends Controller
 
     public function tb_index(Request $request)
     {
-        $query = FLibroFelicitacion::from('F_LIBRO_FELICITACIONES as FLF')->select(
+        $query = FLibroFelicitacion::from('f_libro_felicitaciones as FLF')->select(
             'FLF.IDLIBRO_FELICITACION',
             'FLF.CORRELATVIO',
             'FLF.R_FECHA',
@@ -54,11 +54,11 @@ class FormFelicitacionesController extends Controller
             'FLF.AÑO',
             'FLF.CORRELATIVO_MAC',
         )
-            ->leftJoin('M_PERSONAL AS MP', 'MP.IDPERSONAL', '=', 'FLF.IDPERSONAL')
-            ->leftJoin('M_PERSONAL AS MPR', 'MPR.IDPERSONAL', '=', 'FLF.IDPER_REGISTRA')
-            ->leftJoin('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'FLF.IDCENTRO_MAC')
-            ->leftJoin('D_PERSONAL_TIPODOC AS DPT', 'DPT.IDTIPO_DOC', '=', 'FLF.IDTIPO_DOC')
-            ->leftJoin('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'FLF.IDENTIDAD')
+            ->leftJoin('m_personal AS MP', 'MP.IDPERSONAL', '=', 'FLF.IDPERSONAL')
+            ->leftJoin('m_personal AS MPR', 'MPR.IDPERSONAL', '=', 'FLF.IDPER_REGISTRA')
+            ->leftJoin('m_centro_mac AS MCM', 'MCM.IDCENTRO_MAC', '=', 'FLF.IDCENTRO_MAC')
+            ->leftJoin('d_personal_tipodoc AS DPT', 'DPT.IDTIPO_DOC', '=', 'FLF.IDTIPO_DOC')
+            ->leftJoin('m_entidad AS ME', 'ME.IDENTIDAD', '=', 'FLF.IDENTIDAD')
             ->where('FLF.FLAG', 1)
             ->where(function ($query) {
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
@@ -80,21 +80,21 @@ class FormFelicitacionesController extends Controller
 
     public function md_add_felicitacion(Request $request)
     {
-        $tip_doc = DB::table('D_PERSONAL_TIPODOC')->get();
+        $tip_doc = DB::table('d_personal_tipodoc')->get();
 
-        $entidad = DB::table('M_MAC_ENTIDAD')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
+        $entidad = DB::table('m_mac_entidad')
+            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+            ->where('m_mac_entidad.IDCENTRO_MAC', $this->centro_mac()->idmac)
             ->get();
 
         # $asesor = Personal::where('FLAG' , 1)->where('IDMAC', $this->centro_mac()->idmac)->get();
         // Obtención de los asesores filtrados por el status = 1 y el idmac del centro MAC actual
-        $asesor = DB::table('D_PERSONAL_MAC')
-            ->join('M_PERSONAL', 'D_PERSONAL_MAC.IDPERSONAL', '=', 'M_PERSONAL.IDPERSONAL')
-            // ->where('D_PERSONAL_MAC.Status', 1) // Filtra por status = 1
-            ->where('D_PERSONAL_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
-            ->select('M_PERSONAL.IDPERSONAL', 'M_PERSONAL.NOMBRE', 'M_PERSONAL.APE_PAT', 'M_PERSONAL.APE_MAT')
+        $asesor = DB::table('d_personal_mac')
+            ->join('m_personal', 'd_personal_mac.IDPERSONAL', '=', 'm_personal.IDPERSONAL')
+            // ->where('d_personal_mac.Status', 1) // Filtra por status = 1
+            ->where('d_personal_mac.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
+            ->select('m_personal.IDPERSONAL', 'm_personal.NOMBRE', 'm_personal.APE_PAT', 'm_personal.APE_MAT')
             ->get();
 
         $view = view('formatos.f_felicitaciones.modals.md_add_felicitacion', compact('tip_doc', 'entidad', 'asesor'))->render();
@@ -173,19 +173,19 @@ class FormFelicitacionesController extends Controller
 
     public function md_edit_felicitacion(Request $request)
     {
-        $tip_doc = DB::table('D_PERSONAL_TIPODOC')->get();
+        $tip_doc = DB::table('d_personal_tipodoc')->get();
 
-        $entidad = DB::table('M_MAC_ENTIDAD')
-            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $this->centro_mac()->idmac)
+        $entidad = DB::table('m_mac_entidad')
+            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+            ->where('m_mac_entidad.IDCENTRO_MAC', $this->centro_mac()->idmac)
             ->get();
 
-        $asesor = DB::table('D_PERSONAL_MAC')
-            ->join('M_PERSONAL', 'D_PERSONAL_MAC.IDPERSONAL', '=', 'M_PERSONAL.IDPERSONAL')
-            // ->where('D_PERSONAL_MAC.Status', 1) // Filtra por status = 1
-            ->where('D_PERSONAL_MAC.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
-            ->select('M_PERSONAL.IDPERSONAL', 'M_PERSONAL.NOMBRE', 'M_PERSONAL.APE_PAT', 'M_PERSONAL.APE_MAT')
+        $asesor = DB::table('d_personal_mac')
+            ->join('m_personal', 'd_personal_mac.IDPERSONAL', '=', 'm_personal.IDPERSONAL')
+            // ->where('d_personal_mac.Status', 1) // Filtra por status = 1
+            ->where('d_personal_mac.IDCENTRO_MAC', $this->centro_mac()->idmac) // Filtra por el centro MAC actual
+            ->select('m_personal.IDPERSONAL', 'm_personal.NOMBRE', 'm_personal.APE_PAT', 'm_personal.APE_MAT')
             ->get();
 
         $felicitacion = FLibroFelicitacion::where('IDLIBRO_FELICITACION', $request->idfelicitacion)->first();
@@ -286,7 +286,7 @@ class FormFelicitacionesController extends Controller
 
     public function export_excel(Request $request)
     {
-        $query = FLibroFelicitacion::from('F_LIBRO_FELICITACIONES as FLF')->select(
+        $query = FLibroFelicitacion::from('f_libro_felicitaciones as FLF')->select(
             'FLF.IDLIBRO_FELICITACION',
             'FLF.CORRELATVIO',
             'FLF.R_FECHA',
@@ -303,11 +303,11 @@ class FormFelicitacionesController extends Controller
             'FLF.CORRELATIVO_MAC',
             'FLF.R_CORREO',
         )
-            ->leftJoin('M_PERSONAL AS MP', 'MP.IDPERSONAL', '=', 'FLF.IDPERSONAL')
-            ->leftJoin('M_PERSONAL AS MPR', 'MPR.IDPERSONAL', '=', 'FLF.IDPER_REGISTRA')
-            ->leftJoin('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'FLF.IDCENTRO_MAC')
-            ->leftJoin('D_PERSONAL_TIPODOC AS DPT', 'DPT.IDTIPO_DOC', '=', 'FLF.IDTIPO_DOC')
-            ->leftJoin('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'FLF.IDENTIDAD')
+            ->leftJoin('m_personal AS MP', 'MP.IDPERSONAL', '=', 'FLF.IDPERSONAL')
+            ->leftJoin('m_personal AS MPR', 'MPR.IDPERSONAL', '=', 'FLF.IDPER_REGISTRA')
+            ->leftJoin('m_centro_mac AS MCM', 'MCM.IDCENTRO_MAC', '=', 'FLF.IDCENTRO_MAC')
+            ->leftJoin('d_personal_tipodoc AS DPT', 'DPT.IDTIPO_DOC', '=', 'FLF.IDTIPO_DOC')
+            ->leftJoin('m_entidad AS ME', 'ME.IDENTIDAD', '=', 'FLF.IDENTIDAD')
             ->where('FLF.FLAG', 1)
             ->where(function ($query) {
                 if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {

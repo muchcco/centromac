@@ -9,7 +9,7 @@ class Archivoper extends Model
 {
     use HasFactory;
     
-    protected $table = 'A_PERSONAL';
+    protected $table = 'a_personal';
 
     protected $primaryKey = 'IDARCHIVO_PERSONAL';
 

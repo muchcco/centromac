@@ -9,7 +9,7 @@ class FLibroFelicitacion extends Model
 {
     use HasFactory;
 
-    protected $table = 'F_LIBRO_FELICITACIONES';
+    protected $table = 'f_libro_felicitaciones';
 
     protected $primaryKey = 'IDLIBRO_FELICITACION';
 

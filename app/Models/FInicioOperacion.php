@@ -9,7 +9,7 @@ class FInicioOperacion extends Model
 {
     use HasFactory;
 
-    protected $table = 'F_MAC_03_VER_OPERACION';
+    protected $table = 'f_mac_03_ver_operacion';
 
     protected $primaryKey = 'IDFMAC_02';
 

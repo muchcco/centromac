@@ -9,7 +9,7 @@ class Servicio extends Model
 {
     use HasFactory;
 
-    protected $table = 'D_ENTIDAD_SERVICIOS';
+    protected $table = 'd_entidad_servicios';
 
     protected $primaryKey = 'IDSERVICIOS';
 

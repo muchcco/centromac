@@ -21,7 +21,7 @@ class PagesController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -45,12 +45,12 @@ class PagesController extends Controller
             $count_pcm = Personal::where('IDENTIDAD', 17)->get()->count();
         }
         if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-            $count_entidad = DB::table('M_MAC_ENTIDAD')->where('IDCENTRO_MAC', $this->centro_mac_id()->idmac)->whereNot('IDENTIDAD', 17)->get()->count();
+            $count_entidad = DB::table('m_mac_entidad')->where('IDCENTRO_MAC', $this->centro_mac_id()->idmac)->whereNot('IDENTIDAD', 17)->get()->count();
         }else{
-            $count_entidad = DB::table('M_MAC_ENTIDAD')->whereNot('IDENTIDAD', 17)->get()->count();
+            $count_entidad = DB::table('m_mac_entidad')->whereNot('IDENTIDAD', 17)->get()->count();
         }
 
-        $count_mac = DB::table('M_CENTRO_MAC')->get()->count();
+        $count_mac = DB::table('m_centro_mac')->get()->count();
 
         // 1) obtén tu conteo por departamento
         $countsByDept = DB::table('m_centro_mac as m')
@@ -173,7 +173,7 @@ class PagesController extends Controller
     {
         $macs = Mac::get();
 
-        $tip_doc = DB::table('D_PERSONAL_TIPODOC')->get();
+        $tip_doc = DB::table('d_personal_tipodoc')->get();
 
         return view('validar', compact('tip_doc', 'macs'));
     }
@@ -248,18 +248,18 @@ class PagesController extends Controller
 
     public function formdata($num_doc)
     {
-        $departamentos = DB::table('DEPARTAMENTO')->get();
+        $departamentos = DB::table('departamento')->get();
 
-        $personal = Personal::leftJoin('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-                                ->where('M_PERSONAL.NUM_DOC', $num_doc)
-                                ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+        $personal = Personal::leftJoin('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_personal.IDENTIDAD')
+                                ->where('m_personal.NUM_DOC', $num_doc)
+                                ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_personal.IDMAC')
                                 ->first();
         // dd($personal);
 
         $dis_act = DB::table('DISTRITO AS D')
                         ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
                         ->join('DEPARTAMENTO  AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
-                        ->join('M_PERSONAL AS M', 'M.IDDISTRITO', '=', 'D.IDDISTRITO')
+                        ->join('m_personal AS M', 'M.IDDISTRITO', '=', 'D.IDDISTRITO')
                         ->where('M.IDPERSONAL', $personal->IDPERSONAL)
                         ->first();
         // dd($dis_act);
@@ -267,26 +267,26 @@ class PagesController extends Controller
         $dis_nac = DB::table('DISTRITO AS D')
                         ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
                         ->join('DEPARTAMENTO AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
-                        ->join('M_PERSONAL AS M', 'M.IDDISTRITO_NAC', '=', 'D.IDDISTRITO')
+                        ->join('m_personal AS M', 'M.IDDISTRITO_NAC', '=', 'D.IDDISTRITO')
                         ->where('M.IDPERSONAL', $personal->IDPERSONAL)
                         ->first();
                                 
-        $entidad = DB::table('M_MAC_ENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                        ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $personal->IDMAC)
-                        ->whereNot('M_ENTIDAD.IDENTIDAD', 17)
-                        ->orderBy('M_ENTIDAD.NOMBRE_ENTIDAD', 'ASC')
+        $entidad = DB::table('m_mac_entidad')
+                        ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+                        ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                        ->where('m_mac_entidad.IDCENTRO_MAC', $personal->IDMAC)
+                        ->whereNot('m_entidad.IDENTIDAD', 17)
+                        ->orderBy('m_entidad.NOMBRE_ENTIDAD', 'ASC')
                         ->get();
 
-        $detall_fam = DB::table('D_PERSONAL_FAM')->join('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'D_PERSONAL_FAM.IDPERSONAL')->where('M_PERSONAL.NUM_DOC', $num_doc)->get();
+        $detall_fam = DB::table('d_personal_fam')->join('m_personal', 'm_personal.IDPERSONAL', '=', 'd_personal_fam.IDPERSONAL')->where('m_personal.NUM_DOC', $num_doc)->get();
 
         return view('formdata', compact('personal', 'entidad', 'departamentos', 'detall_fam', 'dis_act', 'dis_nac'));
     }
 
     public function add_datosfamiliares(Request $request)
     {
-        $save = DB::table('D_PERSONAL_FAM')->where('IDPERSONAL', $request->idpersonal)->insert([
+        $save = DB::table('d_personal_fam')->where('IDPERSONAL', $request->idpersonal)->insert([
             'IDPERSONAL' => $request->idpersonal,
             'DATOS_NOMBRES' => $request->datos_nombre,
             'DATOS_PARENTESCO' => $request->datos_parentesco,
@@ -299,7 +299,7 @@ class PagesController extends Controller
 
     public function delete_datosfamiliares(Request $request)
     {
-        $delete = DB::table('D_PERSONAL_FAM')->where('IDDATOS_PERSONAL', $request->iddatos_personal)->delete();
+        $delete = DB::table('d_personal_fam')->where('IDDATOS_PERSONAL', $request->iddatos_personal)->delete();
 
         return $delete;
     }
@@ -540,18 +540,18 @@ class PagesController extends Controller
 
     public function formdata_pcm(Request $request, $num_doc)
     {
-        $departamentos = DB::table('DEPARTAMENTO')->get();
+        $departamentos = DB::table('departamento')->get();
 
-        $personal = Personal::leftJoin('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_PERSONAL.IDENTIDAD')
-                                ->where('M_PERSONAL.NUM_DOC', $num_doc)
-                                ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_PERSONAL.IDMAC')
+        $personal = Personal::leftJoin('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_personal.IDENTIDAD')
+                                ->where('m_personal.NUM_DOC', $num_doc)
+                                ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_personal.IDMAC')
                                 ->first();
         // dd($personal);
 
         $dis_act = DB::table('DISTRITO AS D')
                         ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
                         ->join('DEPARTAMENTO  AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
-                        ->join('M_PERSONAL AS M', 'M.IDDISTRITO', '=', 'D.IDDISTRITO')
+                        ->join('m_personal AS M', 'M.IDDISTRITO', '=', 'D.IDDISTRITO')
                         ->where('M.IDPERSONAL', $personal->IDPERSONAL)
                         ->first();
         // dd($dis_act);
@@ -559,19 +559,19 @@ class PagesController extends Controller
         $dis_nac = DB::table('DISTRITO AS D')
                         ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
                         ->join('DEPARTAMENTO AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
-                        ->join('M_PERSONAL AS M', 'M.IDDISTRITO_NAC', '=', 'D.IDDISTRITO')
+                        ->join('m_personal AS M', 'M.IDDISTRITO_NAC', '=', 'D.IDDISTRITO')
                         ->where('M.IDPERSONAL', $personal->IDPERSONAL)
                         ->first();
                                 
-        $entidad = DB::table('M_MAC_ENTIDAD')
-                        ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                        ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                        ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $personal->IDMAC)
+        $entidad = DB::table('m_mac_entidad')
+                        ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+                        ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                        ->where('m_mac_entidad.IDCENTRO_MAC', $personal->IDMAC)
                         ->get();
 
-        $detall_fam = DB::table('D_PERSONAL_FAM')->join('M_PERSONAL', 'M_PERSONAL.IDPERSONAL', '=', 'D_PERSONAL_FAM.IDPERSONAL')->where('M_PERSONAL.NUM_DOC', $num_doc)->get();
+        $detall_fam = DB::table('d_personal_fam')->join('m_personal', 'm_personal.IDPERSONAL', '=', 'd_personal_fam.IDPERSONAL')->where('m_personal.NUM_DOC', $num_doc)->get();
 
-        $cargo = DB::table('D_PERSONAL_CARGO')->get();
+        $cargo = DB::table('d_personal_cargo')->get();
 
         return view('formdata_pcm', compact('personal', 'entidad', 'departamentos', 'detall_fam', 'dis_act', 'dis_nac', 'cargo'));
     }
@@ -583,18 +583,18 @@ class PagesController extends Controller
         
         $macs = Mac::get();
 
-        $tip_doc = DB::table('D_PERSONAL_TIPODOC')->get();
+        $tip_doc = DB::table('d_personal_tipodoc')->get();
 
         return view('servicios', compact('tip_doc', 'macs'));
     }
 
     public function centro_mac($idcentro_mac)
     {
-        $entidades = DB::table('M_MAC_ENTIDAD')
-                            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idcentro_mac)
-                            ->orderBy('M_ENTIDAD.ABREV_ENTIDAD', 'ASC')
+        $entidades = DB::table('m_mac_entidad')
+                            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+                            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                            ->where('m_mac_entidad.IDCENTRO_MAC', $idcentro_mac)
+                            ->orderBy('m_entidad.ABREV_ENTIDAD', 'ASC')
                             ->get();
 
         $options = '<option value="">-- Seleccione una entidad --</option>';
@@ -609,10 +609,10 @@ class PagesController extends Controller
     {
         // dd($request->all());
 
-        $servicios = DB::table('D_ENT_SERV as DES')
-                        ->join('D_ENTIDAD_SERVICIOS as SERV', 'SERV.IDSERVICIOS', '=', 'DES.IDSERVICIOS')
-                        ->join('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'DES.IDENTIDAD')
-                        ->join('M_CENTRO_MAC as MAC', 'MAC.IDCENTRO_MAC', '=', 'DES.IDMAC')
+        $servicios = DB::table('d_ent_serv as DES')
+                        ->join('d_entidad_servicios as SERV', 'SERV.IDSERVICIOS', '=', 'DES.IDSERVICIOS')
+                        ->join('m_entidad as ME', 'ME.IDENTIDAD', '=', 'DES.IDENTIDAD')
+                        ->join('m_centro_mac as MAC', 'MAC.IDCENTRO_MAC', '=', 'DES.IDMAC')
                         ->select('DES.*', 'SERV.*', 'ME.*', 'MAC.*')
                         ->where('MAC.IDCENTRO_MAC', $request->idmac)
                         ->where('ME.IDENTIDAD', $request->identidad)
@@ -630,10 +630,10 @@ class PagesController extends Controller
         $mac = Mac::where('IDCENTRO_MAC', $idcentro_mac)->first();
 
 
-        $servicios = DB::table('D_ENT_SERV as DES')
-                        ->join('D_ENTIDAD_SERVICIOS as SERV', 'SERV.IDSERVICIOS', '=', 'DES.IDSERVICIOS')
-                        ->join('M_ENTIDAD as ME', 'ME.IDENTIDAD', '=', 'DES.IDENTIDAD')
-                        ->join('M_CENTRO_MAC as MAC', 'MAC.IDCENTRO_MAC', '=', 'DES.IDMAC')
+        $servicios = DB::table('d_ent_serv as DES')
+                        ->join('d_entidad_servicios as SERV', 'SERV.IDSERVICIOS', '=', 'DES.IDSERVICIOS')
+                        ->join('m_entidad as ME', 'ME.IDENTIDAD', '=', 'DES.IDENTIDAD')
+                        ->join('m_centro_mac as MAC', 'MAC.IDCENTRO_MAC', '=', 'DES.IDMAC')
                         ->select('DES.*', 'SERV.*', 'ME.*', 'MAC.*')
                         ->where('MAC.IDCENTRO_MAC', $idcentro_mac)
                         ->where('ME.IDENTIDAD', $identidad)
@@ -704,7 +704,7 @@ class PagesController extends Controller
 
     public function provincias($departamento_id)
     {
-        $provincias = DB::table('PROVINCIA')->where('DEPARTAMENTO_ID', $departamento_id)->get();
+        $provincias = DB::table('provincia')->where('DEPARTAMENTO_ID', $departamento_id)->get();
 
         $options = '<option value="">Selecciona una opción</option>';
         foreach ($provincias as $prov) {
@@ -716,7 +716,7 @@ class PagesController extends Controller
 
     public function distritos($provincia_id)
     {        
-        $distritos = DB::table('DISTRITO')->where('PROVINCIA_ID', $provincia_id)->get();
+        $distritos = DB::table('distrito')->where('PROVINCIA_ID', $provincia_id)->get();
 
         $options = '<option value="">Selecciona una opción</option>';
         foreach ($distritos as $dist) {
@@ -728,12 +728,12 @@ class PagesController extends Controller
 
     public function entidad($idcentro_mac)
     {
-        $idcentro_mac = DB::table('M_MAC_ENTIDAD')
-                            ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                            ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                            ->leftJoin('CONFIGURACION_SIST', 'CONFIGURACION_SIST.IDCONFIGURACION', '=', 'M_MAC_ENTIDAD.TIPO_REFRIGERIO')
-                            ->where('M_MAC_ENTIDAD.IDCENTRO_MAC', $idcentro_mac)
-                            ->orderBy('M_ENTIDAD.NOMBRE_ENTIDAD', 'ASC')
+        $idcentro_mac = DB::table('m_mac_entidad')
+                            ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+                            ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                            ->leftJoin('configuracion_sist', 'configuracion_sist.IDCONFIGURACION', '=', 'm_mac_entidad.TIPO_REFRIGERIO')
+                            ->where('m_mac_entidad.IDCENTRO_MAC', $idcentro_mac)
+                            ->orderBy('m_entidad.NOMBRE_ENTIDAD', 'ASC')
                             ->get();
         
         $options = '<option value="">Selecciona una opción</option>';
@@ -779,7 +779,7 @@ class PagesController extends Controller
     {
         $macs = Mac::orderBy('NOMBRE_MAC', 'ASC')->get();
 
-        $tip_doc = DB::table('D_PERSONAL_TIPODOC')->get();
+        $tip_doc = DB::table('d_personal_tipodoc')->get();
 
         return view('vista', compact('tip_doc', 'macs'));
     }
@@ -797,8 +797,8 @@ class PagesController extends Controller
 
     public function validar_entidad(Request $request)
     {
-        $servicios = DB::table('M_ENTIDAD AS ME')
-                        ->join('M_MAC_ENTIDAD AS MME', 'MME.IDENTIDAD', '=', 'ME.IDENTIDAD')
+        $servicios = DB::table('m_entidad AS ME')
+                        ->join('m_mac_entidad AS MME', 'MME.IDENTIDAD', '=', 'ME.IDENTIDAD')
                         ->where('MME.IDCENTRO_MAC', $request->idmac)
                         ->where('ME.IDENTIDAD', $request->identidad)
                         ->first();
@@ -994,18 +994,18 @@ class PagesController extends Controller
         }
 
 
-        $result = DB::table('M_ASISTENCIA as MA')
-                            ->join('M_PERSONAL as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
-                            ->join(DB::raw('(SELECT CONCAT(M_PERSONAL.APE_PAT, " ", M_PERSONAL.APE_MAT, ", ", M_PERSONAL.NOMBRE, " - (", M_ENTIDAD.ABREV_ENTIDAD, ")" ) AS NOMBREU,
-                                                M_ENTIDAD.ABREV_ENTIDAD,
-                                                M_CENTRO_MAC.IDCENTRO_MAC,
-                                                M_PERSONAL.NUM_DOC,
-                                                M_ENTIDAD.IDENTIDAD,
-                                                D_PERSONAL_CARGO.NOMBRE_CARGO
-                                            FROM M_PERSONAL
-                                            LEFT JOIN D_PERSONAL_CARGO ON D_PERSONAL_CARGO.IDCARGO_PERSONAL = M_PERSONAL.IDCARGO_PERSONAL
-                                            JOIN M_ENTIDAD ON M_ENTIDAD.IDENTIDAD = M_PERSONAL.IDENTIDAD
-                                            JOIN M_CENTRO_MAC ON M_CENTRO_MAC.IDCENTRO_MAC = M_PERSONAL.IDMAC
+        $result = DB::table('m_asistencia as MA')
+                            ->join('m_personal as MP', 'MP.NUM_DOC', '=', 'MA.NUM_DOC')
+                            ->join(DB::raw('(SELECT CONCAT(m_personal.APE_PAT, " ", m_personal.APE_MAT, ", ", m_personal.NOMBRE, " - (", m_entidad.ABREV_ENTIDAD, ")" ) AS NOMBREU,
+                                                m_entidad.ABREV_ENTIDAD,
+                                                m_centro_mac.IDCENTRO_MAC,
+                                                m_personal.NUM_DOC,
+                                                m_entidad.IDENTIDAD,
+                                                d_personal_cargo.NOMBRE_CARGO
+                                            FROM m_personal
+                                            LEFT JOIN d_personal_cargo ON d_personal_cargo.IDCARGO_PERSONAL = m_personal.IDCARGO_PERSONAL
+                                            JOIN m_entidad ON m_entidad.IDENTIDAD = m_personal.IDENTIDAD
+                                            JOIN m_centro_mac ON m_centro_mac.IDCENTRO_MAC = m_personal.IDMAC
                                         ) as PERS'), 'PERS.NUM_DOC', '=', 'MA.NUM_DOC')
                             ->where('PERS.IDCENTRO_MAC',$this->centro_mac_id()->idmac)
                             //->whereBetween(DB::raw('DATE(MA.FECHA)'), [$fecha ])
@@ -1022,20 +1022,20 @@ class PagesController extends Controller
 
     public function directorio()
     {
-        $coordinadores = DB::table('M_PERSONAL as MP')
-                            ->join('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
-                            ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
-                            ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+        $coordinadores = DB::table('m_personal as MP')
+                            ->join('d_personal_cargo as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
+                            ->join('m_entidad AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                            ->join('m_centro_mac AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 2)
                             ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                             ->where('MP.flag', 1)    
                             ->orderBy('MCM.NOMBRE_MAC', 'ASC')
                             ->get();
 
-        $especialistas_tic = DB::table('M_PERSONAL as MP')
-                            ->join('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
-                            ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
-                            ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+        $especialistas_tic = DB::table('m_personal as MP')
+                            ->join('d_personal_cargo as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
+                            ->join('m_entidad AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                            ->join('m_centro_mac AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 1)
                             ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                             ->where('MP.FLAG', 1)
@@ -1043,20 +1043,20 @@ class PagesController extends Controller
                             ->get();
 
                 
-        $supervisores = DB::table('M_PERSONAL as MP')
-                            ->join('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
-                            ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
-                            ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+        $supervisores = DB::table('m_personal as MP')
+                            ->join('d_personal_cargo as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
+                            ->join('m_entidad AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                            ->join('m_centro_mac AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 3)
                             ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                             ->where('MP.FLAG', 1)
                             ->orderBy('MCM.NOMBRE_MAC', 'ASC')
                             ->get();   
                             
-        $mac_express = DB::table('M_PERSONAL as MP')
-                            ->join('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
-                            ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
-                            ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+        $mac_express = DB::table('m_personal as MP')
+                            ->join('d_personal_cargo as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
+                            ->join('m_entidad AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                            ->join('m_centro_mac AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 4)
                             ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                             ->where('MP.FLAG', 1)
@@ -1064,10 +1064,10 @@ class PagesController extends Controller
                             ->get();  
 
 
-        $orientadores = DB::table('M_PERSONAL as MP')
-                            ->join('D_PERSONAL_CARGO as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
-                            ->join('M_ENTIDAD AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
-                            ->join('M_CENTRO_MAC AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
+        $orientadores = DB::table('m_personal as MP')
+                            ->join('d_personal_cargo as DPC', 'DPC.IDCARGO_PERSONAL', '=' , 'MP.IDCARGO_PERSONAL')
+                            ->join('m_entidad AS ME', 'ME.IDENTIDAD', '=', 'MP.IDENTIDAD')
+                            ->join('m_centro_mac AS MCM', 'MCM.IDCENTRO_MAC', '=', 'MP.IDMAC')
                             ->where('MP.IDCARGO_PERSONAL', 5)
                             ->whereIn('MP.IDENTIDAD', [17, 74, 98, 100, 119, 120])  // Cambié la condición para los ID de IDENTIDAD
                                 ->where('MP.FLAG', 1)

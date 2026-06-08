@@ -9,7 +9,7 @@ class Asignacion extends Model
 {
     use HasFactory;
 
-    protected $table = 'M_ASIGNACION_BIEN';
+    protected $table = 'm_asignacion_bien';
 
     protected $primaryKey = 'IDASIGNACION';
 

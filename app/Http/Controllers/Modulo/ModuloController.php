@@ -19,7 +19,7 @@ class ModuloController extends Controller
         // VERIFICAMOS EL USUARIO A QUE CENTRO MAC PERTENECE
         /*================================================================================================================*/
         $us_id = auth()->user()->idcentro_mac;
-        $user = User::join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('M_CENTRO_MAC.IDCENTRO_MAC', $us_id)->first();
+        $user = User::join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'users.idcentro_mac')->where('m_centro_mac.IDCENTRO_MAC', $us_id)->first();
 
         $idmac = $user->IDCENTRO_MAC;
         $name_mac = $user->NOMBRE_MAC;
@@ -120,10 +120,10 @@ class ModuloController extends Controller
     public function create()
     {
         if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-            $entidades = DB::table('M_MAC_ENTIDAD')
-                ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                ->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac)
+            $entidades = DB::table('m_mac_entidad')
+                ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+                ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                ->where('m_centro_mac.IDCENTRO_MAC', '=', $this->centro_mac()->idmac)
                 ->get();
         } else {
             $entidades = Entidad::all();
@@ -208,10 +208,10 @@ class ModuloController extends Controller
 
             // Entidades
             if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
-                $entidades = DB::table('M_MAC_ENTIDAD')
-                    ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                    ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                    ->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $this->centro_mac()->idmac)
+                $entidades = DB::table('m_mac_entidad')
+                    ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+                    ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                    ->where('m_centro_mac.IDCENTRO_MAC', '=', $this->centro_mac()->idmac)
                     ->get();
             } else {
                 $entidades = Entidad::all();
@@ -310,7 +310,7 @@ class ModuloController extends Controller
 
             // ✅ Si es Administrador, puede ver todas las entidades
             if (auth()->user()->hasRole('Administrador')) {
-                $entidades = DB::table('M_ENTIDAD')
+                $entidades = DB::table('m_entidad')
                     ->select('IDENTIDAD', 'NOMBRE_ENTIDAD')
                     ->orderBy('NOMBRE_ENTIDAD')
                     ->get();
@@ -318,12 +318,12 @@ class ModuloController extends Controller
                 // 🔹 Caso contrario: solo entidades del mismo MAC del usuario autenticado
                 $idMacUsuario = $this->centro_mac()->idmac;
 
-                $entidades = DB::table('M_MAC_ENTIDAD')
-                    ->join('M_CENTRO_MAC', 'M_CENTRO_MAC.IDCENTRO_MAC', '=', 'M_MAC_ENTIDAD.IDCENTRO_MAC')
-                    ->join('M_ENTIDAD', 'M_ENTIDAD.IDENTIDAD', '=', 'M_MAC_ENTIDAD.IDENTIDAD')
-                    ->where('M_CENTRO_MAC.IDCENTRO_MAC', '=', $idMacUsuario)
-                    ->select('M_ENTIDAD.IDENTIDAD', 'M_ENTIDAD.NOMBRE_ENTIDAD')
-                    ->orderBy('M_ENTIDAD.NOMBRE_ENTIDAD')
+                $entidades = DB::table('m_mac_entidad')
+                    ->join('m_centro_mac', 'm_centro_mac.IDCENTRO_MAC', '=', 'm_mac_entidad.IDCENTRO_MAC')
+                    ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                    ->where('m_centro_mac.IDCENTRO_MAC', '=', $idMacUsuario)
+                    ->select('m_entidad.IDENTIDAD', 'm_entidad.NOMBRE_ENTIDAD')
+                    ->orderBy('m_entidad.NOMBRE_ENTIDAD')
                     ->get();
             }
 
@@ -357,7 +357,7 @@ class ModuloController extends Controller
             // 🔹 Validar que la nueva entidad pertenezca al MAC del usuario
             $idMacUsuario = $this->centro_mac()->idmac;
 
-            $entidadPertenece = DB::table('M_MAC_ENTIDAD')
+            $entidadPertenece = DB::table('m_mac_entidad')
                 ->where('IDCENTRO_MAC', $idMacUsuario)
                 ->where('IDENTIDAD', $request->nueva_entidad_id)
                 ->exists();
@@ -388,7 +388,7 @@ class ModuloController extends Controller
                 'message' => 'Cambio de entidad realizado correctamente.',
                 'nuevo_modulo' => [
                     'id' => $nuevoModulo->IDMODULO,
-                    'nueva_entidad' => DB::table('M_ENTIDAD')
+                    'nueva_entidad' => DB::table('m_entidad')
                         ->where('IDENTIDAD', $request->nueva_entidad_id)
                         ->value('NOMBRE_ENTIDAD'),
                     'fecha_inicio' => $nuevoModulo->FECHAINICIO,
