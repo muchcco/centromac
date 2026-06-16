@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Modulo;
+use Illuminate\Support\Facades\Log;
 
 use App\Exports\AsistenciaDetalleExport;
 use App\Exports\AsistenciaAsignacionExport;
@@ -1101,12 +1102,51 @@ class AsistenciaController extends Controller
             'txt_file' => 'required|file',
         ]);
 
-        $file = $request->file('txt_file');
+        $file        = $request->file('txt_file');
         $idCentroMac = $this->centro_mac()->idmac;
-
-        $filename = 'asistencia_' . now()->format('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.txt';
-        $storedPath = $file->storeAs('asistencia-txt', $filename);
         $uploadToken = bin2hex(random_bytes(8));
+
+        // Garantizar que el directorio existe antes de guardar
+        Storage::disk('local')->makeDirectory('asistencia-txt');
+
+        // Guardar explícitamente en disco 'local' para evitar ambigüedad
+        $filename   = 'asistencia_' . now()->format('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.txt';
+        $storedPath = Storage::disk('local')->putFileAs('asistencia-txt', $file, $filename);
+        $fullPath   = Storage::disk('local')->path($storedPath ?: '');
+
+        $storageExists = $storedPath && Storage::disk('local')->exists($storedPath);
+        $fsExists      = $storedPath && file_exists($fullPath);
+        $sizeBytes     = ($fsExists) ? filesize($fullPath) : 0;
+        $dirPath       = Storage::disk('local')->path('asistencia-txt');
+        $dirPerms      = is_dir($dirPath) ? substr(sprintf('%o', fileperms($dirPath)), -4) : 'no-existe';
+        $whoami        = trim((string) shell_exec('whoami 2>/dev/null'));
+
+        Log::info('[store_asistencia] Diagnóstico de archivo', [
+            'token'         => $uploadToken,
+            'storedPath'    => $storedPath,
+            'fullPath'      => $fullPath,
+            'storageExists' => $storageExists,
+            'fsExists'      => $fsExists,
+            'sizeBytes'     => $sizeBytes,
+            'dirPerms'      => $dirPerms,
+            'linuxUser'     => $whoami,
+        ]);
+
+        if (!$storageExists || !$fsExists || $sizeBytes === 0) {
+            $msg = 'El archivo no pudo guardarse correctamente.'
+                 . ' storageExists=' . ($storageExists ? 'true' : 'false')
+                 . ' fsExists='      . ($fsExists      ? 'true' : 'false')
+                 . ' sizeBytes='     . $sizeBytes
+                 . ' path='          . ($storedPath ?: '(putFileAs falló)');
+
+            Log::error('[store_asistencia] Fallo al guardar: ' . $msg);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el archivo en el servidor. Intente nuevamente.',
+            ], 500);
+        }
+
         Cache::put('upload_progress:' . $uploadToken, 0);
         Cache::put('upload_status:' . $uploadToken, 'queued');
 
@@ -1118,8 +1158,8 @@ class AsistenciaController extends Controller
         Cache::put('upload_job_id:' . $uploadToken, $jobId);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
+            'success'      => true,
+            'message'      => 'Archivo en cola. El proceso continuará en segundo plano.',
             'upload_token' => $uploadToken,
         ]);
     }

@@ -45,8 +45,35 @@ class ProcessAsistenciaTxt implements ShouldQueue
         $fullPath = Storage::disk('local')->path($this->path);
 
         try {
-            if (!file_exists($fullPath)) {
-                throw new \RuntimeException("Archivo no encontrado: {$fullPath}");
+            // ── Diagnóstico previo ────────────────────────────────────────────
+            $storageExists = Storage::disk('local')->exists($this->path);
+            $fsExists      = file_exists($fullPath);
+            $sizeBytes     = $fsExists ? filesize($fullPath) : 0;
+            $dirPath       = Storage::disk('local')->path('asistencia-txt');
+            $dirExists     = is_dir($dirPath);
+            $dirPerms      = $dirExists ? substr(sprintf('%o', fileperms($dirPath)), -4) : 'no-existe';
+            $whoami        = trim((string) shell_exec('whoami 2>/dev/null'));
+
+            Log::info('[ProcessAsistenciaTxt] Diagnóstico de archivo', [
+                'token'         => $this->uploadToken,
+                'storedPath'    => $this->path,
+                'fullPath'      => $fullPath,
+                'storageExists' => $storageExists,
+                'fsExists'      => $fsExists,
+                'sizeBytes'     => $sizeBytes,
+                'dirExists'     => $dirExists,
+                'dirPerms'      => $dirPerms,
+                'linuxUser'     => $whoami,
+            ]);
+
+            if (!$fsExists || $sizeBytes === 0) {
+                $msg = !$storageExists
+                    ? "El archivo nunca se guardó en storage (Storage::exists=false). Path: {$fullPath}"
+                    : ($sizeBytes === 0
+                        ? "El archivo existe pero está vacío (0 bytes). Path: {$fullPath}"
+                        : "Archivo en storage pero no encontrado en sistema de archivos. Path: {$fullPath}");
+
+                throw new \RuntimeException($msg);
             }
 
             $fileSize = max(filesize($fullPath), 1);
