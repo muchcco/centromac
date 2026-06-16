@@ -2,12 +2,14 @@
 
 namespace App\Jobs;
 
-use App\Models\Asistencia;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use SplFileObject;
 
@@ -15,13 +17,17 @@ class ProcessAsistenciaTxt implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 1;
+
     private string $path;
-    private int $idCentroMac;
+    private int    $idCentroMac;
     private string $uploadToken;
+
+    private const BATCH_SIZE = 500;
 
     public function __construct(string $path, int $idCentroMac, string $uploadToken)
     {
-        $this->path = $path;
+        $this->path        = $path;
         $this->idCentroMac = $idCentroMac;
         $this->uploadToken = $uploadToken;
     }
@@ -29,96 +35,181 @@ class ProcessAsistenciaTxt implements ShouldQueue
     public function handle(): void
     {
         $progressKey = 'upload_progress:' . $this->uploadToken;
-        $cancelKey = 'upload_cancelled:' . $this->uploadToken;
-        cache()->put('upload_status:' . $this->uploadToken, 'running');
+        $cancelKey   = 'upload_cancelled:' . $this->uploadToken;
+        $statusKey   = 'upload_status:'    . $this->uploadToken;
+        $errorKey    = 'upload_error:'     . $this->uploadToken;
+
+        Cache::put($statusKey, 'running');
+        Cache::put($progressKey, 0);
+
         $fullPath = Storage::disk('local')->path($this->path);
-        $totalLines = 0;
-        $counter = new SplFileObject($fullPath, 'r');
-        while (!$counter->eof()) {
-            $counter->fgets();
-            $totalLines++;
-        }
 
-        $file = new SplFileObject($fullPath, 'r');
-        $lineIndex = -1;
-        $processedLines = 0;
-        $lastPercent = 0;
-
-        while (!$file->eof()) {
-            if (cache()->get($cancelKey, false)) {
-                cache()->put('upload_status:' . $this->uploadToken, 'cancelled');
-                cache()->put($progressKey, 0);
-                Storage::disk('local')->delete($this->path);
-                return;
+        try {
+            if (!file_exists($fullPath)) {
+                throw new \RuntimeException("Archivo no encontrado: {$fullPath}");
             }
 
-            $line = $file->fgets();
-            if ($line === false) {
-                continue;
-            }
-            $processedLines++;
+            $fileSize = max(filesize($fullPath), 1);
+            $file     = new SplFileObject($fullPath, 'r');
 
-            if ($totalLines > 0) {
-                $percent = (int) floor(($processedLines / $totalLines) * 100);
-                if ($percent > $lastPercent) {
-                    $lastPercent = $percent;
-                    cache()->put($progressKey, $percent);
+            $batch       = [];
+            $lineIndex   = 0;
+            $bytesRead   = 0;
+            $lastPercent = 0;
+            $inserted    = 0;
+            $skipped     = 0;
+
+            while (!$file->eof()) {
+                if (Cache::get($cancelKey, false)) {
+                    Cache::put($statusKey, 'cancelled');
+                    Cache::put($progressKey, 0);
+                    Storage::disk('local')->delete($this->path);
+                    return;
+                }
+
+                $line = $file->fgets();
+                if ($line === false) {
+                    continue;
+                }
+
+                $bytesRead += strlen($line);
+                $pct = min((int)(($bytesRead / $fileSize) * 99), 99);
+                if ($pct > $lastPercent) {
+                    $lastPercent = $pct;
+                    Cache::put($progressKey, $pct);
+                }
+
+                $line = trim($line);
+                if ($line === '') {
+                    continue;
+                }
+
+                $record = $this->parseLine($line, $lineIndex);
+                if ($record === null) {
+                    continue;
+                }
+
+                $lineIndex++;
+                $batch[] = $record;
+
+                if (count($batch) >= self::BATCH_SIZE) {
+                    [$ins, $skip] = $this->flushBatch($batch);
+                    $inserted += $ins;
+                    $skipped  += $skip;
+                    $batch = [];
                 }
             }
 
-            if ($line === false || trim($line) === '') {
-                continue;
+            if (!empty($batch)) {
+                [$ins, $skip] = $this->flushBatch($batch);
+                $inserted += $ins;
+                $skipped  += $skip;
             }
 
-            $data = explode("\t", $line);
-            if (count($data) < 7) {
-                continue;
-            }
-
-            $numDoc = trim($data[2]);
-            $fechaBiometrico = trim($data[6]);
-            $fechaHora = explode(' ', $fechaBiometrico);
-            if (count($fechaHora) !== 2) {
-                continue;
-            }
-
-            $fecha = $fechaHora[0];
-            $hora = $fechaHora[1];
-            $fechaParts = explode('/', $fecha);
-            if (count($fechaParts) !== 3) {
-                continue;
-            }
-
-            $anio = $fechaParts[0];
-            $mes = $fechaParts[1];
-            $lineIndex++;
-
-            $exists = Asistencia::where('NUM_DOC', $numDoc)
-                ->where('IDCENTRO_MAC', $this->idCentroMac)
-                ->where('FECHA_BIOMETRICO', $fechaBiometrico)
-                ->exists();
-
-            if ($exists) {
-                continue;
-            }
-
-            Asistencia::create([
-                'IDTIPO_ASISTENCIA' => 1,
-                'NUM_DOC' => $numDoc,
-                'IDCENTRO_MAC' => $this->idCentroMac,
-                'MES' => $mes,
-                "AÇ'O" => $anio,
-                'FECHA' => $fechaBiometrico,
-                'HORA' => $hora,
-                'FECHA_BIOMETRICO' => $fechaBiometrico,
-                'NUM_BIOMETRICO' => '',
-                'CORRELATIVO' => $lineIndex + 1,
-                'CORRELATIVO_DIA' => '',
+            Log::info('[ProcessAsistenciaTxt] Completado', [
+                'token'       => $this->uploadToken,
+                'idCentroMac' => $this->idCentroMac,
+                'inserted'    => $inserted,
+                'skipped'     => $skipped,
             ]);
+
+            Storage::disk('local')->delete($this->path);
+            Cache::put($statusKey,   'completed');
+            Cache::put($progressKey, 100);
+
+        } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            Cache::put($statusKey, 'failed');
+            Cache::put($errorKey,  $msg);
+
+            Log::error('[ProcessAsistenciaTxt] Error', [
+                'token'   => $this->uploadToken,
+                'message' => $msg,
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    // ─── Parseo de línea ─────────────────────────────────────────────────────
+
+    private function parseLine(string $line, int $lineIndex): ?array
+    {
+        $data = explode("\t", $line);
+        if (count($data) < 7) {
+            return null;
         }
 
-        cache()->put('upload_status:' . $this->uploadToken, 'completed');
-        cache()->put($progressKey, 100);
-        Storage::disk('local')->delete($this->path);
+        $numDoc          = trim($data[2]);
+        $fechaBiometrico = trim($data[6]);
+
+        if ($numDoc === '' || $fechaBiometrico === '') {
+            return null;
+        }
+
+        $fechaHora = explode(' ', $fechaBiometrico);
+        if (count($fechaHora) !== 2) {
+            return null;
+        }
+
+        $hora       = $fechaHora[1];
+        $fechaParts = explode('/', $fechaHora[0]);
+        if (count($fechaParts) !== 3) {
+            return null;
+        }
+
+        return [
+            'IDTIPO_ASISTENCIA' => 1,
+            'NUM_DOC'           => $numDoc,
+            'IDCENTRO_MAC'      => $this->idCentroMac,
+            'MES'               => $fechaParts[1],
+            'AÑO'               => $fechaParts[0],
+            'FECHA'             => $fechaBiometrico,
+            'HORA'              => $hora,
+            'FECHA_BIOMETRICO'  => $fechaBiometrico,
+            'NUM_BIOMETRICO'    => '',
+            'CORRELATIVO'       => $lineIndex + 1,
+            'CORRELATIVO_DIA'   => '',
+        ];
+    }
+
+    // ─── Flush de lote ───────────────────────────────────────────────────────
+
+    private function flushBatch(array $records): array
+    {
+        $fechas = array_values(array_unique(array_column($records, 'FECHA_BIOMETRICO')));
+        $docs   = array_values(array_unique(array_column($records, 'NUM_DOC')));
+
+        // Una sola query para saber qué combos (doc, fecha_bio) ya existen
+        $existingKeys = DB::table('m_asistencia')
+            ->where('IDCENTRO_MAC', $this->idCentroMac)
+            ->whereIn('NUM_DOC', $docs)
+            ->whereIn('FECHA_BIOMETRICO', $fechas)
+            ->selectRaw("CONCAT(NUM_DOC, '|', FECHA_BIOMETRICO) AS k")
+            ->pluck('k')
+            ->flip()
+            ->all();
+
+        $toInsert = [];
+        $skipped  = 0;
+
+        foreach ($records as $rec) {
+            $key = $rec['NUM_DOC'] . '|' . $rec['FECHA_BIOMETRICO'];
+            if (isset($existingKeys[$key])) {
+                $skipped++;
+                continue;
+            }
+            $toInsert[] = $rec;
+        }
+
+        if (!empty($toInsert)) {
+            foreach (array_chunk($toInsert, 200) as $chunk) {
+                DB::table('m_asistencia')->insert($chunk);
+            }
+        }
+
+        return [count($toInsert), $skipped];
     }
 }

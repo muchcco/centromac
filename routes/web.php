@@ -180,6 +180,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/modals/md_agregar_asistencia', [AsistenciaController::class, 'md_agregar_asistencia'])->name('modals.md_agregar_asistencia');
         Route::post('/store_asistencia', [AsistenciaController::class, 'store_asistencia'])->name('store_asistencia');
         Route::post('/store_asistencia_callao', [AsistenciaController::class, 'store_asistencia_callao'])->name('store_asistencia_callao');
+        Route::post('/callao/chunk',    [AsistenciaController::class, 'uploadCallaoChunk'])->name('callao.chunk');
+        Route::post('/callao/finalize', [AsistenciaController::class, 'finalizeCallaoUpload'])->name('callao.finalize');
         Route::post('/store_agregar_asistencia', [AsistenciaController::class, 'store_agregar_asistencia'])->name('store_agregar_asistencia');
         Route::post('/store_agregar_observacion', [AsistenciaController::class, 'store_agregar_observacion'])->name('store_agregar_observacion');
         Route::post('/eliminar-hora', [AsistenciaController::class, 'eliminarHora'])->name('eliminar_hora');

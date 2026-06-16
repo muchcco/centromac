@@ -256,17 +256,17 @@ class PagesController extends Controller
                                 ->first();
         // dd($personal);
 
-        $dis_act = DB::table('DISTRITO AS D')
-                        ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
-                        ->join('DEPARTAMENTO  AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
+        $dis_act = DB::table('distrito AS D')
+                        ->join('provincia AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
+                        ->join('departamento AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
                         ->join('m_personal AS M', 'M.IDDISTRITO', '=', 'D.IDDISTRITO')
                         ->where('M.IDPERSONAL', $personal->IDPERSONAL)
                         ->first();
         // dd($dis_act);
 
-        $dis_nac = DB::table('DISTRITO AS D')
-                        ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
-                        ->join('DEPARTAMENTO AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
+        $dis_nac = DB::table('distrito AS D')
+                        ->join('provincia AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
+                        ->join('departamento AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
                         ->join('m_personal AS M', 'M.IDDISTRITO_NAC', '=', 'D.IDDISTRITO')
                         ->where('M.IDPERSONAL', $personal->IDPERSONAL)
                         ->first();
@@ -548,17 +548,17 @@ class PagesController extends Controller
                                 ->first();
         // dd($personal);
 
-        $dis_act = DB::table('DISTRITO AS D')
-                        ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
-                        ->join('DEPARTAMENTO  AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
+        $dis_act = DB::table('distrito AS D')
+                        ->join('provincia AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
+                        ->join('departamento AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
                         ->join('m_personal AS M', 'M.IDDISTRITO', '=', 'D.IDDISTRITO')
                         ->where('M.IDPERSONAL', $personal->IDPERSONAL)
                         ->first();
         // dd($dis_act);
 
-        $dis_nac = DB::table('DISTRITO AS D')
-                        ->join('PROVINCIA AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
-                        ->join('DEPARTAMENTO AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
+        $dis_nac = DB::table('distrito AS D')
+                        ->join('provincia AS P' , 'P.IDPROVINCIA', '=', 'D.PROVINCIA_ID')
+                        ->join('departamento AS DP' , 'DP.IDDEPARTAMENTO', '=', 'D.DEPARTAMENTO_ID')
                         ->join('m_personal AS M', 'M.IDDISTRITO_NAC', '=', 'D.IDDISTRITO')
                         ->where('M.IDPERSONAL', $personal->IDPERSONAL)
                         ->first();
@@ -1135,7 +1135,7 @@ class PagesController extends Controller
                 }
 
                 if ($updatedInAuth === 0) {
-                    throw new \RuntimeException('No se encontró el usuario en la BD de autenticación para sincronizar la contraseña.');
+                    throw new \RuntimeException('No se encontrï¿½ el usuario en la BD de autenticaciï¿½n para sincronizar la contraseï¿½a.');
                 }
             });
 

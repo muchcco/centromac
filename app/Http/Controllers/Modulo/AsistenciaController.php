@@ -7,6 +7,7 @@ use App\Exports\AsistenciaAsignacionExport;
 use App\Exports\AsistenciaAsignacionReporteExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -1112,7 +1113,7 @@ class AsistenciaController extends Controller
         $jobId = Queue::connection('database')->push(
             new ProcessAsistenciaTxt($storedPath, $idCentroMac, $uploadToken),
             '',
-            'asistencia'
+            'asistencia-txt'
         );
         Cache::put('upload_job_id:' . $uploadToken, $jobId);
 
@@ -1142,7 +1143,7 @@ class AsistenciaController extends Controller
         $jobId = Queue::connection('database')->push(
             new ProcessAsistenciaCallao($storedPath, $idCentroMac, $uploadToken, $fechaInicio, $fechaFin),
             '',
-            'asistencia'
+            'asistencia-callao'
         );
         Cache::put('upload_job_id:' . $uploadToken, $jobId);
 
@@ -1150,6 +1151,97 @@ class AsistenciaController extends Controller
             'success' => true,
             'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             'upload_token' => $uploadToken,
+        ]);
+    }
+
+    public function uploadCallaoChunk(Request $request)
+    {
+        $request->validate([
+            'chunk'        => 'required|file',
+            'chunk_index'  => 'required|integer|min:0',
+            'total_chunks' => 'required|integer|min:1',
+            'upload_token' => 'required|string|regex:/^[a-fA-F0-9]{8,64}$/',
+            'filename'     => 'required|string|max:255',
+        ]);
+
+        $token    = $request->input('upload_token');
+        $index    = (int) $request->input('chunk_index');
+        $chunkDir = 'asistencia-accdb/chunks/' . $token;
+
+        $request->file('chunk')->storeAs($chunkDir, 'chunk_' . $index, 'local');
+
+        return response()->json([
+            'success'     => true,
+            'chunk_index' => $index,
+        ]);
+    }
+
+    public function finalizeCallaoUpload(Request $request)
+    {
+        $request->validate([
+            'upload_token' => 'required|string|regex:/^[a-fA-F0-9]{8,64}$/',
+            'total_chunks' => 'required|integer|min:1',
+            'filename'     => ['required', 'string', 'max:255', 'regex:/\.(mdb|accdb)$/i'],
+            'fecha_inicio' => 'required|date',
+            'fecha_fin'    => 'required|date',
+        ]);
+
+        $token       = $request->input('upload_token');
+        $totalChunks = (int) $request->input('total_chunks');
+        $ext         = strtolower(pathinfo($request->input('filename'), PATHINFO_EXTENSION));
+        $finalName   = 'asistencia_callao_' . now()->format('Ymd_His') . '_' . $token . '.' . $ext;
+        $chunkDir    = Storage::disk('local')->path('asistencia-accdb/chunks/' . $token);
+        $finalPath   = Storage::disk('local')->path('asistencia-accdb/' . $finalName);
+
+        // Verificar que todos los chunks existen antes de ensamblar
+        for ($i = 0; $i < $totalChunks; $i++) {
+            if (!file_exists($chunkDir . '/chunk_' . $i)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Falta la parte {$i} del archivo. Por favor reintenta la carga.",
+                ], 422);
+            }
+        }
+
+        // Crear directorio destino si no existe
+        Storage::disk('local')->makeDirectory('asistencia-accdb');
+
+        // Ensamblar chunks en el archivo final
+        $out = fopen($finalPath, 'wb');
+        for ($i = 0; $i < $totalChunks; $i++) {
+            $in = fopen($chunkDir . '/chunk_' . $i, 'rb');
+            stream_copy_to_stream($in, $out);
+            fclose($in);
+        }
+        fclose($out);
+
+        // Limpiar chunks temporales
+        Storage::disk('local')->deleteDirectory('asistencia-accdb/chunks/' . $token);
+
+        // Despachar job en la cola asistencia
+        $idCentroMac = $this->centro_mac()->idmac;
+        $storedPath  = 'asistencia-accdb/' . $finalName;
+
+        Cache::put('upload_progress:' . $token, 0);
+        Cache::put('upload_status:' . $token, 'queued');
+
+        $jobId = Queue::connection('database')->push(
+            new ProcessAsistenciaCallao(
+                $storedPath,
+                $idCentroMac,
+                $token,
+                $request->input('fecha_inicio'),
+                $request->input('fecha_fin')
+            ),
+            '',
+            'asistencia-callao'
+        );
+        Cache::put('upload_job_id:' . $token, $jobId);
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Archivo ensamblado. Procesando en segundo plano.',
+            'upload_token' => $token,
         ]);
     }
 
@@ -1165,16 +1257,19 @@ class AsistenciaController extends Controller
             $jobId = Cache::get('upload_job_id:' . $token);
             if ($jobId) {
                 $position = DB::table('jobs')
-                    ->where('queue', 'asistencia')
+                    ->whereIn('queue', ['asistencia-txt', 'asistencia-callao', 'asistencia'])
                     ->where('id', '<', $jobId)
                     ->count();
             }
         }
 
+        $error = $token ? Cache::get('upload_error:' . $token) : null;
+
         return response()->json([
             'progress' => $progress,
-            'status' => $status,
+            'status'   => $status,
             'position' => $position,
+            'error'    => $error,
         ]);
     }
 

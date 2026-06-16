@@ -632,73 +632,245 @@
 
         }
 
-        function btnStoreAccess() {
-            var file_data = $("#txt_file").prop("files")[0];
-            var formData = new FormData();
-            formData.append("txt_file", file_data);
-            formData.append("fecha_inicio", $("#fecha_inicio").val());
-            formData.append("fecha_fin", $("#fecha_fin").val());
-            formData.append("_token", $("input[name=_token]").val());
+        // ── Carga Callao por chunks ────────────────────────────────────────────
+        var _callaoPolling  = null;   // intervalo de polling del job
+        var _callaoAborted  = false;  // bandera para cancelar mid-upload
 
-            // Inicia el polling para actualizar el progreso
-            var pollingInterval = setInterval(function() {
-                $.get("{{ route('asistencia.upload.progress') }}", function(data) {
-                    // Actualiza el botón o una barra de progreso con data.progress
-                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Cargando datos... ' +
-                        data.progress + '%');
-                    // Si el progreso es 100%, detén el polling
-                    if (data.progress >= 100) {
-                        clearInterval(pollingInterval);
+        // Genera token hexadecimal aleatorio de 16 chars
+        function _callaoToken() {
+            var arr = new Uint8Array(8);
+            crypto.getRandomValues(arr);
+            return Array.from(arr, function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+        }
+
+        // Muestra/actualiza la barra de la fase 1 (subida)
+        function _callaoUploadUI(label, pct) {
+            $("#callaoProgressArea").removeClass("d-none");
+            $("#callaoPhaseUpload").removeClass("d-none");
+            $("#callaoUploadLabel").text(label);
+            $("#callaoUploadPct").text(pct + "%");
+            $("#callaoUploadBar").css("width", pct + "%");
+        }
+
+        // Muestra/actualiza la barra de la fase 2 (procesamiento)
+        function _callaoProcessUI(label, pct) {
+            $("#callaoPhaseProcess").removeClass("d-none");
+            $("#callaoProcessLabel").text(label);
+            $("#callaoProcessPct").text(pct + "%");
+            $("#callaoProcessBar").css("width", pct + "%");
+        }
+
+        // Resetea toda la UI del modal al estado inicial
+        function _callaoReset() {
+            if (_callaoPolling) { clearInterval(_callaoPolling); _callaoPolling = null; }
+            _callaoAborted = false;
+            $("#btnEnviarForm").prop("disabled", false).html('<i class="fa fa-upload me-1"></i>Importar');
+            $("#callaoProgressArea").addClass("d-none");
+            $("#callaoPhaseProcess").addClass("d-none");
+            $("#callaoUploadBar").css("width","0%");
+            $("#callaoProcessBar").css("width","0%");
+            $("#callaoProgressMsg").text("");
+        }
+
+        // Muestra error al usuario y deja el botón activo para reintentar
+        function _callaoError(msg) {
+            if (_callaoPolling) { clearInterval(_callaoPolling); _callaoPolling = null; }
+            $("#btnEnviarForm").prop("disabled", false).html('<i class="fa fa-upload me-1"></i>Importar');
+            $("#callaoProgressMsg").html('<span class="text-danger"><i class="fa fa-exclamation-triangle me-1"></i>' + msg + '</span>');
+
+            // Separar el mensaje principal del detalle técnico (a partir de "Detalle técnico:" o "Código de salida:")
+            var mainMsg  = msg;
+            var techMsg  = '';
+            var splitIdx = msg.indexOf('Detalle técnico:');
+            if (splitIdx === -1) splitIdx = msg.indexOf('(Código de salida:');
+            if (splitIdx > 0) {
+                mainMsg = msg.substring(0, splitIdx).trim();
+                techMsg = msg.substring(splitIdx).trim();
+            }
+
+            var htmlContent = '<div style="text-align:left;font-size:0.95em">'
+                + '<p>' + mainMsg + '</p>';
+            if (techMsg) {
+                htmlContent += '<details style="margin-top:8px;cursor:pointer">'
+                    + '<summary style="color:#888;font-size:0.85em">Detalle técnico</summary>'
+                    + '<pre style="font-size:0.8em;background:#f5f5f5;padding:6px;border-radius:4px;white-space:pre-wrap;margin-top:4px">'
+                    + techMsg + '</pre></details>';
+            }
+            htmlContent += '</div>';
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al procesar archivo',
+                html: htmlContent,
+                confirmButtonText: 'Aceptar',
+                width: techMsg ? 600 : 400,
+            });
+        }
+
+        // Inicia polling del progreso del job (fase 2: 0-100 del job → se muestra como 0-100% en barra verde)
+        function _callaoStartPolling(token) {
+            $("#callaoProgressMsg").text("Archivo en cola de procesamiento...");
+            _callaoPolling = setInterval(function() {
+                $.get("{{ route('asistencia.upload.progress') }}", { token: token }, function(resp) {
+                    var jobPct = parseInt(resp.progress) || 0;
+                    var status = resp.status || 'queued';
+
+                    _callaoProcessUI("Procesando archivo... " + jobPct + "%", jobPct);
+
+                    if (status === 'completed') {
+                        clearInterval(_callaoPolling); _callaoPolling = null;
+                        _callaoProcessUI("¡Completado!", 100);
+                        setTimeout(function() {
+                            $("#modal_show_modal").modal("hide");
+                            _callaoReset();
+                            tabla_seccion();
+                            Toastify({
+                                text: "Asistencias Callao importadas correctamente.",
+                                className: "info",
+                                gravity: "bottom",
+                                style: { background: "#47B257" }
+                            }).showToast();
+                        }, 600);
+
+                    } else if (status === 'failed') {
+                        clearInterval(_callaoPolling); _callaoPolling = null;
+                        var errMsg = resp.error || "Error desconocido en el procesamiento.";
+                        _callaoError(errMsg);
+
+                    } else if (status === 'cancelled') {
+                        clearInterval(_callaoPolling); _callaoPolling = null;
+                        _callaoReset();
                     }
+                }).fail(function() {
+                    // Error de red en el polling: se reintenta en el siguiente intervalo
                 });
-            }, 1000); // consulta cada 1 segundo
+            }, 2000);
+        }
+
+        // Envía el chunk número `index` y recursa hasta terminar
+        function _callaoSendChunk(file, token, index, totalChunks, csrf, fechaInicio, fechaFin) {
+            if (_callaoAborted) return;
+
+            var CHUNK = 512 * 1024; // 512 KB (bajo el límite del proxy externo)
+            var start  = index * CHUNK;
+            var end    = Math.min(start + CHUNK, file.size);
+            var blob   = file.slice(start, end);
+
+            var pct    = Math.round((index / totalChunks) * 100);
+            _callaoUploadUI("Subiendo parte " + (index + 1) + " de " + totalChunks + "...", pct);
+
+            var fd = new FormData();
+            fd.append("chunk",        blob, "chunk_" + index);
+            fd.append("chunk_index",  index);
+            fd.append("total_chunks", totalChunks);
+            fd.append("upload_token", token);
+            fd.append("filename",     file.name);
+            fd.append("_token",       csrf);
 
             $.ajax({
-                type: 'POST',
-                url: "{{ route('asistencia.store_asistencia_callao') }}",
-                data: formData,
+                type: "POST",
+                url: "{{ route('asistencia.callao.chunk') }}",
+                data: fd,
                 processData: false,
                 contentType: false,
-                beforeSend: function() {
-                    $("#btnEnviarForm").prop("disabled", true);
-                    // Inicializa el botón con 0% o un mensaje inicial
-                    $("#btnEnviarForm").html('<i class="fa fa-spinner fa-spin"></i> Espere... Cargando datos');
-                },
-                success: function(data) {
-                    $("#modal_show_modal").modal('hide');
-                    $("#btnEnviarForm").prop("disabled", false);
-                    // Asegúrate de detener el polling al recibir la respuesta final
-                    clearInterval(pollingInterval);
-                    if (data.success) {
-                        tabla_seccion();
-                        Toastify({
-                            text: data.message,
-                            className: "info",
-                            gravity: "bottom",
-                            style: {
-                                background: "#47B257",
-                            }
-                        }).showToast();
+                success: function(resp) {
+                    if (!resp.success) {
+                        _callaoError("Error en parte " + (index + 1) + ": " + (resp.message || "respuesta inesperada."));
+                        return;
+                    }
+                    if (index + 1 < totalChunks) {
+                        // Siguiente chunk
+                        _callaoSendChunk(file, token, index + 1, totalChunks, csrf, fechaInicio, fechaFin);
                     } else {
-                        Swal.fire({
-                            icon: "error",
-                            text: data.message,
-                            confirmButtonText: "Aceptar"
-                        });
+                        // Todos los chunks enviados → finalizar
+                        _callaoUploadUI("Subida completa. Ensamblando...", 100);
+                        _callaoFinalize(token, totalChunks, file.name, csrf, fechaInicio, fechaFin);
                     }
                 },
-                error: function(error) {
-                    $("#modal_show_modal").modal('hide');
-                    $("#btnEnviarForm").prop("disabled", false);
-                    clearInterval(pollingInterval);
-                    Swal.fire({
-                        icon: "error",
-                        text: "Hubo un error al cargar las asistencias. Intentar nuevamente.",
-                        confirmButtonText: "Aceptar"
-                    });
+                error: function(xhr) {
+                    var msg;
+                    if (xhr.status === 413) {
+                        msg = "El servidor rechazó la parte " + (index + 1) + " por tamaño (413). Contacte al administrador para aumentar el límite de subida.";
+                    } else {
+                        msg = (xhr.responseJSON && xhr.responseJSON.message)
+                            ? xhr.responseJSON.message
+                            : "Error de red al subir parte " + (index + 1) + ". Puedes reintentar.";
+                    }
+                    _callaoError(msg);
                 }
             });
         }
+
+        // Llama al endpoint de ensamblado y despacha el job
+        function _callaoFinalize(token, totalChunks, filename, csrf, fechaInicio, fechaFin) {
+            if (_callaoAborted) return;
+            $("#callaoProgressMsg").text("Ensamblando partes...");
+
+            $.ajax({
+                type: "POST",
+                url: "{{ route('asistencia.callao.finalize') }}",
+                data: {
+                    _token:        csrf,
+                    upload_token:  token,
+                    total_chunks:  totalChunks,
+                    filename:      filename,
+                    fecha_inicio:  fechaInicio,
+                    fecha_fin:     fechaFin,
+                },
+                success: function(resp) {
+                    if (!resp.success) {
+                        _callaoError(resp.message || "Error al ensamblar el archivo.");
+                        return;
+                    }
+                    // Pasar a fase 2
+                    $("#callaoProgressMsg").text("Archivo en cola. Iniciando procesamiento...");
+                    _callaoStartPolling(token);
+                },
+                error: function(xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message)
+                        ? xhr.responseJSON.message
+                        : "Error al ensamblar el archivo. Puedes reintentar.";
+                    _callaoError(msg);
+                }
+            });
+        }
+
+        // Punto de entrada — llamado desde onclick del botón
+        function btnStoreAccess() {
+            var file = $("#txt_file").prop("files")[0];
+
+            if (!file) {
+                Swal.fire({ icon: "warning", text: "Selecciona un archivo .mdb o .accdb.", confirmButtonText: "Aceptar" });
+                return;
+            }
+
+            var ext = file.name.split(".").pop().toLowerCase();
+            if (ext !== "mdb" && ext !== "accdb") {
+                Swal.fire({ icon: "error", text: "Solo se permiten archivos .mdb y .accdb.", confirmButtonText: "Aceptar" });
+                return;
+            }
+
+            var fechaInicio = $("#fecha_inicio").val();
+            var fechaFin    = $("#fecha_fin").val();
+            if (!fechaInicio || !fechaFin) {
+                Swal.fire({ icon: "warning", text: "Completa las fechas de inicio y fin.", confirmButtonText: "Aceptar" });
+                return;
+            }
+
+            _callaoReset();
+            _callaoAborted = false;
+
+            var CHUNK      = 512 * 1024; // 512 KB
+            var total      = Math.ceil(file.size / CHUNK);
+            var token      = _callaoToken();
+            var csrf       = $("#_callao_token").val();
+
+            $("#btnEnviarForm").prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-1"></i>Subiendo...');
+            $("#callaoProgressArea").removeClass("d-none");
+
+            _callaoSendChunk(file, token, 0, total, csrf, fechaInicio, fechaFin);
+        }
+        // ── Fin carga Callao por chunks ───────────────────────────────────────
 
         var btnModalView = (dni, fecha) => {
             console.log(dni);

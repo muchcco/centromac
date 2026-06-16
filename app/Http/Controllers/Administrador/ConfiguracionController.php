@@ -36,7 +36,7 @@ class ConfiguracionController extends Controller
     public function tb_nuevo_mac(Request $request)
     {
         // $mac = DB::table('m_centro_mac')->where('FLAG', 1)->get();
-        $mac = Mac::leftJoin('DISTRITO as D', 'm_centro_mac.UBICACION', '=', 'D.IDDISTRITO')
+        $mac = Mac::leftJoin('distrito as D', 'm_centro_mac.UBICACION', '=', 'D.IDDISTRITO')
             ->leftJoin('provincia as P', 'D.PROVINCIA_ID', '=', 'P.IDPROVINCIA')
             ->leftJoin('departamento as DEP', 'D.DEPARTAMENTO_ID', '=', 'DEP.IDDEPARTAMENTO')
             ->select('m_centro_mac.*', 'D.*', 'P.*', 'DEP.*')
@@ -89,7 +89,7 @@ class ConfiguracionController extends Controller
 
     public function md_edit_mac(Request $request)
     {
-        $mac = Mac::leftJoin('DISTRITO as D', 'm_centro_mac.UBICACION', '=', 'D.IDDISTRITO')
+        $mac = Mac::leftJoin('distrito as D', 'm_centro_mac.UBICACION', '=', 'D.IDDISTRITO')
             ->leftJoin('provincia as P', 'D.PROVINCIA_ID', '=', 'P.IDPROVINCIA')
             ->leftJoin('departamento as DEP', 'D.DEPARTAMENTO_ID', '=', 'DEP.IDDEPARTAMENTO')
             ->select('m_centro_mac.*', 'D.*', 'P.*', 'DEP.*')
