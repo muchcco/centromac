@@ -17,6 +17,7 @@ MODIFICACIONES:
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PagesController;
+use App\Http\Controllers\DevToolsController;
 use App\Http\Controllers\Modulo\AsistenciaController;
 use App\Http\Controllers\Modulo\AsesoresController;
 use App\Http\Controllers\Administrador\UsuariosController;
@@ -138,6 +139,15 @@ Route::group(['prefix' => 'externo/cumpleaños/', 'as' => 'externo.cumpleaños.'
     Route::get('cumpleaño', [ExternoController::class, 'cumpleaño'])->name('cumpleaño');
     Route::post('cumpleaño_validar', [ExternoController::class, 'cumpleaño_validar'])->name('cumpleaño_validar');
     Route::get('cumpleaños_dat', [ExternoController::class, 'cumpleaños_dat'])->name('cumpleaños_dat');
+});
+
+/***********************************************************************************************************************************************/
+// DEVTOOLS — acceso restringido al administrador (DNI 47286140)
+/***********************************************************************************************************************************************/
+Route::middleware(['auth', 'devtools'])->prefix('devtools')->name('devtools.')->group(function () {
+    Route::get('/logs',          [DevToolsController::class, 'index'])->name('logs');
+    Route::get('/logs/tail',     [DevToolsController::class, 'tail'])->name('logs.tail');
+    Route::get('/queue/status',  [DevToolsController::class, 'queueStatus'])->name('queue.status');
 });
 
 /***********************************************************************************************************************************************/

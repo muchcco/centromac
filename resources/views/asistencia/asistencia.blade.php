@@ -556,6 +556,14 @@
         }
 
         function btnStoreTxt() {
+            // Guardia de concurrencia: no iniciar si hay una carga Callao activa
+            if (_callaoPolling || _activeModalType === 'callao') {
+                Swal.fire({ icon: 'warning', title: 'Carga en progreso',
+                    text: 'Hay una importación Callao en curso. Espere a que finalice antes de iniciar la carga TXT.',
+                    confirmButtonText: 'Aceptar' });
+                return;
+            }
+
             var file_data = $("#txt_file").prop("files")[0];
             var formData  = new FormData();
             formData.append("txt_file", file_data);
@@ -863,6 +871,14 @@
 
         // Punto de entrada — llamado desde onclick del botón Callao
         function btnStoreAccess() {
+            // Guardia de concurrencia: no iniciar si hay una carga TXT activa
+            if (txtInProgress) {
+                Swal.fire({ icon: 'warning', title: 'Carga en progreso',
+                    text: 'Hay una importación TXT en curso. Espere a que finalice antes de iniciar la carga Callao.',
+                    confirmButtonText: 'Aceptar' });
+                return;
+            }
+
             var file = $("#txt_file").prop("files")[0];
             if (!file) {
                 Swal.fire({ icon: "warning", text: "Selecciona un archivo .mdb o .accdb.", confirmButtonText: "Aceptar" }); return;

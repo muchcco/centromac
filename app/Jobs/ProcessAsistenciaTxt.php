@@ -45,15 +45,20 @@ class ProcessAsistenciaTxt implements ShouldQueue
         $fullPath = Storage::disk('local')->path($this->path);
 
         try {
-            // ── Diagnóstico + retry por race condition del filesystem ─────────
-            // El worker puede arrancar tan rápido que el archivo aún no es visible
-            // en el stat cache del proceso. clearstatcache + reintento lo resuelve.
+            // ── Retry robusto por race condition del filesystem ───────────────
+            // El worker puede arrancar antes de que el filesystem propague la
+            // escritura. Backoff progresivo hasta 6.7 s total antes de fallar.
+            $fsExists = false;
+            $delays   = [200000, 500000, 1000000, 2000000, 3000000]; // 0.2s…3s
             clearstatcache(true, $fullPath);
-            $fsExists = file_exists($fullPath);
-            if (!$fsExists) {
-                usleep(500000); // 500ms
-                clearstatcache(true, $fullPath);
-                $fsExists = file_exists($fullPath);
+            if (!($fsExists = file_exists($fullPath))) {
+                foreach ($delays as $us) {
+                    usleep($us);
+                    clearstatcache(true, $fullPath);
+                    if ($fsExists = file_exists($fullPath)) {
+                        break;
+                    }
+                }
             }
 
             $storageExists = Storage::disk('local')->exists($this->path);

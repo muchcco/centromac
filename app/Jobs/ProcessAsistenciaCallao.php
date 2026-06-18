@@ -63,6 +63,20 @@ class ProcessAsistenciaCallao implements ShouldQueue
         $fullPath = Storage::disk('local')->path($this->path);
         $ext      = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
 
+        // ── MUTEX: solo un job Callao por idCentroMac a la vez ───────────────
+        // asistencia_callao es una BD staging compartida: si dos jobs corren en
+        // paralelo para el mismo centro, se pisan los DELETE + INSERT.
+        $lock = Cache::lock('callao-import-' . $this->idCentroMac, 300);
+        if (!$lock->block(120)) {
+            // Otro job ya tiene el lock — reagendar para dentro de 15 s
+            Log::warning('[ProcessAsistenciaCallao] Lock ocupado, reagendando', [
+                'token'       => $this->uploadToken,
+                'idCentroMac' => $this->idCentroMac,
+            ]);
+            $this->release(15);
+            return;
+        }
+
         try {
             // ── 0. Diagnóstico y validación del archivo ───────────────────────
             // Lanza RuntimeException si el archivo no existe, está vacío o extensión inválida.
@@ -356,6 +370,9 @@ class ProcessAsistenciaCallao implements ShouldQueue
             Storage::disk('local')->delete($this->path);
 
             throw $e;
+        } finally {
+            // Liberar el mutex siempre, sin importar cómo termine el job
+            $lock->release();
         }
     }
 
@@ -363,14 +380,20 @@ class ProcessAsistenciaCallao implements ShouldQueue
 
     private function validateFile(string $fullPath, string $ext, string $errorKey, string $statusKey): void
     {
-        // Retry por race condition: el worker puede arrancar antes de que el
-        // filesystem propague la escritura del controller al stat cache del proceso.
+        // Retry robusto: el worker puede arrancar antes de que el filesystem
+        // propague la escritura del controller (clearstatcache + 5 intentos con
+        // backoff progresivo). Cubre tanto race conditions como cargas simultáneas.
+        $fsExists = false;
+        $delays   = [200000, 500000, 1000000, 2000000, 3000000]; // 0.2s, 0.5s, 1s, 2s, 3s
         clearstatcache(true, $fullPath);
-        $fsExists = file_exists($fullPath);
-        if (!$fsExists) {
-            usleep(500000); // 500ms
-            clearstatcache(true, $fullPath);
-            $fsExists = file_exists($fullPath);
+        if (!($fsExists = file_exists($fullPath))) {
+            foreach ($delays as $us) {
+                usleep($us);
+                clearstatcache(true, $fullPath);
+                if ($fsExists = file_exists($fullPath)) {
+                    break;
+                }
+            }
         }
 
         $storageExists = Storage::disk('local')->exists($this->path);
