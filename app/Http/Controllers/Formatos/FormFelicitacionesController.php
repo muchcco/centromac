@@ -123,10 +123,11 @@ class FormFelicitacionesController extends Controller
 
             $num_doc = $request->num_doc;
 
-            $estructura_carp = 'formato_archivo\\felicitaciones\\' . $num_doc;
+            $rutaRelativa  = 'formato_archivo/felicitaciones/' . $num_doc;
+            $estructura_carp = public_path($rutaRelativa);
 
             if (!file_exists($estructura_carp)) {
-                mkdir($estructura_carp, 0777, true);
+                mkdir($estructura_carp, 0755, true);
             }
 
             $save = new FLibroFelicitacion;
@@ -149,12 +150,10 @@ class FormFelicitacionesController extends Controller
             if ($request->hasFile('file_doc')) {
                 $archivoPDF = $request->file('file_doc');
                 $nombrePDF = $archivoPDF->getClientOriginalName();
-                //$nameruta = '/img/fotoempresa/'; // RUTA DONDE SE VA ALMACENAR EL DOCUMENTO PDF
-                $nameruta = $estructura_carp;  // GUARDAR EN UN SERVIDOR
-                $archivoPDF->move($nameruta, $nombrePDF);
+                $archivoPDF->move($estructura_carp, $nombrePDF);
 
                 $save->R_ARCHIVO_NOM = $nombrePDF;
-                $save->R_ARCHIVO_RUT = $estructura_carp;
+                $save->R_ARCHIVO_RUT = $rutaRelativa;
             }
             $save->save();
 
@@ -200,10 +199,11 @@ class FormFelicitacionesController extends Controller
         try {
             $num_doc = $request->num_doc;
 
-            $estructura_carp = 'formato_archivo\\felicitaciones\\' . $num_doc;
+            $rutaRelativa  = 'formato_archivo/felicitaciones/' . $num_doc;
+            $estructura_carp = public_path($rutaRelativa);
 
             if (!file_exists($estructura_carp)) {
-                mkdir($estructura_carp, 0777, true);
+                mkdir($estructura_carp, 0755, true);
             }
 
             $save = FLibroFelicitacion::findOrFail($request->idfelicitacion);
@@ -219,12 +219,10 @@ class FormFelicitacionesController extends Controller
             if ($request->hasFile('file_doc')) {
                 $archivoPDF = $request->file('file_doc');
                 $nombrePDF = $archivoPDF->getClientOriginalName();
-                //$nameruta = '/img/fotoempresa/'; // RUTA DONDE SE VA ALMACENAR EL DOCUMENTO PDF
-                $nameruta = $estructura_carp;  // GUARDAR EN UN SERVIDOR
-                $archivoPDF->move($nameruta, $nombrePDF);
+                $archivoPDF->move($estructura_carp, $nombrePDF);
 
                 $save->R_ARCHIVO_NOM = $nombrePDF;
-                $save->R_ARCHIVO_RUT = $estructura_carp;
+                $save->R_ARCHIVO_RUT = $rutaRelativa;
             }
             $save->save();
 
@@ -250,8 +248,9 @@ class FormFelicitacionesController extends Controller
             'R_ARCHIVO_RUT' => null,
         ]);
 
-        if (file_exists($archivo->R_ARCHIVO_RUT . '/' . $archivo->R_ARCHIVO_NOM)) {
-            unlink($archivo->R_ARCHIVO_RUT . '/' . $archivo->R_ARCHIVO_NOM);
+        $rutaFisica = public_path($archivo->R_ARCHIVO_RUT . '/' . $archivo->R_ARCHIVO_NOM);
+        if (file_exists($rutaFisica)) {
+            unlink($rutaFisica);
         }
 
         return $del;

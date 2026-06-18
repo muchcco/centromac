@@ -1148,19 +1148,50 @@ class AsistenciaController extends Controller
         }
 
         Cache::put('upload_progress:' . $uploadToken, 0);
-        Cache::put('upload_status:' . $uploadToken, 'queued');
+        Cache::put('upload_status:'   . $uploadToken, 'queued');
+        Cache::put('upload_error:'    . $uploadToken, null);
+        Cache::put('upload_queue:'    . $uploadToken, 'asistencia-txt');
+        Cache::put('upload_type:'     . $uploadToken, 'txt');
 
-        $jobId = Queue::connection('database')->push(
-            new ProcessAsistenciaTxt($storedPath, $idCentroMac, $uploadToken),
-            '',
-            'asistencia-txt'
-        );
-        Cache::put('upload_job_id:' . $uploadToken, $jobId);
+        try {
+            Log::info('[store_asistencia] Despachando job TXT', [
+                'token'      => $uploadToken,
+                'storedPath' => $storedPath,
+                'queue'      => 'asistencia-txt',
+            ]);
+
+            $jobId = Queue::connection('database')->push(
+                new ProcessAsistenciaTxt($storedPath, $idCentroMac, $uploadToken),
+                '',
+                'asistencia-txt'
+            );
+
+            Cache::put('upload_job_id:' . $uploadToken, $jobId);
+
+            Log::info('[store_asistencia] Job TXT despachado', [
+                'token'  => $uploadToken,
+                'jobId'  => $jobId,
+                'queue'  => 'asistencia-txt',
+            ]);
+        } catch (\Throwable $e) {
+            Cache::put('upload_status:' . $uploadToken, 'failed');
+            Cache::put('upload_error:'  . $uploadToken, $e->getMessage());
+            Log::error('[store_asistencia] Error al despachar job TXT', [
+                'token'   => $uploadToken,
+                'message' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'El archivo se guardó pero no pudo encolarse: ' . $e->getMessage(),
+            ], 500);
+        }
 
         return response()->json([
             'success'      => true,
             'message'      => 'Archivo en cola. El proceso continuará en segundo plano.',
             'upload_token' => $uploadToken,
+            'type'         => 'txt',
+            'queue'        => 'asistencia-txt',
         ]);
     }
     public function store_asistencia_callao(Request $request)
@@ -1262,21 +1293,81 @@ class AsistenciaController extends Controller
         $idCentroMac = $this->centro_mac()->idmac;
         $storedPath  = 'asistencia-accdb/' . $finalName;
 
-        Cache::put('upload_progress:' . $token, 0);
-        Cache::put('upload_status:' . $token, 'queued');
+        // ── Validar archivo ensamblado antes de despachar ─────────────────────
+        $storageExists = Storage::disk('local')->exists($storedPath);
+        $fsExists      = file_exists($finalPath);
+        $sizeBytes     = $fsExists ? filesize($finalPath) : 0;
+        $dirPath       = Storage::disk('local')->path('asistencia-accdb');
+        $dirPerms      = is_dir($dirPath) ? substr(sprintf('%o', fileperms($dirPath)), -4) : 'no-existe';
+        $whoami        = trim((string) shell_exec('whoami 2>/dev/null'));
 
-        $jobId = Queue::connection('database')->push(
-            new ProcessAsistenciaCallao(
-                $storedPath,
-                $idCentroMac,
-                $token,
-                $request->input('fecha_inicio'),
-                $request->input('fecha_fin')
-            ),
-            '',
-            'asistencia-callao'
-        );
-        Cache::put('upload_job_id:' . $token, $jobId);
+        Log::info('[store_asistencia_callao] Diagnóstico de archivo', [
+            'token'         => $token,
+            'storedPath'    => $storedPath,
+            'fullPath'      => $finalPath,
+            'storageExists' => $storageExists,
+            'fsExists'      => $fsExists,
+            'sizeBytes'     => $sizeBytes,
+            'dirPerms'      => $dirPerms,
+            'linuxUser'     => $whoami,
+        ]);
+
+        if (!$storageExists || !$fsExists || $sizeBytes === 0) {
+            $msg = 'Archivo ensamblado no encontrado o vacío.'
+                 . ' storageExists=' . ($storageExists ? 'true' : 'false')
+                 . ' fsExists='      . ($fsExists      ? 'true' : 'false')
+                 . ' sizeBytes='     . $sizeBytes;
+            Log::error('[store_asistencia_callao] Validación fallida post-ensamble: ' . $msg);
+            Cache::put('upload_status:' . $token, 'failed');
+            Cache::put('upload_error:'  . $token, 'Error interno: el archivo ensamblado no pudo ser verificado.');
+            return response()->json(['success' => false, 'message' => 'Error al verificar el archivo ensamblado. Intente nuevamente.'], 500);
+        }
+
+        Cache::put('upload_progress:' . $token, 0);
+        Cache::put('upload_status:'   . $token, 'queued');
+        Cache::put('upload_error:'    . $token, null);
+        Cache::put('upload_queue:'    . $token, 'asistencia-callao');
+        Cache::put('upload_type:'     . $token, 'callao');
+
+        try {
+            Log::info('[store_asistencia_callao] Despachando job Callao', [
+                'token'      => $token,
+                'storedPath' => $storedPath,
+                'queue'      => 'asistencia-callao',
+                'idCentroMac'=> $idCentroMac,
+            ]);
+
+            $jobId = Queue::connection('database')->push(
+                new ProcessAsistenciaCallao(
+                    $storedPath,
+                    $idCentroMac,
+                    $token,
+                    $request->input('fecha_inicio'),
+                    $request->input('fecha_fin')
+                ),
+                '',
+                'asistencia-callao'
+            );
+
+            Cache::put('upload_job_id:' . $token, $jobId);
+
+            Log::info('[store_asistencia_callao] Job Callao despachado', [
+                'token' => $token,
+                'jobId' => $jobId,
+                'queue' => 'asistencia-callao',
+            ]);
+        } catch (\Throwable $e) {
+            Cache::put('upload_status:' . $token, 'failed');
+            Cache::put('upload_error:'  . $token, $e->getMessage());
+            Log::error('[store_asistencia_callao] Error al despachar job Callao', [
+                'token'   => $token,
+                'message' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'El archivo se ensamblò pero no pudo encolarse: ' . $e->getMessage(),
+            ], 500);
+        }
 
         return response()->json([
             'success'      => true,
@@ -1287,29 +1378,78 @@ class AsistenciaController extends Controller
 
     public function getUploadProgress(Request $request)
     {
-        $token = $request->query('token');
-        $key = $token ? 'upload_progress:' . $token : 'upload_progress';
-        $progress = Cache::get($key, 0);
-        $status = $token ? Cache::get('upload_status:' . $token, 'queued') : 'queued';
+        $token    = $request->query('token');
+        $progress = $token ? Cache::get('upload_progress:' . $token, 0)        : 0;
+        $status   = $token ? Cache::get('upload_status:'   . $token, 'queued') : 'queued';
+        $error    = $token ? Cache::get('upload_error:'    . $token)            : null;
+        $type     = $token ? Cache::get('upload_type:'     . $token, 'txt')    : 'txt';
+        $queue    = $token ? Cache::get('upload_queue:'    . $token)            : null;
+        $jobId    = $token ? Cache::get('upload_job_id:'   . $token)            : null;
         $position = null;
 
-        if ($token) {
-            $jobId = Cache::get('upload_job_id:' . $token);
-            if ($jobId) {
-                $position = DB::table('jobs')
-                    ->whereIn('queue', ['asistencia-txt', 'asistencia-callao', 'asistencia'])
-                    ->where('id', '<', $jobId)
-                    ->count();
+        // Detección inteligente: solo cuando cache dice 'queued' y tenemos job_id
+        if ($token && $jobId && $status === 'queued') {
+            $job = DB::table('jobs')->where('id', $jobId)->first();
+
+            if ($job) {
+                if (!is_null($job->reserved_at)) {
+                    // Worker ya tomó el job pero handle() aún no actualizó el cache
+                    $status   = 'processing';
+                    $progress = max($progress, 5);
+                } else {
+                    // Genuinamente en cola: calcular posición real
+                    $position = DB::table('jobs')
+                        ->whereIn('queue', ['asistencia-txt', 'asistencia-callao', 'asistencia'])
+                        ->where('id', '<', $jobId)
+                        ->count();
+                }
+            } else {
+                // Job ya no está en jobs table — re-leer cache (puede haber sido actualizado
+                // entre la primera lectura y este punto)
+                $freshStatus = Cache::get('upload_status:' . $token, 'queued');
+
+                if ($freshStatus !== 'queued') {
+                    $status   = $freshStatus;
+                    $progress = Cache::get('upload_progress:' . $token, $progress);
+                    $error    = Cache::get('upload_error:'    . $token, $error);
+                } else {
+                    // Cache sigue en 'queued' pero el job ya no existe → buscar en failed_jobs
+                    $failedJob = DB::table('failed_jobs')
+                        ->where('payload', 'like', '%' . $token . '%')
+                        ->orderByDesc('id')
+                        ->first();
+
+                    if ($failedJob) {
+                        $exception = $failedJob->exception ?? '';
+                        $firstLine = strtok($exception, "\n") ?: 'Error desconocido.';
+                        $error     = $firstLine;
+                        $status    = 'failed';
+                    } else {
+                        // Job desapareció sin dejar rastro (worker crash, eliminado manualmente, etc.)
+                        $status = 'failed';
+                        $error  = 'El job ya no está en cola y no se encontró estado final. '
+                                . 'Revise los logs del worker en storage/logs/queue-callao.log';
+                    }
+
+                    Cache::put('upload_status:' . $token, $status);
+                    Cache::put('upload_error:'  . $token, $error);
+                }
             }
+        } elseif ($token && $jobId && $status === 'processing') {
+            // En procesamiento: posición siempre 0 (ya fue tomado por el worker)
+            $position = 0;
         }
 
-        $error = $token ? Cache::get('upload_error:' . $token) : null;
-
         return response()->json([
-            'progress' => $progress,
+            'success'  => true,
+            'token'    => $token,
+            'type'     => $type,
+            'queue'    => $queue,
             'status'   => $status,
-            'position' => $position,
+            'progress' => $progress,
             'error'    => $error,
+            'job_id'   => $jobId,
+            'position' => $position,
         ]);
     }
 

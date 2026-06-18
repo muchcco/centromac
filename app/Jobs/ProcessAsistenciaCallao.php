@@ -48,8 +48,17 @@ class ProcessAsistenciaCallao implements ShouldQueue
         $statusKey   = 'upload_status:'    . $this->uploadToken;
         $errorKey    = 'upload_error:'     . $this->uploadToken;
 
-        Cache::put($statusKey,   'running');
-        Cache::put($progressKey, 0);
+        // Primera acción: confirmar en log que el worker tomó este job
+        Log::info('[ProcessAsistenciaCallao] Iniciando procesamiento', [
+            'token'       => $this->uploadToken,
+            'path'        => $this->path,
+            'idCentroMac' => $this->idCentroMac,
+            'fechaInicio' => $this->fechaInicio,
+            'fechaFin'    => $this->fechaFin,
+        ]);
+
+        Cache::put($statusKey,   'processing');
+        Cache::put($progressKey, 5);
 
         $fullPath = Storage::disk('local')->path($this->path);
         $ext      = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
@@ -276,19 +285,48 @@ class ProcessAsistenciaCallao implements ShouldQueue
 
             // ── 5. Marcar resultado ───────────────────────────────────────────
             if ($inserted === 0) {
-                // El archivo se leyó bien pero no hubo marcaciones en el rango
-                $msg = "El archivo fue leído correctamente ({$invalidCount} filas con formato inválido), "
-                     . "pero no hay marcaciones dentro del rango de fechas seleccionado "
-                     . "({$this->fechaInicio} → {$this->fechaFin}). "
-                     . "Verifique que el archivo corresponda al período indicado.";
+                // Distinguir: ¿el archivo no tiene datos en el rango, o ya fueron importados?
+                $candidatos = (int) (DB::selectOne("
+                    SELECT COUNT(*) AS cnt
+                    FROM (
+                        SELECT ui.ssn, x.check_dt
+                        FROM (
+                            SELECT chk.userid,
+                                COALESCE(
+                                    STR_TO_DATE(chk.CHECKTIME, '%m/%d/%y %H:%i:%s'),
+                                    STR_TO_DATE(chk.CHECKTIME, '%m/%d/%Y %H:%i:%s'),
+                                    STR_TO_DATE(chk.CHECKTIME, '%d/%m/%y %H:%i:%s'),
+                                    STR_TO_DATE(chk.CHECKTIME, '%d/%m/%Y %H:%i:%s'),
+                                    STR_TO_DATE(chk.CHECKTIME, '%Y-%m-%d %H:%i:%s')
+                                ) AS check_dt
+                            FROM asistencia_callao.checkinout chk
+                            WHERE chk.CHECKTIME IS NOT NULL AND TRIM(chk.CHECKTIME) <> ''
+                        ) x
+                        JOIN asistencia_callao.userinfo ui ON ui.userid = x.userid
+                        WHERE ui.ssn IS NOT NULL AND TRIM(ui.ssn) <> ''
+                          AND x.check_dt IS NOT NULL
+                          AND DATE(x.check_dt) BETWEEN ? AND ?
+                    ) j
+                ", [$this->fechaInicio, $this->fechaFin])->cnt ?? 0);
+
+                if ($candidatos > 0) {
+                    $msg = "Las asistencias del período {$this->fechaInicio} al {$this->fechaFin} "
+                         . "ya fueron registradas anteriormente en el sistema "
+                         . "({$candidatos} marcaciones). No hay datos nuevos para importar.";
+                } else {
+                    $msg = "El archivo no contiene marcaciones para el período seleccionado "
+                         . "({$this->fechaInicio} al {$this->fechaFin}). "
+                         . "Verifique que el archivo corresponda al período indicado.";
+                }
 
                 Cache::put($errorKey,  $msg);
-                Cache::put($statusKey, 'failed');
+                Cache::put($statusKey, 'warning');
 
-                Log::warning('[ProcessAsistenciaCallao] Sin registros en rango de fechas', [
+                Log::warning('[ProcessAsistenciaCallao] Sin registros nuevos', [
                     'token'       => $this->uploadToken,
                     'fechaInicio' => $this->fechaInicio,
                     'fechaFin'    => $this->fechaFin,
+                    'candidatos'  => $candidatos,
                     'invalid'     => $invalidCount,
                 ]);
 
@@ -303,7 +341,6 @@ class ProcessAsistenciaCallao implements ShouldQueue
             Cache::put($progressKey, 100);
 
         } catch (\Exception $e) {
-            // NO se elimina el archivo: puede ser útil para diagnóstico
             $msg = $e->getMessage();
             Cache::put($statusKey, 'failed');
             Cache::put($errorKey,  $msg);
@@ -315,6 +352,9 @@ class ProcessAsistenciaCallao implements ShouldQueue
                 'line'    => $e->getLine(),
             ]);
 
+            // Limpiar archivo para no acumular en storage
+            Storage::disk('local')->delete($this->path);
+
             throw $e;
         }
     }
@@ -323,8 +363,17 @@ class ProcessAsistenciaCallao implements ShouldQueue
 
     private function validateFile(string $fullPath, string $ext, string $errorKey, string $statusKey): void
     {
+        // Retry por race condition: el worker puede arrancar antes de que el
+        // filesystem propague la escritura del controller al stat cache del proceso.
+        clearstatcache(true, $fullPath);
+        $fsExists = file_exists($fullPath);
+        if (!$fsExists) {
+            usleep(500000); // 500ms
+            clearstatcache(true, $fullPath);
+            $fsExists = file_exists($fullPath);
+        }
+
         $storageExists = Storage::disk('local')->exists($this->path);
-        $fsExists      = file_exists($fullPath);
         $size          = $fsExists ? filesize($fullPath) : 0;
         $whoami        = trim((string) shell_exec('whoami 2>/dev/null'));
         $fileCmd       = trim((string) shell_exec('file ' . escapeshellarg($fullPath) . ' 2>/dev/null'))

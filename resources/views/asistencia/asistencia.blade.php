@@ -371,15 +371,13 @@
         }
 
         function btnAddAsistencia() {
-
             $.ajax({
                 type: 'post',
                 url: "{{ route('asistencia.modals.md_add_asistencia') }}",
                 dataType: "json",
-                data: {
-                    "_token": "{{ csrf_token() }}"
-                },
+                data: { "_token": "{{ csrf_token() }}" },
                 success: function(data) {
+                    _activeModalType = 'txt';
                     $("#modal_show_modal").html(data.html);
                     $("#modal_show_modal").modal('show');
                 }
@@ -387,15 +385,17 @@
         }
 
         function btnAddAsistenciaCallao() {
-
+            // Solo detiene Callao — el polling TXT sigue activo en background
+            _stopCallaoPolling();
+            _callaoAborted       = false;
+            _callaoQueuedSeconds = 0;
             $.ajax({
                 type: 'post',
                 url: "{{ route('asistencia.modals.md_add_asistencia_callao') }}",
                 dataType: "json",
-                data: {
-                    "_token": "{{ csrf_token() }}"
-                },
+                data: { "_token": "{{ csrf_token() }}" },
                 success: function(data) {
+                    _activeModalType = 'callao';
                     $("#modal_show_modal").html(data.html);
                     $("#modal_show_modal").modal('show');
                 }
@@ -479,12 +479,33 @@
             followCursor: true,
         });
 
-        var currentUploadToken = null;
-        var uploadPollingInterval = null;
-        var uploadInProgress = false;
+        // ── Estado TXT (independiente de Callao) ──────────────────────────────
+        var txtUploadToken    = null;
+        var txtPollingInterval = null;
+        var txtInProgress     = false;
+        var txtQueuedSeconds  = 0;
+
+        // ── Estado Callao (independiente de TXT) ──────────────────────────────
+        var _callaoPolling       = null;
+        var _callaoAborted       = false;
+        var _callaoQueuedSeconds = 0;
+
+        // Qué tipo de modal está activo ahora mismo ('txt', 'callao', o null)
+        var _activeModalType = null;
+
+        // Detiene TODOS los pollings (solo para cierre de página / navegación)
+        function _stopAllPolling() {
+            if (txtPollingInterval)  { clearInterval(txtPollingInterval);  txtPollingInterval  = null; }
+            if (_callaoPolling)      { clearInterval(_callaoPolling);      _callaoPolling      = null; }
+        }
+
+        // Detiene solo el polling Callao
+        function _stopCallaoPolling() {
+            if (_callaoPolling) { clearInterval(_callaoPolling); _callaoPolling = null; }
+        }
 
         window.addEventListener('beforeunload', function(e) {
-            if (uploadInProgress) {
+            if (txtInProgress) {
                 var msg = 'Si sale de esta ventana se cancelara el envio.';
                 e.preventDefault();
                 e.returnValue = msg;
@@ -493,148 +514,154 @@
         });
 
         window.addEventListener('unload', function() {
-            if (!uploadInProgress || !currentUploadToken) {
-                return;
-            }
+            if (!txtInProgress || !txtUploadToken) return;
             var params = new URLSearchParams();
-            params.append('token', currentUploadToken);
+            params.append('token', txtUploadToken);
             params.append('_token', "{{ csrf_token() }}");
             navigator.sendBeacon("{{ route('asistencia.upload.cancel') }}", params);
         });
 
         $(document).on('click', '#btnCancelarUpload', function(e) {
-            if (!uploadInProgress || !currentUploadToken) {
-                return;
-            }
+            if (!txtInProgress || !txtUploadToken) return;
             e.preventDefault();
-            var confirmCancel = confirm('Si sale de esta ventana se cancelara el envio. Desea continuar?');
-            if (!confirmCancel) {
-                return;
-            }
+            if (!confirm('Si sale de esta ventana se cancelara el envio. Desea continuar?')) return;
 
             $.post("{{ route('asistencia.upload.cancel') }}", {
-                token: currentUploadToken,
+                token:  txtUploadToken,
                 _token: "{{ csrf_token() }}"
             }).always(function() {
-                if (uploadPollingInterval) {
-                    clearInterval(uploadPollingInterval);
-                }
-                uploadInProgress = false;
-                currentUploadToken = null;
+                if (txtPollingInterval) { clearInterval(txtPollingInterval); txtPollingInterval = null; }
+                txtInProgress    = false;
+                txtUploadToken   = null;
+                txtQueuedSeconds = 0;
                 $("#uploadProgressWrapper").addClass("d-none");
                 $("#uploadQueueInfo").addClass("d-none").text("");
                 $("#uploadProgressBar").css("width", "0%").text("0%");
-                document.getElementById("btnEnviarForm").disabled = false;
-                document.getElementById("btnEnviarForm").innerHTML = "Importar";
+                var $btn = $("#modal_show_modal #btnEnviarForm");
+                $btn.prop("disabled", false).html("Importar");
                 $("#modal_show_modal").modal('hide');
             });
         });
 
-        function btnStoreTxt() {
+        // ── TXT: reinicia UI del modal TXT ───────────────────────────────────
+        function _txtResetUI() {
+            if (txtPollingInterval) { clearInterval(txtPollingInterval); txtPollingInterval = null; }
+            txtInProgress    = false;
+            txtQueuedSeconds = 0;
+            var $btn = $("#modal_show_modal #btnEnviarForm");
+            $btn.prop("disabled", false).html("Importar");
+            $("#uploadProgressWrapper").addClass("d-none");
+            $("#uploadQueueInfo").addClass("d-none").text("");
+            $("#uploadProgressBar").css("width", "0%").text("0%");
+        }
 
+        function btnStoreTxt() {
             var file_data = $("#txt_file").prop("files")[0];
-            var formData = new FormData();
+            var formData  = new FormData();
             formData.append("txt_file", file_data);
             formData.append("_token", $("input[name=_token]").val());
 
             $.ajax({
                 type: 'POST',
-                url: "{{ route('asistencia.store_asistencia') }}", // Cambia la ruta segun tu configuracion
+                url: "{{ route('asistencia.store_asistencia') }}",
                 data: formData,
                 processData: false,
                 contentType: false,
                 beforeSend: function() {
-                    document.getElementById("btnEnviarForm").innerHTML =
-                        '<i class="fa fa-spinner fa-spin"></i> Espere... Cargando datos';
-                    document.getElementById("btnEnviarForm").disabled = true;
+                    var $btn = $("#modal_show_modal #btnEnviarForm");
+                    $btn.html('<i class="fa fa-spinner fa-spin"></i> Espere... Cargando datos').prop("disabled", true);
                     $("#uploadProgressWrapper").removeClass("d-none");
                     $("#uploadProgressBar").css("width", "0%").text("0%");
                     $("#uploadQueueInfo").addClass("d-none").text("");
-                    uploadInProgress = true;
+                    txtInProgress    = true;
+                    txtQueuedSeconds = 0;
                 },
                 success: function(data) {
                     if (!data.upload_token) {
+                        _txtResetUI();
                         $("#modal_show_modal").modal('hide');
                         refrescarTablaActual();
-                        Toastify({
-                            text: "Se agregaron los registros",
-                            className: "info",
-                            gravity: "bottom",
-                            style: {
-                                background: "#47B257",
-                            }
-                        }).showToast();
+                        Toastify({ text: "Se agregaron los registros", className: "info", gravity: "bottom",
+                            style: { background: "#47B257" } }).showToast();
                         return;
                     }
 
-                    currentUploadToken = data.upload_token;
-                    uploadPollingInterval = setInterval(function() {
-                        $.get("{{ route('asistencia.upload.progress') }}", {
-                            token: data.upload_token
-                        }, function(resp) {
-                            var progress = resp.progress || 0;
-                            $("#uploadProgressBar")
-                                .css("width", progress + "%")
-                                .text(progress + "%");
+                    txtUploadToken = data.upload_token;
 
-                            if (resp.status === 'cancelled') {
-                                clearInterval(uploadPollingInterval);
-                                uploadInProgress = false;
-                                currentUploadToken = null;
-                                $("#uploadQueueInfo").removeClass("d-none").text(
-                                    "Carga cancelada.");
-                                document.getElementById("btnEnviarForm").disabled = false;
-                                document.getElementById("btnEnviarForm").innerHTML = "Importar";
+                    txtPollingInterval = setInterval(function() {
+                        $.get("{{ route('asistencia.upload.progress') }}", { token: txtUploadToken }, function(resp) {
+                            var progress = parseInt(resp.progress) || 0;
+                            var status   = resp.status || 'queued';
+
+                            $("#uploadProgressBar").css("width", progress + "%").text(progress + "%");
+
+                            // ── Status terminal ───────────────────────────────
+                            if (status === 'completed') {
+                                clearInterval(txtPollingInterval); txtPollingInterval = null;
+                                txtInProgress = false; txtUploadToken = null; txtQueuedSeconds = 0;
+                                refrescarTablaActual();
+                                Toastify({ text: "Carga TXT terminada correctamente.", className: "info", gravity: "bottom",
+                                    style: { background: "#47B257" } }).showToast();
+                                // Solo cerrar modal si el modal TXT sigue activo
+                                if (_activeModalType === 'txt') {
+                                    _activeModalType = null;
+                                    $("#modal_show_modal").modal('hide');
+                                }
                                 return;
                             }
 
-                            if (resp.status === 'queued' && resp.position !== null) {
-                                $("#uploadQueueInfo").removeClass("d-none").text(
-                                    "En cola: posicion " + (resp.position + 1));
-                            } else if (resp.status === 'running') {
-                                $("#uploadQueueInfo").removeClass("d-none").text(
-                                    "Procesando...");
+                            if (status === 'failed') {
+                                clearInterval(txtPollingInterval); txtPollingInterval = null;
+                                txtInProgress = false; txtQueuedSeconds = 0;
+                                var errMsg = resp.error || "Error desconocido en el procesamiento.";
+                                if (_activeModalType === 'txt') {
+                                    var $btn = $("#modal_show_modal #btnEnviarForm");
+                                    $btn.prop("disabled", false).html("Importar");
+                                }
+                                Swal.fire({ icon: "error", title: "Error al procesar TXT",
+                                    text: errMsg, confirmButtonText: "Aceptar" });
+                                return;
                             }
 
-                            if (progress >= 100) {
-                                clearInterval(uploadPollingInterval);
-                                uploadInProgress = false;
-                                currentUploadToken = null;
-                                $("#modal_show_modal").modal('hide');
-                                document.getElementById("btnEnviarForm").disabled = false;
-                                document.getElementById("btnEnviarForm").innerHTML = "Importar";
-                                refrescarTablaActual();
-                                Toastify({
-                                    text: "Carga terminada",
-                                    className: "info",
-                                    gravity: "bottom",
-                                    style: {
-                                        background: "#47B257",
-                                    }
-                                }).showToast();
+                            if (status === 'cancelled') {
+                                clearInterval(txtPollingInterval); txtPollingInterval = null;
+                                txtInProgress = false; txtUploadToken = null; txtQueuedSeconds = 0;
+                                if (_activeModalType === 'txt') {
+                                    $("#uploadQueueInfo").removeClass("d-none").text("Carga cancelada.");
+                                    var $btn = $("#modal_show_modal #btnEnviarForm");
+                                    $btn.prop("disabled", false).html("Importar");
+                                }
+                                return;
                             }
+
+                            // ── Status en progreso ────────────────────────────
+                            if (status === 'queued') {
+                                txtQueuedSeconds++;
+                                var queueMsg = "En cola" + (resp.position !== null ? ": posición " + (resp.position + 1) : "") + "...";
+                                if (txtQueuedSeconds >= 30) {
+                                    queueMsg = "El archivo fue guardado, pero el worker aún no inicia el procesamiento. Verifique el estado de la cola.";
+                                }
+                                $("#uploadQueueInfo").removeClass("d-none").text(queueMsg);
+                            } else if (status === 'processing' || status === 'running') {
+                                txtQueuedSeconds = 0;
+                                $("#uploadQueueInfo").removeClass("d-none").text("Procesando... " + progress + "%");
+                            }
+                        }).fail(function() {
+                            // Error de red: se reintenta en el siguiente tick
                         });
                     }, 1000);
                 },
-                error: function(error) {
-                    $("#modal_show_modal").modal('hide');
-                    document.getElementById("btnEnviarForm").disabled = false;
-                    document.getElementById("btnEnviarForm").innerHTML = "Importar";
-                    uploadInProgress = false;
-                    currentUploadToken = null;
-                    Swal.fire({
-                        icon: "error",
-                        text: "Hubo un error al cargar las asistencias... Intentar nuevamente! Verifique que el archivo txt no tenga el caracter en la ultima fila  \x1a",
-                        confirmButtonText: "Aceptar"
-                    })
+                error: function(xhr) {
+                    _txtResetUI();
+                    var errMsg = (xhr.responseJSON && xhr.responseJSON.message)
+                        ? xhr.responseJSON.message
+                        : "Hubo un error al cargar las asistencias. Intente nuevamente.";
+                    Swal.fire({ icon: "error", title: "Error al subir archivo", text: errMsg, confirmButtonText: "Aceptar" });
                 }
             });
-
         }
 
         // ── Carga Callao por chunks ────────────────────────────────────────────
-        var _callaoPolling  = null;   // intervalo de polling del job
-        var _callaoAborted  = false;  // bandera para cancelar mid-upload
 
         // Genera token hexadecimal aleatorio de 16 chars
         function _callaoToken() {
@@ -642,6 +669,8 @@
             crypto.getRandomValues(arr);
             return Array.from(arr, function(b){ return b.toString(16).padStart(2,'0'); }).join('');
         }
+
+        function _callaoBtn() { return $("#modal_show_modal #btnEnviarForm"); }
 
         // Muestra/actualiza la barra de la fase 1 (subida)
         function _callaoUploadUI(label, pct) {
@@ -660,11 +689,13 @@
             $("#callaoProcessBar").css("width", pct + "%");
         }
 
-        // Resetea toda la UI del modal al estado inicial
+        // Resetea toda la UI del modal Callao al estado inicial
         function _callaoReset() {
             if (_callaoPolling) { clearInterval(_callaoPolling); _callaoPolling = null; }
-            _callaoAborted = false;
-            $("#btnEnviarForm").prop("disabled", false).html('<i class="fa fa-upload me-1"></i>Importar');
+            _callaoAborted       = false;
+            _callaoQueuedSeconds = 0;
+            if (_activeModalType === 'callao') { _activeModalType = null; }
+            _callaoBtn().prop("disabled", false).html('<i class="fa fa-upload me-1"></i>Importar');
             $("#callaoProgressArea").addClass("d-none");
             $("#callaoPhaseProcess").addClass("d-none");
             $("#callaoUploadBar").css("width","0%");
@@ -675,10 +706,11 @@
         // Muestra error al usuario y deja el botón activo para reintentar
         function _callaoError(msg) {
             if (_callaoPolling) { clearInterval(_callaoPolling); _callaoPolling = null; }
-            $("#btnEnviarForm").prop("disabled", false).html('<i class="fa fa-upload me-1"></i>Importar');
+            _callaoAborted       = false;
+            _callaoQueuedSeconds = 0;
+            _callaoBtn().prop("disabled", false).html('<i class="fa fa-upload me-1"></i>Importar');
             $("#callaoProgressMsg").html('<span class="text-danger"><i class="fa fa-exclamation-triangle me-1"></i>' + msg + '</span>');
 
-            // Separar el mensaje principal del detalle técnico (a partir de "Detalle técnico:" o "Código de salida:")
             var mainMsg  = msg;
             var techMsg  = '';
             var splitIdx = msg.indexOf('Detalle técnico:');
@@ -688,8 +720,7 @@
                 techMsg = msg.substring(splitIdx).trim();
             }
 
-            var htmlContent = '<div style="text-align:left;font-size:0.95em">'
-                + '<p>' + mainMsg + '</p>';
+            var htmlContent = '<div style="text-align:left;font-size:0.95em"><p>' + mainMsg + '</p>';
             if (techMsg) {
                 htmlContent += '<details style="margin-top:8px;cursor:pointer">'
                     + '<summary style="color:#888;font-size:0.85em">Detalle técnico</summary>'
@@ -698,17 +729,13 @@
             }
             htmlContent += '</div>';
 
-            Swal.fire({
-                icon: 'error',
-                title: 'Error al procesar archivo',
-                html: htmlContent,
-                confirmButtonText: 'Aceptar',
-                width: techMsg ? 600 : 400,
-            });
+            Swal.fire({ icon: 'error', title: 'Error al procesar archivo', html: htmlContent,
+                confirmButtonText: 'Aceptar', width: techMsg ? 600 : 400 });
         }
 
-        // Inicia polling del progreso del job (fase 2: 0-100 del job → se muestra como 0-100% en barra verde)
+        // Inicia polling del progreso del job Callao (fase 2)
         function _callaoStartPolling(token) {
+            _callaoQueuedSeconds = 0;
             $("#callaoProgressMsg").text("Archivo en cola de procesamiento...");
             _callaoPolling = setInterval(function() {
                 $.get("{{ route('asistencia.upload.progress') }}", { token: token }, function(resp) {
@@ -719,30 +746,53 @@
 
                     if (status === 'completed') {
                         clearInterval(_callaoPolling); _callaoPolling = null;
+                        _callaoQueuedSeconds = 0;
                         _callaoProcessUI("¡Completado!", 100);
                         setTimeout(function() {
                             $("#modal_show_modal").modal("hide");
                             _callaoReset();
                             tabla_seccion();
-                            Toastify({
-                                text: "Asistencias Callao importadas correctamente.",
-                                className: "info",
-                                gravity: "bottom",
-                                style: { background: "#47B257" }
-                            }).showToast();
+                            Toastify({ text: "Asistencias Callao importadas correctamente.", className: "info",
+                                gravity: "bottom", style: { background: "#47B257" } }).showToast();
                         }, 600);
+                        return;
+                    }
 
-                    } else if (status === 'failed') {
+                    if (status === 'warning') {
                         clearInterval(_callaoPolling); _callaoPolling = null;
-                        var errMsg = resp.error || "Error desconocido en el procesamiento.";
-                        _callaoError(errMsg);
+                        _callaoProcessUI("Proceso completado — sin registros nuevos.", 100);
+                        _callaoBtn().prop("disabled", false).html('<i class="fa fa-upload me-1"></i>Importar');
+                        if (_activeModalType === 'callao') { _activeModalType = null; }
+                        Swal.fire({ icon: 'warning', title: 'Sin registros nuevos para importar',
+                            html: '<div style="text-align:left;font-size:0.95em">' + (resp.error || '') + '</div>',
+                            confirmButtonText: 'Aceptar', width: 520 });
+                        return;
+                    }
 
-                    } else if (status === 'cancelled') {
+                    if (status === 'failed') {
+                        clearInterval(_callaoPolling); _callaoPolling = null;
+                        _callaoError(resp.error || "Error desconocido en el procesamiento.");
+                        return;
+                    }
+
+                    if (status === 'cancelled') {
                         clearInterval(_callaoPolling); _callaoPolling = null;
                         _callaoReset();
+                        return;
+                    }
+
+                    if (status === 'queued') {
+                        _callaoQueuedSeconds++;
+                        var queueMsg = "En cola de procesamiento...";
+                        if (_callaoQueuedSeconds >= 30) {
+                            queueMsg = "El archivo fue guardado, pero el worker aún no inicia el procesamiento. Verifique el estado de la cola.";
+                        }
+                        $("#callaoProgressMsg").text(queueMsg);
+                    } else {
+                        _callaoQueuedSeconds = 0;
                     }
                 }).fail(function() {
-                    // Error de red en el polling: se reintenta en el siguiente intervalo
+                    // Error de red: se reintenta en el siguiente tick
                 });
             }, 2000);
         }
@@ -752,12 +802,12 @@
             if (_callaoAborted) return;
 
             var CHUNK = 512 * 1024; // 512 KB (bajo el límite del proxy externo)
-            var start  = index * CHUNK;
-            var end    = Math.min(start + CHUNK, file.size);
-            var blob   = file.slice(start, end);
+            var start = index * CHUNK;
+            var end   = Math.min(start + CHUNK, file.size);
+            var blob  = file.slice(start, end);
 
-            var pct    = Math.round((index / totalChunks) * 100);
-            _callaoUploadUI("Subiendo parte " + (index + 1) + " de " + totalChunks + "...", pct);
+            _callaoUploadUI("Subiendo parte " + (index + 1) + " de " + totalChunks + "...",
+                Math.round((index / totalChunks) * 100));
 
             var fd = new FormData();
             fd.append("chunk",        blob, "chunk_" + index);
@@ -768,34 +818,24 @@
             fd.append("_token",       csrf);
 
             $.ajax({
-                type: "POST",
-                url: "{{ route('asistencia.callao.chunk') }}",
-                data: fd,
-                processData: false,
-                contentType: false,
+                type: "POST", url: "{{ route('asistencia.callao.chunk') }}",
+                data: fd, processData: false, contentType: false,
                 success: function(resp) {
                     if (!resp.success) {
                         _callaoError("Error en parte " + (index + 1) + ": " + (resp.message || "respuesta inesperada."));
                         return;
                     }
                     if (index + 1 < totalChunks) {
-                        // Siguiente chunk
                         _callaoSendChunk(file, token, index + 1, totalChunks, csrf, fechaInicio, fechaFin);
                     } else {
-                        // Todos los chunks enviados → finalizar
                         _callaoUploadUI("Subida completa. Ensamblando...", 100);
                         _callaoFinalize(token, totalChunks, file.name, csrf, fechaInicio, fechaFin);
                     }
                 },
                 error: function(xhr) {
-                    var msg;
-                    if (xhr.status === 413) {
-                        msg = "El servidor rechazó la parte " + (index + 1) + " por tamaño (413). Contacte al administrador para aumentar el límite de subida.";
-                    } else {
-                        msg = (xhr.responseJSON && xhr.responseJSON.message)
-                            ? xhr.responseJSON.message
-                            : "Error de red al subir parte " + (index + 1) + ". Puedes reintentar.";
-                    }
+                    var msg = xhr.status === 413
+                        ? "El servidor rechazó la parte " + (index + 1) + " por tamaño (413). Contacte al administrador."
+                        : ((xhr.responseJSON && xhr.responseJSON.message) || "Error de red al subir parte " + (index + 1) + ". Puedes reintentar.");
                     _callaoError(msg);
                 }
             });
@@ -807,67 +847,44 @@
             $("#callaoProgressMsg").text("Ensamblando partes...");
 
             $.ajax({
-                type: "POST",
-                url: "{{ route('asistencia.callao.finalize') }}",
-                data: {
-                    _token:        csrf,
-                    upload_token:  token,
-                    total_chunks:  totalChunks,
-                    filename:      filename,
-                    fecha_inicio:  fechaInicio,
-                    fecha_fin:     fechaFin,
-                },
+                type: "POST", url: "{{ route('asistencia.callao.finalize') }}",
+                data: { _token: csrf, upload_token: token, total_chunks: totalChunks,
+                        filename: filename, fecha_inicio: fechaInicio, fecha_fin: fechaFin },
                 success: function(resp) {
-                    if (!resp.success) {
-                        _callaoError(resp.message || "Error al ensamblar el archivo.");
-                        return;
-                    }
-                    // Pasar a fase 2
+                    if (!resp.success) { _callaoError(resp.message || "Error al ensamblar el archivo."); return; }
                     $("#callaoProgressMsg").text("Archivo en cola. Iniciando procesamiento...");
                     _callaoStartPolling(token);
                 },
                 error: function(xhr) {
-                    var msg = (xhr.responseJSON && xhr.responseJSON.message)
-                        ? xhr.responseJSON.message
-                        : "Error al ensamblar el archivo. Puedes reintentar.";
-                    _callaoError(msg);
+                    _callaoError((xhr.responseJSON && xhr.responseJSON.message) || "Error al ensamblar el archivo. Puedes reintentar.");
                 }
             });
         }
 
-        // Punto de entrada — llamado desde onclick del botón
+        // Punto de entrada — llamado desde onclick del botón Callao
         function btnStoreAccess() {
             var file = $("#txt_file").prop("files")[0];
-
             if (!file) {
-                Swal.fire({ icon: "warning", text: "Selecciona un archivo .mdb o .accdb.", confirmButtonText: "Aceptar" });
-                return;
+                Swal.fire({ icon: "warning", text: "Selecciona un archivo .mdb o .accdb.", confirmButtonText: "Aceptar" }); return;
             }
-
             var ext = file.name.split(".").pop().toLowerCase();
             if (ext !== "mdb" && ext !== "accdb") {
-                Swal.fire({ icon: "error", text: "Solo se permiten archivos .mdb y .accdb.", confirmButtonText: "Aceptar" });
-                return;
+                Swal.fire({ icon: "error", text: "Solo se permiten archivos .mdb y .accdb.", confirmButtonText: "Aceptar" }); return;
             }
-
             var fechaInicio = $("#fecha_inicio").val();
             var fechaFin    = $("#fecha_fin").val();
             if (!fechaInicio || !fechaFin) {
-                Swal.fire({ icon: "warning", text: "Completa las fechas de inicio y fin.", confirmButtonText: "Aceptar" });
-                return;
+                Swal.fire({ icon: "warning", text: "Completa las fechas de inicio y fin.", confirmButtonText: "Aceptar" }); return;
             }
 
             _callaoReset();
-            _callaoAborted = false;
+            var CHUNK = 512 * 1024;
+            var total = Math.ceil(file.size / CHUNK);
+            var token = _callaoToken();
+            var csrf  = $("#_callao_token").val();
 
-            var CHUNK      = 512 * 1024; // 512 KB
-            var total      = Math.ceil(file.size / CHUNK);
-            var token      = _callaoToken();
-            var csrf       = $("#_callao_token").val();
-
-            $("#btnEnviarForm").prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-1"></i>Subiendo...');
+            _callaoBtn().prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-1"></i>Subiendo...');
             $("#callaoProgressArea").removeClass("d-none");
-
             _callaoSendChunk(file, token, 0, total, csrf, fechaInicio, fechaFin);
         }
         // ── Fin carga Callao por chunks ───────────────────────────────────────

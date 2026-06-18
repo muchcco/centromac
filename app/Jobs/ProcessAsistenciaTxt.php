@@ -39,15 +39,24 @@ class ProcessAsistenciaTxt implements ShouldQueue
         $statusKey   = 'upload_status:'    . $this->uploadToken;
         $errorKey    = 'upload_error:'     . $this->uploadToken;
 
-        Cache::put($statusKey, 'running');
-        Cache::put($progressKey, 0);
+        Cache::put($statusKey,   'processing');
+        Cache::put($progressKey, 5);
 
         $fullPath = Storage::disk('local')->path($this->path);
 
         try {
-            // ── Diagnóstico previo ────────────────────────────────────────────
+            // ── Diagnóstico + retry por race condition del filesystem ─────────
+            // El worker puede arrancar tan rápido que el archivo aún no es visible
+            // en el stat cache del proceso. clearstatcache + reintento lo resuelve.
+            clearstatcache(true, $fullPath);
+            $fsExists = file_exists($fullPath);
+            if (!$fsExists) {
+                usleep(500000); // 500ms
+                clearstatcache(true, $fullPath);
+                $fsExists = file_exists($fullPath);
+            }
+
             $storageExists = Storage::disk('local')->exists($this->path);
-            $fsExists      = file_exists($fullPath);
             $sizeBytes     = $fsExists ? filesize($fullPath) : 0;
             $dirPath       = Storage::disk('local')->path('asistencia-txt');
             $dirExists     = is_dir($dirPath);
@@ -155,6 +164,9 @@ class ProcessAsistenciaTxt implements ShouldQueue
                 'file'    => $e->getFile(),
                 'line'    => $e->getLine(),
             ]);
+
+            // Limpiar archivo para no acumular en storage
+            Storage::disk('local')->delete($this->path);
 
             throw $e;
         }
