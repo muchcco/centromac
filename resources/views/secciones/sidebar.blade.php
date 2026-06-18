@@ -132,6 +132,51 @@
                             </a>
                         </li>
 
+
+
+      <li>
+                    <a href="javascript:void(0);">
+                        <i data-feather="tv"
+                            class="align-self-center menu-icon @if (Request::is('dashboard*')) mm-active @endif"></i>
+                        <span>Monitoreo del Novo</span>
+                        <span class="menu-arrow">
+                            <i class="mdi mdi-chevron-right"></i>
+                        </span>
+                    </a>
+
+                    <ul class="nav-second-level" aria-expanded="false">
+
+
+
+                        <li class="nav-item @if (Request::is('dashboard/index')) mm-active @endif">
+                            <a class="nav-link d-flex align-items-start" href="{{ route('dashboard.monitoreo_novo_estados') }}">
+                               <i data-feather="search" class="align-self-center menu-icon"></i> <span class="ms-2">Consulta de estados</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item @if (Request::is('dashboard/monitoreo_novo_sumaq')) mm-active @endif">
+                            <a class="nav-link d-flex align-items-start" href="{{ route('dashboard.monitoreo_novo_sumaq') }}">
+                               <i data-feather="star" class="align-self-center menu-icon"></i> <span class="ms-2">Ticket SUMAQ</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item @if (Request::is('dashboard/index')) mm-active @endif">
+                            <a class="nav-link d-flex align-items-start" href="{{ route('dashboard.monitoreo_novo_servicios') }}">
+                               <i data-feather="bar-chart" class="align-self-center menu-icon"></i> <span class="ms-2">Indicador 1(servicios < 1 min)</span>
+                            </a>
+                        </li>
+
+ 
+
+
+                    </ul>
+                </li>
+
+
+
+
+
+
                 </li>
             @endif
 

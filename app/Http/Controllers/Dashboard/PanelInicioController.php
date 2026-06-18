@@ -29,4 +29,18 @@ class PanelInicioController extends Controller
     {
         return view('dashboard.incidencias_mac');
     }
+
+    public function monitoreo_novo_sumaq(Request $request)
+    {
+        return view('dashboard.monitoreo_novo_sumaq');
+    }
+    public function monitoreo_novo_estados(Request $request)
+    {
+        return view('dashboard.monitoreo_novo_estados');
+    }
+    public function monitoreo_novo_servicios(Request $request)
+    {
+        return view('dashboard.monitoreo_novo_servicios');
+    }
+    
 }

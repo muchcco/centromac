@@ -655,6 +655,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/indicadores_ans', [PanelInicioController::class, 'indicadores_ans'])->name('indicadores_ans');
         Route::get('/alo_mac', [PanelInicioController::class, 'alo_mac'])->name('alo_mac');
         Route::get('/incidencias_mac', [PanelInicioController::class, 'incidencias_mac'])->name('incidencias_mac');
+        Route::get('/monitoreo_novo_sumaq', [PanelInicioController::class, 'monitoreo_novo_sumaq'])->name('monitoreo_novo_sumaq');
+        Route::get('/monitoreo_novo_estados', [PanelInicioController::class, 'monitoreo_novo_estados'])->name('monitoreo_novo_estados');
+        Route::get('/monitoreo_novo_servicios', [PanelInicioController::class, 'monitoreo_novo_servicios'])->name('monitoreo_novo_servicios');        
     });
 
 
