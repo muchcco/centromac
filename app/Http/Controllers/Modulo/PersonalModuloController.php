@@ -110,7 +110,7 @@ class PersonalModuloController extends Controller
 
         try {
             // Pasa las variables 'modulos' y 'personal' a la vista
-            $view = view('personalmodulo.modals.md_add_personalModulo', compact('modulos', 'personal'))->render();
+            $view = view('personalmodulo.modals.md_add_personalmodulo', compact('modulos', 'personal'))->render();
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -264,7 +264,7 @@ class PersonalModuloController extends Controller
                 ->get();
 
             // Renderizar la vista con los datos obtenidos
-            $view = view('personalmodulo.modals.md_edit_personalModulo', compact('personalModulo', 'modulos', 'personal'))->render();
+            $view = view('personalmodulo.modals.md_edit_personalmodulo', compact('personalModulo', 'modulos', 'personal'))->render();
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
