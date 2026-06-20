@@ -59,6 +59,8 @@ use App\Http\Controllers\Modulo\ActualizacionesController;
 use App\Http\Controllers\Modulo\AnsCatalogoController;
 use App\Http\Controllers\Modulo\EntidadCatalogoController;
 use App\Http\Controllers\Modulo\MiAsistenciaController;
+use App\Http\Controllers\Modulo\AsistenciaApiTokenController;
+use App\Http\Controllers\Modulo\AsistenciaSyncLogController;
 use Illuminate\Support\Facades\Mail;
 
 /** FORMULARIO DE REGISTROS PARA BD PERSONAL **/
@@ -148,6 +150,17 @@ Route::middleware(['auth', 'devtools'])->prefix('devtools')->name('devtools.')->
     Route::get('/logs',          [DevToolsController::class, 'index'])->name('logs');
     Route::get('/logs/tail',     [DevToolsController::class, 'tail'])->name('logs.tail');
     Route::get('/queue/status',  [DevToolsController::class, 'queueStatus'])->name('queue.status');
+});
+
+// ── API Asistencia — Gestión web (solo Administrador) ────────────────────────
+Route::middleware(['auth', 'role:Administrador'])->prefix('asistencia-api')->name('asistencia-api.')->group(function () {
+    // Tokens
+    Route::get('/tokens',                        [AsistenciaApiTokenController::class, 'index'])->name('tokens.index');
+    Route::post('/tokens',                       [AsistenciaApiTokenController::class, 'store'])->name('tokens.store');
+    Route::post('/tokens/{id}/toggle',           [AsistenciaApiTokenController::class, 'toggle'])->name('tokens.toggle');
+    Route::delete('/tokens/{id}',                [AsistenciaApiTokenController::class, 'destroy'])->name('tokens.destroy');
+    // Logs de sincronización
+    Route::get('/logs',                          [AsistenciaSyncLogController::class, 'index'])->name('logs.index');
 });
 
 /***********************************************************************************************************************************************/

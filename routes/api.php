@@ -19,3 +19,17 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post('recibir-datos', [PagesController::class, 'recibirDatos'])->name('recibir-datos');
+
+// ── API Asistencia Lima Norte ────────────────────────────────────────────────
+use App\Http\Controllers\Api\AsistenciaSyncController;
+
+Route::prefix('asistencia')->name('api.asistencia.')->group(function () {
+    // Sin autenticación — health check
+    Route::get('/ping', [AsistenciaSyncController::class, 'ping'])->name('ping');
+
+    // Con token Bearer
+    Route::middleware('api.token')->group(function () {
+        Route::post('/sync',        [AsistenciaSyncController::class, 'sync'])->name('sync');
+        Route::get('/ultimo-item',  [AsistenciaSyncController::class, 'ultimoItem'])->name('ultimo-item');
+    });
+});

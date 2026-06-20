@@ -503,6 +503,22 @@
                                 class="align-self-center menu-icon"></i><span>Usuarios</span></a>
                     </li>
                 @endif
+
+                <li class="menu-label my-2" style="font-weight: bolder;color: white;">API Asistencia</li>
+                <li class="@if (Request::is('asistencia-api/tokens*')) mm-active @endif">
+                    <a href="{{ route('asistencia-api.tokens.index') }}"
+                       class="@if (Request::is('asistencia-api/tokens*')) active @endif">
+                        <i data-feather="key" class="align-self-center menu-icon"></i>
+                        <span>Tokens API</span>
+                    </a>
+                </li>
+                <li class="@if (Request::is('asistencia-api/logs*')) mm-active @endif">
+                    <a href="{{ route('asistencia-api.logs.index') }}"
+                       class="@if (Request::is('asistencia-api/logs*')) active @endif">
+                        <i data-feather="activity" class="align-self-center menu-icon"></i>
+                        <span>Sincronizaciones API</span>
+                    </a>
+                </li>
             @endrole
 
 
