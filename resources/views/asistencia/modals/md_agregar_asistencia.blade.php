@@ -14,8 +14,8 @@
 
                 <div class="form-group">
                     <h5>DNI</h5>
-                    <input type="text" class="form-control" name="DNI" id="DNI" required maxlength="8"
-                        oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Ingrese DNI (8 dígitos)">
+                    <input type="text" class="form-control" name="DNI" id="DNI" required maxlength="12"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Ingrese DNI (12 dígitos)">
                 </div>
 
                 <div class="form-group">
@@ -107,7 +107,7 @@
         $('#DNI').on('input', function() {
             const dni = $(this).val();
 
-            if (dni.length === 8) {
+            if (dni.length === 12) {
                 // Usar la función storeAsistenciatest para buscar el nombre y mostrarlo
                 const formData = new FormData();
                 formData.append('DNI', dni);
