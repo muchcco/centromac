@@ -95,7 +95,7 @@ class ItineranteController extends Controller
         }
         try {
             // Pasa las variables 'modulos' y 'personal' a la vista
-            $view = view('personalmoduloitinerante.modals.md_add_personalModulo', compact('modulos', 'personal'))->render();
+            $view = view('personalmoduloitinerante.modals.md_add_personalmodulo', compact('modulos', 'personal'))->render();
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -199,7 +199,7 @@ class ItineranteController extends Controller
                 ->get();
 
             // Renderizar la vista con los datos obtenidos
-            $view = view('personalmoduloitinerante.modals.md_edit_personalModulo', compact('personalModulo', 'modulos', 'personal'))->render();
+            $view = view('personalmoduloitinerante.modals.md_edit_personalmodulo', compact('personalModulo', 'modulos', 'personal'))->render();
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
