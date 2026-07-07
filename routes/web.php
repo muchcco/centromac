@@ -680,7 +680,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/incidencias_mac', [PanelInicioController::class, 'incidencias_mac'])->name('incidencias_mac');
         Route::get('/monitoreo_novo_sumaq', [PanelInicioController::class, 'monitoreo_novo_sumaq'])->name('monitoreo_novo_sumaq');
         Route::get('/monitoreo_novo_estados', [PanelInicioController::class, 'monitoreo_novo_estados'])->name('monitoreo_novo_estados');
-        Route::get('/monitoreo_novo_servicios', [PanelInicioController::class, 'monitoreo_novo_servicios'])->name('monitoreo_novo_servicios');        
+        Route::get('/monitoreo_novo_servicios', [PanelInicioController::class, 'monitoreo_novo_servicios'])->name('monitoreo_novo_servicios');
     });
 
 
@@ -698,10 +698,11 @@ Route::group(['middleware' => ['auth']], function () {
     Route::delete('/verificaciones/{verificacion}', [VerificacionController::class, 'destroy'])->name('verificaciones.destroy');
     Route::get('/verificaciones/contingencia', [VerificacionController::class, 'contingencia'])->name('verificaciones.contingencia');
     Route::get('/verificaciones/filtrar', [VerificacionController::class, 'filtrar'])->name('verificaciones.filtrar');
+    Route::get('/verificaciones/contingencia/detalle-dia', [VerificacionController::class, 'detalleContingenciaDia'])->name('verificaciones.contingencia.detalle-dia');
+    Route::get('/verificaciones/monitoreo', [VerificacionController::class, 'monitoreo'])->name('verificaciones.monitoreo');
     Route::get('verificaciones/{fecha}', [VerificacionController::class, 'show'])->name('verificaciones.show');
     Route::get('/verificaciones/get-observations', [VerificacionController::class, 'getObservations'])->name('verificaciones.getObservations');
     Route::get('/verificaciones/observaciones/export', [VerificacionController::class, 'export'])->name('verificaciones.export');
-
     /** permisos especiales para check list ***/
     Route::post('/verificaciones/modals/up_time', [VerificacionController::class, 'up_time'])->name('verificaciones.modals.up_time');
     Route::post('/verificaciones/update_time', [VerificacionController::class, 'update_time'])

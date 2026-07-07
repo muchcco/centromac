@@ -345,14 +345,38 @@ class VerificacionController extends Controller
 
     public function contingencia(Request $request)
     {
-        // 🔥 mes seleccionado
+        $userAuth = auth()->user();
+
         $mes = $request->mes ?? now()->format('Y-m');
+
+        if ($userAuth->hasRole(['Administrador', 'Moderador'])) {
+            $idmac = $request->input('idmac') ?: $userAuth->idcentro_mac;
+
+            $centrosMac = DB::table('m_centro_mac')
+                ->select('IDCENTRO_MAC as id', 'NOMBRE_MAC as nom')
+                ->orderBy('NOMBRE_MAC')
+                ->get();
+
+            $puedeElegirMac = true;
+        } else {
+            $idmac = $userAuth->idcentro_mac;
+
+            $centrosMac = DB::table('m_centro_mac')
+                ->select('IDCENTRO_MAC as id', 'NOMBRE_MAC as nom')
+                ->where('IDCENTRO_MAC', $idmac)
+                ->get();
+
+            $puedeElegirMac = false;
+        }
+
+        $name_mac = DB::table('m_centro_mac')
+            ->where('IDCENTRO_MAC', $idmac)
+            ->value('NOMBRE_MAC') ?? 'Centro MAC';
 
         $year = substr($mes, 0, 4);
         $month = substr($mes, 5, 2);
 
-        // 🔥 traer datos SOLO del mes
-        $verificaciones = Verificacion::where('id_centromac', auth()->user()->idcentro_mac)
+        $verificaciones = Verificacion::where('id_centromac', $idmac)
             ->whereYear('Fecha', $year)
             ->whereMonth('Fecha', $month)
             ->get();
@@ -362,8 +386,6 @@ class VerificacionController extends Controller
         $tabla = [];
 
         foreach ($verificaciones as $v) {
-
-            // 🔥 día (1–31)
             $dia = (int) Carbon::parse($v->Fecha)->format('d');
 
             if (!isset($tabla[$dia])) {
@@ -374,23 +396,27 @@ class VerificacionController extends Controller
                 ];
             }
 
-            // 🔥 CORRECCIÓN CLAVE (alinear campos)
             $data = collect($campos)->mapWithKeys(function ($campo) use ($v) {
                 return [$campo => (int) $v->$campo];
             })->toArray();
 
-            if ($v->AperturaCierre == 0) $tabla[$dia]['Apertura'] = $data;
-            if ($v->AperturaCierre == 1) $tabla[$dia]['Relevo'] = $data;
-            if ($v->AperturaCierre == 2) $tabla[$dia]['Cierre'] = $data;
+            if ($v->AperturaCierre == 0) {
+                $tabla[$dia]['Apertura'] = $data;
+            }
+
+            if ($v->AperturaCierre == 1) {
+                $tabla[$dia]['Relevo'] = $data;
+            }
+
+            if ($v->AperturaCierre == 2) {
+                $tabla[$dia]['Cierre'] = $data;
+            }
         }
 
-        // 🔥 MATRIZ FINAL
         $matriz = [];
 
         foreach ($campos as $campo) {
-
             foreach (range(1, 31) as $dia) {
-
                 $a = $tabla[$dia]['Apertura'][$campo] ?? null;
                 $c = $tabla[$dia]['Cierre'][$campo] ?? null;
 
@@ -401,7 +427,7 @@ class VerificacionController extends Controller
                 } elseif ($a === 1 && $c !== 1) {
                     $valor = '❌C';
                 } elseif ($a !== null || $c !== null) {
-                    $valor = '❌'; // existe pero incompleto
+                    $valor = '❌';
                 } else {
                     $valor = '-';
                 }
@@ -410,7 +436,77 @@ class VerificacionController extends Controller
             }
         }
 
-        return view('verificaciones.contingencia', compact('matriz', 'mes', 'campos'));
+        return view('verificaciones.contingencia', compact(
+            'matriz',
+            'mes',
+            'campos',
+            'idmac',
+            'name_mac',
+            'centrosMac',
+            'puedeElegirMac'
+        ));
+    }
+    public function detalleContingenciaDia(Request $request)
+    {
+        $userAuth = auth()->user();
+
+        $request->validate([
+            'mes' => 'required|date_format:Y-m',
+            'dia' => 'required|integer|min:1|max:31',
+            'idmac' => 'nullable|integer',
+        ]);
+
+        if ($userAuth->hasRole(['Administrador', 'Moderador'])) {
+            $idmac = $request->input('idmac') ?: $userAuth->idcentro_mac;
+        } else {
+            $idmac = $userAuth->idcentro_mac;
+        }
+
+        try {
+            $fecha = Carbon::createFromFormat(
+                'Y-m-d',
+                $request->mes . '-' . str_pad($request->dia, 2, '0', STR_PAD_LEFT)
+            );
+
+            if (
+                $fecha->format('Y-m') !== $request->mes ||
+                (int) $fecha->format('d') !== (int) $request->dia
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La fecha seleccionada no es válida.'
+                ], 422);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La fecha seleccionada no es válida.'
+            ], 422);
+        }
+
+        $campos = $this->camposChecklist();
+
+        $registros = Verificacion::with('user')
+            ->where('id_centromac', $idmac)
+            ->whereDate('Fecha', $fecha->format('Y-m-d'))
+            ->orderBy('AperturaCierre')
+            ->get();
+
+        $name_mac = DB::table('m_centro_mac')
+            ->where('IDCENTRO_MAC', $idmac)
+            ->value('NOMBRE_MAC') ?? 'Centro MAC';
+
+        $html = view('verificaciones.modals.detalle_contingencia_dia', compact(
+            'registros',
+            'campos',
+            'fecha',
+            'name_mac'
+        ))->render();
+
+        return response()->json([
+            'success' => true,
+            'html' => $html
+        ]);
     }
     public function observaciones(Request $request)
     {
@@ -611,5 +707,197 @@ class VerificacionController extends Controller
             ->update(['hora_registro' => $request->fecha_fin . ' ' . $request->hora_fin]);
 
         return response()->json(['success' => true]);
+    }
+    public function monitoreo(Request $request)
+    {
+        $userAuth = auth()->user();
+
+        if (!$userAuth->hasRole(['Administrador', 'Moderador'])) {
+            abort(403, 'No tiene permisos para acceder al monitoreo.');
+        }
+
+        $request->validate([
+            'mes' => 'nullable|date_format:Y-m',
+        ]);
+
+        $mes = $request->input('mes', now()->format('Y-m'));
+
+        try {
+            $inicioMes = Carbon::createFromFormat('Y-m', $mes)->startOfMonth();
+        } catch (\Exception $e) {
+            $inicioMes = now()->startOfMonth();
+            $mes = $inicioMes->format('Y-m');
+        }
+
+        $finMes = $inicioMes->copy()->endOfMonth();
+        $dias = range(1, $finMes->daysInMonth);
+        $hoy = Carbon::today();
+
+        $macs = DB::table('m_centro_mac')
+            ->select(
+                'IDCENTRO_MAC as idmac',
+                'NOMBRE_MAC as name_mac'
+            )
+            ->orderBy('NOMBRE_MAC')
+            ->get();
+
+        $registros = Verificacion::select(
+            'id_centromac',
+            'Fecha',
+            'AperturaCierre'
+        )
+            ->whereBetween('Fecha', [
+                $inicioMes->format('Y-m-d'),
+                $finMes->format('Y-m-d')
+            ])
+            ->get();
+
+        $feriados = DB::table('feriados')
+            ->select('id', 'name', 'fecha', 'id_centromac')
+            ->whereBetween('fecha', [
+                $inicioMes->format('Y-m-d'),
+                $finMes->format('Y-m-d')
+            ])
+            ->get();
+        $feriadosGenerales = [];
+        $feriadosPorMac = [];
+
+        foreach ($feriados as $feriado) {
+            if (!empty($feriado->fecha)) {
+                $fechas = [
+                    Carbon::parse($feriado->fecha)->format('Y-m-d')
+                ];
+            } elseif (!empty($feriado->fecha_inicio) && !empty($feriado->fecha_fin)) {
+                $inicioFeriado = Carbon::parse($feriado->fecha_inicio);
+                $finFeriado = Carbon::parse($feriado->fecha_fin);
+
+                if ($inicioFeriado->lt($inicioMes)) {
+                    $inicioFeriado = $inicioMes->copy();
+                }
+
+                if ($finFeriado->gt($finMes)) {
+                    $finFeriado = $finMes->copy();
+                }
+
+                $fechas = [];
+
+                while ($inicioFeriado->lte($finFeriado)) {
+                    $fechas[] = $inicioFeriado->format('Y-m-d');
+                    $inicioFeriado->addDay();
+                }
+            } else {
+                continue;
+            }
+
+            foreach ($fechas as $fechaFeriado) {
+                if (is_null($feriado->id_centromac)) {
+                    $feriadosGenerales[$fechaFeriado] = $feriado->name;
+                } else {
+                    $feriadosPorMac[(int) $feriado->id_centromac][$fechaFeriado] = $feriado->name;
+                }
+            }
+        }
+
+        $matriz = [];
+
+        foreach ($macs as $mac) {
+            foreach ($dias as $dia) {
+                $fechaDia = $inicioMes->copy()->day($dia);
+                $fechaFormato = $fechaDia->format('Y-m-d');
+
+                $esDomingo = $fechaDia->isSunday();
+
+                $feriadoGeneral = $feriadosGenerales[$fechaFormato] ?? null;
+                $feriadoMac = $feriadosPorMac[$mac->idmac][$fechaFormato] ?? null;
+
+                $nombreFeriado = $feriadoMac ?? $feriadoGeneral;
+
+                $esFeriado = !is_null($nombreFeriado);
+                $esFuturo = $fechaDia->gt($hoy);
+
+                $evaluar = !$esDomingo && !$esFeriado && !$esFuturo;
+
+                $matriz[$mac->idmac][$dia] = [
+                    'apertura' => false,
+                    'relevo' => false,
+                    'cierre' => false,
+                    'evaluar' => $evaluar,
+                    'es_domingo' => $esDomingo,
+                    'es_feriado' => $esFeriado,
+                    'es_futuro' => $esFuturo,
+                    'feriado_nombre' => $nombreFeriado,
+                ];
+            }
+        }
+
+        foreach ($registros as $registro) {
+            $idmac = (int) $registro->id_centromac;
+            $dia = (int) Carbon::parse($registro->Fecha)->format('d');
+
+            if (!isset($matriz[$idmac][$dia])) {
+                continue;
+            }
+
+            if ((int) $registro->AperturaCierre === 0) {
+                $matriz[$idmac][$dia]['apertura'] = true;
+            }
+
+            if ((int) $registro->AperturaCierre === 1) {
+                $matriz[$idmac][$dia]['relevo'] = true;
+            }
+
+            if ((int) $registro->AperturaCierre === 2) {
+                $matriz[$idmac][$dia]['cierre'] = true;
+            }
+        }
+
+        $totalMacs = $macs->count();
+
+        $resumen = [
+            'completos' => 0,
+            'faltaApertura' => 0,
+            'faltaCierre' => 0,
+            'sinRegistro' => 0,
+            'feriados' => 0,
+        ];
+
+        foreach ($macs as $mac) {
+            foreach ($dias as $dia) {
+                $celda = $matriz[$mac->idmac][$dia];
+
+                if ($celda['es_feriado']) {
+                    $resumen['feriados']++;
+                    continue;
+                }
+
+                if (!$celda['evaluar']) {
+                    continue;
+                }
+
+                $apertura = $celda['apertura'];
+                $cierre = $celda['cierre'];
+
+                if ($apertura && $cierre) {
+                    $resumen['completos']++;
+                } elseif (!$apertura && $cierre) {
+                    $resumen['faltaApertura']++;
+                } elseif ($apertura && !$cierre) {
+                    $resumen['faltaCierre']++;
+                } else {
+                    $resumen['sinRegistro']++;
+                }
+            }
+        }
+
+        return view('verificaciones.monitoreo', compact(
+            'mes',
+            'inicioMes',
+            'finMes',
+            'dias',
+            'macs',
+            'matriz',
+            'totalMacs',
+            'resumen'
+        ));
     }
 }
