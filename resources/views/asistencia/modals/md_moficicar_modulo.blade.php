@@ -26,10 +26,16 @@
                     <label class="">Módulo</label>
                     <div>
                         <select class="form-control" name="idmodulo" id="idmodulo">
+                            <option value="">Seleccione un módulo</option>
+
                             @foreach ($modulos as $modulo)
-                                <option value="{{ $modulo->IDMODULO }}">
-                                    {{ $modulo->N_MODULO }} - {{ $modulo->NOMBRE_ENTIDAD }}
-                                </option>
+                            <option value="{{ $modulo->IDMODULO }}"
+                                {{ !$modulo->seleccionable ? 'disabled' : '' }}>
+                                {{ $modulo->N_MODULO }} - {{ $modulo->NOMBRE_ENTIDAD }}
+                                | {{ $modulo->estado_texto }}
+                                | Inicio: {{ $modulo->fecha_inicio_texto }}
+                                | Fin: {{ $modulo->fecha_fin_texto }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -87,5 +93,4 @@
         width: '100%', // Ajusta el ancho para que sea responsivo
         allowClear: true
     });
-
 </script>

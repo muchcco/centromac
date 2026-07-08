@@ -22,6 +22,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing;
 use Maatwebsite\Excel\Concerns\WithDrawings;
 
 use Maatwebsite\Excel\Concerns\WithTitle;
+
 class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSize,  WithDrawings, WithStyles, WithTitle
 {
     protected $query;
@@ -39,13 +40,14 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
     protected $datosAgrupados;
     protected $fechasArray;
 
-    function __construct($query, $name_mac,  $nombreMES, $tipo_desc, $fecha_inicial, $fecha_fin, $hora_1, $hora_2, $hora_3, $hora_4, $hora_5, $identidad, $datosAgrupados, $fechasArray) {
+    function __construct($query, $name_mac,  $nombreMES, $tipo_desc, $fecha_inicial, $fecha_fin, $hora_1, $hora_2, $hora_3, $hora_4, $hora_5, $identidad, $datosAgrupados, $fechasArray)
+    {
         $this->query = $query;
         $this->nombreMES = $nombreMES;
         $this->name_mac = $name_mac;
         $this->tipo_desc = $tipo_desc;
         $this->fecha_inicial = $fecha_inicial;
-        $this->fecha_fin = $fecha_fin; 
+        $this->fecha_fin = $fecha_fin;
         $this->hora_1 = $hora_1;
         $this->hora_2 = $hora_2;
         $this->hora_3 = $hora_3;
@@ -55,7 +57,7 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
         $this->datosAgrupados = $datosAgrupados;
         $this->fechasArray = $fechasArray;
     }
-    
+
     public function view(): View
     {
         return view('asistencia.exportgroup_excel', [
@@ -75,21 +77,21 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
             'fechasArray' => $this->fechasArray,
         ]);
     }
-
     public function defaultStyles(Style $defaultStyle)
     {
-        // Configure the default styles
-        return $defaultStyle->getFill()->setFillType(Fill::FILL_SOLID);
-    
-        // Configura el relleno de celda
-        return [
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['argb' => '000'], // Color negro
-            ],
-        ];
-    }
+        if ((string) $this->identidad === '17') {
+            return [
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => [
+                        'argb' => 'FFFFFFFF',
+                    ],
+                ],
+            ];
+        }
 
+        return $defaultStyle->getFill()->setFillType(Fill::FILL_SOLID);
+    }
     public function drawings()
     {
         if ($this->identidad != '17') {
@@ -99,14 +101,12 @@ class AsistenciaGroupExport implements FromView, WithDefaultStyles, ShouldAutoSi
             $drawing->setPath(public_path('imagen/mac_logo_export.jpg'));
             $drawing->setHeight(50);
             $drawing->setCoordinates('A1');
-    
+
             return [$drawing];
         }
-    
+
         // Si $this->identidad es igual a '17', no devuelvas ningún dibujo
         return [];
-
-        
     }
 
     public function styles(Worksheet $sheet)

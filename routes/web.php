@@ -192,7 +192,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/externo-int', [PagesController::class, 'externoInt'])->name('externo-int');
 
     /********************************************************* ASISTENCIA  ***************************************************************/
-
+    Route::get('/asistencia/excepciones-huanuco', [App\Http\Controllers\Modulo\AsistenciaController::class, 'ver_excepciones_huanuco'])
+        ->name('asistencia.excepciones_huanuco');
     Route::group(['prefix' => 'asistencia', 'as' => 'asistencia.'], function () {
 
         Route::get('/asistencia', [AsistenciaController::class, 'asistencia'])->name('asistencia');
@@ -516,6 +517,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/update_modulo', [ModuloController::class, 'update'])->name('update_modulo');
         Route::post('/delete_modulo', [ModuloController::class, 'destroy'])->name('delete_modulo');
         Route::post('/cambiar_entidad', [ModuloController::class, 'cambiarEntidad'])->name('cambiar_entidad');
+        Route::get('/monitoreo', [ModuloController::class, 'monitoreo'])->name('monitoreo');
+        Route::get('/tablas/tb_monitoreo', [ModuloController::class, 'tb_monitoreo'])->name('tablas.tb_monitoreo');
     });
 
     /******************************************************   FORMATOS *****************************************************************************/

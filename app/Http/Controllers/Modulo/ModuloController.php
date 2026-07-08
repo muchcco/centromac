@@ -343,40 +343,49 @@ class ModuloController extends Controller
         ]);
 
         try {
-            DB::beginTransaction();
-
             $moduloActual = Modulo::findOrFail($request->id_modulo);
 
-            // 🔹 Validar fecha
+            // Validar fecha antes de abrir transacción
             if (strtotime($request->fecha_fin) < strtotime($moduloActual->FECHAINICIO)) {
                 return response()->json([
                     'message' => 'La fecha de fin no puede ser menor que la fecha de inicio actual.'
                 ], 422);
             }
 
-            // 🔹 Validar que la nueva entidad pertenezca al MAC del usuario
-            $idMacUsuario = $this->centro_mac()->idmac;
-
-            $entidadPertenece = DB::table('m_mac_entidad')
-                ->where('IDCENTRO_MAC', $idMacUsuario)
-                ->where('IDENTIDAD', $request->nueva_entidad_id)
-                ->exists();
-
-            if (!$entidadPertenece && !auth()->user()->hasRole('Administrador')) {
+            // Validar que no seleccione la misma entidad
+            if ((int) $moduloActual->IDENTIDAD === (int) $request->nueva_entidad_id) {
                 return response()->json([
-                    'message' => 'No puede asignar una entidad que no pertenece a su Centro MAC.'
-                ], 403);
+                    'message' => 'La nueva entidad debe ser diferente a la entidad actual.'
+                ], 422);
             }
 
-            // 🔹 1. Cerrar módulo actual
+            // Solo validar pertenencia al MAC si NO es administrador
+            if (!auth()->user()->hasRole('Administrador')) {
+                $idMacUsuario = $this->centro_mac()->idmac;
+
+                $entidadPertenece = DB::table('m_mac_entidad')
+                    ->where('IDCENTRO_MAC', $idMacUsuario)
+                    ->where('IDENTIDAD', $request->nueva_entidad_id)
+                    ->exists();
+
+                if (!$entidadPertenece) {
+                    return response()->json([
+                        'message' => 'No puede asignar una entidad que no pertenece a su Centro MAC.'
+                    ], 403);
+                }
+            }
+
+            DB::beginTransaction();
+
+            // 1. Cerrar módulo actual
             $moduloActual->FECHAFIN = $request->fecha_fin;
             $moduloActual->save();
 
-            // 🔹 2. Crear nuevo módulo con nueva entidad
+            // 2. Crear nuevo módulo con nueva entidad
             $nuevoModulo = new Modulo();
             $nuevoModulo->N_MODULO = $moduloActual->N_MODULO;
             $nuevoModulo->FECHAINICIO = date('Y-m-d', strtotime($request->fecha_fin . ' +1 day'));
-            $nuevoModulo->FECHAFIN = '2050-12-31'; // cierre largo fijo
+            $nuevoModulo->FECHAFIN = '2050-12-31';
             $nuevoModulo->IDENTIDAD = $request->nueva_entidad_id;
             $nuevoModulo->IDCENTRO_MAC = $moduloActual->IDCENTRO_MAC;
             $nuevoModulo->ES_ADMINISTRATIVO = $moduloActual->ES_ADMINISTRATIVO;
@@ -397,7 +406,136 @@ class ModuloController extends Controller
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 400);
+
+            return response()->json([
+                'message' => 'Error al cambiar la entidad del módulo.',
+                'error' => $e->getMessage()
+            ], 400);
         }
+    }
+    public function monitoreo()
+    {
+        $usuario = auth()->user();
+
+        $centro_mac = null;
+
+        if (!$usuario->hasRole(['Administrador', 'Moderador'])) {
+            $centro_mac = DB::table('m_centro_mac')
+                ->where('IDCENTRO_MAC', $usuario->idcentro_mac)
+                ->select('IDCENTRO_MAC as idmac', 'NOMBRE_MAC as name_mac')
+                ->first();
+        }
+
+        $macs = $usuario->hasRole(['Administrador', 'Moderador'])
+            ? DB::table('m_centro_mac')
+            ->select('IDCENTRO_MAC', 'NOMBRE_MAC')
+            ->orderBy('NOMBRE_MAC')
+            ->get()
+            : collect();
+
+        if ($usuario->hasRole(['Administrador', 'Moderador'])) {
+            $entidades = DB::table('m_entidad')
+                ->select('IDENTIDAD', 'NOMBRE_ENTIDAD')
+                ->orderBy('NOMBRE_ENTIDAD')
+                ->get();
+        } else {
+            $entidades = DB::table('m_mac_entidad')
+                ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_mac_entidad.IDENTIDAD')
+                ->where('m_mac_entidad.IDCENTRO_MAC', $usuario->idcentro_mac)
+                ->select('m_entidad.IDENTIDAD', 'm_entidad.NOMBRE_ENTIDAD')
+                ->orderBy('m_entidad.NOMBRE_ENTIDAD')
+                ->get();
+        }
+
+        return view('modulo.monitoreo.index', compact('macs', 'entidades', 'centro_mac'));
+    }
+
+    public function tb_monitoreo(Request $request)
+    {
+        $usuario = auth()->user();
+
+        $anio = $request->input('anio', date('Y'));
+        $mes = $request->input('mes', date('m'));
+
+        $fechaInicioMes = date('Y-m-01', strtotime("$anio-$mes-01"));
+        $fechaFinMes = date('Y-m-t', strtotime("$anio-$mes-01"));
+
+        // Si es el mes actual, consultar solo hasta hoy
+        if ((int) $anio === (int) date('Y') && (int) $mes === (int) date('m')) {
+            $fechaFinMes = date('Y-m-d');
+        }
+
+        $query = DB::table('m_modulo as m')
+            ->leftJoin('m_entidad as e', 'm.IDENTIDAD', '=', 'e.IDENTIDAD')
+            ->leftJoin('m_centro_mac as c', 'm.IDCENTRO_MAC', '=', 'c.IDCENTRO_MAC')
+            ->select(
+                'm.IDMODULO',
+                'm.N_MODULO',
+                'm.FECHAINICIO',
+                'm.FECHAFIN',
+                'm.ESTADO',
+                'm.ES_ADMINISTRATIVO',
+                'm.IDCENTRO_MAC',
+                'm.IDENTIDAD',
+                'e.NOMBRE_ENTIDAD',
+                'c.NOMBRE_MAC'
+            )
+            ->where('m.ESTADO', 1)
+            ->whereDate('m.FECHAINICIO', '<=', $fechaFinMes)
+            ->where(function ($q) use ($fechaInicioMes) {
+                $q->whereNull('m.FECHAFIN')
+                    ->orWhereDate('m.FECHAFIN', '>=', $fechaInicioMes);
+            });
+
+        if ($request->filled('id_mac')) {
+            $query->where('m.IDCENTRO_MAC', $request->id_mac);
+        }
+
+        if ($request->filled('id_entidad')) {
+            $query->where('m.IDENTIDAD', $request->id_entidad);
+        }
+
+        if ($request->filled('es_admin')) {
+            $query->where('m.ES_ADMINISTRATIVO', $request->es_admin);
+        }
+
+        if (!$usuario->hasRole(['Administrador', 'Moderador'])) {
+            $query->where('m.IDCENTRO_MAC', $usuario->idcentro_mac);
+        }
+
+        $modulos = $query
+            ->orderBy('c.NOMBRE_MAC', 'asc')
+            ->orderBy('m.N_MODULO', 'asc')
+            ->get();
+
+        $totalModulos = $modulos->count();
+        $totalAdministrativos = $modulos->where('ES_ADMINISTRATIVO', 'SI')->count();
+        $totalAtencion = $modulos->where('ES_ADMINISTRATIVO', 'NO')->count();
+
+        $totalEntidades = $modulos
+            ->pluck('IDENTIDAD')
+            ->filter()
+            ->unique()
+            ->count();
+
+        $view = view('modulo.monitoreo.tb_monitoreo', compact(
+            'modulos',
+            'fechaInicioMes',
+            'fechaFinMes',
+            'totalModulos',
+            'totalAdministrativos',
+            'totalAtencion',
+            'totalEntidades'
+        ))->render();
+
+        return response()->json([
+            'html' => $view,
+            'total_modulos' => $totalModulos,
+            'total_administrativos' => $totalAdministrativos,
+            'total_atencion' => $totalAtencion,
+            'total_entidades' => $totalEntidades,
+            'fecha_inicio' => $fechaInicioMes,
+            'fecha_fin' => $fechaFinMes,
+        ]);
     }
 }

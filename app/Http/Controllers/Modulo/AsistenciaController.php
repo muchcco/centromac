@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Modulo;
+
 use Illuminate\Support\Facades\Log;
 
 use App\Exports\AsistenciaDetalleExport;
@@ -324,9 +325,9 @@ class AsistenciaController extends Controller
                 $userCentroMac = auth()->user()->idcentro_mac;
 
                 $personal = DB::table('m_personal as p')
-                                ->join('d_personal_mac as dpm', 'dpm.idpersonal', '=', 'p.idpersonal')
-                                ->where('p.NUM_DOC', $request->input('DNI'))
-                                ->first();
+                    ->join('d_personal_mac as dpm', 'dpm.idpersonal', '=', 'p.idpersonal')
+                    ->where('p.NUM_DOC', $request->input('DNI'))
+                    ->first();
 
                 if ($personal) {
                     $nombreCompleto = $personal->NOMBRE . ' ' . $personal->APE_PAT . ' ' . $personal->APE_MAT;
@@ -364,9 +365,9 @@ class AsistenciaController extends Controller
             //     ->first();
 
             $personal = DB::table('m_personal as p')
-                    ->join('d_personal_mac as dpm', 'dpm.idpersonal', '=', 'p.idpersonal')
-                    ->where('p.NUM_DOC', $request->input('DNI'))
-                    ->first();
+                ->join('d_personal_mac as dpm', 'dpm.idpersonal', '=', 'p.idpersonal')
+                ->where('p.NUM_DOC', $request->input('DNI'))
+                ->first();
 
             if (!$personal) {
                 return response()->json([
@@ -773,51 +774,251 @@ class AsistenciaController extends Controller
     public function guardar_excepcion_cierre(Request $request)
     {
         try {
-            $fecha = $request->fecha;
-            $idmac = $request->mac ?? $request->idmac;
-            $cerrado = DB::table('db_centro_mac_reporte.asistencia_resumen')
-                ->where('idmac', $idmac)
-                ->whereDate('fecha_asistencia', $fecha)
-                ->exists();
 
-            if ($cerrado) {
-                return response()->json([
-                    'ok' => false,
-                    'msg' => 'Ese día ya se encuentra cerrado. No se puede registrar excepción.'
-                ]);
-            }
-            $existe = DB::table('d_asistencia_excepcion_cierre')
-                ->where('IDCENTRO_MAC', $idmac)
-                ->whereDate('FECHA_ASISTENCIA', $fecha)
-                ->where('ESTADO', 'ACTIVO')
-                ->exists();
-
-            if ($existe) {
-                return response()->json([
-                    'ok' => false,
-                    'msg' => 'Ya existe una excepción registrada para ese día.'
-                ]);
-            }
-            DB::table('d_asistencia_excepcion_cierre')->insert([
-                'IDCENTRO_MAC' => $idmac,
-                'FECHA_ASISTENCIA' => $fecha,
-                'SOLICITADO_POR' => auth()->user()->id,
-                'NOMBRE_SOLICITANTE' => auth()->user()->name,
-                'MOTIVO' => $request->motivo,
-                'VALIDO_HASTA' => $request->valido_hasta,
-                'FECHA_SOLICITUD' => now(),
-                'ESTADO' => 'ACTIVO'
+            $request->validate([
+                'idmac'             => 'nullable|integer',
+                'mac'               => 'nullable|integer',
+                'fecha_inicio'      => 'required|date',
+                'fecha_fin'         => 'required|date|after_or_equal:fecha_inicio',
+                'motivo'            => 'required|string|max:1000',
+                'valido_hasta'      => 'nullable|date',
+                'revertir_cerrado'  => 'nullable|integer',
             ]);
+
+            $user = auth()->user();
+            $idmac = $request->idmac ?? $request->mac;
+
+            if (!$idmac) {
+                return response()->json([
+                    'ok' => false,
+                    'msg' => 'Debe seleccionar un Centro MAC.'
+                ], 422);
+            }
+
+            $revertirCerrado = (int) $request->revertir_cerrado === 1;
+
+            // Seguridad: solo Administrador o Moderador pueden revertir días cerrados
+            if ($revertirCerrado && !$user->hasAnyRole(['Administrador', 'Moderador'])) {
+                return response()->json([
+                    'ok' => false,
+                    'msg' => 'No tiene permisos para revertir días cerrados.'
+                ], 403);
+            }
+
+            $fechaInicio = Carbon::parse($request->fecha_inicio)->startOfDay();
+            $fechaFin    = Carbon::parse($request->fecha_fin)->startOfDay();
+
+            $validoHasta = $request->valido_hasta
+                ? Carbon::parse($request->valido_hasta)
+                : now()->addHours(24);
+
+            $registradas = [];
+            $revertidas = [];
+            $cerradas = [];
+            $existentes = [];
+            $domingos = [];
+            $feriados = [];
+
+            DB::beginTransaction();
+
+            foreach (CarbonPeriod::create($fechaInicio, $fechaFin) as $dia) {
+
+                $fecha = $dia->format('Y-m-d');
+
+                // 1. No registrar domingos
+                if ($dia->isSunday()) {
+                    $domingos[] = $dia->format('d-m-Y');
+                    continue;
+                }
+
+                // 2. No registrar feriados nacionales o feriados del MAC
+                $esFeriado = DB::table('feriados')
+                    ->whereDate('fecha', $fecha)
+                    ->where(function ($q) use ($idmac) {
+                        $q->whereNull('id_centromac')
+                            ->orWhere('id_centromac', $idmac);
+                    })
+                    ->exists();
+
+                if ($esFeriado) {
+                    $feriados[] = $dia->format('d-m-Y');
+                    continue;
+                }
+
+                // 3. Verificar si ya está cerrado
+                $cerrado = DB::table('db_centro_mac_reporte.asistencia_resumen')
+                    ->where('idmac', $idmac)
+                    ->whereDate('fecha_asistencia', $fecha)
+                    ->exists();
+
+                if ($cerrado) {
+
+                    if ($revertirCerrado) {
+
+                        // Revertir cierre del día
+                        DB::statement("CALL sp_revertir_asistencia_dia(?, ?)", [
+                            $fecha,
+                            $idmac
+                        ]);
+
+                        $revertidas[] = $dia->format('d-m-Y');
+                    } else {
+
+                        $cerradas[] = $dia->format('d-m-Y');
+                        continue;
+                    }
+                }
+
+                // 4. Validar si ya existe excepción activa
+                $existe = DB::table('d_asistencia_excepcion_cierre')
+                    ->where('IDCENTRO_MAC', $idmac)
+                    ->whereDate('FECHA_ASISTENCIA', $fecha)
+                    ->where('ESTADO', 'ACTIVO')
+                    ->exists();
+
+                if ($existe) {
+                    $existentes[] = $dia->format('d-m-Y');
+                    continue;
+                }
+
+                // 5. Registrar excepción
+                DB::table('d_asistencia_excepcion_cierre')->insert([
+                    'IDCENTRO_MAC'       => $idmac,
+                    'FECHA_ASISTENCIA'   => $fecha,
+                    'SOLICITADO_POR'     => $user->id,
+                    'NOMBRE_SOLICITANTE' => $user->name,
+                    'MOTIVO'             => $request->motivo,
+                    'VALIDO_HASTA'       => $validoHasta,
+                    'FECHA_SOLICITUD'    => now(),
+                    'ESTADO'             => 'ACTIVO'
+                ]);
+
+                $registradas[] = $dia->format('d-m-Y');
+            }
+
+            DB::commit();
+
+            $msg = '<strong>Proceso terminado.</strong><br><br>';
+
+            if (count($revertidas) > 0) {
+                $msg .= '<strong>Días revertidos:</strong><br>';
+                $msg .= implode('<br>', $revertidas);
+                $msg .= '<br><br>';
+            }
+
+            if (count($registradas) > 0) {
+                $msg .= '<strong>Excepciones registradas:</strong><br>';
+                $msg .= implode('<br>', $registradas);
+                $msg .= '<br><br>';
+            }
+
+            if (count($cerradas) > 0) {
+                $msg .= '<strong>No registradas porque ya estaban cerradas:</strong><br>';
+                $msg .= implode('<br>', $cerradas);
+                $msg .= '<br><br>';
+            }
+
+            if (count($existentes) > 0) {
+                $msg .= '<strong>No registradas porque ya tenían excepción activa:</strong><br>';
+                $msg .= implode('<br>', $existentes);
+                $msg .= '<br><br>';
+            }
+
+            if (count($feriados) > 0) {
+                $msg .= '<strong>No registradas porque son feriados:</strong><br>';
+                $msg .= implode('<br>', $feriados);
+                $msg .= '<br><br>';
+            }
+
+            if (count($domingos) > 0) {
+                $msg .= '<strong>No registradas porque son domingos:</strong><br>';
+                $msg .= implode('<br>', $domingos);
+                $msg .= '<br><br>';
+            }
+
+            if (count($registradas) === 0 && count($revertidas) === 0) {
+                return response()->json([
+                    'ok' => false,
+                    'msg' => $msg
+                ]);
+            }
+
             return response()->json([
                 'ok' => true,
-                'msg' => 'Excepción registrada correctamente.'
+                'msg' => $msg
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            return response()->json([
+                'ok' => false,
+                'msg' => 'Revise los campos enviados.',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
+
+            DB::rollBack();
+
             return response()->json([
                 'ok' => false,
                 'msg' => 'Error al registrar excepción.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'line' => $e->getLine()
+            ], 500);
+        }
+    }
+    public function ver_excepciones_huanuco()
+    {
+        try {
+
+            // Primero buscamos el ID real del MAC Huánuco
+            $mac = DB::table('m_centro_mac')
+                ->where(function ($q) {
+                    $q->where('NOMBRE_MAC', 'LIKE', '%HUANUCO%')
+                        ->orWhere('NOMBRE_MAC', 'LIKE', '%HUÁNUCO%');
+                })
+                ->first();
+
+            if (!$mac) {
+                return response()->json([
+                    'ok' => false,
+                    'msg' => 'No se encontró el Centro MAC Huánuco.'
+                ]);
+            }
+
+            $idmac = $mac->IDCENTRO_MAC;
+
+            $excepciones = DB::table('d_asistencia_excepcion_cierre')
+                ->where('IDCENTRO_MAC', $idmac)
+                ->orderBy('FECHA_ASISTENCIA', 'DESC')
+                ->get();
+
+            $activas = DB::table('d_asistencia_excepcion_cierre')
+                ->where('IDCENTRO_MAC', $idmac)
+                ->where('ESTADO', 'ACTIVO')
+                ->where(function ($q) {
+                    $q->whereNull('VALIDO_HASTA')
+                        ->orWhere('VALIDO_HASTA', '>=', now());
+                })
+                ->orderBy('FECHA_ASISTENCIA', 'ASC')
+                ->get();
+
+            return response()->json([
+                'ok' => true,
+                'centro_mac' => $mac->NOMBRE_MAC,
+                'idmac' => $idmac,
+                'total_excepciones' => $excepciones->count(),
+                'total_activas' => $activas->count(),
+                'dias_habilitados_actualmente' => $activas,
+                'todas_las_excepciones' => $excepciones
             ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'ok' => false,
+                'msg' => 'Error al consultar excepciones.',
+                'error' => $e->getMessage(),
+                'line' => $e->getLine()
+            ], 500);
         }
     }
     public function tb_asistencia_resumen(Request $request)
@@ -955,31 +1156,101 @@ class AsistenciaController extends Controller
         $nombre_modulo = $request->input('nombre_modulo');
         $fecha_asistencia = $request->input('fecha_asistencia');
 
-        // Obtener el nombre del asesor completo
-        $asesor = DB::table('m_personal')->where('NUM_DOC', $num_doc)->first();
-        $nombre_asesor = $asesor ? $asesor->APE_PAT . " " . $asesor->APE_MAT . ", " . $asesor->NOMBRE : '';
+        $fechaConsulta = Carbon::parse($fecha_asistencia)->format('Y-m-d');
 
-        // Obtener la entidad del asesor desde la tabla m_personal_modulo según el rango de fechas
+        // Obtener el nombre del asesor completo
+        $asesor = DB::table('m_personal')
+            ->where('NUM_DOC', $num_doc)
+            ->first();
+
+        $nombre_asesor = $asesor
+            ? $asesor->APE_PAT . " " . $asesor->APE_MAT . ", " . $asesor->NOMBRE
+            : '';
+
+        // Obtener la entidad del asesor desde m_personal_modulo según la fecha de asistencia
         $entidad_id = DB::table('m_personal_modulo as MPM')
             ->join('m_modulo as MM', 'MPM.IDMODULO', '=', 'MM.IDMODULO')
             ->join('m_entidad as ME', 'MM.IDENTIDAD', '=', 'ME.IDENTIDAD')
             ->where('MPM.NUM_DOC', $num_doc)
-            ->whereDate('MPM.FECHAINICIO', '<=', $fecha_asistencia)
-            ->whereDate('MPM.FECHAFIN', '>=', $fecha_asistencia)
+            ->whereDate('MPM.FECHAINICIO', '<=', $fechaConsulta)
+            ->where(function ($q) use ($fechaConsulta) {
+                $q->whereNull('MPM.FECHAFIN')
+                    ->orWhereDate('MPM.FECHAFIN', '>=', $fechaConsulta);
+            })
             ->value('ME.IDENTIDAD');
 
-        // Obtener los módulos disponibles que están relacionados con la entidad del asesor
-        $modulos = DB::table('m_modulo')
-            ->join('m_entidad', 'm_modulo.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')
-            ->select('m_modulo.IDMODULO', 'm_modulo.N_MODULO', 'm_entidad.NOMBRE_ENTIDAD')
-            ->where('m_modulo.IDENTIDAD', $entidad_id)  // Filtrar por la entidad del asesor
-            ->where('m_modulo.IDCENTRO_MAC', auth()->user()->idcentro_mac) // Filtrar por el centro MAC del usuario autenticado
-            ->get();
+        // Si no encuentra entidad por m_personal_modulo, usa la entidad del maestro personal
+        if (!$entidad_id && $asesor) {
+            $entidad_id = $asesor->IDENTIDAD;
+        }
 
         $idcentro_mac = auth()->user()->idcentro_mac;
 
-        // Renderiza la vista del modal con los datos, incluyendo los módulos y el ID del centro MAC
-        $html = view('asistencia.modals.md_moficicar_modulo', compact('num_doc', 'nombre_modulo', 'fecha_asistencia', 'nombre_asesor', 'modulos', 'idcentro_mac'))->render();
+        // Obtener módulos de la entidad y del Centro MAC, con estado calculado para la fecha
+        $modulos = DB::table('m_modulo')
+            ->join('m_entidad', 'm_modulo.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')
+            ->select(
+                'm_modulo.IDMODULO',
+                'm_modulo.N_MODULO',
+                'm_modulo.FECHAINICIO',
+                'm_modulo.FECHAFIN',
+                'm_modulo.ESTADO',
+                'm_entidad.NOMBRE_ENTIDAD'
+            )
+            ->where('m_modulo.IDCENTRO_MAC', $idcentro_mac)
+            ->when($entidad_id, function ($q) use ($entidad_id) {
+                $q->where('m_modulo.IDENTIDAD', $entidad_id);
+            })
+            ->orderBy('m_modulo.N_MODULO', 'ASC')
+            ->get()
+            ->map(function ($modulo) use ($fechaConsulta) {
+                $fecha = Carbon::parse($fechaConsulta);
+
+                $fechaInicio = $modulo->FECHAINICIO
+                    ? Carbon::parse($modulo->FECHAINICIO)
+                    : null;
+
+                $fechaFin = $modulo->FECHAFIN
+                    ? Carbon::parse($modulo->FECHAFIN)
+                    : null;
+
+                if ((int) $modulo->ESTADO !== 1) {
+                    $modulo->estado_texto = 'Inactivo';
+                    $modulo->estado_class = 'secondary';
+                    $modulo->seleccionable = false;
+                } elseif ($fechaInicio && $fecha->lt($fechaInicio)) {
+                    $modulo->estado_texto = 'Inicia después';
+                    $modulo->estado_class = 'info';
+                    $modulo->seleccionable = false;
+                } elseif ($fechaFin && $fecha->gt($fechaFin)) {
+                    $modulo->estado_texto = 'Vencido';
+                    $modulo->estado_class = 'warning';
+                    $modulo->seleccionable = false;
+                } else {
+                    $modulo->estado_texto = 'Activo';
+                    $modulo->estado_class = 'success';
+                    $modulo->seleccionable = true;
+                }
+
+                $modulo->fecha_inicio_texto = $modulo->FECHAINICIO
+                    ? Carbon::parse($modulo->FECHAINICIO)->format('d-m-Y')
+                    : 'Sin datos';
+
+                $modulo->fecha_fin_texto = $modulo->FECHAFIN
+                    ? Carbon::parse($modulo->FECHAFIN)->format('d-m-Y')
+                    : 'Sin fecha fin';
+
+                return $modulo;
+            });
+
+        $html = view('asistencia.modals.md_moficicar_modulo', compact(
+            'num_doc',
+            'nombre_modulo',
+            'fecha_asistencia',
+            'nombre_asesor',
+            'modulos',
+            'idcentro_mac'
+        ))->render();
 
         return response()->json(['html' => $html]);
     }
@@ -1134,10 +1405,10 @@ class AsistenciaController extends Controller
 
         if (!$storageExists || !$fsExists || $sizeBytes === 0) {
             $msg = 'El archivo no pudo guardarse correctamente.'
-                 . ' storageExists=' . ($storageExists ? 'true' : 'false')
-                 . ' fsExists='      . ($fsExists      ? 'true' : 'false')
-                 . ' sizeBytes='     . $sizeBytes
-                 . ' path='          . ($storedPath ?: '(putFileAs falló)');
+                . ' storageExists=' . ($storageExists ? 'true' : 'false')
+                . ' fsExists='      . ($fsExists      ? 'true' : 'false')
+                . ' sizeBytes='     . $sizeBytes
+                . ' path='          . ($storedPath ?: '(putFileAs falló)');
 
             Log::error('[store_asistencia] Fallo al guardar: ' . $msg);
 
@@ -1314,9 +1585,9 @@ class AsistenciaController extends Controller
 
         if (!$storageExists || !$fsExists || $sizeBytes === 0) {
             $msg = 'Archivo ensamblado no encontrado o vacío.'
-                 . ' storageExists=' . ($storageExists ? 'true' : 'false')
-                 . ' fsExists='      . ($fsExists      ? 'true' : 'false')
-                 . ' sizeBytes='     . $sizeBytes;
+                . ' storageExists=' . ($storageExists ? 'true' : 'false')
+                . ' fsExists='      . ($fsExists      ? 'true' : 'false')
+                . ' sizeBytes='     . $sizeBytes;
             Log::error('[store_asistencia_callao] Validación fallida post-ensamble: ' . $msg);
             Cache::put('upload_status:' . $token, 'failed');
             Cache::put('upload_error:'  . $token, 'Error interno: el archivo ensamblado no pudo ser verificado.');
@@ -1334,7 +1605,7 @@ class AsistenciaController extends Controller
                 'token'      => $token,
                 'storedPath' => $storedPath,
                 'queue'      => 'asistencia-callao',
-                'idCentroMac'=> $idCentroMac,
+                'idCentroMac' => $idCentroMac,
             ]);
 
             $jobId = Queue::connection('database')->push(
@@ -1428,7 +1699,7 @@ class AsistenciaController extends Controller
                         // Job desapareció sin dejar rastro (worker crash, eliminado manualmente, etc.)
                         $status = 'failed';
                         $error  = 'El job ya no está en cola y no se encontró estado final. '
-                                . 'Revise los logs del worker en storage/logs/queue-callao.log';
+                            . 'Revise los logs del worker en storage/logs/queue-callao.log';
                     }
 
                     Cache::put('upload_status:' . $token, $status);
@@ -2348,19 +2619,26 @@ class AsistenciaController extends Controller
     public function exportgroup_excel(Request $request)
     {
         setlocale(LC_TIME, 'es_ES', 'es_PE', 'es');
+
         $fecha = Carbon::create(null, $request->mes, 1);
         $nombreMES = $fecha->formatLocalized('%B');
+
         $hora_1 = Configuracion::where('PARAMETRO', 'HORA_1')->first();
         $hora_2 = Configuracion::where('PARAMETRO', 'HORA_2')->first();
         $hora_3 = Configuracion::where('PARAMETRO', 'HORA_3')->first();
         $hora_4 = Configuracion::where('PARAMETRO', 'HORA_4')->first();
         $hora_5 = Configuracion::where('PARAMETRO', 'HORA_5')->first();
+
         if (auth()->user()->hasRole('Especialista TIC|Orientador|Asesor|Supervisor|Coordinador')) {
             $idmac = $this->centro_mac()->idmac;
         } else {
             $idmac = $request->mac ?? 0;
         }
-        $name_mac = ($idmac == 0) ? 'TODOS LOS MACs' : Mac::where('IDCENTRO_MAC', $idmac)->value('NOMBRE_MAC');
+
+        $name_mac = ($idmac == 0)
+            ? 'TODOS LOS MACs'
+            : Mac::where('IDCENTRO_MAC', $idmac)->value('NOMBRE_MAC');
+
         if ($request->fecha_inicio && $request->fecha_fin) {
             $fecha_inicio = Carbon::parse($request->fecha_inicio)->format('Y-m-d');
             $fecha_fin = Carbon::parse($request->fecha_fin)->format('Y-m-d');
@@ -2370,88 +2648,192 @@ class AsistenciaController extends Controller
             $fecha_fin = Carbon::create($request->año, $request->mes, 1)->endOfMonth()->format('Y-m-d');
             $nombreMES = Carbon::create(null, $request->mes, 1)->formatLocalized('%B');
         }
+
         $identidad = $request->identidad ?? 0;
-        $cerrados = DB::select('CALL db_centro_mac_reporte.sp_reporte_asistencia_detallado(?, ?, ?, ?)', [$fecha_inicio, $fecha_fin, $idmac, $identidad]);
-        $abiertos = DB::select('CALL db_centros_mac.sp_asistencia_diaria_mac_rango(?, ?, ?, ?, ?)', [$idmac, $fecha_inicio, $fecha_fin, $identidad, 1]);
-        $mapear = function ($q, $estado) {
-            // =======================
-            // 1. SI ES DÍA CERRADO
-            // =======================
-            if (!empty($q->hora_ingreso) || !empty($q->hora_salida)) {
 
-                $horas = array_filter([
-                    $q->hora_ingreso,
-                    $q->salida_refrigerio,
-                    $q->ingreso_refrigerio,
-                    $q->hora_salida
-                ]);
+        $datosAgrupados = [];
+        $fechasArray = [];
+        $data = [];
 
-                $horas = array_values($horas);
+        if ((string) $identidad === '17') {
 
-                // =======================
-                // 2. SI ES DÍA ABIERTO
-                // =======================
+            $nom_ = Personal::from('m_personal as MP')
+                ->leftJoin('d_personal_cargo as DPC', 'DPC.IDCARGO_PERSONAL', '=', 'MP.IDCARGO_PERSONAL')
+                ->select(
+                    'DPC.NOMBRE_CARGO',
+                    DB::raw('CONCAT(MP.APE_PAT," ",MP.APE_MAT,", ",MP.NOMBRE) AS NOMBREU'),
+                    'MP.NUM_DOC',
+                    'MP.IDENTIDAD'
+                )
+                ->where('MP.IDENTIDAD', 17)
+                ->where('MP.IDMAC', $idmac)
+                ->where('MP.TVL_ID', 1)
+                ->where('MP.FLAG', 1)
+                ->orderBy('MP.APE_PAT', 'ASC')
+                ->orderBy('MP.APE_MAT', 'ASC')
+                ->orderBy('MP.NOMBRE', 'ASC')
+                ->get();
+
+            $fechas = CarbonPeriod::create($fecha_inicio, $fecha_fin);
+
+            foreach ($fechas as $f) {
+                $fechasArray[] = $f->toDateString();
+            }
+
+            if ($nom_->isNotEmpty()) {
+                $asistenciasPCM = DB::table('m_asistencia')
+                    ->select(
+                        'NUM_DOC',
+                        'FECHA',
+                        DB::raw('GROUP_CONCAT(DATE_FORMAT(HORA,"%H:%i:%s") ORDER BY HORA SEPARATOR ",") AS HORAS'),
+                        DB::raw('COUNT(*) AS N_NUM_DOC')
+                    )
+                    ->where('IDCENTRO_MAC', $idmac)
+                    ->whereBetween(DB::raw('DATE(FECHA)'), [$fecha_inicio, $fecha_fin])
+                    ->whereIn('NUM_DOC', $nom_->pluck('NUM_DOC')->toArray())
+                    ->groupBy('NUM_DOC', 'FECHA')
+                    ->get()
+                    ->keyBy(function ($row) {
+                        return $row->NUM_DOC . '|' . Carbon::parse($row->FECHA)->format('Y-m-d');
+                    });
             } else {
-
-                $horas_raw = explode(',', $q->horas ?? ($q->fecha_biometrico ?? ''));
-
-                $horas = array_values(array_filter(array_map('trim', $horas_raw)));
-
-                sort($horas); // 🔥 clave
+                $asistenciasPCM = collect();
             }
 
-            // =======================
-            // 3. NORMALIZAR (AMBOS CASOS)
-            // =======================
-            $horas = array_slice($horas, 0, 4);
+            foreach ($nom_ as $encabezado) {
 
-            $q->HORA_1 = null;
-            $q->HORA_2 = null;
-            $q->HORA_3 = null;
-            $q->HORA_4 = null;
+                $detalle = collect();
 
-            $count = count($horas);
+                foreach ($fechasArray as $fechaDia) {
 
-            if ($count == 1) {
-                $q->HORA_1 = $horas[0];
-            } elseif ($count == 2) {
-                $q->HORA_1 = $horas[0];
-                $q->HORA_4 = $horas[1];
-            } elseif ($count == 3) {
-                $q->HORA_1 = $horas[0];
-                $q->HORA_2 = $horas[1];
-                $q->HORA_4 = $horas[2];
-            } elseif ($count >= 4) {
-                $q->HORA_1 = $horas[0];
-                $q->HORA_2 = $horas[1];
-                $q->HORA_3 = $horas[2];
-                $q->HORA_4 = $horas[3];
+                    $key = $encabezado->NUM_DOC . '|' . Carbon::parse($fechaDia)->format('Y-m-d');
+                    $asistencia = $asistenciasPCM->get($key);
+
+                    $horas = [];
+
+                    if ($asistencia && !empty($asistencia->HORAS)) {
+                        $horas = array_values(array_filter(array_map('trim', explode(',', $asistencia->HORAS))));
+                        sort($horas);
+                    }
+
+                    $esDomingo = Carbon::parse($fechaDia)->isSunday();
+
+                    $detalle->push((object) [
+                        'FECHA'       => $fechaDia,
+                        'NUM_DOC'     => $encabezado->NUM_DOC,
+                        'HORAS'       => $asistencia->HORAS ?? '',
+                        'N_NUM_DOC'   => $asistencia->N_NUM_DOC ?? 0,
+
+                        'HORA_1'      => $horas[0] ?? '',
+                        'HORA_2'      => $horas[1] ?? '',
+                        'HORA_3'      => $horas[2] ?? '',
+                        'HORA_4'      => $horas[3] ?? '',
+
+                        'hora1'       => $horas[0] ?? '',
+                        'hora2'       => $horas[1] ?? '',
+                        'hora3'       => $horas[2] ?? '',
+                        'hora4'       => $horas[3] ?? '',
+
+                        'OBSERVACION' => $esDomingo ? 'DESCANSO' : '',
+                        'ES_DOMINGO'  => $esDomingo,
+                        'ESTADO'      => '',
+                    ]);
+                }
+
+                $datosAgrupados[] = [
+                    'encabezado' => $encabezado,
+                    'detalle'    => $detalle,
+                ];
             }
-            $q->NOMBRE_MAC = $q->NOMBRE_MAC ?? $q->centro_mac ?? '';
-            $q->ABREV_ENTIDAD = $q->ABREV_ENTIDAD ?? $q->entidad ?? '';
-            $q->NOMBREU = $q->NOMBREU ?? $q->colaborador ?? $q->nombre ?? '';
-            $q->NUM_DOC = $q->NUM_DOC ?? $q->dni ?? '';
-            $q->FECHA = $q->FECHA ?? $q->fecha ?? $q->fecha_asistencia ?? null;
-            $q->N_MODULO = $q->N_MODULO ?? $q->nombre_modulo ?? null;
-            $q->observaciones = $q->observaciones ?? '';
-            $q->contador_obs = isset($q->observaciones) && $q->observaciones != ''
-                ? count(array_filter(explode(';', $q->observaciones)))
-                : 0;
-            $q->ESTADO = $estado;
-            return $q;
-        };
-        $cerrados = array_map(fn($q) => $mapear($q, 'CERRADO'), $cerrados);
-        $abiertos = array_map(fn($q) => $mapear($q, 'ABIERTO'), $abiertos);
-        $data = array_merge($cerrados, $abiertos);
-        usort($data, function ($a, $b) {
-            if ($a->FECHA != $b->FECHA) {
-                return strcmp($a->FECHA, $b->FECHA);
-            }
-            if ($a->N_MODULO != $b->N_MODULO) {
-                return strcmp($a->N_MODULO ?? '', $b->N_MODULO ?? '');
-            }
-            return strcmp($a->NOMBREU ?? '', $b->NOMBREU ?? '');
-        });
+        } else {
+
+            $cerrados = DB::select(
+                'CALL db_centro_mac_reporte.sp_reporte_asistencia_detallado(?, ?, ?, ?)',
+                [$fecha_inicio, $fecha_fin, $idmac, $identidad]
+            );
+
+            $abiertos = DB::select(
+                'CALL db_centros_mac.sp_asistencia_diaria_mac_rango(?, ?, ?, ?, ?)',
+                [$idmac, $fecha_inicio, $fecha_fin, $identidad, 1]
+            );
+
+            $mapear = function ($q, $estado) {
+
+                if (!empty($q->hora_ingreso) || !empty($q->hora_salida)) {
+                    $horas = array_filter([
+                        $q->hora_ingreso,
+                        $q->salida_refrigerio,
+                        $q->ingreso_refrigerio,
+                        $q->hora_salida
+                    ]);
+
+                    $horas = array_values($horas);
+                } else {
+                    $horas_raw = explode(',', $q->horas ?? ($q->fecha_biometrico ?? ''));
+                    $horas = array_values(array_filter(array_map('trim', $horas_raw)));
+                    sort($horas);
+                }
+
+                $horas = array_slice($horas, 0, 4);
+
+                $q->HORA_1 = null;
+                $q->HORA_2 = null;
+                $q->HORA_3 = null;
+                $q->HORA_4 = null;
+
+                $count = count($horas);
+
+                if ($count == 1) {
+                    $q->HORA_1 = $horas[0];
+                } elseif ($count == 2) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_4 = $horas[1];
+                } elseif ($count == 3) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_4 = $horas[2];
+                } elseif ($count >= 4) {
+                    $q->HORA_1 = $horas[0];
+                    $q->HORA_2 = $horas[1];
+                    $q->HORA_3 = $horas[2];
+                    $q->HORA_4 = $horas[3];
+                }
+
+                $q->NOMBRE_MAC = $q->NOMBRE_MAC ?? $q->centro_mac ?? '';
+                $q->ABREV_ENTIDAD = $q->ABREV_ENTIDAD ?? $q->entidad ?? '';
+                $q->NOMBREU = $q->NOMBREU ?? $q->colaborador ?? $q->nombre ?? '';
+                $q->NUM_DOC = $q->NUM_DOC ?? $q->dni ?? '';
+                $q->FECHA = $q->FECHA ?? $q->fecha ?? $q->fecha_asistencia ?? null;
+                $q->N_MODULO = $q->N_MODULO ?? $q->nombre_modulo ?? null;
+                $q->observaciones = $q->observaciones ?? '';
+
+                $q->contador_obs = isset($q->observaciones) && $q->observaciones != ''
+                    ? count(array_filter(explode(';', $q->observaciones)))
+                    : 0;
+
+                $q->ESTADO = $estado;
+
+                return $q;
+            };
+
+            $cerrados = array_map(fn($q) => $mapear($q, 'CERRADO'), $cerrados);
+            $abiertos = array_map(fn($q) => $mapear($q, 'ABIERTO'), $abiertos);
+
+            $data = array_merge($cerrados, $abiertos);
+
+            usort($data, function ($a, $b) {
+                if ($a->FECHA != $b->FECHA) {
+                    return strcmp($a->FECHA, $b->FECHA);
+                }
+
+                if ($a->N_MODULO != $b->N_MODULO) {
+                    return strcmp($a->N_MODULO ?? '', $b->N_MODULO ?? '');
+                }
+
+                return strcmp($a->NOMBREU ?? '', $b->NOMBREU ?? '');
+            });
+        }
+
         return Excel::download(
             new AsistenciaGroupExport(
                 $data,
@@ -2466,8 +2848,8 @@ class AsistenciaController extends Controller
                 $hora_4,
                 $hora_5,
                 $identidad,
-                '',
-                ''
+                $datosAgrupados,
+                $fechasArray
             ),
             'REPORTE ASISTENCIA COMPLETO - ' . $name_mac . ' - ' . strtoupper($nombreMES) . '.xlsx'
         );
@@ -2757,13 +3139,13 @@ class AsistenciaController extends Controller
         $feriados = $this->asignacionFeriadosData($idmac, $inicio->format('Y-m-d'), $fin->format('Y-m-d'));
         $diasEspeciales = $this->asignacionDiasEspecialesDisponible()
             ? DB::table('d_personal_asistencia_dia')
-                ->where('id_asignacion', $horario->id)
-                ->where('activo', 1)
-                ->whereBetween('fecha', [$inicio->format('Y-m-d'), $fin->format('Y-m-d')])
-                ->get()
-                ->keyBy(function ($dia) {
-                    return Carbon::parse($dia->fecha)->format('Y-m-d');
-                })
+            ->where('id_asignacion', $horario->id)
+            ->where('activo', 1)
+            ->whereBetween('fecha', [$inicio->format('Y-m-d'), $fin->format('Y-m-d')])
+            ->get()
+            ->keyBy(function ($dia) {
+                return Carbon::parse($dia->fecha)->format('Y-m-d');
+            })
             : collect();
 
         $nombresDia = [
@@ -2900,27 +3282,27 @@ class AsistenciaController extends Controller
         }
 
         $query->select(
-                'dpa.id as id_asignacion',
-                'dpa.idpersonal',
-                DB::raw($ingresoProgramado . ' as ingreso_programado'),
-                DB::raw($salidaProgramada . ' as salida_programada'),
-                DB::raw($tipoProgramacion . ' as tipo_programacion'),
-                'dpa.fecha_inicio as asignacion_inicio',
-                'dpa.fecha_fin as asignacion_fin',
-                'dpa.sin_fin',
-                'p.NUM_DOC',
-                'a.FECHA',
-                'a.IDCENTRO_MAC',
-                DB::raw('DAYOFWEEK(a.FECHA) as dia_semana'),
-                DB::raw('UPPER(CONCAT(p.APE_PAT, " ", p.APE_MAT, ", ", p.NOMBRE)) as nombre_completo'),
-                DB::raw('COALESCE(cm.NOMBRE_MAC, "-") as nombre_mac'),
-                DB::raw('COALESCE(e.ABREV_ENTIDAD, e.NOMBRE_ENTIDAD, "-") as entidad'),
-                DB::raw('COALESCE(m.N_MODULO, p.NUMERO_MODULO, "-") as modulo'),
-                DB::raw('MIN(a.HORA) as asistencia_ingreso'),
-                DB::raw('CASE WHEN COUNT(a.IDASISTENCIA) > 1 THEN MAX(a.HORA) ELSE NULL END as asistencia_salida'),
-                DB::raw('COUNT(a.IDASISTENCIA) as total_marcaciones'),
-                DB::raw('CASE WHEN COUNT(a.IDASISTENCIA) > 1 THEN GREATEST(TIMESTAMPDIFF(MINUTE, CONCAT(a.FECHA, " ", ' . $salidaProgramada . '), CONCAT(a.FECHA, " ", MAX(a.HORA))), 0) ELSE 0 END as minutos_extra')
-            )
+            'dpa.id as id_asignacion',
+            'dpa.idpersonal',
+            DB::raw($ingresoProgramado . ' as ingreso_programado'),
+            DB::raw($salidaProgramada . ' as salida_programada'),
+            DB::raw($tipoProgramacion . ' as tipo_programacion'),
+            'dpa.fecha_inicio as asignacion_inicio',
+            'dpa.fecha_fin as asignacion_fin',
+            'dpa.sin_fin',
+            'p.NUM_DOC',
+            'a.FECHA',
+            'a.IDCENTRO_MAC',
+            DB::raw('DAYOFWEEK(a.FECHA) as dia_semana'),
+            DB::raw('UPPER(CONCAT(p.APE_PAT, " ", p.APE_MAT, ", ", p.NOMBRE)) as nombre_completo'),
+            DB::raw('COALESCE(cm.NOMBRE_MAC, "-") as nombre_mac'),
+            DB::raw('COALESCE(e.ABREV_ENTIDAD, e.NOMBRE_ENTIDAD, "-") as entidad'),
+            DB::raw('COALESCE(m.N_MODULO, p.NUMERO_MODULO, "-") as modulo'),
+            DB::raw('MIN(a.HORA) as asistencia_ingreso'),
+            DB::raw('CASE WHEN COUNT(a.IDASISTENCIA) > 1 THEN MAX(a.HORA) ELSE NULL END as asistencia_salida'),
+            DB::raw('COUNT(a.IDASISTENCIA) as total_marcaciones'),
+            DB::raw('CASE WHEN COUNT(a.IDASISTENCIA) > 1 THEN GREATEST(TIMESTAMPDIFF(MINUTE, CONCAT(a.FECHA, " ", ' . $salidaProgramada . '), CONCAT(a.FECHA, " ", MAX(a.HORA))), 0) ELSE 0 END as minutos_extra')
+        )
             ->groupBy(
                 'dpa.id',
                 'dpa.idpersonal',
@@ -3467,10 +3849,10 @@ class AsistenciaController extends Controller
 
             $ultimoDiaEspecial = $diasEspecialesDisponible
                 ? DB::table('d_personal_asistencia_dia')
-                    ->where('id_asignacion', $horario->id)
-                    ->where('activo', 1)
-                    ->orderBy('fecha', 'desc')
-                    ->value('fecha')
+                ->where('id_asignacion', $horario->id)
+                ->where('activo', 1)
+                ->orderBy('fecha', 'desc')
+                ->value('fecha')
                 : null;
 
             if ($ultimoDiaEspecial) {
