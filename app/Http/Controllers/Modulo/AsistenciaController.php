@@ -1167,7 +1167,7 @@ class AsistenciaController extends Controller
             ? $asesor->APE_PAT . " " . $asesor->APE_MAT . ", " . $asesor->NOMBRE
             : '';
 
-        // Obtener la entidad del asesor desde m_personal_modulo según la fecha de asistencia
+        // Obtener entidad del asesor según la fecha de asistencia
         $entidad_id = DB::table('m_personal_modulo as MPM')
             ->join('m_modulo as MM', 'MPM.IDMODULO', '=', 'MM.IDMODULO')
             ->join('m_entidad as ME', 'MM.IDENTIDAD', '=', 'ME.IDENTIDAD')
@@ -1179,14 +1179,14 @@ class AsistenciaController extends Controller
             })
             ->value('ME.IDENTIDAD');
 
-        // Si no encuentra entidad por m_personal_modulo, usa la entidad del maestro personal
+        // Si no encuentra entidad en m_personal_modulo, usar entidad del maestro personal
         if (!$entidad_id && $asesor) {
             $entidad_id = $asesor->IDENTIDAD;
         }
 
         $idcentro_mac = auth()->user()->idcentro_mac;
 
-        // Obtener módulos de la entidad y del Centro MAC, con estado calculado para la fecha
+        // Solo módulos activos para la fecha seleccionada
         $modulos = DB::table('m_modulo')
             ->join('m_entidad', 'm_modulo.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')
             ->select(
@@ -1198,39 +1198,21 @@ class AsistenciaController extends Controller
                 'm_entidad.NOMBRE_ENTIDAD'
             )
             ->where('m_modulo.IDCENTRO_MAC', $idcentro_mac)
+            ->where('m_modulo.ESTADO', 1)
+            ->whereDate('m_modulo.FECHAINICIO', '<=', $fechaConsulta)
+            ->where(function ($q) use ($fechaConsulta) {
+                $q->whereNull('m_modulo.FECHAFIN')
+                    ->orWhereDate('m_modulo.FECHAFIN', '>=', $fechaConsulta);
+            })
             ->when($entidad_id, function ($q) use ($entidad_id) {
                 $q->where('m_modulo.IDENTIDAD', $entidad_id);
             })
             ->orderBy('m_modulo.N_MODULO', 'ASC')
             ->get()
-            ->map(function ($modulo) use ($fechaConsulta) {
-                $fecha = Carbon::parse($fechaConsulta);
-
-                $fechaInicio = $modulo->FECHAINICIO
-                    ? Carbon::parse($modulo->FECHAINICIO)
-                    : null;
-
-                $fechaFin = $modulo->FECHAFIN
-                    ? Carbon::parse($modulo->FECHAFIN)
-                    : null;
-
-                if ((int) $modulo->ESTADO !== 1) {
-                    $modulo->estado_texto = 'Inactivo';
-                    $modulo->estado_class = 'secondary';
-                    $modulo->seleccionable = false;
-                } elseif ($fechaInicio && $fecha->lt($fechaInicio)) {
-                    $modulo->estado_texto = 'Inicia después';
-                    $modulo->estado_class = 'info';
-                    $modulo->seleccionable = false;
-                } elseif ($fechaFin && $fecha->gt($fechaFin)) {
-                    $modulo->estado_texto = 'Vencido';
-                    $modulo->estado_class = 'warning';
-                    $modulo->seleccionable = false;
-                } else {
-                    $modulo->estado_texto = 'Activo';
-                    $modulo->estado_class = 'success';
-                    $modulo->seleccionable = true;
-                }
+            ->map(function ($modulo) {
+                $modulo->estado_texto = 'Activo';
+                $modulo->estado_class = 'success';
+                $modulo->seleccionable = true;
 
                 $modulo->fecha_inicio_texto = $modulo->FECHAINICIO
                     ? Carbon::parse($modulo->FECHAINICIO)->format('d-m-Y')

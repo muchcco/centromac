@@ -15,120 +15,141 @@
 
     <tbody>
         @foreach ($interrupciones as $i => $interrupcion)
-            @php
-                $usuarioObservador = $interrupcion->observado_por
-                    ? \App\Models\User::find($interrupcion->observado_por)
-                    : null;
-            @endphp
+        @php
+        $usuarioObservador = $interrupcion->observado_por
+        ? \App\Models\User::find($interrupcion->observado_por)
+        : null;
+        @endphp
 
-            <tr
-                @if ($interrupcion->observado) style="background-color:#fff8dc;"
-                    title="Observado por {{ $usuarioObservador->name ?? 'Administrador/Moderador' }} el {{ \Carbon\Carbon::parse($interrupcion->fecha_observado)->format('d-m-Y H:i') }}" @endif>
+        <tr
+            @if ($interrupcion->observado) style="background-color:#fff8dc;"
+            title="Observado por {{ $usuarioObservador->name ?? 'Administrador/Moderador' }} el {{ \Carbon\Carbon::parse($interrupcion->fecha_observado)->format('d-m-Y H:i') }}" @endif>
 
-                <td>{{ $i + 1 }}</td>
+            <td>{{ $i + 1 }}</td>
 
-                {{-- Centro MAC --}}
-                <td>{{ $interrupcion->centroMac->nombre_mac ?? 'No asignado' }}</td>
+            {{-- Centro MAC --}}
+            <td>{{ $interrupcion->centroMac->nombre_mac ?? 'No asignado' }}</td>
 
-                {{-- Fecha y Hora de Inicio --}}
-                <td>
-                    {{ \Carbon\Carbon::parse($interrupcion->fecha_inicio)->format('d-m-Y') }} -
-                    {{ \Carbon\Carbon::parse($interrupcion->hora_inicio)->format('H:i') }}
-                </td>
+            {{-- Fecha y Hora de Inicio --}}
+            <td>
+                {{ \Carbon\Carbon::parse($interrupcion->fecha_inicio)->format('d-m-Y') }} -
+                {{ \Carbon\Carbon::parse($interrupcion->hora_inicio)->format('H:i') }}
+            </td>
 
-                {{-- Tipificación --}}
-                <td>
-                    {{ $interrupcion->tipoIntObs->tipo ?? '' }}
-                    {{ $interrupcion->tipoIntObs->numeracion ?? '' }} --
-                    {{ $interrupcion->tipoIntObs->nom_tipo_int_obs ?? '' }}
-                </td>
+            {{-- Tipificación --}}
+            <td>
+                {{ $interrupcion->tipoIntObs->tipo ?? '' }}
+                {{ $interrupcion->tipoIntObs->numeracion ?? '' }} --
+                {{ $interrupcion->tipoIntObs->nom_tipo_int_obs ?? '' }}
+            </td>
 
-                {{-- Entidad --}}
-                <td>{{ $interrupcion->entidad->ABREV_ENTIDAD ?? 'No asignado' }}</td>
+            {{-- Entidad --}}
+            <td>{{ $interrupcion->entidad->ABREV_ENTIDAD ?? 'No asignado' }}</td>
 
-                {{-- Descripción --}}
-                <td class="text-uppercase">
-                    {{ Str::limit(strtoupper($interrupcion->descripcion ?? 'SIN DESCRIPCIÓN'), 100, '...') }}
-                </td>
+            {{-- Descripción --}}
+            <td class="text-uppercase">
+                {{ Str::limit(strtoupper($interrupcion->descripcion ?? 'SIN DESCRIPCIÓN'), 100, '...') }}
+            </td>
 
-                {{-- Estado --}}
-                <td class="text-center">
-                    @switch(strtoupper($interrupcion->estado))
-                        @case('ABIERTO')
-                            <span class="badge bg-danger">ABIERTO</span>
-                        @break
+            {{-- Estado --}}
+            <td class="text-center">
+                @switch(strtoupper($interrupcion->estado))
+                @case('ABIERTO')
+                <span class="badge bg-danger">ABIERTO</span>
+                @break
 
-                        @case('CERRADO')
-                            <span class="badge bg-success">CERRADO</span>
-                        @break
+                @case('CERRADO')
+                <span class="badge bg-success">CERRADO</span>
+                @break
 
-                        @default
-                            <span class="badge bg-warning text-dark">{{ strtoupper($interrupcion->estado) }}</span>
-                    @endswitch
-                </td>
+                @default
+                <span class="badge bg-warning text-dark">{{ strtoupper($interrupcion->estado) }}</span>
+                @endswitch
+            </td>
 
-                {{-- Tiempo --}}
-                <td class="text-center">{{ $interrupcion->tiempo_horario }}</td>
+            {{-- Tiempo --}}
+            <td class="text-center">{{ $interrupcion->tiempo_horario }}</td>
 
-                {{-- ACCIONES --}}
-                <td class="text-center">
+            {{-- ACCIONES --}}
+            <td class="text-center">
 
-                    {{-- Iconos de Observación --}}
-                    @if ($interrupcion->observado)
-                        @php
-                            $icono = $interrupcion->corregido
-                                ? 'fa-check-circle text-success'
-                                : 'fa-exclamation-triangle text-danger';
+                {{-- Iconos de Observación --}}
+                @if ($interrupcion->observado)
+                @php
+                $icono = $interrupcion->corregido
+                ? 'fa-check-circle text-success'
+                : 'fa-exclamation-triangle text-danger';
 
-                            $tooltip = $interrupcion->corregido
-                                ? 'Observación corregida'
-                                : 'Ver observación / Retroalimentar';
-                        @endphp
+                $tooltip = $interrupcion->corregido
+                ? 'Observación corregida'
+                : 'Ver observación / Retroalimentar';
+                @endphp
 
-                        <button class="nobtn bandejTool" data-tippy-content="{{ $tooltip }}"
-                            onclick="btnObservarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
-                            <i class="fa {{ $icono }} font-16"></i>
-                        </button>
-                    @endif
+                <button class="nobtn bandejTool" data-tippy-content="{{ $tooltip }}"
+                    onclick="btnObservarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
+                    <i class="fa {{ $icono }} font-16"></i>
+                </button>
+                @endif
 
-                    {{-- Crear observación --}}
-                    @role('Administrador|Moderador')
-                        @if (!$interrupcion->observado)
-                            <button class="nobtn bandejTool" data-tippy-content="Marcar como Observado / Retroalimentar"
-                                onclick="btnObservarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
-                                <i class="fa fa-exclamation-triangle text-info font-16"></i>
-                            </button>
-                        @endif
-                    @endrole
+                {{-- Crear observación --}}
+                @role('Administrador|Moderador')
+                @if (!$interrupcion->observado)
+                <button class="nobtn bandejTool" data-tippy-content="Marcar como Observado / Retroalimentar"
+                    onclick="btnObservarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
+                    <i class="fa fa-exclamation-triangle text-info font-16"></i>
+                </button>
+                @endif
+                @endrole
 
-                    {{-- Ver --}}
-                    @role('Administrador|Especialista TIC|Moderador')
-                        <button class="nobtn bandejTool" data-tippy-content="Ver detalle"
-                            onclick="btnVerInterrupcion({{ $interrupcion->id_interrupcion }})">
-                            <i class="las la-eye text-primary font-16"></i>
-                        </button>
+                @php
+                $anioInterrupcion = \Carbon\Carbon::parse($interrupcion->fecha_inicio)->year;
 
-                        {{-- Editar --}}
-                        <button class="nobtn bandejTool" data-tippy-content="Editar Interrupción"
-                            onclick="btnEditarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
-                            <i class="las la-pen text-success font-16"></i>
-                        </button>
+                if ($anioInterrupcion == 2025) {
+                // Año 2025: solo Administrador y Moderador
+                $puedeGestionarInterrupcion = auth()->user()->hasAnyRole(['Administrador', 'Moderador']);
+                } else {
+                // Otros años: Administrador, Especialista TIC y Moderador
+                $puedeGestionarInterrupcion = auth()->user()->hasAnyRole([
+                'Administrador',
+                'Especialista TIC',
+                'Moderador'
+                ]);
+                }
+                @endphp
 
-                        {{-- Eliminar --}}
-                        <button class="nobtn bandejTool" data-tippy-content="Eliminar Interrupción"
-                            onclick="btnEliminarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
-                            <i class="las la-trash-alt text-danger font-16"></i>
-                        </button>
-                    @endrole
+                {{-- Ver --}}
+                @role('Administrador|Especialista TIC|Moderador')
+                <button class="nobtn bandejTool" data-tippy-content="Ver detalle"
+                    onclick="btnVerInterrupcion({{ $interrupcion->id_interrupcion }})">
+                    <i class="las la-eye text-primary font-16"></i>
+                </button>
+                @endrole
 
-                    {{-- Subsanar --}}
-                    <button class="nobtn bandejTool" data-tippy-content="Subsanar"
-                        onclick="btnSubsanarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
-                        <i class="las la-file-medical text-success font-16"></i>
-                    </button>
+                {{-- Editar, Eliminar y Subsanar --}}
+                @if ($puedeGestionarInterrupcion)
 
-                </td>
-            </tr>
+                {{-- Editar --}}
+                <button class="nobtn bandejTool" data-tippy-content="Editar Interrupción"
+                    onclick="btnEditarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
+                    <i class="las la-pen text-success font-16"></i>
+                </button>
+
+                {{-- Eliminar --}}
+                <button class="nobtn bandejTool" data-tippy-content="Eliminar Interrupción"
+                    onclick="btnEliminarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
+                    <i class="las la-trash-alt text-danger font-16"></i>
+                </button>
+
+                {{-- Subsanar --}}
+                <button class="nobtn bandejTool" data-tippy-content="Subsanar"
+                    onclick="btnSubsanarInterrupcion('{{ $interrupcion->id_interrupcion }}')">
+                    <i class="las la-file-medical text-success font-16"></i>
+                </button>
+
+                @endif
+
+            </td>
+        </tr>
         @endforeach
     </tbody>
 </table>

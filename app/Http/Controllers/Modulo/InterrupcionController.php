@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\InterrupcionExport;
+use Carbon\Carbon;
 
 class InterrupcionController extends Controller
 {
@@ -325,6 +326,15 @@ class InterrupcionController extends Controller
                 return response()->json(['error' => 'Interrupción no encontrada'], 404);
             }
 
+            $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
+
+            if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
+                return response()->json([
+                    'message' => 'No tienes permisos para editar interrupciones del año 2025.',
+                    'status' => 403
+                ], 403);
+            }
+
             $centro_mac = $this->centro_mac();
 
             $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
@@ -338,6 +348,7 @@ class InterrupcionController extends Controller
                 ->orderBy('numeracion', 'asc')
                 ->orderBy('nom_tipo_int_obs', 'asc')
                 ->get();
+
             $responsables = User::where('idcentro_mac', $centro_mac->idmac)->get();
 
             $view = view('interrupcion.modals.md_edit_interrupcion', compact('interrupcion', 'entidades', 'tipos', 'responsables'))->render();
@@ -371,7 +382,17 @@ class InterrupcionController extends Controller
 
         try {
             $interrupcion = Interrupcion::find($request->id_interrupcion);
-            $data = $request->except('accion_correctiva'); //  ignorado
+
+            $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
+
+            if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
+                return response()->json([
+                    'message' => 'No tienes permisos para actualizar interrupciones del año 2025.',
+                    'status' => 403
+                ], 403);
+            }
+
+            $data = $request->except('accion_correctiva');
 
             if ($request->estado === 'ABIERTO') {
                 $data['fecha_fin'] = null;
@@ -392,13 +413,33 @@ class InterrupcionController extends Controller
 
         try {
             $interrupcion = Interrupcion::findOrFail($request->id_interrupcion);
+
+            $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
+
+            if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
+                DB::rollBack();
+
+                return response()->json([
+                    'message' => 'No tienes permisos para eliminar interrupciones del año 2025.',
+                    'status' => 403
+                ], 403);
+            }
+
             $interrupcion->delete();
 
             DB::commit();
-            return response()->json(['message' => 'Interrupción eliminada exitosamente'], 200);
+
+            return response()->json([
+                'message' => 'Interrupción eliminada exitosamente',
+                'status' => 200
+            ], 200);
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 400);
+
+            return response()->json([
+                'error' => $e->getMessage(),
+                'status' => 400
+            ], 400);
         }
     }
 
@@ -425,6 +466,15 @@ class InterrupcionController extends Controller
 
         if (!$interrupcion) {
             return response()->json(['error' => 'Interrupción no encontrada'], 404);
+        }
+
+        $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
+
+        if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
+            return response()->json([
+                'message' => 'No tienes permisos para subsanar interrupciones del año 2025.',
+                'status' => 403
+            ], 403);
         }
 
         $centro_mac = $this->centro_mac();
@@ -479,15 +529,37 @@ class InterrupcionController extends Controller
         try {
             $interrupcion = Interrupcion::find($request->id_interrupcion);
 
+            if (!$interrupcion) {
+                return response()->json([
+                    'message' => 'Interrupción no encontrada.',
+                    'status' => 404
+                ], 404);
+            }
+
+            $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
+
+            if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
+                return response()->json([
+                    'message' => 'No tienes permisos para guardar la subsanación de interrupciones del año 2025.',
+                    'status' => 403
+                ], 403);
+            }
+
             $interrupcion->update([
                 'estado'    => $request->estado,
                 'fecha_fin' => $request->fecha_fin,
                 'hora_fin'  => $request->hora_fin,
             ]);
 
-            return response()->json(['message' => 'Interrupción cerrada correctamente', 'status' => 200]);
+            return response()->json([
+                'message' => 'Interrupción cerrada correctamente',
+                'status' => 200
+            ], 200);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage(), 'status' => 400]);
+            return response()->json([
+                'error' => $e->getMessage(),
+                'status' => 400
+            ], 400);
         }
     }
 
