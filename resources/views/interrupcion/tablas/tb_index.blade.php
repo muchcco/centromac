@@ -156,6 +156,10 @@
 
 <script>
     $(document).ready(function() {
+        if ($.fn.DataTable.isDataTable('#table_interrupciones')) {
+            $('#table_interrupciones').DataTable().clear().destroy();
+        }
+
         $('#table_interrupciones').DataTable({
             responsive: true,
             autoWidth: false,
@@ -190,6 +194,11 @@
                     className: "text-center"
                 }
             ]
+        });
+
+        tippy(".bandejTool", {
+            allowHTML: true,
+            followCursor: true
         });
 
         tippy(".bandejTool", {

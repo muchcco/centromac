@@ -666,10 +666,8 @@
 
         // Resetear campos base
         $('#filtro_mac').val('').trigger('change');
-        $('#filtro_fecha_inicio').val('{{ date('
-            Y - m - 01 ') }}');
-        $('#filtro_fecha_fin').val('{{ date('
-            Y - m - d ') }}');
+        $('#filtro_fecha_inicio').val("{{ date('Y-m-01') }}");
+        $('#filtro_fecha_fin').val("{{ date('Y-m-d') }}");
 
         // Resetear filtros adicionales
         $('#filtro_entidad, #filtro_tipificacion, #filtro_estado, #filtro_revision')
