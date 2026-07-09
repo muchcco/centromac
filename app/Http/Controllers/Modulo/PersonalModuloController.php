@@ -103,7 +103,7 @@ class PersonalModuloController extends Controller
         // Obtener los módulos disponibles junto con la entidad asociada
         $modulos = DB::table('m_modulo')
             ->join('m_entidad', 'm_modulo.IDENTIDAD', '=', 'm_entidad.IDENTIDAD')
-            ->select('m_modulo.IDMODULO', 'm_modulo.N_MODULO', 'm_entidad.NOMBRE_ENTIDAD')
+            ->select('m_modulo.IDMODULO', 'm_modulo.N_MODULO', 'm_entidad.NOMBRE_ENTIDAD' , 'm_modulo.fechainicio', 'm_modulo.fechafin', 'm_modulo.estado')
             ->where('m_modulo.IDCENTRO_MAC', auth()->user()->idcentro_mac) // Filtrar por el centro MAC del usuario autenticado
             ->get();
 
@@ -259,9 +259,9 @@ class PersonalModuloController extends Controller
             // Obtener los módulos disponibles del centro MAC del usuario autenticado
             $modulos = DB::table('m_modulo')
                 ->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_modulo.IDENTIDAD')
-                ->select('m_modulo.IDMODULO', 'm_modulo.N_MODULO', 'm_entidad.NOMBRE_ENTIDAD')
+                ->select('m_modulo.IDMODULO', 'm_modulo.N_MODULO', 'm_entidad.NOMBRE_ENTIDAD', 'm_modulo.fechainicio', 'm_modulo.fechafin', 'm_modulo.estado')
                 ->where('m_modulo.IDCENTRO_MAC', auth()->user()->idcentro_mac)
-                ->get();
+                ->get();            
 
             // Renderizar la vista con los datos obtenidos
             $view = view('personalmodulo.modals.md_edit_personalmodulo', compact('personalModulo', 'modulos', 'personal'))->render();

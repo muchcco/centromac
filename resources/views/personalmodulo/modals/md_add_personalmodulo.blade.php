@@ -27,8 +27,11 @@
                         <select class="form-control select2" name="idmodulo" id="idmodulo">
                             <option value="" disabled selected>Seleccione un módulo</option>
                             @foreach ($modulos as $modulo)
-                                <option value="{{ $modulo->IDMODULO }}">{{ $modulo->N_MODULO }} -
-                                    {{ $modulo->NOMBRE_ENTIDAD }}</option>
+                                <option value="{{ $modulo->IDMODULO }}">
+                                    {{ $modulo->N_MODULO }} - {{ $modulo->NOMBRE_ENTIDAD }}                                    
+                                    | Inicio: {{ $modulo->fechainicio }}
+                                    | Fin: {{ $modulo->fechafin }}
+                                </option>
                             @endforeach
                         </select>
                     </div>

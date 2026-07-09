@@ -30,7 +30,10 @@
                             <option value="" disabled>Seleccione un módulo</option>
                             @foreach ($modulos as $modulo)
                                 <option value="{{ $modulo->IDMODULO }}" {{ $modulo->IDMODULO == $personalModulo->idmodulo ? 'selected' : '' }}>
+                                    <!-- {{ $modulo->N_MODULO }} - {{ $modulo->NOMBRE_ENTIDAD }} -->                                    
                                     {{ $modulo->N_MODULO }} - {{ $modulo->NOMBRE_ENTIDAD }}
+                                    | Inicio: {{ $modulo->fechainicio }}
+                                    | Fin: {{ $modulo->fechafin }}
                                 </option>
                             @endforeach
                         </select>
