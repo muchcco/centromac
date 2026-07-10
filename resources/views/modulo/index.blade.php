@@ -173,11 +173,45 @@
 
                     $('#table_modulos').DataTable({
                         responsive: true,
+                        bLengthChange: false,
+                        autoWidth: false,
+                        searching: true,
+                        info: true,
+                        ordering: false,
                         pageLength: 10,
-                        ordering: true,
                         language: {
-                            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                        }
+                            url: "{{ asset('js/Spanish.json') }}"
+                        },
+                        columns: [{
+                                width: "5px"
+                            },
+                            {
+                                width: "15%"
+                            },
+                            {
+                                width: "18%"
+                            },
+                            {
+                                width: "12%"
+                            },
+                            {
+                                width: "12%"
+                            },
+                            {
+                                width: "15%"
+                            },
+                            {
+                                width: "10%"
+                            },
+                            {
+                                width: "13%"
+                            }
+                        ]
+                    });
+
+                    tippy(".bandejTool", {
+                        allowHTML: true,
+                        followCursor: true
                     });
                 }
             },

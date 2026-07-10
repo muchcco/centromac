@@ -168,7 +168,9 @@ class AsesoresController extends Controller
             ->where('MCM.IDCENTRO_MAC', $idmac)
             ->select(
                 DB::raw('CONCAT(MM.N_MODULO, " - ", ME.NOMBRE_ENTIDAD) as nombre_completo'),
-                'MM.IDMODULO'
+                'MM.IDMODULO',
+                'MM.FECHAINICIO',
+                'MM.FECHAFIN'
             )
             ->orderBy('MM.N_MODULO', 'ASC')
             ->get();

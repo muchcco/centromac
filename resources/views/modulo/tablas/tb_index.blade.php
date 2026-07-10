@@ -27,19 +27,25 @@
             <td>{{ $modulo->ES_ADMINISTRATIVO == 'SI' ? 'Sí' : 'No' }}</td>
             <td class="text-center">
 
-                <button class="nobtn bandejTool" data-tippy-content="Editar módulo"
-                    onclick="btnEditModulo({{ $modulo->IDMODULO }})">
+                <button type="button"
+                    class="nobtn bandejTool"
+                    data-tippy-content="Editar módulo"
+                    onclick="btnEditModulo('{{ $modulo->IDMODULO }}')">
                     <i class="las la-pen text-success font-16"></i>
                 </button>
 
-                <button class="nobtn bandejTool" data-tippy-content="Cambiar entidad del módulo"
-                    onclick="btnCambiarEntidad({{ $modulo->IDMODULO }})">
+                <button type="button"
+                    class="nobtn bandejTool"
+                    data-tippy-content="Cambiar entidad del módulo"
+                    onclick="btnCambiarEntidad('{{ $modulo->IDMODULO }}')">
                     <i class="las la-random text-warning font-16"></i>
                 </button>
 
                 @role('Administrador')
-                <button class="nobtn bandejTool" data-tippy-content="Eliminar módulo"
-                    onclick="btnDeleteModulo({{ $modulo->IDMODULO }})">
+                <button type="button"
+                    class="nobtn bandejTool"
+                    data-tippy-content="Eliminar módulo"
+                    onclick="btnDeleteModulo('{{ $modulo->IDMODULO }}')">
                     <i class="las la-trash-alt text-danger font-16"></i>
                 </button>
                 @endrole

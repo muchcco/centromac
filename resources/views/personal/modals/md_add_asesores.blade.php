@@ -51,9 +51,17 @@
                         <select id="modulos_entidades" name="modulos_entidades" class="form-control select2">
                             <option disabled selected>-- Seleccione una opción --</option>
                             @forelse ($modulos_entidades as $item)
-                                <option value="{{ $item->IDMODULO }}">{{ $item->nombre_completo }}</option>
+                            <option value="{{ $item->IDMODULO }}"
+                                data-fechainicio="{{ \Carbon\Carbon::parse($item->FECHAINICIO)->format('Y-m-d') }}"
+                                data-fechafin="{{ \Carbon\Carbon::parse($item->FECHAFIN)->format('Y-m-d') }}">
+
+                                {{ $item->nombre_completo }}
+                                | Inicio: {{ \Carbon\Carbon::parse($item->FECHAINICIO)->format('d-m-Y') }}
+                                | Fin: {{ \Carbon\Carbon::parse($item->FECHAFIN)->format('d-m-Y') }}
+
+                            </option>
                             @empty
-                                <option value="">No hay datos disponibles</option>
+                            <option value="">No hay datos disponibles</option>
                             @endforelse
                         </select>
                     </div>
