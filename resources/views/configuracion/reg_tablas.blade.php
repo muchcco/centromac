@@ -71,6 +71,106 @@
     </div>
 </div>
 <div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-body">
+                <input type="hidden" name="_token" value="{{ csrf_token() }}" />
+                <div class="media mb-3">
+                    <img src="{{ asset('imagen/logo-novosga.png') }}" alt="" class="thumb-md rounded-circle">
+                    <div class="media-body align-self-center text-truncate ms-3">
+                        <h4 class="m-0 fw-semibold text-dark font-15">Configuración de biométrico</h4>
+                        <p class="text-muted mb-0 font-13">
+                            <span class="text-dark">Actual : </span>
+                            @if ($configuracionBiometrico)
+                                {{ strtoupper($configuracionBiometrico->nombre_biometrico) }}
+                                desde {{ \Carbon\Carbon::parse($configuracionBiometrico->fecha_inicio)->format('d/m/Y') }}
+                            @else
+                                Sin configuración activa
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                <hr class="hr-dashed">
+                <form id="formBiometrico" class="row align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Tipo de biométrico</label>
+                        <select name="tipo_biometrico" id="tipo_biometrico" class="form-select">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="1" {{ optional($configuracionBiometrico)->tipo_biometrico == 1 ? 'selected' : '' }}>TXT</option>
+                            <option value="2" {{ optional($configuracionBiometrico)->tipo_biometrico == 2 ? 'selected' : '' }}>Access</option>
+                            <option value="3" {{ optional($configuracionBiometrico)->tipo_biometrico == 3 ? 'selected' : '' }}>Excel / CSV</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha inicio</label>
+                        <input type="date" class="form-control" id="fecha_inicio_biometrico" value="{{ optional($configuracionBiometrico)->fecha_inicio ?? now()->format('Y-m-d') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha fin</label>
+                        <input type="date" class="form-control" id="fecha_fin_biometrico" value="{{ optional($configuracionBiometrico)->fecha_fin }}">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-primary btn-block col-12" id="btnGuardarConfigBiometrico" onclick="guardarConfigBiometrico()">Guardar</button>
+                    </div>
+                </form>
+                <hr class="hr-dashed">
+                <div id="datos-biometrico">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-semibold m-0">Biométricos registrados:</h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Nombre</th>
+                                    <th>Fecha inicio</th>
+                                    <th>Fecha fin</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($configuracionesBiometrico as $bio)
+                                    <tr>
+                                        <td>{{ $bio->tipo_biometrico }}</td>
+                                        <td>{{ strtoupper($bio->nombre_biometrico) }}</td>
+                                        <td>{{ $bio->fecha_inicio ? \Carbon\Carbon::parse($bio->fecha_inicio)->format('d/m/Y') : '-' }}</td>
+                                        <td>{{ $bio->fecha_fin ? \Carbon\Carbon::parse($bio->fecha_fin)->format('d/m/Y') : '-' }}</td>
+                                        <td>
+                                            @if ((int) $bio->status === 1 && (int) $bio->flag === 1)
+                                                <span class="badge bg-success">Activo</span>
+                                            @else
+                                                <span class="badge bg-secondary">Baja</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if ((int) $bio->status === 1 && (int) $bio->flag === 1)
+                                                <button type="button"
+                                                    class="nobtn bandejTool"
+                                                    data-tippy-content="Dar de baja"
+                                                    onclick="btnBajaBiometrico('{{ $bio->idconfiguracion_biometrico }}', '{{ $bio->fecha_inicio }}')">
+                                                    <i class="las la-calendar-times text-secondary font-16 text-danger"></i>
+                                                </button>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">No hay biométricos registrados.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
     <div class="col-lg-4">
         <div class="card">
             <div class="card-body">                                        
@@ -141,7 +241,7 @@
         
     </div><!--end col-->
 
-    <div class="col-lg-4">
+    <!-- <div class="col-lg-4">
         <div class="card"  >
             <div class="card-body">
                 <div class="media mb-3">
@@ -149,7 +249,7 @@
                     <div class="media-body align-self-center text-truncate ms-3">
                         <h4 class="m-0 fw-semibold text-dark font-15">Agregar Módulos</h4>
                         <p class="text-muted  mb-0 font-13"><span class="text-dark">Acceso : </span>Por el personal TIC</p>
-                    </div><!--end media-body-->
+                    </div>
                 </div>
                 <hr class="hr-dashed">
                 <div class="d-flex justify-content-between mb-1">
@@ -199,9 +299,9 @@
                     </div>
                 </div>
             </div>
-        </div><!--end card-->
+        </div> -->
         
-    </div><!--end col-->
+    
 </div>
 
 
@@ -328,6 +428,110 @@ function btnAddEntidad() {
     });
 
 
+}
+
+function guardarConfigBiometrico() {
+    var mac = "{{ $mac->IDCENTRO_MAC }}";
+    var formData = new FormData();
+    formData.append("idmac", mac);
+    formData.append("tipo_biometrico", $("#tipo_biometrico").val());
+    formData.append("fecha_inicio", $("#fecha_inicio_biometrico").val());
+    formData.append("fecha_fin", $("#fecha_fin_biometrico").val());
+    formData.append("_token", $("input[name=_token]").val());
+
+    $.ajax({
+        type: 'post',
+        url: "{{ route('configuracion.storeConfiguracionBiometrico') }}",
+        dataType: "json",
+        data: formData,
+        processData: false,
+        contentType: false,
+        beforeSend: function () {
+            document.getElementById("btnGuardarConfigBiometrico").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Espere';
+            document.getElementById("btnGuardarConfigBiometrico").disabled = true;
+        },
+        success: function (data) {
+            toastr.success(data.message || "Configuración guardada correctamente.");
+            $("#datos-biometrico").load(window.location.href + " #datos-biometrico > *", function () {
+                tippy(".bandejTool", {
+                    allowHTML: true,
+                    followCursor: true,
+                });
+            });
+            document.getElementById("btnGuardarConfigBiometrico").innerHTML = 'Guardar';
+            document.getElementById("btnGuardarConfigBiometrico").disabled = false;
+        },
+        error: function (xhr) {
+            document.getElementById("btnGuardarConfigBiometrico").innerHTML = 'Guardar';
+            document.getElementById("btnGuardarConfigBiometrico").disabled = false;
+
+            var mensaje = "Ocurrio un error al guardar la configuración.";
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                mensaje = xhr.responseJSON.message;
+            }
+            toastr.error(mensaje);
+        }
+    });
+}
+
+function btnBajaBiometrico(id, fechaInicio) {
+    var hoy = new Date().toISOString().split('T')[0];
+
+    swal.fire({
+        title: "Dar de baja biométrico",
+        html: '<div class="text-start">' +
+            '<label class="form-label">Fecha fin</label>' +
+            '<input type="date" id="fecha_fin_baja_biometrico" class="form-control" value="' + hoy + '" min="' + fechaInicio + '">' +
+            '</div>',
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Dar de baja",
+        cancelButtonText: "Cancelar",
+        preConfirm: function () {
+            var fechaFin = document.getElementById("fecha_fin_baja_biometrico").value;
+            if (!fechaFin) {
+                Swal.showValidationMessage("Seleccione la fecha fin.");
+                return false;
+            }
+            if (fechaFin < fechaInicio) {
+                Swal.showValidationMessage("La fecha fin no puede ser menor a la fecha de inicio.");
+                return false;
+            }
+            return fechaFin;
+        }
+    }).then((result) => {
+        if (!result.value) {
+            return;
+        }
+
+        $.ajax({
+            type: 'post',
+            url: "{{ route('configuracion.bajaConfiguracionBiometrico') }}",
+            dataType: "json",
+            data: {
+                "_token": "{{ csrf_token() }}",
+                idconfiguracion_biometrico: id,
+                idmac: "{{ $mac->IDCENTRO_MAC }}",
+                fecha_fin: result.value
+            },
+            success: function (data) {
+                toastr.success(data.message || "Biométrico dado de baja correctamente.");
+                $("#datos-biometrico").load(window.location.href + " #datos-biometrico > *", function () {
+                    tippy(".bandejTool", {
+                        allowHTML: true,
+                        followCursor: true,
+                    });
+                });
+            },
+            error: function (xhr) {
+                var mensaje = "Ocurrio un error al dar de baja el biométrico.";
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    mensaje = xhr.responseJSON.message;
+                }
+                toastr.error(mensaje);
+            }
+        });
+    });
 }
 
 

@@ -163,7 +163,111 @@ class ConfiguracionController extends Controller
         $modulos = DB::table('m_modulo')->join('m_entidad', 'm_entidad.IDENTIDAD', '=', 'm_modulo.IDENTIDAD')->where('m_modulo.IDCENTRO_MAC',  $idcentro_mac)->get();
         // dd($modulos);
 
-        return view('configuracion.reg_tablas', compact('mac', 'entidad', 'entidad_completo', 'modulos'));
+        $configuracionBiometrico = DB::table('configuracion_biometrico')
+            ->where('idcentro_mac', $idcentro_mac)
+            ->where('flag', 1)
+            ->where('status', 1)
+            ->orderByDesc('idconfiguracion_biometrico')
+            ->first();
+
+        $configuracionesBiometrico = DB::table('configuracion_biometrico')
+            ->where('idcentro_mac', $idcentro_mac)
+            ->orderByDesc('fecha_inicio')
+            ->orderByDesc('idconfiguracion_biometrico')
+            ->get();
+
+        return view('configuracion.reg_tablas', compact('mac', 'entidad', 'entidad_completo', 'modulos', 'configuracionBiometrico', 'configuracionesBiometrico'));
+    }
+
+    public function storeConfiguracionBiometrico(Request $request)
+    {
+        $request->validate([
+            'idmac' => ['required', 'integer'],
+            'tipo_biometrico' => ['required', 'integer', 'in:1,2,3'],
+            'fecha_inicio' => ['required', 'date'],
+            'fecha_fin' => ['nullable', 'date', 'after_or_equal:fecha_inicio'],
+        ]);
+
+        $mac = Mac::where('IDCENTRO_MAC', $request->idmac)->firstOrFail();
+        $nombres = [
+            1 => 'txt',
+            2 => 'access',
+            3 => 'excel',
+        ];
+
+        $existeActivo = DB::table('configuracion_biometrico')
+            ->where('idcentro_mac', $request->idmac)
+            ->where('flag', 1)
+            ->where('status', 1)
+            ->exists();
+
+        if ($existeActivo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ya existe un biométrico activo. Primero debe darlo de baja para registrar uno nuevo.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($request, $mac, $nombres) {
+            DB::table('configuracion_biometrico')->insert([
+                'centro_mac' => $mac->NOMBRE_MAC,
+                'idcentro_mac' => $mac->IDCENTRO_MAC,
+                'tipo_biometrico' => (int) $request->tipo_biometrico,
+                'nombre_biometrico' => $nombres[(int) $request->tipo_biometrico],
+                'fecha_inicio' => $request->fecha_inicio,
+                'fecha_fin' => $request->fecha_fin,
+                'status' => 1,
+                'flag' => 1,
+                'fecha_creacion' => now(),
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Configuración de biométrico guardada correctamente.',
+        ]);
+    }
+
+    public function bajaConfiguracionBiometrico(Request $request)
+    {
+        $request->validate([
+            'idconfiguracion_biometrico' => ['required', 'integer'],
+            'idmac' => ['required', 'integer'],
+            'fecha_fin' => ['required', 'date'],
+        ]);
+
+        $configuracion = DB::table('configuracion_biometrico')
+            ->where('idconfiguracion_biometrico', $request->idconfiguracion_biometrico)
+            ->where('idcentro_mac', $request->idmac)
+            ->first();
+
+        if (!$configuracion) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró la configuración del biométrico.',
+            ], 404);
+        }
+
+        if ($request->fecha_fin < $configuracion->fecha_inicio) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La fecha fin no puede ser menor a la fecha de inicio.',
+            ], 422);
+        }
+
+        DB::table('configuracion_biometrico')
+            ->where('idconfiguracion_biometrico', $request->idconfiguracion_biometrico)
+            ->where('idcentro_mac', $request->idmac)
+            ->update([
+                'fecha_fin' => $request->fecha_fin,
+                'status' => 0,
+                'flag' => 0,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Biométrico dado de baja correctamente.',
+        ]);
     }
 
     public function addEntidad(Request $request)

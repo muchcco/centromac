@@ -200,10 +200,12 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/tablas/tb_asistencia', [AsistenciaController::class, 'tb_asistencia'])->name('tablas.tb_asistencia');
         Route::post('/modals/md_add_asistencia', [AsistenciaController::class, 'md_add_asistencia'])->name('modals.md_add_asistencia');
         Route::post('/modals/md_add_asistencia_callao', [AsistenciaController::class, 'md_add_asistencia_callao'])->name('modals.md_add_asistencia_callao');
+        Route::post('/modals/md_add_asistencia_excel', [AsistenciaController::class, 'md_add_asistencia_excel'])->name('modals.md_add_asistencia_excel');
         Route::post('/modals/md_detalle', [AsistenciaController::class, 'md_detalle'])->name('modals.md_detalle');
         Route::post('/modals/md_agregar_asistencia', [AsistenciaController::class, 'md_agregar_asistencia'])->name('modals.md_agregar_asistencia');
         Route::post('/store_asistencia', [AsistenciaController::class, 'store_asistencia'])->name('store_asistencia');
         Route::post('/store_asistencia_callao', [AsistenciaController::class, 'store_asistencia_callao'])->name('store_asistencia_callao');
+        Route::post('/store_asistencia_excel', [AsistenciaController::class, 'store_asistencia_excel'])->name('store_asistencia_excel');
         Route::post('/callao/chunk',    [AsistenciaController::class, 'uploadCallaoChunk'])->name('callao.chunk');
         Route::post('/callao/finalize', [AsistenciaController::class, 'finalizeCallaoUpload'])->name('callao.finalize');
         Route::post('/store_agregar_asistencia', [AsistenciaController::class, 'store_agregar_asistencia'])->name('store_agregar_asistencia');
@@ -667,6 +669,8 @@ Route::group(['middleware' => ['auth']], function () {
         // CONFIGURACION DE TABLAS ASOCIADAS
 
         Route::get('/reg_tablas/{idcentro_mac}', [ConfiguracionController::class, 'reg_tablas'])->name('reg_tablas');
+        Route::post('/storeConfiguracionBiometrico', [ConfiguracionController::class, 'storeConfiguracionBiometrico'])->name('storeConfiguracionBiometrico');
+        Route::post('/bajaConfiguracionBiometrico', [ConfiguracionController::class, 'bajaConfiguracionBiometrico'])->name('bajaConfiguracionBiometrico');
         Route::post('/addEntidad', [ConfiguracionController::class, 'addEntidad'])->name('addEntidad');
         Route::post('/deleteEntidad', [ConfiguracionController::class, 'deleteEntidad'])->name('deleteEntidad');
         Route::post('/addModulo', [ConfiguracionController::class, 'addModulo'])->name('addModulo');

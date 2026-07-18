@@ -122,14 +122,26 @@
                 <div class="row">
                     <div class="col-12">
                         @role('Administrador|Especialista TIC|Especialista_TIC')
-                        @if ($idmac == 10)
+                        @php
+                            $tipoBiometrico = (int) optional($configuracionBiometrico)->tipo_biometrico;
+                        @endphp
+                        @if ($tipoBiometrico === 2)
                         <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
                             onclick="btnAddAsistenciaCallao()"><i class="fa fa-upload" aria-hidden="true"></i>
                             Subir Archivo de Asistencia
                         </button>
-                        @else
+                        @elseif ($tipoBiometrico === 3)
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
+                            onclick="btnAddAsistenciaExcel()"><i class="fa fa-upload" aria-hidden="true"></i>
+                            Subir Archivo de Asistencia
+                        </button>
+                        @elseif ($tipoBiometrico === 1)
                         <button class="btn btn-primary" data-toggle="modal" data-target="#large-Modal"
                             onclick="btnAddAsistencia()"><i class="fa fa-upload" aria-hidden="true"></i>
+                            Subir Archivo de Asistencia
+                        </button>
+                        @else
+                        <button class="btn btn-primary" onclick="sinConfiguracionBiometrico()"><i class="fa fa-upload" aria-hidden="true"></i>
                             Subir Archivo de Asistencia
                         </button>
                         @endif
@@ -277,12 +289,16 @@
                     $('button[onclick="btnAgregarAsistencia()"]').hide();
                     $('button[onclick="btnAddAsistencia()"]').hide();
                     $('button[onclick="btnAddAsistenciaCallao()"]').hide();
+                    $('button[onclick="btnAddAsistenciaExcel()"]').hide();
+                    $('button[onclick="sinConfiguracionBiometrico()"]').hide();
                 } else {
                     $('#btnCerrarDia').show();
                     $('#btnCerrarMes').show();
                     $('button[onclick="btnAgregarAsistencia()"]').show();
                     $('button[onclick="btnAddAsistencia()"]').show();
                     $('button[onclick="btnAddAsistenciaCallao()"]').show();
+                    $('button[onclick="btnAddAsistenciaExcel()"]').show();
+                    $('button[onclick="sinConfiguracionBiometrico()"]').show();
                 }
 
                 // Cargar tabla
@@ -406,6 +422,37 @@
         });
     }
 
+    function btnAddAsistenciaExcel() {
+        _activeModalType = 'excel';
+        $.ajax({
+            type: 'post',
+            url: "{{ route('asistencia.modals.md_add_asistencia_excel') }}",
+            dataType: "json",
+            data: {
+                "_token": "{{ csrf_token() }}"
+            },
+            success: function(data) {
+                $("#modal_show_modal").html(data.html);
+                $("#modal_show_modal").modal('show');
+            }
+        });
+    }
+
+    function sinConfiguracionBiometrico() {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Configuración requerida',
+            text: 'Este Centro MAC no tiene configurado un tipo de biométrico. Primero configúrelo en Configuración para poder subir asistencia.',
+            showCancelButton: true,
+            confirmButtonText: 'Configurar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{{ route('configuracion.reg_tablas', $idmac) }}";
+            }
+        });
+    }
+
     function btnAgregarAsistencia() {
 
         $.ajax({
@@ -494,7 +541,7 @@
     var _callaoAborted = false;
     var _callaoQueuedSeconds = 0;
 
-    // Qué tipo de modal está activo ahora mismo ('txt', 'callao', o null)
+    // Qué tipo de modal está activo ahora mismo ('txt', 'callao', 'excel', o null)
     var _activeModalType = null;
 
     // Detiene TODOS los pollings (solo para cierre de página / navegación)
@@ -575,25 +622,53 @@
     }
 
     function btnStoreTxt() {
+        return _storeQueuedFile({
+            endpoint: "{{ route('asistencia.store_asistencia') }}",
+            type: "txt",
+            successText: "Carga TXT terminada correctamente.",
+            errorTitle: "Error al procesar TXT",
+            fileWarning: "Selecciona un archivo TXT."
+        });
+    }
+
+    function btnStoreExcel() {
+        return _storeQueuedFile({
+            endpoint: "{{ route('asistencia.store_asistencia_excel') }}",
+            type: "excel",
+            successText: "Carga CSV terminada correctamente.",
+            errorTitle: "Error al procesar CSV",
+            fileWarning: "Selecciona un archivo CSV."
+        });
+    }
+
+    function _storeQueuedFile(options) {
         // Guardia de concurrencia: no iniciar si hay una carga Callao activa
         if (_callaoPolling || _activeModalType === 'callao') {
             Swal.fire({
                 icon: 'warning',
                 title: 'Carga en progreso',
-                text: 'Hay una importación Callao en curso. Espere a que finalice antes de iniciar la carga TXT.',
+                text: 'Hay una importación Callao en curso. Espere a que finalice antes de iniciar otra carga.',
                 confirmButtonText: 'Aceptar'
             });
             return;
         }
 
         var file_data = $("#txt_file").prop("files")[0];
+        if (!file_data) {
+            Swal.fire({
+                icon: "warning",
+                text: options.fileWarning,
+                confirmButtonText: "Aceptar"
+            });
+            return;
+        }
         var formData = new FormData();
         formData.append("txt_file", file_data);
         formData.append("_token", $("input[name=_token]").val());
 
         $.ajax({
             type: 'POST',
-            url: "{{ route('asistencia.store_asistencia') }}",
+            url: options.endpoint,
             data: formData,
             processData: false,
             contentType: false,
@@ -642,15 +717,15 @@
                             txtQueuedSeconds = 0;
                             refrescarTablaActual();
                             Toastify({
-                                text: "Carga TXT terminada correctamente.",
+                                text: options.successText,
                                 className: "info",
                                 gravity: "bottom",
                                 style: {
                                     background: "#47B257"
                                 }
                             }).showToast();
-                            // Solo cerrar modal si el modal TXT sigue activo
-                            if (_activeModalType === 'txt') {
+                            // Solo cerrar modal si el modal de la carga sigue activo
+                            if (_activeModalType === options.type) {
                                 _activeModalType = null;
                                 $("#modal_show_modal").modal('hide');
                             }
@@ -663,13 +738,13 @@
                             txtInProgress = false;
                             txtQueuedSeconds = 0;
                             var errMsg = resp.error || "Error desconocido en el procesamiento.";
-                            if (_activeModalType === 'txt') {
+                            if (_activeModalType === options.type) {
                                 var $btn = $("#modal_show_modal #btnEnviarForm");
                                 $btn.prop("disabled", false).html("Importar");
                             }
                             Swal.fire({
                                 icon: "error",
-                                title: "Error al procesar TXT",
+                                title: options.errorTitle,
                                 text: errMsg,
                                 confirmButtonText: "Aceptar"
                             });
@@ -682,7 +757,7 @@
                             txtInProgress = false;
                             txtUploadToken = null;
                             txtQueuedSeconds = 0;
-                            if (_activeModalType === 'txt') {
+                            if (_activeModalType === options.type) {
                                 $("#uploadQueueInfo").removeClass("d-none").text("Carga cancelada.");
                                 var $btn = $("#modal_show_modal #btnEnviarForm");
                                 $btn.prop("disabled", false).html("Importar");

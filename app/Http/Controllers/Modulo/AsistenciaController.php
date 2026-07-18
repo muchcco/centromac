@@ -19,6 +19,7 @@ use App\Models\Entidad;
 use App\Models\Mac;
 use App\Jobs\ProcessAsistenciaTxt;
 use App\Jobs\ProcessAsistenciaCallao;
+use App\Jobs\ProcessAsistenciaExcel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Queue;
@@ -86,7 +87,24 @@ class AsistenciaController extends Controller
                 ->get();
         }
 
-        return view('asistencia.asistencia', compact('entidad', 'idmac', 'name_mac', 'macs'));
+        $configuracionBiometrico = $this->configuracionBiometrico($idmac);
+
+        return view('asistencia.asistencia', compact('entidad', 'idmac', 'name_mac', 'macs', 'configuracionBiometrico'));
+    }
+
+    private function configuracionBiometrico(int $idCentroMac): ?object
+    {
+        return DB::table('configuracion_biometrico')
+            ->where('idcentro_mac', $idCentroMac)
+            ->where('status', 1)
+            ->where('flag', 1)
+            ->whereDate('fecha_inicio', '<=', now()->toDateString())
+            ->where(function ($query) {
+                $query->whereNull('fecha_fin')
+                    ->orWhereDate('fecha_fin', '>=', now()->toDateString());
+            })
+            ->orderByDesc('idconfiguracion_biometrico')
+            ->first();
     }
 
     public function cerrarDia(Request $request)
@@ -1332,13 +1350,22 @@ class AsistenciaController extends Controller
 
     public function md_add_asistencia(Request $request)
     {
-        $view = view('asistencia.modals.md_add_asistencia')->render();
+        $configuracionBiometrico = $this->configuracionBiometrico($this->centro_mac()->idmac);
+        $view = view('asistencia.modals.md_add_asistencia', compact('configuracionBiometrico'))->render();
 
         return response()->json(['html' => $view]);
     }
     public function md_add_asistencia_callao(Request $request)
     {
-        $view = view('asistencia.modals.md_add_asistencia_callao')->render();
+        $configuracionBiometrico = $this->configuracionBiometrico($this->centro_mac()->idmac);
+        $view = view('asistencia.modals.md_add_asistencia_callao', compact('configuracionBiometrico'))->render();
+
+        return response()->json(['html' => $view]);
+    }
+    public function md_add_asistencia_excel(Request $request)
+    {
+        $configuracionBiometrico = $this->configuracionBiometrico($this->centro_mac()->idmac);
+        $view = view('asistencia.modals.md_add_asistencia_excel', compact('configuracionBiometrico'))->render();
 
         return response()->json(['html' => $view]);
     }
@@ -1357,6 +1384,15 @@ class AsistenciaController extends Controller
 
         $file        = $request->file('txt_file');
         $idCentroMac = $this->centro_mac()->idmac;
+        $configuracion = $this->configuracionBiometrico($idCentroMac);
+
+        if (!$configuracion || (int) $configuracion->tipo_biometrico !== 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El Centro MAC no tiene configurado un biométrico tipo txt. Configure el biométrico para continuar.',
+            ], 422);
+        }
+
         $uploadToken = bin2hex(random_bytes(8));
 
         // Garantizar que el directorio existe antes de guardar
@@ -1455,6 +1491,15 @@ class AsistenciaController extends Controller
 
         $file = $request->file('txt_file');
         $idCentroMac = $this->centro_mac()->idmac;
+        $configuracion = $this->configuracionBiometrico($idCentroMac);
+
+        if (!$configuracion || (int) $configuracion->tipo_biometrico !== 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El Centro MAC no tiene configurado un biométrico tipo access. Configure el biométrico para continuar.',
+            ], 422);
+        }
+
         $fechaInicio = $request->fecha_inicio;
         $fechaFin = $request->fecha_fin;
 
@@ -1475,6 +1520,78 @@ class AsistenciaController extends Controller
             'success' => true,
             'message' => 'Archivo en cola. El proceso continuara en segundo plano.',
             'upload_token' => $uploadToken,
+        ]);
+    }
+
+    public function store_asistencia_excel(Request $request)
+    {
+        $request->validate([
+            'txt_file' => ['required', 'file'],
+        ]);
+
+        $idCentroMac = $this->centro_mac()->idmac;
+        $configuracion = $this->configuracionBiometrico($idCentroMac);
+
+        if (!$configuracion || (int) $configuracion->tipo_biometrico !== 3) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El Centro MAC no tiene configurado un biométrico tipo excel. Configure el biométrico para continuar.',
+            ], 422);
+        }
+
+        $file = $request->file('txt_file');
+        $extension = strtolower($file->getClientOriginalExtension());
+        if (!in_array($extension, ['csv', 'txt'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo se permiten archivos .csv o .txt exportados desde Excel.',
+            ], 422);
+        }
+
+        $uploadToken = bin2hex(random_bytes(8));
+        Storage::disk('local')->makeDirectory('asistencia-excel');
+
+        $filename = 'asistencia_excel_' . now()->format('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.csv';
+        $storedPath = Storage::disk('local')->putFileAs('asistencia-excel', $file, $filename);
+        $fullPath = Storage::disk('local')->path($storedPath ?: '');
+
+        if (!$storedPath || !Storage::disk('local')->exists($storedPath) || !file_exists($fullPath) || filesize($fullPath) === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el archivo CSV en el servidor. Intente nuevamente.',
+            ], 500);
+        }
+
+        Cache::put('upload_progress:' . $uploadToken, 0);
+        Cache::put('upload_status:' . $uploadToken, 'queued');
+        Cache::put('upload_error:' . $uploadToken, null);
+        Cache::put('upload_queue:' . $uploadToken, 'asistencia-excel');
+        Cache::put('upload_type:' . $uploadToken, 'excel');
+
+        try {
+            $jobId = Queue::connection('database')->push(
+                new ProcessAsistenciaExcel($storedPath, $idCentroMac, $uploadToken),
+                '',
+                'asistencia-excel'
+            );
+
+            Cache::put('upload_job_id:' . $uploadToken, $jobId);
+        } catch (\Throwable $e) {
+            Cache::put('upload_status:' . $uploadToken, 'failed');
+            Cache::put('upload_error:' . $uploadToken, $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El archivo se guardó pero no pudo encolarse: ' . $e->getMessage(),
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Archivo CSV en cola. El proceso continuará en segundo plano.',
+            'upload_token' => $uploadToken,
+            'type' => 'excel',
+            'queue' => 'asistencia-excel',
         ]);
     }
 
@@ -1512,6 +1629,18 @@ class AsistenciaController extends Controller
 
         $token       = $request->input('upload_token');
         $totalChunks = (int) $request->input('total_chunks');
+        $idCentroMac = $this->centro_mac()->idmac;
+        $configuracion = $this->configuracionBiometrico($idCentroMac);
+
+        if (!$configuracion || (int) $configuracion->tipo_biometrico !== 2) {
+            Storage::disk('local')->deleteDirectory('asistencia-accdb/chunks/' . $token);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El Centro MAC no tiene configurado un biométrico tipo access. Configure el biométrico para continuar.',
+            ], 422);
+        }
+
         $ext         = strtolower(pathinfo($request->input('filename'), PATHINFO_EXTENSION));
         $finalName   = 'asistencia_callao_' . now()->format('Ymd_His') . '_' . $token . '.' . $ext;
         $chunkDir    = Storage::disk('local')->path('asistencia-accdb/chunks/' . $token);
@@ -1543,7 +1672,6 @@ class AsistenciaController extends Controller
         Storage::disk('local')->deleteDirectory('asistencia-accdb/chunks/' . $token);
 
         // Despachar job en la cola asistencia
-        $idCentroMac = $this->centro_mac()->idmac;
         $storedPath  = 'asistencia-accdb/' . $finalName;
 
         // ── Validar archivo ensamblado antes de despachar ─────────────────────
@@ -1652,7 +1780,7 @@ class AsistenciaController extends Controller
                 } else {
                     // Genuinamente en cola: calcular posición real
                     $position = DB::table('jobs')
-                        ->whereIn('queue', ['asistencia-txt', 'asistencia-callao', 'asistencia'])
+                        ->whereIn('queue', ['asistencia-txt', 'asistencia-callao', 'asistencia-excel', 'asistencia'])
                         ->where('id', '<', $jobId)
                         ->count();
                 }
