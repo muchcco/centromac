@@ -15,7 +15,9 @@ class Interrupcion extends Model
         'id_tipo_int_obs',
         'idcentro_mac',
         'responsable',
+        'identidad_hijo',
         'servicio_involucrado',
+        'atribuible_entidad',
         'descripcion',
         'descripcion_accion',
         'fecha_inicio',
@@ -36,6 +38,11 @@ class Interrupcion extends Model
     public function entidad()
     {
         return $this->belongsTo(Entidad::class, 'identidad', 'IDENTIDAD');
+    }
+
+    public function entidadHijo()
+    {
+        return $this->belongsTo(Entidad::class, 'identidad_hijo', 'IDENTIDAD');
     }
 
     public function tipoIntObs()

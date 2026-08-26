@@ -57,12 +57,34 @@
                     </div>
                 </div>
 
+                <!-- Unidad de Organización -->
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label">Unidad de Organización</label>
+                    <div class="col-9">
+                        <select class="form-control select2" name="identidad_hijo" id="identidad_hijo">
+                            <option value="">--Seleccione--</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Servicio Involucrado -->
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Servicio Involucrado</label>
                     <div class="col-9">
                         <input type="text" class="form-control" name="servicio_involucrado"
                             value="{{ $interrupcion->servicio_involucrado }}">
+                    </div>
+                </div>
+
+                <!-- Atribuible a la Entidad -->
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label">Atribuible a la Entidad</label>
+                    <div class="col-9">
+                        <input type="hidden" name="atribuible_entidad" id="atribuible_entidad_valor"
+                            value="{{ $interrupcion->atribuible_entidad }}">
+                        <input type="checkbox" id="atribuible_e"
+                            {{ $interrupcion->atribuible_entidad ? 'checked' : '' }}>
+                        <span id="atribuible_entidad">SI</span>
                     </div>
                 </div>
 
@@ -164,14 +186,65 @@
             }
         }
 
-        toggleCamposFin();
+        function toggleAtribuible() {
+            if ($('#atribuible_e').is(':checked')) {
+                $('#atribuible_entidad').text('SI');
+                $('#atribuible_entidad_valor').val(1);
+            } else {
+                $('#atribuible_entidad').text('NO');
+                $('#atribuible_entidad_valor').val(0);
+            }
+        }
+
+        function cargarEntidadesHijo(identidad, seleccionado = null) {
+            if (!identidad) {
+                $('#identidad_hijo').html('<option value="">--Seleccione--</option>');
+                return;
+            }
+            $('#identidad_hijo').html('<option value="">Cargando...</option>');
+            $.ajax({
+                url: "{{ route('interrupcion.entidades_hijo') }}",
+                type: "GET",
+                data: {
+                    identidad: identidad
+                },
+                success: function(data) {
+                    let opciones = '<option value="">--Seleccione--</option>';
+                    $.each(data, function(i, item) {
+                        let selected = '';
+                        if (seleccionado == item.identidad) {
+                            selected = 'selected';
+                        }
+                        opciones += `
+                            <option value="${item.identidad}" ${selected}>
+                                ${item.abrev_entidad} - ${item.nombre_entidad}
+                            </option>`;
+                    });
+                    $('#identidad_hijo')
+                        .html(opciones)
+                        .trigger('change');
+                }
+            });
+        }
 
         $('#interrupcion_curso').change(toggleCamposFin);
-
         $('#estado_final').change(function() {
             if (!$('#interrupcion_curso').is(':checked')) {
                 $('#estado').val($(this).val());
             }
         });
+
+        $('#atribuible_e').change(toggleAtribuible);
+        $('#identidad').change(function() {
+            cargarEntidadesHijo($(this).val());
+        });
+
+        toggleCamposFin();
+        toggleAtribuible();
+
+        cargarEntidadesHijo(
+            $('#identidad').val(),
+            "{{ $interrupcion->identidad_hijo }}"
+        );
     });
 </script>

@@ -98,7 +98,9 @@
             <th style="border: 1px solid black;">N°</th>
             <th style="border: 1px solid black;">CENTRO MAC</th>
             <th style="border: 1px solid black;">ENTIDAD INVOLUCRADA</th>
+            <th style="border: 1px solid black;">UNIDAD DE ORGANIZACIÓN</th>
             <th style="border: 1px solid black;">SERVICIO INVOLUCRADO</th>
+            <th style="border: 1px solid black;">ATRIBUIBLE A ENTIDAD</th>
             <th style="border: 1px solid black;">TIPIFICACIÓN DE LA INTERRUPCIÓN (**)</th>
             <th style="border: 1px solid black;">DESCRIPCIÓN DE LA INTERRUPCIÓN</th>
             <th style="border: 1px solid black;" colspan="2">DESCRIPCIÓN DE LAS ACCIONES INMEDIATAS</th>
@@ -117,7 +119,11 @@
                 <td style="border: 1px solid black;">{{ $i + 1 }}</td>
                 <td style="border: 1px solid black;">{{ strtoupper($obs->centroMac->nombre_mac ?? 'No asignado') }}</td>
                 <td style="border: 1px solid black;">{{ strtoupper($obs->entidad->ABREV_ENTIDAD ?? '') }}</td>
+                <td style="border: 1px solid black;">{{ strtoupper($obs->entidadHijo->NOMBRE_ENTIDAD ?? '') }}</td>
                 <td style="border: 1px solid black;">{{ strtoupper($obs->servicio_involucrado ?? '') }}</td>
+                <td style="border: 1px solid black; text-align: center;">
+                    {{ $obs->atribuible_entidad == 1 ? 'SI' : 'NO' }}
+                </td>
                 <td style="border: 1px solid black;">
                     {{ strtoupper($obs->tipoIntObs->tipo ?? '') }} {{ strtoupper($obs->tipoIntObs->numeracion ?? '') }}
                 </td>

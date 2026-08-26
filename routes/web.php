@@ -423,6 +423,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/observar', [InterrupcionController::class, 'observarGuardar'])->name('observar');
         Route::post('/marcar-corregido', [InterrupcionController::class, 'marcarCorregido'])->name('marcar_corregido');
         Route::post('/toggle-corregido', [InterrupcionController::class, 'toggleCorregido'])->name('toggle_corregido');
+
+        Route::get('/entidades-hijo',[InterrupcionController::class,'getEntidadesHijo'])->name('entidades_hijo');
     });
     Route::prefix('observacion')->name('observacion.')->group(function () {
         Route::get('/index', [ObservacionController::class, 'index'])->name('index');

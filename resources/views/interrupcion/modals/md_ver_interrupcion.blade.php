@@ -33,6 +33,15 @@
                     </li>
                 @endif
 
+                {{-- Unidad de Organización --}}
+                @if ($interrupcion->entidadHijo)
+                    <li class="list-group-item">
+                        <strong>Unidad de Organización:</strong>
+                        {{ $interrupcion->entidadHijo->ABREV_ENTIDAD ?? '' }} -
+                        {{ $interrupcion->entidadHijo->NOMBRE_ENTIDAD ?? '' }}
+                    </li>
+                @endif
+
                 {{-- Servicio involucrado --}}
                 @if ($interrupcion->servicio_involucrado)
                     <li class="list-group-item">
@@ -40,6 +49,16 @@
                         {{ $interrupcion->servicio_involucrado }}
                     </li>
                 @endif
+
+                {{-- Atribuible a la Entidad --}}
+                <li class="list-group-item">
+                    <strong>Atribuible a la Entidad:</strong>
+                    @if ($interrupcion->atribuible_entidad == 1)
+                        <span class="badge bg-danger">SI</span>
+                    @else
+                        <span class="badge bg-success">NO</span>
+                    @endif
+                </li>
 
                 {{-- Descripción --}}
                 @if ($interrupcion->descripcion)

@@ -257,12 +257,26 @@ class InterrupcionController extends Controller
         try {
             $centro_mac = $this->centro_mac();
 
-            $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
-                ->where('m_mac_entidad.idcentro_mac', $centro_mac->idmac)
-                ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
-                ->orderBy('m_entidad.abrev_entidad')
-                ->get();
+            // $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
+            //     ->where('m_mac_entidad.idcentro_mac', $centro_mac->idmac)
+            //     ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
+            //     ->orderBy('m_entidad.abrev_entidad')
+            //     ->get();
 
+            $entidades = DB::table('m_mac_entidad as mme')
+                ->join('m_entidad as e', 'e.identidad', '=', 'mme.identidad')
+                ->leftJoin('m_entidad as p', 'p.identidad', '=', 'e.id_entidad_padre')
+                ->where('mme.idcentro_mac', $centro_mac->idmac)
+                ->where('e.flag', 1)
+                ->select(
+                    DB::raw('COALESCE(p.IDENTIDAD, e.IDENTIDAD) AS identidad'),
+                    DB::raw('COALESCE(p.NOMBRE_ENTIDAD, e.NOMBRE_ENTIDAD) AS nombre_entidad'),
+                    DB::raw('COALESCE(p.ABREV_ENTIDAD, e.ABREV_ENTIDAD) AS abrev_entidad')
+                )
+                ->distinct()
+                ->orderBy('nombre_entidad')
+                ->get();
+            
             $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')
                 ->orderBy('tipo', 'asc')
                 ->orderBy('numeracion', 'asc')
@@ -284,7 +298,9 @@ class InterrupcionController extends Controller
             'idcentro_mac'          => 'required|integer|exists:m_centro_mac,idcentro_mac',
             'identidad'             => 'required|integer|exists:m_entidad,identidad',
             'id_tipo_int_obs'       => 'required|integer|exists:m_tipo_int_obs,id_tipo_int_obs',
+            'identidad_hijo'        => 'required|integer',
             'servicio_involucrado'  => 'required|string|max:255',
+            'atribuible_entidad'    => 'required|boolean',
             'descripcion'           => 'required|string',
             'descripcion_accion'    => 'nullable|string',
             'fecha_inicio'          => 'required|date',
@@ -337,10 +353,24 @@ class InterrupcionController extends Controller
 
             $centro_mac = $this->centro_mac();
 
-            $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
-                ->where('m_mac_entidad.idcentro_mac', $centro_mac->idmac)
-                ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
-                ->orderBy('m_entidad.abrev_entidad')
+            // $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
+            //     ->where('m_mac_entidad.idcentro_mac', $centro_mac->idmac)
+            //     ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
+            //     ->orderBy('m_entidad.abrev_entidad')
+            //     ->get();
+            
+            $entidades = DB::table('m_mac_entidad as mme')
+                ->join('m_entidad as e', 'e.identidad', '=', 'mme.identidad')
+                ->leftJoin('m_entidad as p', 'p.identidad', '=', 'e.id_entidad_padre')
+                ->where('mme.idcentro_mac', $centro_mac->idmac)
+                ->where('e.flag', 1)
+                ->select(
+                    DB::raw('COALESCE(p.IDENTIDAD, e.IDENTIDAD) AS identidad'),
+                    DB::raw('COALESCE(p.NOMBRE_ENTIDAD, e.NOMBRE_ENTIDAD) AS nombre_entidad'),
+                    DB::raw('COALESCE(p.ABREV_ENTIDAD, e.ABREV_ENTIDAD) AS abrev_entidad')
+                )
+                ->distinct()
+                ->orderBy('nombre_entidad')
                 ->get();
 
             $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')
@@ -362,10 +392,12 @@ class InterrupcionController extends Controller
     public function update(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id_interrupcion' => 'required|integer|exists:m_interrupcion,id_interrupcion',
-            'identidad'       => 'required|integer|exists:m_entidad,identidad',
-            'id_tipo_int_obs' => 'required|integer|exists:m_tipo_int_obs,id_tipo_int_obs',
-            'descripcion'     => 'required|string',
+            'id_interrupcion'    => 'required|integer|exists:m_interrupcion,id_interrupcion',
+            'identidad'          => 'required|integer|exists:m_entidad,identidad',
+            'id_tipo_int_obs'    => 'required|integer|exists:m_tipo_int_obs,id_tipo_int_obs',
+            'identidad_hijo'     => 'required|integer',
+            'atribuible_entidad' => 'required|boolean',
+            'descripcion'        => 'required|string',
             'descripcion_accion' => 'nullable|string',
             'fecha_inicio'       => 'required|date',
             'hora_inicio'        => 'required|date_format:H:i',
@@ -479,10 +511,24 @@ class InterrupcionController extends Controller
 
         $centro_mac = $this->centro_mac();
 
-        $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
-            ->where('m_mac_entidad.idcentro_mac', $centro_mac->idmac)
-            ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
-            ->orderBy('m_entidad.abrev_entidad')
+        // $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
+        //     ->where('m_mac_entidad.idcentro_mac', $centro_mac->idmac)
+        //     ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
+        //     ->orderBy('m_entidad.abrev_entidad')
+        //     ->get();
+
+        $entidades = DB::table('m_mac_entidad as mme')
+            ->join('m_entidad as e', 'e.identidad', '=', 'mme.identidad')
+            ->leftJoin('m_entidad as p', 'p.identidad', '=', 'e.id_entidad_padre')
+            ->where('mme.idcentro_mac', $centro_mac->idmac)
+            ->where('e.flag', 1)
+            ->select(
+                DB::raw('COALESCE(p.IDENTIDAD, e.IDENTIDAD) AS identidad'),
+                DB::raw('COALESCE(p.NOMBRE_ENTIDAD, e.NOMBRE_ENTIDAD) AS nombre_entidad'),
+                DB::raw('COALESCE(p.ABREV_ENTIDAD, e.ABREV_ENTIDAD) AS abrev_entidad')
+            )
+            ->distinct()
+            ->orderBy('nombre_entidad')
             ->get();
 
         $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')
@@ -495,10 +541,11 @@ class InterrupcionController extends Controller
 
         return response()->json(['html' => $view]);
     }
+
     public function verModal(Request $request)
     {
         try {
-            $interrupcion = Interrupcion::with(['entidad', 'tipoIntObs', 'centroMac', 'responsableUsuario'])
+            $interrupcion = Interrupcion::with(['entidad', 'entidadHijo', 'tipoIntObs', 'centroMac', 'responsableUsuario'])
                 ->find($request->id_interrupcion);
 
             if (!$interrupcion) {
@@ -759,5 +806,28 @@ class InterrupcionController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => 400]);
         }
+    }
+
+    public function getEntidadesHijo(Request $request)
+    {
+        // dd($request->identidad);
+        $centro_mac = $this->centro_mac();
+
+        $entidades = DB::table('m_mac_entidad as mme')
+            ->join('m_entidad as e', 'e.identidad', '=', 'mme.identidad')
+            ->where('mme.idcentro_mac', $centro_mac->idmac)
+            ->where('e.id_entidad_padre', $request->identidad)
+            ->where('e.flag', 1)
+            ->select(
+                'e.identidad',
+                'e.nombre_entidad',
+                'e.abrev_entidad'
+            )
+            ->distinct()
+            ->orderBy('e.nombre_entidad')
+            ->get();
+
+        // dd(response()->json($entidades));
+        return response()->json($entidades);
     }
 }

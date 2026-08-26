@@ -34,15 +34,23 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Entidad</label>
                     <div class="col-9">
-                        <select class="form-control" disabled>
-                            @foreach ($entidades as $entidad)
-                                <option {{ $interrupcion->identidad == $entidad->identidad ? 'selected' : '' }}>
-                                    {{ $entidad->abrev_entidad }} - {{ $entidad->nombre_entidad }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <input type="text" class="form-control"
+                            value="{{ $interrupcion->entidad->ABREV_ENTIDAD }} - {{ $interrupcion->entidad->NOMBRE_ENTIDAD }}"
+                            readonly>
                     </div>
                 </div>
+
+                <!-- Unidad de Organización -->
+                @if ($interrupcion->entidadHijo)
+                    <div class="row mb-3">
+                        <label class="col-3 col-form-label">Unidad de Organización</label>
+                        <div class="col-9">
+                            <input type="text" class="form-control"
+                                value="{{ $interrupcion->entidadHijo->ABREV_ENTIDAD }} - {{ $interrupcion->entidadHijo->NOMBRE_ENTIDAD }}"
+                                readonly>
+                        </div>
+                    </div>
+                @endif
 
                 <!-- Servicio Involucrado -->
                 <div class="row mb-3">
@@ -50,6 +58,18 @@
                     <div class="col-9">
                         <input type="text" class="form-control" value="{{ $interrupcion->servicio_involucrado }}"
                             disabled>
+                    </div>
+                </div>
+
+                <!-- Atribuible a la Entidad -->
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label">Atribuible a la Entidad</label>
+                    <div class="col-9">
+                        <input type="checkbox" disabled
+                            {{ $interrupcion->atribuible_entidad == 1 ? 'checked' : '' }}>
+                        <span>
+                            {{ $interrupcion->atribuible_entidad == 1 ? 'SI' : 'NO' }}
+                        </span>
                     </div>
                 </div>
 
@@ -111,8 +131,8 @@
 </div>
 
 <script>
-    $(document).ready(function() {
-        $('#estado_final').change(function() {
+    $(document).ready(function () {
+        $('#estado_final').change(function () {
             $('#estado').val($(this).val());
         });
     });

@@ -55,11 +55,31 @@
                     </div>
                 </div>
 
+                <!-- Unidad de Organización -->
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label">Unidad de Organización</label>
+                    <div class="col-9">
+                        <select class="form-control select2" name="identidad_hijo" id="identidad_hijo">
+                            <option value="">--Seleccione--</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Servicio Involucrado -->
                 <div class="row mb-3">
                     <label class="col-3 col-form-label">Servicio Involucrado</label>
                     <div class="col-9">
                         <input type="text" class="form-control" name="servicio_involucrado">
+                    </div>
+                </div>
+
+                <!-- Atribuible a la Entidad -->
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label">Atribuible a la Entidad</label>
+                    <div class="col-9">
+                        <input type="hidden" name="atribuible_entidad" id="atribuible_entidad_valor" value="1">
+                        <input type="checkbox" id="atribuible_e" checked>
+                        <span id="atribuible_entidad">SI</span>
                     </div>
                 </div>
 
@@ -145,6 +165,7 @@
 
         function toggleCamposFin() {
             if ($('#interrupcion_curso').is(':checked')) {
+                $('#atribuible_entidad').text('SI');
                 $('#estado_interrupcion').text('ABIERTO');
                 $('#estado').val('ABIERTO');
                 $('#campos_fin').hide();
@@ -156,6 +177,7 @@
         }
 
         $('#interrupcion_curso').change(toggleCamposFin);
+
         $('#estado_final').change(function() {
             if (!$('#interrupcion_curso').is(':checked')) {
                 $('#estado').val($(this).val());
@@ -163,6 +185,41 @@
             }
         });
 
+        function toggleAtribuible() {
+            if ($('#atribuible_e').is(':checked')) {
+                $('#atribuible_entidad').text('SI');
+                $('#atribuible_entidad_valor').val(1);
+            } else {
+                $('#atribuible_entidad').text('NO');
+                $('#atribuible_entidad_valor').val(0);
+            }
+        }
+        $('#atribuible_e').change(toggleAtribuible);
+
         toggleCamposFin();
+        toggleAtribuible();
+    });
+
+    $('#identidad').change(function () {
+        let identidad = $(this).val();
+        $('#identidad_hijo').html('<option>Cargando...</option>');
+        $.ajax({
+            url: "{{ route('interrupcion.entidades_hijo') }}",
+            type: "GET",
+            data: {
+                identidad: identidad
+            },
+            success: function(data){
+                // console.log(data);
+                let opciones = '<option value="">--Seleccione--</option>';
+                $.each(data, function(i,item){
+                    opciones += `
+                        <option value="${item.identidad}">
+                            ${item.abrev_entidad} - ${item.nombre_entidad}
+                        </option>`;
+                });
+                $('#identidad_hijo').html(opciones).trigger('change');
+            }
+        });
     });
 </script>
