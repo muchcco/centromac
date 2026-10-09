@@ -162,6 +162,9 @@
                         <button type="button" class="btn btn-outline-primary" onclick="exportarExcel()">
                             <i class="fa fa-file-excel"></i> Exportar Excel
                         </button>
+                        <button type="button" class="btn btn-outline-success" onclick="exportarExcelANS()">
+                            <i class="fa fa-chart-bar"></i> Reporte ANS
+                        </button>
                     </div>
                 </div>
                 <div class="row">
@@ -633,10 +636,8 @@
             }
         });
 
-    } // ===============================================
-    // 🔹 Exportar Excel con filtros aplicados
-    // ===============================================
-    // 🔹 Exportar Excel con todos los filtros aplicados
+    } 
+
     function exportarExcel() {
         let idmac = $('#filtro_mac').val() || '';
         let fecha_inicio = $('#filtro_fecha_inicio').val() || '';
@@ -660,6 +661,19 @@
         window.location.href = url;
     }
 
+    function exportarExcelANS() {
+        const filtros = {
+            idmac: $('#filtro_mac').val() || '',
+            fecha_inicio: $('#filtro_fecha_inicio').val() || '',
+            fecha_fin: $('#filtro_fecha_fin').val() || '',
+            entidad: $('#filtro_entidad').val() || '',
+            tipificacion: $('#filtro_tipificacion').val() || '',
+            estado: $('#filtro_estado').val() || '',
+            revision: $('#filtro_revision').val() || ''
+        };
+        const parametros = new URLSearchParams(filtros).toString();
+        window.location.href = "{{ route('interrupcion.export_excel_ans') }}" + '?' + parametros;
+    }
     //  Función para limpiar todos los filtros
     $(document).on('click', '#btnLimpiarFiltro', function(e) {
         e.preventDefault();

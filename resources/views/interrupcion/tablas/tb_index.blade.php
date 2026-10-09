@@ -102,19 +102,8 @@
                 @endrole
 
                 @php
-                $anioInterrupcion = \Carbon\Carbon::parse($interrupcion->fecha_inicio)->year;
-
-                if ($anioInterrupcion == 2025) {
-                // Año 2025: solo Administrador y Moderador
-                $puedeGestionarInterrupcion = auth()->user()->hasAnyRole(['Administrador', 'Moderador']);
-                } else {
-                // Otros años: Administrador, Especialista TIC y Moderador
-                $puedeGestionarInterrupcion = auth()->user()->hasAnyRole([
-                'Administrador',
-                'Especialista TIC',
-                'Moderador'
-                ]);
-                }
+                $puedeGestionarInterrupcion = \Carbon\Carbon::parse($interrupcion->fecha_inicio)->toDateString() > '2026-09-30'
+                && auth()->user()->hasAnyRole(['Administrador', 'Especialista TIC', 'Moderador']);
                 @endphp
 
                 {{-- Ver --}}

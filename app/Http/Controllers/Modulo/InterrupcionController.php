@@ -17,43 +17,44 @@ use Carbon\Carbon;
 
 class InterrupcionController extends Controller
 {
+    private function interrupcionBloqueada($fechaInicio): bool
+    {
+        return Carbon::parse($fechaInicio)->startOfDay()->lte(Carbon::create(2026, 9, 30)->startOfDay());
+    }
+    private function respuestaBloqueo()
+    {
+        return response()->json([
+            'message' => 'Las interrupciones con fecha de inicio hasta el 30/09/2026 están bloqueadas. Solo se permite su consulta.',
+            'status' => 403,
+        ], 403);
+    }
     private function centro_mac()
     {
         $us_id = auth()->user()->idcentro_mac;
         $user = User::join('m_centro_mac', 'm_centro_mac.idcentro_mac', '=', 'users.idcentro_mac')
             ->where('m_centro_mac.idcentro_mac', $us_id)
             ->first();
-
         return (object)[
             'idmac' => $user->idcentro_mac,
             'name_mac' => $user->nombre_mac
         ];
     }
-
     public function index()
     {
         $user = auth()->user();
-
-        // 🔹 Listado de MAC (solo visible para admins/moderadores)
         $centros_mac = DB::table('m_centro_mac')
             ->select('idcentro_mac as IDCENTRO_MAC', 'nombre_mac as NOMBRE_MAC')
             ->orderBy('nombre_mac')
             ->get();
-
-        // 🔹 Nombre del MAC del usuario actual
         $nombre_mac_usuario = DB::table('m_centro_mac')
             ->where('idcentro_mac', $user->idcentro_mac)
             ->value('nombre_mac');
-
-        // 🔹 Lógica para ENTIDADES
         if ($user->hasAnyRole(['Administrador', 'Moderador'])) {
-            // Si es admin o moderador, obtiene TODAS las entidades (de todos los MAC)
             $entidades = DB::table('m_entidad')
                 ->select('identidad', 'abrev_entidad', 'nombre_entidad')
                 ->orderBy('abrev_entidad')
                 ->get();
         } else {
-            // Si no es admin/moderador, solo las entidades de su MAC
             $entidades = DB::table('m_entidad')
                 ->join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
                 ->where('m_mac_entidad.idcentro_mac', $user->idcentro_mac)
@@ -61,16 +62,12 @@ class InterrupcionController extends Controller
                 ->orderBy('m_entidad.abrev_entidad')
                 ->get();
         }
-
-        // 🔹 Lógica para TIPIFICACIONES (solo interrupciones)
         $tipificaciones = DB::table('m_tipo_int_obs')
             ->where('tipo_obs', 'INTERRUPCIÓN')
             ->orderBy('tipo', 'asc')
             ->orderBy('numeracion', 'asc')
             ->orderBy('nom_tipo_int_obs', 'asc')
             ->get(['id_tipo_int_obs', 'tipo', 'numeracion', 'nom_tipo_int_obs']);
-
-        // 🔹 Enviamos todo a la vista
         return view('interrupcion.index', compact(
             'centros_mac',
             'nombre_mac_usuario',
@@ -78,11 +75,9 @@ class InterrupcionController extends Controller
             'tipificaciones'
         ));
     }
-
     public function tb_index(Request $request)
     {
         $user = auth()->user();
-
         $idmac = $request->idmac;
         $fecha_inicio = $request->fecha_inicio;
         $fecha_fin = $request->fecha_fin;
@@ -90,16 +85,12 @@ class InterrupcionController extends Controller
         $tipificacion = $request->tipificacion;
         $estado = $request->estado;
         $revision = $request->revision;
-
-        // 🔹 Construcción base de la consulta
         $query = Interrupcion::with([
             'entidad:IDENTIDAD,NOMBRE_ENTIDAD,ABREV_ENTIDAD',
             'tipoIntObs:id_tipo_int_obs,tipo,numeracion,nom_tipo_int_obs',
             'centroMac:idcentro_mac,nombre_mac',
             'responsableUsuario:id,name'
         ]);
-
-        // 🔹 Filtro por MAC
         if ($idmac) {
             $query->where('idcentro_mac', $idmac);
         } else {
@@ -107,137 +98,89 @@ class InterrupcionController extends Controller
                 $query->where('idcentro_mac', $user->idcentro_mac);
             }
         }
-
-        // 🔹 Filtro por fechas
         if ($fecha_inicio && $fecha_fin) {
             $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
         }
-
-        // 🔹 Filtro por entidad
         if (!empty($entidad)) {
             $query->whereHas('entidad', function ($q) use ($entidad) {
                 $q->where('ABREV_ENTIDAD', 'like', "%{$entidad}%")
                     ->orWhere('NOMBRE_ENTIDAD', 'like', "%{$entidad}%");
             });
         }
-
-        // 🔹 Filtro por tipificación
         if (!empty($tipificacion)) {
             $query->whereHas('tipoIntObs', function ($q) use ($tipificacion) {
                 $q->where('nom_tipo_int_obs', 'like', "%{$tipificacion}%")
                     ->orWhere('tipo', 'like', "%{$tipificacion}%");
             });
         }
-
-        // 🔹 Filtro por estado
         if (!empty($estado)) {
             $query->where('estado', strtoupper($estado));
         }
-
-        // 🔹 Filtro por revisión
         if ($revision === 'observado') {
             $query->where('observado', 1);
         } elseif ($revision === 'no_observado') {
             $query->where('observado', 0);
         }
-
-        // --------------------------------------------------------------
-        // 🔹 Cargar horarios y feriados UNA SOLA VEZ
-        // --------------------------------------------------------------
-
         $horariosMac = DB::table('m_horario_mac')
             ->where('activo', 1)
             ->get()
             ->groupBy('idcentro_mac');
-
         $feriadosMac = DB::table('feriados')
             ->get()
             ->groupBy(function ($f) {
                 return $f->id_centromac ?? 'nacional';
             });
-
-        // --------------------------------------------------------------
-        // 🔹 EJECUTAR CONSULTA Y CALCULAR TIEMPO DE INTERRUPCIÓN
-        // --------------------------------------------------------------
-
         $interrupciones = $query
             ->orderBy('fecha_inicio', 'desc')
             ->orderBy('hora_inicio', 'desc')
             ->get()
             ->map(function ($item) use ($horariosMac, $feriadosMac) {
-
-                // 🔹 Solo calcular si tiene fecha y hora de fin
                 if (!$item->fecha_fin || !$item->hora_fin) {
                     $item->tiempo_horario = '-';
                     return $item;
                 }
-
                 $inicio = \Carbon\Carbon::parse("{$item->fecha_inicio} {$item->hora_inicio}");
                 $fin    = \Carbon\Carbon::parse("{$item->fecha_fin} {$item->hora_fin}");
-
                 if ($fin <= $inicio) {
                     $item->tiempo_horario = '-';
                     return $item;
                 }
-
-                // 🔹 Horarios del MAC desde memoria
                 $horarios = $horariosMac[$item->idcentro_mac] ?? collect();
-
-                // 🔹 Feriados nacionales + del MAC
                 $feriados = collect();
-
                 if (isset($feriadosMac['nacional'])) {
                     $feriados = $feriados->merge($feriadosMac['nacional']);
                 }
-
                 if (isset($feriadosMac[$item->idcentro_mac])) {
                     $feriados = $feriados->merge($feriadosMac[$item->idcentro_mac]);
                 }
-
                 $feriados = $feriados->pluck('fecha')->toArray();
-
                 $totalMin = 0;
                 $cursor = $inicio->copy()->startOfDay();
-
                 while ($cursor->lte($fin)) {
-
                     $dia = $cursor->format('Y-m-d');
                     $diaIso = $cursor->dayOfWeekIso;
-
-                    // 🔹 Domingo no atiende
                     if ($diaIso == 7) {
                         $cursor->addDay();
                         continue;
                     }
-
-                    // 🔹 Feriado no atiende
                     if (in_array($dia, $feriados)) {
                         $cursor->addDay();
                         continue;
                     }
-
-                    // 🔹 Horario de ese día
                     $h = $horarios->firstWhere('dia_semana', $diaIso);
-
                     if (!$h) {
                         $cursor->addDay();
                         continue;
                     }
-
                     $inicioDia = \Carbon\Carbon::parse("$dia {$h->hora_inicio}");
                     $finDia    = \Carbon\Carbon::parse("$dia {$h->hora_fin}");
-
-                    // 🔹 Intersección con la interrupción
                     $desde = $inicioDia->max($inicio);
                     $hasta = $finDia->min($fin);
-
                     if ($hasta->gt($desde)) {
                         $totalMin += $desde->diffInMinutes($hasta);
                     }
-
                     $cursor->addDay();
                 }
-
                 if ($totalMin <= 0) {
                     $item->tiempo_horario = '-';
                 } else {
@@ -245,38 +188,31 @@ class InterrupcionController extends Controller
                     $m = $totalMin % 60;
                     $item->tiempo_horario = sprintf('%02d:%02d', $h, $m);
                 }
-
                 return $item;
             });
-
         return view('interrupcion.tablas.tb_index', compact('interrupciones'));
     }
-
     public function create()
     {
         try {
             $centro_mac = $this->centro_mac();
-
             $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
                 ->where('m_mac_entidad.idcentro_mac', $centro_mac->idmac)
                 ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
                 ->orderBy('m_entidad.abrev_entidad')
                 ->get();
-
             $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')
                 ->orderBy('tipo', 'asc')
                 ->orderBy('numeracion', 'asc')
                 ->orderBy('nom_tipo_int_obs', 'asc')
                 ->get();
             $responsables = User::where('idcentro_mac', $centro_mac->idmac)->select('id', 'name')->get();
-
             $view = view('interrupcion.modals.md_add_interrupcion', compact('entidades', 'tipos', 'responsables'))->render();
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
         }
     }
-
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -293,72 +229,54 @@ class InterrupcionController extends Controller
             'hora_fin'              => 'nullable|date_format:H:i',
             'estado'                => 'required|string',
         ]);
-
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors(), 'status' => 422], 422);
         }
-
+        if ($this->interrupcionBloqueada($request->fecha_inicio)) {
+            return $this->respuestaBloqueo();
+        }
         try {
             $centro_mac = $this->centro_mac();
             $data = $request->except('accion_correctiva'); //  se ignora completamente
-
             if ($request->estado === 'ABIERTO') {
                 $data['fecha_fin'] = null;
                 $data['hora_fin'] = null;
             }
-
             $data['idcentro_mac'] = $centro_mac->idmac;
-
             Interrupcion::create($data);
-
             return response()->json(['message' => 'Interrupción creada exitosamente', 'status' => 201], 201);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => 400], 400);
         }
     }
-
     public function edit(Request $request)
     {
         try {
             $interrupcion = Interrupcion::find($request->id_interrupcion);
-
             if (!$interrupcion) {
                 return response()->json(['error' => 'Interrupción no encontrada'], 404);
             }
-
-            $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
-
-            if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
-                return response()->json([
-                    'message' => 'No tienes permisos para editar interrupciones del año 2025.',
-                    'status' => 403
-                ], 403);
+            if ($this->interrupcionBloqueada($interrupcion->fecha_inicio)) {
+                return $this->respuestaBloqueo();
             }
-
             $centro_mac = $this->centro_mac();
-
             $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
                 ->where('m_mac_entidad.idcentro_mac', $centro_mac->idmac)
                 ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
                 ->orderBy('m_entidad.abrev_entidad')
                 ->get();
-
             $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')
                 ->orderBy('tipo', 'asc')
                 ->orderBy('numeracion', 'asc')
                 ->orderBy('nom_tipo_int_obs', 'asc')
                 ->get();
-
             $responsables = User::where('idcentro_mac', $centro_mac->idmac)->get();
-
             $view = view('interrupcion.modals.md_edit_interrupcion', compact('interrupcion', 'entidades', 'tipos', 'responsables'))->render();
-
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
     public function update(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -375,74 +293,51 @@ class InterrupcionController extends Controller
             'responsable'        => 'required|integer|exists:users,id',
             'idcentro_mac'       => 'required|integer|exists:m_centro_mac,idcentro_mac'
         ]);
-
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors(), 'status' => 422], 422);
         }
-
         try {
             $interrupcion = Interrupcion::find($request->id_interrupcion);
-
-            $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
-
-            if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
-                return response()->json([
-                    'message' => 'No tienes permisos para actualizar interrupciones del año 2025.',
-                    'status' => 403
-                ], 403);
+            if ($this->interrupcionBloqueada($interrupcion->fecha_inicio)) {
+                return $this->respuestaBloqueo();
             }
-
+            if ($this->interrupcionBloqueada($request->fecha_inicio)) {
+                return $this->respuestaBloqueo();
+            }
             $data = $request->except('accion_correctiva');
-
             if ($request->estado === 'ABIERTO') {
                 $data['fecha_fin'] = null;
                 $data['hora_fin'] = null;
             }
-
             $interrupcion->update($data);
-
             return response()->json(['message' => 'Interrupción actualizada exitosamente', 'status' => 200], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => 400], 400);
         }
     }
-
     public function destroy(Request $request)
     {
         DB::beginTransaction();
-
         try {
             $interrupcion = Interrupcion::findOrFail($request->id_interrupcion);
-
-            $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
-
-            if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
+            if ($this->interrupcionBloqueada($interrupcion->fecha_inicio)) {
                 DB::rollBack();
-
-                return response()->json([
-                    'message' => 'No tienes permisos para eliminar interrupciones del año 2025.',
-                    'status' => 403
-                ], 403);
+                return $this->respuestaBloqueo();
             }
-
             $interrupcion->delete();
-
             DB::commit();
-
             return response()->json([
                 'message' => 'Interrupción eliminada exitosamente',
                 'status' => 200
             ], 200);
         } catch (\Exception $e) {
             DB::rollback();
-
             return response()->json([
                 'error' => $e->getMessage(),
                 'status' => 400
             ], 400);
         }
     }
-
     public function getPersonales(Request $request)
     {
         try {
@@ -453,46 +348,32 @@ class InterrupcionController extends Controller
                 ->distinct()
                 ->orderBy('m_personal.nombre', 'asc')
                 ->get();
-
             return response()->json($personales);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al obtener los personales'], 500);
         }
     }
-
     public function subsanarModal(Request $request)
     {
         $interrupcion = Interrupcion::find($request->id_interrupcion);
-
         if (!$interrupcion) {
             return response()->json(['error' => 'Interrupción no encontrada'], 404);
         }
-
-        $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
-
-        if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
-            return response()->json([
-                'message' => 'No tienes permisos para subsanar interrupciones del año 2025.',
-                'status' => 403
-            ], 403);
+        if ($this->interrupcionBloqueada($interrupcion->fecha_inicio)) {
+            return $this->respuestaBloqueo();
         }
-
         $centro_mac = $this->centro_mac();
-
         $entidades = Entidad::join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
             ->where('m_mac_entidad.idcentro_mac', $centro_mac->idmac)
             ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
             ->orderBy('m_entidad.abrev_entidad')
             ->get();
-
         $tipos = TipoIntObs::where('tipo_obs', 'INTERRUPCIÓN')
             ->orderBy('tipo', 'asc')
             ->orderBy('numeracion', 'asc')
             ->orderBy('nom_tipo_int_obs', 'asc')
             ->get();
-
         $view = view('interrupcion.modals.md_subsanar_interrupcion', compact('interrupcion', 'tipos', 'entidades'))->render();
-
         return response()->json(['html' => $view]);
     }
     public function verModal(Request $request)
@@ -500,19 +381,15 @@ class InterrupcionController extends Controller
         try {
             $interrupcion = Interrupcion::with(['entidad', 'tipoIntObs', 'centroMac', 'responsableUsuario'])
                 ->find($request->id_interrupcion);
-
             if (!$interrupcion) {
                 return response()->json(['error' => 'Interrupción no encontrada'], 404);
             }
-
             $view = view('interrupcion.modals.md_ver_interrupcion', compact('interrupcion'))->render();
-
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
     public function subsanarGuardar(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -521,36 +398,25 @@ class InterrupcionController extends Controller
             'fecha_fin'          => 'nullable|date',
             'hora_fin'           => 'nullable|date_format:H:i',
         ]);
-
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors(), 'status' => 422], 422);
         }
-
         try {
             $interrupcion = Interrupcion::find($request->id_interrupcion);
-
             if (!$interrupcion) {
                 return response()->json([
                     'message' => 'Interrupción no encontrada.',
                     'status' => 404
                 ], 404);
             }
-
-            $anioInterrupcion = Carbon::parse($interrupcion->fecha_inicio)->year;
-
-            if ($anioInterrupcion == 2025 && !auth()->user()->hasAnyRole(['Administrador', 'Moderador'])) {
-                return response()->json([
-                    'message' => 'No tienes permisos para guardar la subsanación de interrupciones del año 2025.',
-                    'status' => 403
-                ], 403);
+            if ($this->interrupcionBloqueada($interrupcion->fecha_inicio)) {
+                return $this->respuestaBloqueo();
             }
-
             $interrupcion->update([
                 'estado'    => $request->estado,
                 'fecha_fin' => $request->fecha_fin,
                 'hora_fin'  => $request->hora_fin,
             ]);
-
             return response()->json([
                 'message' => 'Interrupción cerrada correctamente',
                 'status' => 200
@@ -562,13 +428,10 @@ class InterrupcionController extends Controller
             ], 400);
         }
     }
-
     public function export_excel(Request $request)
     {
         try {
             $user = auth()->user();
-
-            // 🔹 Filtros del request
             $idmac = $request->idmac;
             $fecha_inicio = $request->fecha_inicio;
             $fecha_fin = $request->fecha_fin;
@@ -576,58 +439,41 @@ class InterrupcionController extends Controller
             $tipificacion = $request->tipificacion;
             $estado = $request->estado;
             $revision = $request->revision;
-
-            // 🔹 Base de consulta con relaciones
             $query = Interrupcion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac']);
-
-            // 🔹 Filtro por Centro MAC
             if ($idmac) {
                 $query->where('idcentro_mac', $idmac);
             } elseif (!$user->hasAnyRole(['Administrador', 'Monitor', 'Moderador'])) {
                 $query->where('idcentro_mac', $user->idcentro_mac);
             }
-
-            // 🔹 Filtro por fechas
             if ($fecha_inicio && $fecha_fin) {
                 $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
             }
-
-            // 🔹 Filtro por entidad
             if (!empty($entidad)) {
                 $query->whereHas('entidad', function ($q) use ($entidad) {
                     $q->where('ABREV_ENTIDAD', 'like', "%{$entidad}%")
                         ->orWhere('NOMBRE_ENTIDAD', 'like', "%{$entidad}%");
                 });
             }
-
-            // 🔹 Filtro por tipificación
             if (!empty($tipificacion)) {
                 $query->whereHas('tipoIntObs', function ($q) use ($tipificacion) {
                     $q->where('nom_tipo_int_obs', 'like', "%{$tipificacion}%")
                         ->orWhere('tipo', 'like', "%{$tipificacion}%");
                 });
             }
-
-            // 🔹 Filtro por estado
             if (!empty($estado)) {
                 $query->where('estado', strtoupper($estado));
             }
-
-            // 🔹 Filtro por revisión (observado / no observado)
             if ($revision === 'observado') {
                 $query->where('observado', 1);
             } elseif ($revision === 'no_observado') {
                 $query->where('observado', 0);
             }
-
-            // 🔹 Ejecutar consulta
             $interrupciones = $query
-                ->with(['centroMac:idcentro_mac,nombre_mac']) // <-- fuerza el join correcto
+                ->with(['centroMac:idcentro_mac,nombre_mac'])
                 ->orderBy('fecha_inicio', 'desc')
                 ->orderBy('hora_inicio', 'desc')
                 ->get()
                 ->map(function ($item) {
-                    // 🔧 fallback por si no se cargó correctamente el centroMac
                     if (!$item->centroMac && $item->idcentro_mac) {
                         $item->centroMac = (object)[
                             'nombre_mac' => DB::table('m_centro_mac')
@@ -637,11 +483,7 @@ class InterrupcionController extends Controller
                     }
                     return $item;
                 });
-
-            // 🔹 Detectar centros MAC distintos en los resultados
             $macsUnicos = $interrupciones->pluck('centroMac.nombre_mac')->unique()->filter()->values();
-
-            // Si solo hay uno, lo mostramos; si hay varios, decimos “VARIOS CENTROS MAC”
             if ($macsUnicos->count() === 1) {
                 $nombreMac = $macsUnicos->first();
             } elseif ($idmac) {
@@ -651,8 +493,6 @@ class InterrupcionController extends Controller
             } else {
                 $nombreMac = 'TODOS LOS CENTROS MAC';
             }
-
-            // 🔹 Rango de fechas
             $rango = '';
             if ($fecha_inicio && $fecha_fin) {
                 $rango = '_('
@@ -661,11 +501,9 @@ class InterrupcionController extends Controller
                     . \Carbon\Carbon::parse($fecha_fin)->format('d-m-Y')
                     . ')';
             }
-
-            // 🔹 Nombre del archivo
-            $nombreArchivo = 'Interrupciones_' . str_replace(' ', '_', $nombreMac) . $rango . '.xlsx';
-
-            // 🔹 Exportar con los filtros aplicados
+            $nombreMacLimpio = preg_replace('/[\/\\\\:*?"<>|]/', '_', $nombreMac);
+            $nombreMacLimpio = preg_replace('/\s+/', '_', $nombreMacLimpio);
+            $nombreArchivo = 'Interrupciones_' . $nombreMacLimpio . $rango . '.xlsx';
             return Excel::download(
                 new InterrupcionExport($interrupciones, $nombreMac, $rango),
                 $nombreArchivo
@@ -674,57 +512,125 @@ class InterrupcionController extends Controller
             return response()->json(['error' => $e->getMessage(), 'status' => 400]);
         }
     }
+    public function export_excel_ans(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            $idmac = $request->idmac;
+            $fecha_inicio = $request->fecha_inicio;
+            $fecha_fin = $request->fecha_fin;
+            $entidad = $request->entidad;
+            $tipificacion = $request->tipificacion;
+            $estado = $request->estado;
+            $revision = $request->revision;
+            $query = Interrupcion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac']);
+            if ($idmac) {
+                $query->where('idcentro_mac', $idmac);
+            } elseif (!$user->hasAnyRole(['Administrador', 'Monitor', 'Moderador'])) {
+                $query->where('idcentro_mac', $user->idcentro_mac);
+            }
+            if ($fecha_inicio && $fecha_fin) {
+                $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
+            }
+            if (!empty($entidad)) {
+                $query->whereHas('entidad', function ($q) use ($entidad) {
+                    $q->where('ABREV_ENTIDAD', 'like', "%{$entidad}%")
+                        ->orWhere('NOMBRE_ENTIDAD', 'like', "%{$entidad}%");
+                });
+            }
+            if (!empty($tipificacion)) {
+                $query->whereHas('tipoIntObs', function ($q) use ($tipificacion) {
+                    $q->where('nom_tipo_int_obs', 'like', "%{$tipificacion}%")
+                        ->orWhere('tipo', 'like', "%{$tipificacion}%");
+                });
+            }
+            if (!empty($estado)) {
+                $query->where('estado', strtoupper($estado));
+            }
+            if ($revision === 'observado') {
+                $query->where('observado', 1);
+            } elseif ($revision === 'no_observado') {
+                $query->where('observado', 0);
+            }
+            $interrupciones = $query
+                ->with(['centroMac:idcentro_mac,nombre_mac'])
+                ->orderBy('fecha_inicio', 'desc')
+                ->orderBy('hora_inicio', 'desc')
+                ->get()
+                ->map(function ($item) {
+                    if (!$item->centroMac && $item->idcentro_mac) {
+                        $item->centroMac = (object)[
+                            'nombre_mac' => DB::table('m_centro_mac')
+                                ->where('idcentro_mac', $item->idcentro_mac)
+                                ->value('nombre_mac')
+                        ];
+                    }
+                    return $item;
+                });
+            $macsUnicos = $interrupciones->pluck('centroMac.nombre_mac')->unique()->filter()->values();
+            if ($macsUnicos->count() === 1) {
+                $nombreMac = $macsUnicos->first();
+            } elseif ($idmac) {
+                $nombreMac = DB::table('m_centro_mac')
+                    ->where('idcentro_mac', $idmac)
+                    ->value('nombre_mac') ?? 'Centro MAC';
+            } else {
+                $nombreMac = 'TODOS LOS CENTROS MAC';
+            }
+            return (new \App\Exports\InterrupcionAnsExport(
+                $interrupciones,
+                $nombreMac,
+                $fecha_inicio,
+                $fecha_fin
+            ))->download();
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'status' => 400], 400);
+        }
+    }
 
     public function observarModal(Request $request)
     {
         try {
             $interrupcion = Interrupcion::with(['usuarioObservador'])->find($request->id_interrupcion);
-
             if (!$interrupcion) {
                 return response()->json(['error' => 'Interrupción no encontrada'], 404);
             }
-
             $user = auth()->user();
-
-            // 🔹 Detecta tipo de acceso
+            if ($this->interrupcionBloqueada($interrupcion->fecha_inicio)) {
+                return $this->respuestaBloqueo();
+            }
             $soloLectura = !$user->hasAnyRole(['Administrador', 'Moderador']);
             $puedeCorregir = $user->hasAnyRole(['Supervisor', 'Especialista TIC', 'Moderador', 'Administrador']);
-
             $view = view('interrupcion.modals.md_observar_interrupcion', compact('interrupcion', 'soloLectura', 'puedeCorregir'))->render();
-
             return response()->json(['html' => $view]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
     public function observarGuardar(Request $request)
     {
         try {
             $user = auth()->user();
-
             $request->merge([
                 'observado' => $request->has('observado') ? 1 : 0,
                 'corregido' => $request->has('corregido') ? 1 : 0,
             ]);
-
             $validator = Validator::make($request->all(), [
                 'id_interrupcion' => 'required|integer|exists:m_interrupcion,id_interrupcion',
                 'retroalimentacion' => 'nullable|string|max:1000',
                 'observado' => 'required|boolean',
                 'corregido' => 'boolean'
             ]);
-
             if ($validator->fails()) {
                 return response()->json(['message' => $validator->errors(), 'status' => 422], 422);
             }
-
             $interrupcion = Interrupcion::find($request->id_interrupcion);
             if (!$interrupcion) {
                 return response()->json(['error' => 'Interrupción no encontrada'], 404);
             }
-
-            // 🧠 1️⃣ Si el usuario es ADMIN o MODERADOR → puede observar o quitar observación
+            if ($this->interrupcionBloqueada($interrupcion->fecha_inicio)) {
+                return $this->respuestaBloqueo();
+            }
             if ($user->hasAnyRole(['Administrador', 'Moderador'])) {
                 $datos = [
                     'observado' => $request->observado,
@@ -732,20 +638,14 @@ class InterrupcionController extends Controller
                     'observado_por' => $request->observado ? $user->id : null,
                     'fecha_observado' => $request->observado ? now() : null,
                 ];
-
-                // 👇 Si se desmarca "observado", se limpian también los campos de corrección
                 if (!$request->observado) {
                     $datos['corregido'] = 0;
                     $datos['corregido_por'] = null;
                     $datos['fecha_corregido'] = null;
                 }
-
                 $interrupcion->update($datos);
             }
-
-            // 🧠 2️⃣ Si el usuario es SUPERVISOR o ESPECIALISTA TIC → puede marcar corrección
             if ($user->hasAnyRole(['Supervisor', 'Especialista TIC', 'Moderador', 'Administrador'])) {
-                // Solo puede corregir si ya fue observado
                 if ($interrupcion->observado) {
                     $interrupcion->update([
                         'corregido' => $request->corregido,
@@ -754,7 +654,6 @@ class InterrupcionController extends Controller
                     ]);
                 }
             }
-
             return response()->json(['message' => 'Cambios guardados correctamente', 'status' => 200]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => 400]);
