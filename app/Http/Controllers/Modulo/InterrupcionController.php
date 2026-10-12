@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\InterrupcionExport;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+use ZipArchive;
 
 class InterrupcionController extends Controller
 {
@@ -501,7 +504,7 @@ class InterrupcionController extends Controller
                     . \Carbon\Carbon::parse($fecha_fin)->format('d-m-Y')
                     . ')';
             }
-            $nombreMacLimpio = preg_replace('/[\/\\\\:*?"<>|]/', '_', $nombreMac);
+            $nombreMacLimpio = preg_replace('/[\\\/:*?"<>|]/', '_', $nombreMac);
             $nombreMacLimpio = preg_replace('/\s+/', '_', $nombreMacLimpio);
             $nombreArchivo = 'Interrupciones_' . $nombreMacLimpio . $rango . '.xlsx';
             return Excel::download(
@@ -587,7 +590,6 @@ class InterrupcionController extends Controller
             return response()->json(['error' => $e->getMessage(), 'status' => 400], 400);
         }
     }
-
     public function observarModal(Request $request)
     {
         try {
@@ -658,5 +660,132 @@ class InterrupcionController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => 400]);
         }
+    }
+    private function consultaBaseInterrupcionesAns(Request $request)
+    {
+        $query = Interrupcion::with(['entidad', 'tipoIntObs', 'responsableUsuario', 'centroMac']);
+        if ($request->filled('fecha_inicio')) {
+            $query->whereDate('fecha_inicio', '>=', $request->fecha_inicio);
+        }
+        if ($request->filled('fecha_fin')) {
+            $query->whereDate('fecha_inicio', '<=', $request->fecha_fin);
+        }
+        if ($request->filled('tipificacion')) {
+            $tipificacion = $request->tipificacion;
+            $query->whereHas('tipoIntObs', function ($q) use ($tipificacion) {
+                $q->where(function ($sub) use ($tipificacion) {
+                    $sub->where('nom_tipo_int_obs', 'like', "%{$tipificacion}%")
+                        ->orWhere('tipo', 'like', "%{$tipificacion}%");
+                });
+            });
+        }
+        if ($request->filled('estado')) {
+            $query->where('estado', strtoupper($request->estado));
+        }
+        if ($request->revision === 'observado') {
+            $query->where('observado', 1);
+        } elseif ($request->revision === 'no_observado') {
+            $query->where('observado', 0);
+        }
+        return $query->whereNotNull('identidad');
+    }
+    private function comprobarPermisoAnsMasivo(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->hasAnyRole(['Administrador', 'Monitor', 'Moderador']), 403, 'No autorizado para exportar todos los Centros MAC.');
+    }
+    private function directorioAnsMasivo(string $token): string
+    {
+        abort_unless(preg_match('/^[a-f0-9]{32}$/', $token), 404);
+        return storage_path('app/tmp/ans_masivo/' . $token);
+    }
+    private function leerEstadoAnsMasivo(string $token): array
+    {
+        $archivo = $this->directorioAnsMasivo($token) . '/estado.json';
+        abort_unless(is_file($archivo), 404, 'Exportación no encontrada.');
+        $estado = json_decode(File::get($archivo), true);
+        abort_unless(is_array($estado) && ($estado['usuario'] ?? null) === (int) auth()->id(), 403);
+        return $estado;
+    }
+    private function guardarEstadoAnsMasivo(string $token, array $estado): void
+    {
+        File::put($this->directorioAnsMasivo($token) . '/estado.json', json_encode($estado, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), true);
+    }
+    public function iniciarExportacionAns(Request $request)
+    {
+        $this->comprobarPermisoAnsMasivo();
+        $datos = $request->validate(['fecha_inicio' => 'nullable|date', 'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio', 'tipificacion' => 'nullable|string|max:255', 'estado' => 'nullable|string|max:100', 'revision' => 'nullable|in:observado,no_observado']);
+        $consulta = $this->consultaBaseInterrupcionesAns(new Request($datos));
+        $ids = (clone $consulta)->whereNotNull('identidad')->select('identidad')->distinct()->orderBy('identidad')->pluck('identidad')->map(fn($id) => (int) $id)->all();
+        if (!$ids) return response()->json(['error' => 'No se encontraron interrupciones.'], 404);
+        $token = bin2hex(random_bytes(16));
+        File::ensureDirectoryExists($this->directorioAnsMasivo($token));
+        $this->guardarEstadoAnsMasivo($token, ['usuario' => (int) auth()->id(), 'filtros' => $datos, 'entidades' => $ids, 'procesadas' => [], 'terminado' => false, 'creado' => now()->toDateTimeString()]);
+        return response()->json(['token' => $token, 'total' => count($ids)]);
+    }
+    public function procesarEntidadAns(Request $request)
+    {
+        $this->comprobarPermisoAnsMasivo();
+        $datos = $request->validate(['token' => 'required|string|size:32', 'indice' => 'required|integer|min:0']);
+        $token = $datos['token'];
+        $estado = $this->leerEstadoAnsMasivo($token);
+        abort_if($estado['terminado'], 409, 'La exportación ya terminó.');
+        $indice = (int) $datos['indice'];
+        abort_unless(isset($estado['entidades'][$indice]), 422, 'Índice no válido.');
+        abort_unless($indice === count($estado['procesadas']), 409, 'Las entidades deben procesarse en orden.');
+        $id = $estado['entidades'][$indice];
+        try {
+            $consulta = $this->consultaBaseInterrupcionesAns(new Request($estado['filtros']));
+            $registros = $consulta->where('identidad', $id)->orderBy('fecha_inicio', 'desc')->orderBy('hora_inicio', 'desc')->get();
+            if ($registros->isEmpty()) throw new \RuntimeException('No hay interrupciones para la entidad ' . $id);
+            $nombre = DB::table('m_entidad')->where('identidad', $id)->value('nombre_entidad') ?: 'ENTIDAD_' . $id;
+            $limpio = trim(preg_replace('/[^\pL\pN._-]+/u', '_', $nombre), '_');
+            $archivo = ($limpio ?: 'ENTIDAD') . '_' . $id . '.xlsx';
+            $ruta = $this->directorioAnsMasivo($token) . '/' . $archivo;
+            (new \App\Exports\InterrupcionAnsExport($registros, 'TODOS LOS CENTROS MAC', $estado['filtros']['fecha_inicio'] ?? null, $estado['filtros']['fecha_fin'] ?? null))->saveToPath($ruta);
+            unset($registros);
+            $estado['procesadas'][] = $archivo;
+            $this->guardarEstadoAnsMasivo($token, $estado);
+            return response()->json(['procesadas' => count($estado['procesadas']), 'total' => count($estado['entidades']), 'entidad' => $nombre]);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['error' => 'Error generando la entidad ' . $id . ': ' . $e->getMessage()], 500);
+        }
+    }
+    public function finalizarExportacionAns(Request $request)
+    {
+        $this->comprobarPermisoAnsMasivo();
+        $datos = $request->validate(['token' => 'required|string|size:32']);
+        $token = $datos['token'];
+        $estado = $this->leerEstadoAnsMasivo($token);
+        if ($estado['terminado']) return response()->json(['descarga' => route('interrupcion.descargar_exportacion_ans', ['token' => $token])]);
+        abort_unless(count($estado['procesadas']) === count($estado['entidades']), 409, 'Aún faltan entidades por procesar.');
+        $directorio = $this->directorioAnsMasivo($token);
+        $zip = new ZipArchive();
+        $ruta = $directorio . '/INTERRUPCIONES_ANS.zip';
+        if ($zip->open($ruta, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) throw new \RuntimeException('No se pudo crear el ZIP.');
+        try {
+            foreach ($estado['procesadas'] as $nombre) {
+                $archivo = $directorio . '/' . $nombre;
+                if (!is_file($archivo) || !$zip->addFile($archivo, $nombre)) throw new \RuntimeException('No se pudo incorporar ' . $nombre . ' al ZIP.');
+            }
+            if (!$zip->close()) throw new \RuntimeException('No se pudo cerrar el ZIP.');
+            $estado['terminado'] = true;
+            $this->guardarEstadoAnsMasivo($token, $estado);
+            foreach ($estado['procesadas'] as $nombre) File::delete($directorio . '/' . $nombre);
+            return response()->json(['descarga' => route('interrupcion.descargar_exportacion_ans', ['token' => $token])]);
+        } catch (\Throwable $e) {
+            $zip->close();
+            report($e);
+            return response()->json(['error' => 'No se pudo finalizar el ZIP.'], 500);
+        }
+    }
+    public function descargarExportacionAns(string $token)
+    {
+        $this->comprobarPermisoAnsMasivo();
+        $estado = $this->leerEstadoAnsMasivo($token);
+        abort_unless($estado['terminado'], 409, 'El ZIP todavía no está listo.');
+        $archivo = $this->directorioAnsMasivo($token) . '/INTERRUPCIONES_ANS.zip';
+        abort_unless(is_file($archivo), 404);
+        return response()->download($archivo, 'INTERRUPCIONES_ANS_' . now()->format('Ymd_His') . '.zip');
     }
 }

@@ -1,12 +1,10 @@
 @extends('layouts.layout')
-
 @section('style')
 <link rel="stylesheet" href="{{ asset('Vendor/toastr/toastr.min.css') }}">
 <link href="{{ asset('nuevo/plugins/select2/select2.min.css') }}" rel="stylesheet" type="text/css" />
 <link href="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.css') }}" rel="stylesheet" type="text/css" />
 <link href="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
 @endsection
-
 @section('main')
 <div class="row">
     <div class="col-sm-12">
@@ -34,7 +32,6 @@
     <div class="card-header" style="background-color:#132842">
         <h4 class="card-title text-white mb-0">Filtro de Búsqueda</h4>
     </div>
-
     <div class="card-body">
         <div class="row align-items-end">
             <!-- CENTRO MAC -->
@@ -55,7 +52,6 @@
                     @endrole
                 </div>
             </div>
-
             <!-- FECHA INICIO -->
             <div class="col-md-3">
                 <div class="">
@@ -63,7 +59,6 @@
                     <input type="date" id="filtro_fecha_inicio" class="form-control" value="{{ date('Y-m-01') }}">
                 </div>
             </div>
-
             <!-- FECHA FIN -->
             <div class="col-md-3">
                 <div class="">
@@ -71,7 +66,6 @@
                     <input type="date" id="filtro_fecha_fin" class="form-control" value="{{ date('Y-m-d') }}">
                 </div>
             </div>
-
             <!-- BOTONES BUSCAR / LIMPIAR -->
             <div class="col-md-2 d-flex align-items-end">
                 <div class=" d-flex gap-1 w-100">
@@ -84,7 +78,6 @@
                 </div>
             </div>
         </div>
-
         <!-- 🔹 FILTROS ADICIONALES -->
         <div id="extraFiltros" class="mt-2" style="display: none;">
             <div class="row g-3">
@@ -100,7 +93,6 @@
                         @endforeach
                     </select>
                 </div>
-
                 <!-- TIPIFICACIÓN -->
                 <div class="col-md-3">
                     <label class="fw-bold text-dark">Tipificación:</label>
@@ -113,7 +105,6 @@
                         @endforeach
                     </select>
                 </div>
-
                 <!-- ESTADO -->
                 <div class="col-md-3">
                     <label class="fw-bold text-dark">Estado:</label>
@@ -123,7 +114,6 @@
                         <option value="CERRADO">Cerrado</option>
                     </select>
                 </div>
-
                 <!-- REVISIÓN -->
                 <div class="col-md-3">
                     <label class="fw-bold text-dark">Revisión:</label>
@@ -135,7 +125,6 @@
                 </div>
             </div>
         </div>
-
         <!-- 🔹 BOTÓN MÁS FILTROS -->
         <div class="mt-3 text-center">
             <button class="btn btn-outline-dark w-100" id="btnToggleFiltros" style="font-weight: 600;">
@@ -144,7 +133,6 @@
         </div>
     </div>
 </div>
-
 <!-- Contenedor principal -->
 <div class="row">
     <div class="col-lg-12">
@@ -165,7 +153,25 @@
                         <button type="button" class="btn btn-outline-success" onclick="exportarExcelANS()">
                             <i class="fa fa-chart-bar"></i> Reporte ANS
                         </button>
+                        @role('Administrador|Monitor|Moderador')
+                        <button type="button" id="btnAnsTodas" class="btn btn-success" onclick="exportarExcelANSTodas()">
+                            <i class="fas fa-file-archive"></i> Generar ZIP por entidades
+                        </button>
+                        @endrole
                     </div>
+                </div>
+                <div class="row">
+                    @role('Administrador|Monitor|Moderador')
+                    <div class="col-12 mb-3" id="progresoAnsTodas">
+                        <div class="progress" style="height:22px;">
+                            <div id="barraAnsTodas" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:0%">0%</div>
+                        </div>
+                        <small id="estadoAnsTodas" class="text-muted d-block mt-2">Listo para generar el reporte.</small>
+                        <a id="enlaceAnsTodas" href="#" class="btn btn-outline-success mt-2" hidden>
+                            <i class="fa fa-download"></i> Descargar ZIP generado
+                        </a>
+                    </div>
+                    @endrole
                 </div>
                 <div class="row">
                     <div class="col-12">
@@ -176,50 +182,83 @@
         </div>
     </div>
 </div>
-
 <!-- Modal contenedor general -->
 <div class="modal fade" id="modal_show_modal" tabindex="-1" role="dialog"></div>
+@role('Administrador|Monitor|Moderador')
+<div id="configAnsTodas" data-iniciar="{{ route('interrupcion.iniciar_exportacion_ans') }}" data-procesar="{{ route('interrupcion.procesar_entidad_ans') }}" data-finalizar="{{ route('interrupcion.finalizar_exportacion_ans') }}" data-csrf="{{ csrf_token() }}" hidden></div>
+@endrole
+<div id="bloqueoZipANS" style="display:none;position:fixed;inset:0;background:rgba(8,22,42,.75);backdrop-filter:blur(5px);z-index:99999;align-items:center;justify-content:center;">
+    <div class="bg-white text-center shadow-lg" style="width:440px;max-width:92%;border-radius:18px;overflow:hidden;">
+        <div style="height:6px;background:linear-gradient(90deg,#132842,#198754);"></div>
+        <div style="padding:32px 28px;">
+            <div style="width:76px;height:76px;border-radius:50%;background:#eaf6f0;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+                <i class="fas fa-file-archive" style="font-size:34px;color:#198754;"></i>
+            </div>
+            <h4 style="color:#132842;font-weight:700;margin-bottom:12px;">Generando reportes ANS</h4>
+            <p style="color:#64748b;font-size:14px;line-height:1.7;margin-bottom:18px;">Preparando los reportes de las entidades con interrupciones en el periodo seleccionado.</p>
+            <div class="progress mb-2" style="height:18px;border-radius:10px;">
+                <div id="barraZipANS" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:0%">0%</div>
+            </div>
+            <p id="detalleZipANS" style="color:#198754;font-size:13px;font-weight:600;margin:12px 0 18px;">Identificando entidades...</p>
+            <div style="background:#f1f5f9;border-radius:10px;padding:13px 15px;">
+                <p style="font-size:12px;color:#475569;margin:0;line-height:1.6;"><i class="fas fa-info-circle" style="color:#132842;margin-right:5px;"></i>Mantenga esta ventana abierta. La descarga comenzará automáticamente al finalizar.</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="bloqueoReporteANS" style="display:none;position:fixed;inset:0;background:rgba(8,22,42,.75);backdrop-filter:blur(5px);z-index:99999;align-items:center;justify-content:center;">
+    <div class="bg-white text-center shadow-lg" style="width:440px;max-width:92%;border-radius:18px;overflow:hidden;">
+        <div style="height:6px;background:linear-gradient(90deg,#132842,#198754);"></div>
+        <div style="padding:32px 28px;">
+            <div style="width:76px;height:76px;border-radius:50%;background:#eaf6f0;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+                <i class="fas fa-file-excel" style="font-size:34px;color:#198754;"></i>
+            </div>
+            <h4 style="color:#132842;font-weight:700;margin-bottom:12px;">Generando Reporte ANS</h4>
+            <p style="color:#64748b;font-size:14px;line-height:1.7;margin-bottom:20px;">Estamos procesando las interrupciones y evaluando el cumplimiento de los indicadores ANS.</p>
+            <div class="spinner-border text-success mb-3" role="status" style="width:2rem;height:2rem;"></div>
+            <div style="font-size:13px;font-weight:600;color:#198754;margin-bottom:20px;">Preparando archivo Excel...</div>
+            <div style="background:#f1f5f9;border-radius:10px;padding:13px 15px;">
+                <p style="font-size:12px;color:#475569;margin:0;line-height:1.6;">
+                    <i class="fas fa-info-circle" style="color:#132842;margin-right:5px;"></i>
+                    Mantenga esta ventana abierta. La descarga comenzará automáticamente al finalizar.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
-
 @section('script')
 <script src="{{ asset('Script/js/sweet-alert.min.js') }}"></script>
 <script src="{{ asset('Vendor/toastr/toastr.min.js') }}"></script>
 <script src="{{ asset('//cdn.jsdelivr.net/npm/sweetalert2@11') }}"></script>
-
 <!-- Plugins -->
 <script src="{{ asset('nuevo/plugins/select2/select2.min.js') }}"></script>
 <script src="{{ asset('nuevo/plugins/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('nuevo/plugins/datatables/dataTables.bootstrap5.min.js') }}"></script>
 <script src="{{ asset('nuevo/plugins/datatables/dataTables.responsive.min.js') }}"></script>
 <script src="{{ asset('nuevo/plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
-
 <script>
     $(document).ready(function() {
         // inicializar select2
         $('.select2').select2();
-
         // cargar tabla al iniciar
         cargarTablaInterrupciones();
-
         //  activar botón BUSCAR
         $('#btnBuscar').on('click', function(e) {
             e.preventDefault();
             cargarTablaInterrupciones();
         });
     });
-
     // 🔹 Función principal para cargar la tabla
     function cargarTablaInterrupciones() {
         let idmac = $('#filtro_mac').val();
         let fecha_inicio = $('#filtro_fecha_inicio').val();
         let fecha_fin = $('#filtro_fecha_fin').val();
-
         // 🔸 Filtros adicionales (solo si están visibles o tienen valor)
         let entidad = $('#filtro_entidad').val();
         let tipificacion = $('#filtro_tipificacion').val();
         let estado = $('#filtro_estado').val();
         let revision = $('#filtro_revision').val();
-
         $.ajax({
             type: 'GET',
             url: "{{ route('interrupcion.tablas.tb_index') }}",
@@ -237,13 +276,11 @@
             error: () => $('#table_data').html('Error al cargar los datos.')
         });
     }
-
     // 🔹 Mostrar / ocultar los filtros extra con animación y reseteo
     $(document).on('click', '#btnToggleFiltros', function() {
         const $extra = $('#extraFiltros');
         const visible = $extra.is(':visible');
         const $btn = $(this);
-
         // Si está visible, lo estamos cerrando
         if (visible) {
             // Ocultamos con animación
@@ -252,11 +289,9 @@
                 $('#filtro_entidad, #filtro_tipificacion, #filtro_estado, #filtro_revision')
                     .val('')
                     .trigger('change.select2'); // evita lanzar evento 'change' normal
-
                 // 🔁 Actualizar tabla UNA sola vez después del reset
                 cargarTablaInterrupciones();
             });
-
             // Cambiar texto del botón
             $btn.html('<i class="fa fa-filter"></i> Ver más filtros');
         } else {
@@ -265,7 +300,6 @@
             $btn.html('<i class="fa fa-chevron-up"></i> Ver menos filtros');
         }
     });
-
     // 🔹 Actualizar tabla automáticamente al cambiar filtros
     $('#extraFiltros input, #extraFiltros select').on('change keyup', function() {
         cargarTablaInterrupciones();
@@ -307,7 +341,6 @@
                 .val() || '';
             let fechaFin = form.find('[name="fecha_fin"]').val() || '';
             let horaFin = form.find('[name="hora_fin"]').val() || '';
-
             // 1️⃣ Verificar campos completos
             if (!fechaFin || !horaFin) {
                 Swal.fire({
@@ -317,13 +350,11 @@
                 });
                 return false;
             }
-
             // ⚠️ Si no hay inicio (subsanar), solo valida existencia de fin
             if (!fechaInicio || !horaInicio) {
                 // no hay inicio => no comparar, solo verificar que fin no esté vacío
                 return true;
             }
-
             // 2️⃣ Validar fechas
             if (fechaFin < fechaInicio) {
                 Swal.fire({
@@ -333,7 +364,6 @@
                 });
                 return false;
             }
-
             // 3️⃣ Si son iguales, comparar horas
             if (fechaFin === fechaInicio && horaFin <= horaInicio) {
                 Swal.fire({
@@ -343,11 +373,9 @@
                 });
                 return false;
             }
-
             // 4️⃣ Validación total combinada
             const inicio = new Date(`${fechaInicio}T${horaInicio}`);
             const fin = new Date(`${fechaFin}T${horaFin}`);
-
             if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
                 Swal.fire({
                     icon: "warning",
@@ -356,7 +384,6 @@
                 });
                 return false;
             }
-
             if (fin <= inicio) {
                 Swal.fire({
                     icon: "warning",
@@ -372,12 +399,9 @@
     function btnStoreInterrupcion() {
         let form = $('#form_add_interrupcion');
         let estado = $('#estado').val();
-
         //  Llamamos a la función de validación
         if (!validarFechasHoras(form, estado)) return;
-
         var formData = new FormData($('#form_add_interrupcion')[0]);
-
         $.ajax({
             type: 'POST',
             url: "{{ route('interrupcion.store') }}",
@@ -424,7 +448,6 @@
             success: function(response) {
                 $("#modal_show_modal").html(response.html);
                 $("#modal_show_modal").modal('show');
-
                 setTimeout(() => {
                     $('#responsable, #identidad, #id_tipo_int_obs, #estado_final').select2({
                         dropdownParent: $('#modal_show_modal'),
@@ -435,11 +458,9 @@
             },
             error: function(xhr) {
                 let mensaje = "No se pudo cargar la información para editar.";
-
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     mensaje = xhr.responseJSON.message;
                 }
-
                 Swal.fire({
                     icon: "warning",
                     title: "Acceso restringido",
@@ -453,12 +474,9 @@
     function btnUpdateInterrupcion() {
         let form = $('#form_edit_interrupcion');
         let estado = $('#estado').val();
-
         //  Llamamos a la función de validación
         if (!validarFechasHoras(form, estado)) return;
-
         var formData = new FormData($('#form_edit_interrupcion')[0]);
-
         $.ajax({
             type: 'POST',
             url: "{{ route('interrupcion.update') }}",
@@ -516,7 +534,6 @@
                     success: function(response) {
                         if (response.status == 200 || response.success == true) {
                             cargarTablaInterrupciones();
-
                             Swal.fire({
                                 icon: "success",
                                 title: "Eliminado",
@@ -532,11 +549,9 @@
                     },
                     error: function(xhr) {
                         let mensaje = "No se pudo eliminar la interrupción.";
-
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             mensaje = xhr.responseJSON.message;
                         }
-
                         Swal.fire({
                             icon: "warning",
                             title: "Acceso restringido",
@@ -563,11 +578,9 @@
             },
             error: function(xhr) {
                 let mensaje = "Error al cargar el formulario de subsanación.";
-
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     mensaje = xhr.responseJSON.message;
                 }
-
                 Swal.fire({
                     icon: "warning",
                     title: "Acceso restringido",
@@ -580,19 +593,15 @@
 
     function btnSubsanarGuardar() {
         let form = $('#form_subsanar_interrupcion');
-
         // 🔍 Buscar el campo de estado (en cualquiera de sus variantes)
         let estado = form.find('[name="estado"]').val() ||
             form.find('[name="estado_final"]').val() ||
             form.find('#estado').val() ||
             form.find('#estado_final').val() ||
             ''; // si no hay campo, queda vacío
-
         //  Validar fechas y horas antes de enviar
         if (!validarFechasHoras(form, estado)) return;
-
         let formData = new FormData(form[0]);
-
         $.ajax({
             url: "{{ route('interrupcion.subsanar') }}",
             type: 'POST',
@@ -620,13 +629,10 @@
             },
             error: function(xhr) {
                 $('#btnEnviarForm').html('Guardar').prop('disabled', false);
-
                 let mensaje = "Error al guardar la subsanación.";
-
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     mensaje = xhr.responseJSON.message;
                 }
-
                 Swal.fire({
                     icon: "warning",
                     title: "Acceso restringido",
@@ -635,8 +641,7 @@
                 });
             }
         });
-
-    } 
+    }
 
     function exportarExcel() {
         let idmac = $('#filtro_mac').val() || '';
@@ -646,7 +651,6 @@
         let tipificacion = $('#filtro_tipificacion').val() || '';
         let estado = $('#filtro_estado').val() || '';
         let revision = $('#filtro_revision').val() || '';
-
         // 🔸 Construimos la URL con todos los parámetros
         const url = "{{ route('interrupcion.export_excel') }}" +
             `?idmac=${encodeURIComponent(idmac)}` +
@@ -656,12 +660,12 @@
             `&tipificacion=${encodeURIComponent(tipificacion)}` +
             `&estado=${encodeURIComponent(estado)}` +
             `&revision=${encodeURIComponent(revision)}`;
-
         // 🔹 Ejecuta la descarga del Excel
         window.location.href = url;
     }
-
-    function exportarExcelANS() {
+    async function exportarExcelANS() {
+        const bloqueo = document.getElementById('bloqueoReporteANS');
+        if (!bloqueo || bloqueo.style.display === 'flex') return;
         const filtros = {
             idmac: $('#filtro_mac').val() || '',
             fecha_inicio: $('#filtro_fecha_inicio').val() || '',
@@ -671,30 +675,59 @@
             estado: $('#filtro_estado').val() || '',
             revision: $('#filtro_revision').val() || ''
         };
-        const parametros = new URLSearchParams(filtros).toString();
-        window.location.href = "{{ route('interrupcion.export_excel_ans') }}" + '?' + parametros;
+        if (!filtros.fecha_inicio || !filtros.fecha_fin || filtros.fecha_inicio > filtros.fecha_fin) {
+            Swal.fire('Atención', 'Seleccione un rango de fechas válido.', 'warning');
+            return;
+        }
+        const url = "{{ route('interrupcion.export_excel_ans') }}" + '?' + new URLSearchParams(filtros).toString();
+        const overflowOriginal = document.body.style.overflow;
+        bloqueo.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        try {
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            const respuesta = await fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                }
+            });
+            if (!respuesta.ok) throw new Error('No se pudo generar el Reporte ANS. Error HTTP ' + respuesta.status);
+            const tipo = respuesta.headers.get('Content-Type') || '';
+            if (tipo.includes('text/html') || tipo.includes('application/json')) throw new Error('El servidor no devolvió un archivo Excel válido.');
+            const blob = await respuesta.blob();
+            if (!blob.size) throw new Error('El archivo Excel recibido está vacío.');
+            const urlArchivo = URL.createObjectURL(blob);
+            const enlace = document.createElement('a');
+            enlace.href = urlArchivo;
+            enlace.download = 'Reporte_ANS_Interrupciones.xlsx';
+            document.body.appendChild(enlace);
+            enlace.click();
+            enlace.remove();
+            setTimeout(() => URL.revokeObjectURL(urlArchivo), 60000);
+        } catch (error) {
+            Swal.fire('Error', error.message, 'error');
+        } finally {
+            bloqueo.style.display = 'none';
+            document.body.style.overflow = overflowOriginal;
+        }
     }
-    //  Función para limpiar todos los filtros
     $(document).on('click', '#btnLimpiarFiltro', function(e) {
         e.preventDefault();
-
         // Resetear campos base
         $('#filtro_mac').val('').trigger('change');
         $('#filtro_fecha_inicio').val("{{ date('Y-m-01') }}");
         $('#filtro_fecha_fin').val("{{ date('Y-m-d') }}");
-
         // Resetear filtros adicionales
         $('#filtro_entidad, #filtro_tipificacion, #filtro_estado, #filtro_revision')
             .val('')
             .trigger('change.select2');
-
         // Cerrar panel de filtros extra (si está abierto)
         const $extra = $('#extraFiltros');
         if ($extra.is(':visible')) {
             $extra.slideUp(300);
             $('#btnToggleFiltros').html('<i class="fa fa-filter"></i> Ver más filtros');
         }
-
         // Recargar tabla con filtros limpios
         cargarTablaInterrupciones();
     });
@@ -736,7 +769,6 @@
 
     function guardarObservacion() {
         const form = $('#form_observar_interrupcion');
-
         $.ajax({
             url: "{{ route('interrupcion.observar') }}",
             type: "POST",
@@ -747,7 +779,6 @@
             },
             success: function(res) {
                 $('#btnGuardarObservacion').prop('disabled', false).html('Guardar');
-
                 if (res.status === 200) {
                     Swal.fire(" Éxito", res.message, "success");
                     $('#modal_show_modal').modal('hide');
@@ -767,9 +798,7 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
-
         cargarTablaInterrupciones();
-
         $('#btnBuscar').on('click', function(e) {
             e.preventDefault();
             cargarTablaInterrupciones();
@@ -780,12 +809,10 @@
         let idmac = $('#filtro_mac').val();
         let fecha_inicio = $('#filtro_fecha_inicio').val();
         let fecha_fin = $('#filtro_fecha_fin').val();
-
         let entidad = $('#filtro_entidad').val();
         let tipificacion = $('#filtro_tipificacion').val();
         let estado = $('#filtro_estado').val();
         let revision = $('#filtro_revision').val();
-
         $.ajax({
             type: 'GET',
             url: "{{ route('interrupcion.tablas.tb_index') }}",
@@ -803,20 +830,17 @@
             error: () => $('#table_data').html('Error al cargar los datos.')
         });
     }
-
     // =============================
     // VALIDACIÓN GLOBAL
     // =============================
     function validarFechasHoras(form, estado) {
         if (estado && estado.toUpperCase() === 'CERRADO') {
-
             let fechaInicio = form.find('[name="fecha_inicio"]').val() || form.find('input[type="date"]:disabled')
                 .val() || '';
             let horaInicio = form.find('[name="hora_inicio"]').val() || form.find('input[type="time"]:disabled')
                 .val() || '';
             let fechaFin = form.find('[name="fecha_fin"]').val() || '';
             let horaFin = form.find('[name="hora_fin"]').val() || '';
-
             if (!fechaFin || !horaFin) {
                 Swal.fire({
                     icon: "warning",
@@ -825,11 +849,9 @@
                 });
                 return false;
             }
-
             if (!fechaInicio || !horaInicio) {
                 return true;
             }
-
             if (fechaFin < fechaInicio) {
                 Swal.fire({
                     icon: "warning",
@@ -838,7 +860,6 @@
                 });
                 return false;
             }
-
             if (fechaFin === fechaInicio && horaFin <= horaInicio) {
                 Swal.fire({
                     icon: "warning",
@@ -847,10 +868,8 @@
                 });
                 return false;
             }
-
             const inicio = new Date(`${fechaInicio}T${horaInicio}`);
             const fin = new Date(`${fechaFin}T${horaFin}`);
-
             if (fin <= inicio) {
                 Swal.fire({
                     icon: "warning",
@@ -859,12 +878,10 @@
                 });
                 return false;
             }
-
             // ======================================
             // 🟦 NUEVA VALIDACIÓN: ¿CAMBIÓ DE DÍA?
             // ======================================
             if (fechaFin > fechaInicio) {
-
                 return Swal.fire({
                     title: "Interrupción mayor a un día",
                     text: "La interrupción ha pasado al día siguiente. ¿Desea continuar?",
@@ -877,19 +894,14 @@
                 });
             }
         }
-
         return true;
     }
-
     async function btnStoreInterrupcion() {
         let form = $('#form_add_interrupcion');
         let estado = $('#estado').val();
-
         let valido = await validarFechasHoras(form, estado);
         if (!valido) return;
-
         var formData = new FormData($('#form_add_interrupcion')[0]);
-
         $.ajax({
             type: 'POST',
             url: "{{ route('interrupcion.store') }}",
@@ -916,16 +928,12 @@
             }
         });
     }
-
     async function btnUpdateInterrupcion() {
         let form = $('#form_edit_interrupcion');
         let estado = $('#estado').val();
-
         let valido = await validarFechasHoras(form, estado);
         if (!valido) return;
-
         var formData = new FormData($('#form_edit_interrupcion')[0]);
-
         $.ajax({
             type: 'POST',
             url: "{{ route('interrupcion.update') }}",
@@ -953,4 +961,5 @@
         });
     }
 </script>
+<script src="{{ asset('js/ans_masivo_ajax.js') }}"></script>
 @endsection

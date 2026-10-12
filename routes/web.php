@@ -49,7 +49,7 @@ use App\Http\Controllers\Modulo\VerificacionController;
 use App\Http\Controllers\Modulo\MantenimientoController;
 use App\Http\Controllers\Modulo\ReporteOcupabilidadController;
 use App\Http\Controllers\Modulo\TipoIntObsController;
-use App\Http\Controllers\Modulo\ObservacionInterrupcionController;
+use App\Http\Controllers\Modulo\ReporteOcupabilidadPuntualidadController;
 use App\Http\Controllers\Modulo\InterrupcionController;
 use App\Http\Controllers\Modulo\ObservacionController;
 use App\Http\Controllers\Modulo\HorarioMacController;
@@ -167,6 +167,16 @@ Route::middleware(['auth', 'role:Administrador'])->prefix('asistencia-api')->nam
 // CONFIGURACION DENTRO DE LA AUTH
 /***********************************************************************************************************************************************/
 Route::group(['middleware' => ['auth']], function () {
+    Route::prefix('reporte/ocupabilidad-puntualidad')->name('reporte.ocupabilidad_puntualidad.')->middleware('role:Administrador|Moderador')->group(function () {
+        Route::get('/', [ReporteOcupabilidadPuntualidadController::class, 'index'])->name('index');
+        Route::get('/tablas/tb_index', [ReporteOcupabilidadPuntualidadController::class, 'tb_index'])->name('tablas.tb_index');
+        Route::get('/consultar', [ReporteOcupabilidadPuntualidadController::class, 'consultar'])->name('consultar');
+        Route::get('/exportar', [ReporteOcupabilidadPuntualidadController::class, 'exportar'])->name('exportar');
+        Route::post('/ans-masivo/iniciar', [ReporteOcupabilidadPuntualidadController::class, 'iniciarExportacion'])->name('iniciar_exportacion');
+        Route::post('/ans-masivo/procesar', [ReporteOcupabilidadPuntualidadController::class, 'procesarEntidad'])->name('procesar_entidad');
+        Route::post('/ans-masivo/finalizar', [ReporteOcupabilidadPuntualidadController::class, 'finalizarExportacion'])->name('finalizar_exportacion');
+        Route::get('/ans-masivo/descargar/{token}', [ReporteOcupabilidadPuntualidadController::class, 'descargarExportacion'])->name('descargar_exportacion');
+    });
 
     //PAGINA DE INICIO
     Route::get('/', [PagesController::class, 'index'])->name('inicio');
@@ -425,6 +435,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/toggle-corregido', [InterrupcionController::class, 'toggleCorregido'])->name('toggle_corregido');
         Route::get('/interrupcion/export-excel', [InterrupcionController::class, 'export_excel'])->name('export_excel');
         Route::get('/export-excel-ans', [InterrupcionController::class, 'export_excel_ans'])->name('export_excel_ans');
+        Route::get('/export-excel-ans-todas', [InterrupcionController::class, 'export_excel_ans_todas'])->name('export_excel_ans_todas');
+        Route::post('/ans-masivo/iniciar', [InterrupcionController::class, 'iniciarExportacionAns'])->name('iniciar_exportacion_ans');
+        Route::post('/ans-masivo/procesar', [InterrupcionController::class, 'procesarEntidadAns'])->name('procesar_entidad_ans');
+        Route::post('/ans-masivo/finalizar', [InterrupcionController::class, 'finalizarExportacionAns'])->name('finalizar_exportacion_ans');
+        Route::get('/ans-masivo/descargar/{token}', [InterrupcionController::class, 'descargarExportacionAns'])->name('descargar_exportacion_ans');
     });
     Route::prefix('observacion')->name('observacion.')->group(function () {
         Route::get('/index', [ObservacionController::class, 'index'])->name('index');
