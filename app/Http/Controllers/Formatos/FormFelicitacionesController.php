@@ -104,6 +104,13 @@ class FormFelicitacionesController extends Controller
 
     public function store(Request $request)
     {
+        $request->validate([
+            'fecha' => 'required|date|after_or_equal:' . now()->startOfYear()->toDateString() . '|before_or_equal:today'
+        ], [
+            'fecha.required' => 'Debe seleccionar una fecha.',
+            'fecha.after_or_equal' => 'No se permite registrar felicitaciones de años anteriores.',
+            'fecha.before_or_equal' => 'No se permiten fechas posteriores a hoy.'
+        ]);
         try {
 
             $currentYear = Carbon::now()->format('Y');

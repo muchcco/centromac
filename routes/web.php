@@ -178,6 +178,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/ans-masivo/descargar/{token}', [ReporteOcupabilidadPuntualidadController::class, 'descargarExportacion'])->name('descargar_exportacion');
     });
 
+
     //PAGINA DE INICIO
     Route::get('/', [PagesController::class, 'index'])->name('inicio');
 
