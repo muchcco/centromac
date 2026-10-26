@@ -213,6 +213,7 @@
                 success: function(data) {
                     $("#modal_show_modal").html(data.html);
                     $("#modal_show_modal").modal('show');
+                    inicializarModalANS();
                 }
             });
         }
@@ -513,29 +514,100 @@
             });
         }
 
+        // ANS: el orden visual NUNCA modifica los checkbox ni los datos del servidor.
+        function inicializarModalANS() {
+            const $modal = $('#ans-modal-servicios');
+            if (!$modal.length) return;
+            const $filas = $modal.find('#ans_filas_servicios tr');
+            $filas.each(function() {
+                const $fila = $(this);
+                const $cb = $fila.find('.calcula');
+                // El atributo data-bd-calcula viene de Blade; NO marcamos todos.
+                const desdeBD = String($cb.attr('data-bd-calcula')) === '1';
+                $cb.prop('checked', desdeBD);
+                $cb.data('inicial', desdeBD);
+            });
+            ordenarFilasANS(false); // primera presentación sin animación ni cambios en checked
+            actualizarEstadoCalculo();
+        }
+
+        function actualizarEstadoCalculo() {
+            const $modal = $('#ans-modal-servicios');
+            if (!$modal.length) return;
+            const $checks = $modal.find('.calcula');
+            const total = $checks.length;
+            const calculables = $checks.filter(':checked').length;
+            const cambios = $checks.filter(function () {
+                return $(this).prop('checked') !== $(this).data('inicial');
+            }).length;
+            $modal.find('#contador_calculo').text(`${calculables} calculables / ${total} servicios`);
+            $modal.find('#ans_pendientes').text(cambios ? `· ${cambios} cambio(s) sin guardar` : '');
+            $modal.find('button[onclick="activarCalculoTodos()" ]').prop('disabled', total === calculables);
+            $modal.find('button[onclick="quitarCalculoTodos()" ]').prop('disabled', calculables === 0);
+        }
+
+        function ordenarFilasANS(animar = true) {
+            const modal = document.getElementById('ans-modal-servicios');
+            if (!modal) return;
+            const tbody = modal.querySelector('#ans_filas_servicios');
+            if (!tbody) return;
+            const filas = Array.from(tbody.querySelectorAll('tr'));
+            const inicial = new Map();
+            if (animar) filas.forEach(row => inicial.set(row, row.getBoundingClientRect().top));
+            const automatico = modal.querySelector('#ans_orden_automatico').checked;
+            // Orden estable: primero calculables, luego excluidos; orden original dentro de cada grupo.
+            filas.sort((a, b) => {
+                if (automatico) {
+                    const aa = a.querySelector('.calcula').checked ? 0 : 1;
+                    const bb = b.querySelector('.calcula').checked ? 0 : 1;
+                    if (aa !== bb) return aa - bb;
+                }
+                return Number(a.dataset.ordenOriginal) - Number(b.dataset.ordenOriginal);
+            });
+            filas.forEach((row, i) => {
+                tbody.appendChild(row); // se mueve el DOM original, no se recrean inputs
+                row.querySelector('.ans-numero').textContent = i + 1;
+            });
+            if (animar && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                filas.forEach(row => {
+                    const delta = inicial.get(row) - row.getBoundingClientRect().top;
+                    if (Math.abs(delta) > 1 && row.animate) {
+                        row.animate([{transform:`translateY(${delta}px)`},{transform:'translateY(0)'}],
+                            {duration:300,easing:'ease-in-out'});
+                    }
+                });
+            }
+        }
+
+        // Delegados: siguen funcionando aunque el modal se cargue por AJAX.
+        $(document).off('change.ansOrden', '#ans-modal-servicios .calcula')
+            .on('change.ansOrden', '#ans-modal-servicios .calcula', function () {
+                ordenarFilasANS(true);
+                actualizarEstadoCalculo();
+            });
+        $(document).off('change.ansOrdenModo', '#ans_orden_automatico')
+            .on('change.ansOrdenModo', '#ans_orden_automatico', function () {
+                ordenarFilasANS(true);
+            });
+
         function activarCalculoTodos() {
-            $(".calcula").prop("checked", true);
+            $('#ans-modal-servicios .calcula').prop('checked', true);
+            ordenarFilasANS(true);
+            actualizarEstadoCalculo();
         }
 
         function quitarCalculoTodos() {
-
             Swal.fire({
-                title: "¿Seguro?",
-                text: "Se quitará el cálculo a todos los servicios",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonText: "Sí, quitar",
-                cancelButtonText: "Cancelar"
-            }).then((result) => {
-
-                if (result.isConfirmed) {
-
-                    $(".calcula").prop("checked", false);
-
-                }
-
+                title: '¿Quitar el cálculo a todos?',
+                text: 'Los cambios no se guardarán hasta pulsar Guardar cambios.',
+                icon: 'warning', showCancelButton: true,
+                confirmButtonText: 'Sí, quitar', cancelButtonText: 'Cancelar'
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                $('#ans-modal-servicios .calcula').prop('checked', false);
+                ordenarFilasANS(true);
+                actualizarEstadoCalculo();
             });
-
         }
     </script>
 @endsection

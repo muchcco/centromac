@@ -30,12 +30,59 @@ class AnsCatalogoController extends Controller
 
         return (object) $resp;
     }
+    /**
+     * Entidades visibles: padres e independientes.
+     * Los hijos se consultan mediante supermacro_id, sin alterar los IDs NOVO.
+     */
+    private function entidadesPrincipales()
+    {
+        return DB::table('db_centro_mac_tiempos.catalogo_entidades')
+            ->whereNull('supermacro_id')
+            ->where('status', 1)
+            ->orderBy('nome');
+    }
+
+    /**
+     * Devuelve IDs de la entidad seleccionada y todas sus dependencias.
+     * Incluye hijas inactivas para conservar la visibilidad histórica del catálogo;
+     * el estado de cada servicio no se modifica.
+     */
+    private function idsEntidadGrupo($idEntidad): array
+    {
+        $entidades = DB::table('db_centro_mac_tiempos.catalogo_entidades')
+            ->select('id_entidad', 'supermacro_id')
+            ->get();
+
+        $porId = $entidades->keyBy('id_entidad');
+        $seleccionada = $porId->get((int) $idEntidad);
+        if (!$seleccionada) {
+            return [];
+        }
+        // También admite que llegue un ID hijo desde enlaces antiguos.
+        $raiz = (int) $seleccionada->id_entidad;
+        $visitados = [];
+        while ($porId->has($raiz) && $porId->get($raiz)->supermacro_id !== null) {
+            if (isset($visitados[$raiz])) break;
+            $visitados[$raiz] = true;
+            $raiz = (int) $porId->get($raiz)->supermacro_id;
+        }
+
+        $ids = [$raiz];
+        for ($i = 0; $i < count($ids); $i++) {
+            foreach ($entidades as $item) {
+                if ($item->supermacro_id !== null && (int) $item->supermacro_id === $ids[$i]
+                    && !in_array((int) $item->id_entidad, $ids, true)) {
+                    $ids[] = (int) $item->id_entidad;
+                }
+            }
+        }
+        return $ids;
+    }
+
     // Vista principal
     public function index()
     {
-        $entidades = DB::table('db_centro_mac_tiempos.catalogo_entidades')
-            ->orderBy('nome')
-            ->get();
+        $entidades = $this->entidadesPrincipales()->get();
 
         return view('ans.index', compact('entidades'));
     }
@@ -46,7 +93,8 @@ class AnsCatalogoController extends Controller
         try {
 
             $data = DB::table('db_centro_mac_tiempos.catalogo_entidades as e')
-
+                ->leftJoin('db_centro_mac_tiempos.catalogo_entidades as padre',
+                    'padre.id_entidad', '=', 'e.supermacro_id')
                 ->leftJoin(
                     'db_centro_mac_tiempos.catalogo_servicios_ans as s',
                     's.macro_id',
@@ -71,8 +119,10 @@ class AnsCatalogoController extends Controller
                 )
 
                 ->select(
-                    'e.id_entidad',
-                    'e.nome as entidad',
+                    DB::raw('COALESCE(padre.id_entidad, e.id_entidad) as id_entidad'),
+                    DB::raw('COALESCE(padre.nome, e.nome) as entidad'),
+                    'e.nome as entidad_origen',
+                    'e.id_entidad as id_entidad_origen',
 
                     's.id_servicio',
                     's.nome as servicio',
@@ -86,7 +136,16 @@ class AnsCatalogoController extends Controller
                     't.se_calcula'
                 )
 
-                ->orderBy('e.nome')
+                ->where(function ($q) {
+                    $q->where(function ($sub) {
+                        $sub->whereNull('e.supermacro_id')->where('e.status', 1);
+                    })->orWhere(function ($sub) {
+                        $sub->whereNotNull('e.supermacro_id')
+                            ->where('padre.status', 1)
+                            ->whereNotNull('s.id_servicio');
+                    });
+                })
+                ->orderBy('entidad')
                 ->orderBy('s.nome')
 
                 ->get();
@@ -107,10 +166,7 @@ class AnsCatalogoController extends Controller
     {
         try {
 
-            $entidades = DB::table('db_centro_mac_tiempos.catalogo_entidades')
-                ->where('status', 1)
-                ->orderBy('nome')
-                ->get();
+            $entidades = $this->entidadesPrincipales()->get();
 
             $view = view('ans.modals.md_add_servicio', compact('entidades'))->render();
 
@@ -140,6 +196,15 @@ class AnsCatalogoController extends Controller
                 'message' => $validator->errors(),
                 'status' => 422
             ], 422);
+        }
+
+        $principal = DB::table('db_centro_mac_tiempos.catalogo_entidades')
+            ->where('id_entidad', $request->macro_id)
+            ->whereNull('supermacro_id')
+            ->where('status', 1)
+            ->exists();
+        if (!$principal) {
+            return response()->json(['message' => 'Seleccione una entidad principal activa'], 422);
         }
 
         DB::beginTransaction();
@@ -347,6 +412,8 @@ class AnsCatalogoController extends Controller
                     '=',
                     's.macro_id'
                 )
+                ->leftJoin('db_centro_mac_tiempos.catalogo_entidades as padre',
+                    'padre.id_entidad', '=', 'e.supermacro_id')
 
                 ->leftJoin(DB::raw("
                 (
@@ -360,13 +427,14 @@ class AnsCatalogoController extends Controller
                 ) t
             "), 't.id_servicio', '=', 's.id_servicio')
 
-                ->where('s.macro_id', $request->id_entidad)
+                ->whereIn('s.macro_id', $this->idsEntidadGrupo($request->id_entidad))
 
                 ->select(
                     's.id_servicio',
                     's.nome',
                     's.status',
-                    'e.nome as entidad',
+                    DB::raw('COALESCE(padre.nome, e.nome) as entidad'),
+                    'e.nome as entidad_origen',
                     't.fecha_inicio',
                     't.fecha_fin',
                     't.limite_espera',
@@ -454,6 +522,8 @@ public function update_tiempos_entidad(Request $request)
                 '=',
                 's.macro_id'
             )
+            ->leftJoin('db_centro_mac_tiempos.catalogo_entidades as padre',
+                'padre.id_entidad', '=', 'e.supermacro_id')
 
             ->leftJoin(
                 'db_centro_mac_tiempos.catalogo_servicios_ans_tiempos as t',
@@ -465,12 +535,13 @@ public function update_tiempos_entidad(Request $request)
                 }
             )
 
-            ->where('s.macro_id', $request->id_entidad)
+            ->whereIn('s.macro_id', $this->idsEntidadGrupo($request->id_entidad))
 
             ->select(
                 's.id_servicio',
                 's.nome',
-                'e.nome as entidad',
+                DB::raw('COALESCE(padre.nome, e.nome) as entidad'),
+                'e.nome as entidad_origen',
                 't.fecha_inicio',
                 't.fecha_fin',
                 't.limite_espera',

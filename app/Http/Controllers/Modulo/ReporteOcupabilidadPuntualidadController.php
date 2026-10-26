@@ -12,10 +12,64 @@ class ReporteOcupabilidadPuntualidadController extends Controller
         $usuario = auth()->user();
         $todos = $usuario->hasAnyRole(['Administrador', 'Moderador']);
         $centros_mac = DB::table('m_centro_mac')->select('idcentro_mac', 'nombre_mac')->when(!$todos, fn($q) => $q->where('idcentro_mac', $usuario->idcentro_mac))->orderBy('nombre_mac')->get();
-        $entidades = DB::table('m_entidad')->select('identidad', 'nombre_entidad', 'abrev_entidad')->orderBy('nombre_entidad')->get();
+        $entidades = DB::table('m_entidad')->select('identidad', 'nombre_entidad', 'abrev_entidad')->whereNull('id_entidad_padre')->where('flag', 1)->orderBy('nombre_entidad')->get();
         $nombre_mac_usuario = $centros_mac->firstWhere('idcentro_mac', $usuario->idcentro_mac)->nombre_mac ?? null;
         return view('reporte.ocupabilidad_puntualidad.index', compact('centros_mac', 'entidades', 'nombre_mac_usuario'));
     }
+    /**
+     * Catálogo de entidades activas: las hijas se asignan a su entidad principal.
+     * Se mantienen las abreviaturas para consultar asistencia_resumen sin alterar datos.
+     */
+    private function catalogoConsolidado(): array
+    {
+        $registros = DB::table('m_entidad')
+            ->select('identidad', 'id_entidad_padre', 'abrev_entidad', 'nombre_entidad')
+            ->where('flag', 1)->orderBy('identidad')->get();
+        $porId = $registros->keyBy('identidad');
+        $principales = [];
+        $mapa = [];
+        foreach ($registros as $e) {
+            $id = (int) $e->identidad;
+            $padre = $e->id_entidad_padre === null ? $id : (int) $e->id_entidad_padre;
+            // No asignar entidades a padres inexistentes o inactivos.
+            if (!isset($porId[$padre])) continue;
+            if ($porId[$padre]->id_entidad_padre !== null) continue;
+            if (!isset($principales[$padre])) {
+                $principal = $porId[$padre];
+                $principales[$padre] = [
+                    'id' => $padre,
+                    'abrev' => mb_strtoupper(trim((string)$principal->abrev_entidad)),
+                    'nombre' => trim((string)$principal->nombre_entidad),
+                    'abreviaturas' => [],
+                ];
+            }
+            $alias = mb_strtoupper(trim((string)$e->abrev_entidad));
+            if ($alias !== '') $principales[$padre]['abreviaturas'][$alias] = $alias;
+        }
+        // Priorizar abreviaturas de entidades principales ante un catálogo ambiguo.
+        foreach ($principales as $id => $principal) {
+            if ($principal['abrev'] !== '') $mapa[$principal['abrev']] = $id;
+        }
+        foreach ($principales as $id => $principal) {
+            foreach ($principal['abreviaturas'] as $alias) {
+                if (!isset($mapa[$alias])) $mapa[$alias] = $id;
+            }
+        }
+        foreach ($principales as $id => &$principal) {
+            $principal['abreviaturas'] = array_values(array_filter(
+                $principal['abreviaturas'], fn($alias) => ($mapa[$alias] ?? null) === $id
+            ));
+        }
+        unset($principal);
+        return [$principales, $mapa];
+    }
+
+    private function entidadPrincipal(?int $id, array $principales)
+    {
+        if (!$id) return null;
+        return $principales[$id] ?? null;
+    }
+
     public function consultar(Request $request)
     {
         return $this->generarDatos($request, 500);
@@ -58,19 +112,25 @@ class ReporteOcupabilidadPuntualidadController extends Controller
         if (Carbon::parse($f['fecha_inicio'])->diffInDays(Carbon::parse($f['fecha_fin']))>92) return response()->json(['message'=>'Máximo 93 días'],422);
         $user=auth()->user();
         $f['idmac']=$user->hasAnyRole(['Administrador','Moderador']) ? ($f['idmac']??null) : $user->idcentro_mac;
-        $seleccionada=null;
-        if (!empty($f['identidad'])) {
-            $seleccionada=DB::table('m_entidad')->where('identidad',$f['identidad'])->value('abrev_entidad');
-            if (!$seleccionada) return response()->json(['message'=>'Entidad no válida'],422);
-        }
-        $q=DB::table('db_centro_mac_reporte.asistencia_resumen')->where('fecha_asistencia','<=',$f['fecha_fin'])->whereNotNull('idmodulo');
+        [$principales, $mapa] = $this->catalogoConsolidado();
+        $seleccionada = $this->entidadPrincipal(!empty($f['identidad']) ? (int)$f['identidad'] : null, $principales);
+        if (!empty($f['identidad']) && !$seleccionada) return response()->json(['message'=>'Entidad principal no válida'],422);
+        $q=DB::table('db_centro_mac_reporte.asistencia_resumen')
+            ->where('fecha_asistencia','<=',$f['fecha_fin'])->whereNotNull('idmodulo');
         if ($f['idmac']) $q->where('idmac',(int)$f['idmac']);
-        if ($seleccionada) $q->where('abrev_entidad',trim($seleccionada));
-        $existentes=$q->distinct()->pluck('abrev_entidad')->map(fn($x)=>mb_strtoupper(trim((string)$x)))->filter(fn($x)=>$x!==''&&$x!=='PCM')->unique();
-        $catalogo=DB::table('m_entidad')->pluck('identidad','abrev_entidad');
+        if ($seleccionada) $q->whereIn(DB::raw('UPPER(TRIM(abrev_entidad))'), $seleccionada['abreviaturas'] ?: ['__NO_EXISTE__']);
+        $existentes=$q->distinct()->pluck('abrev_entidad')
+            ->map(fn($x)=>mb_strtoupper(trim((string)$x)))->filter(fn($x)=>$x!==''&&$x!=='PCM')->unique();
+        $ids=[];
+        foreach ($existentes as $abrev) {
+            if (isset($mapa[$abrev])) $ids[$mapa[$abrev]] = true;
+        }
         $entidades=[];
-        foreach ($existentes as $abrev) if (isset($catalogo[$abrev])) $entidades[]=['abrev'=>$abrev,'id'=>(int)$catalogo[$abrev]];
-        sort($entidades);
+        foreach (array_keys($ids) as $id) {
+            $p=$principales[$id];
+            $entidades[]=['abrev'=>$p['abrev'], 'id'=>$id, 'abreviaturas'=>$p['abreviaturas']];
+        }
+        usort($entidades, fn($a,$b)=>strcmp($a['abrev'],$b['abrev']));
         if (!$entidades) return response()->json(['message'=>'Sin entidades válidas para exportar'],422);
         $token=bin2hex(random_bytes(20));
         \Illuminate\Support\Facades\File::ensureDirectoryExists($this->opDirectorio($token));
@@ -99,7 +159,7 @@ class ReporteOcupabilidadPuntualidadController extends Controller
                 $indiceLote=intdiv($avance['dia'],$tamanoLote);
                 $parte=$subdir.'/detalle_'.$indiceLote.'.jsonl';
                 $temporal=$parte.'.tmp';
-                $resumen=$this->procesarLoteExportacion($f,$e['abrev'],$desde,$hasta,$temporal);
+                $resumen=$this->procesarLoteExportacion($f,$e['abrev'],$e['abreviaturas'],$desde,$hasta,$temporal);
                 if (!rename($temporal,$parte)) throw new \RuntimeException('No se pudo cerrar lote de datos');
                 $avance['dia']=min($avance['dia']+$tamanoLote,$nDias);
                 foreach (['dias_habiles','asistencias','puntuales'] as $k) $avance[$k]+=$resumen[$k];
@@ -123,14 +183,14 @@ class ReporteOcupabilidadPuntualidadController extends Controller
             return response()->json(['message'=>'No se pudo exportar '.$e['abrev'].': '.$ex->getMessage()],500);
         }
     }
-    private function procesarLoteExportacion(array $f, string $abrev, string $desde, string $hasta, string $destino): array
+    private function procesarLoteExportacion(array $f, string $abrev, array $abreviaturas, string $desde, string $hasta, string $destino): array
     {
         $idmac = !empty($f['idmac']) ? (int)$f['idmac'] : null;
         $macs = DB::table('m_centro_mac')->select('idcentro_mac', 'nombre_mac')->get()->keyBy('idcentro_mac');
         // Una consulta historica por semana, no una por cada dia.
         $historico = DB::table('db_centro_mac_reporte.asistencia_resumen as ar')
             ->where('ar.fecha_asistencia', '<=', $f['fecha_fin'])
-            ->where('ar.abrev_entidad', $abrev)->whereNotNull('ar.idmodulo')
+            ->whereIn(DB::raw('UPPER(TRIM(ar.abrev_entidad))'), $abreviaturas)->whereNotNull('ar.idmodulo')
             ->select('ar.idmac', 'ar.idmodulo')->distinct();
         if ($idmac) $historico->where('ar.idmac', $idmac);
         $pares = $historico->get();
@@ -148,7 +208,7 @@ class ReporteOcupabilidadPuntualidadController extends Controller
         // Trae las marcaciones de hasta 7 dias en una consulta paginada.
         $query = DB::table('db_centro_mac_reporte.asistencia_resumen as ar')
             ->whereBetween('ar.fecha_asistencia', [$desde, $hasta])
-            ->where('ar.abrev_entidad', $abrev)->whereNotNull('ar.idmodulo')
+            ->whereIn(DB::raw('UPPER(TRIM(ar.abrev_entidad))'), $abreviaturas)->whereNotNull('ar.idmodulo')
             ->select('ar.fecha_asistencia','ar.idmac','ar.idmodulo','ar.nombreu','ar.n_dni','ar.nombre_modulo','ar.fecha_biometrico');
         if ($idmac) $query->where('ar.idmac', $idmac);
         $query->orderBy('ar.fecha_asistencia')->orderBy('ar.idmac')->orderBy('ar.idmodulo')->orderBy('ar.n_dni')
@@ -251,14 +311,15 @@ class ReporteOcupabilidadPuntualidadController extends Controller
         $macs = DB::table('m_centro_mac')->select('idcentro_mac', 'nombre_mac')->get();
         $mapaMac = $macs->keyBy(fn($m) => (int)$m->idcentro_mac);
         if ($idmac && !$mapaMac->has((int)$idmac)) return response()->json(['message' => 'Centro MAC no válido.'], 422);
-        $entidad = !empty($datos['identidad']) ? DB::table('m_entidad')->where('identidad', $datos['identidad'])->first(['abrev_entidad', 'nombre_entidad']) : null;
-        if (!empty($datos['identidad']) && !$entidad) return response()->json(['message' => 'Entidad no válida.'], 422);
+        [$principales, $mapa] = $this->catalogoConsolidado();
+        $entidad = $this->entidadPrincipal(!empty($datos['identidad']) ? (int)$datos['identidad'] : null, $principales);
+        if (!empty($datos['identidad']) && !$entidad) return response()->json(['message' => 'Entidad principal no válida.'], 422);
         $filtrar = function ($query) use ($idmac, $entidad) {
             if ($idmac) $query->where('ar.idmac', (int)$idmac);
-            if ($entidad) $query->where('ar.abrev_entidad', trim((string)$entidad->abrev_entidad));
+            if ($entidad) $query->whereIn(DB::raw('UPPER(TRIM(ar.abrev_entidad))'), $entidad['abreviaturas'] ?: ['__NO_EXISTE__']);
             return $query;
         };
-        $claveHistorica = 'op_hist\_' . md5(json_encode([$idmac, $entidad->abrev_entidad ?? null, $fin->toDateString()]));
+        $claveHistorica = 'op_hist_' . md5(json_encode([$idmac, $entidad['id'] ?? null, $entidad['abreviaturas'] ?? null, $fin->toDateString()]));
         $baseHistorica = Cache::remember($claveHistorica, now()->addMinutes(10), function () use ($filtrar, $fin) {
             return $filtrar(DB::table('db_centro_mac_reporte.asistencia_resumen as ar')
                 ->where('ar.fecha_asistencia', '<=', $fin->toDateString())
@@ -283,13 +344,17 @@ class ReporteOcupabilidadPuntualidadController extends Controller
             $mac = $mapaMac->get((int)$r->idmac);
             $modulo = $modulos->get($r->idmodulo);
             if (!$mac || !$modulo) continue;
-            $abrev = mb_strtoupper(trim((string)$r->abrev_entidad));
+            $alias = mb_strtoupper(trim((string)$r->abrev_entidad));
+            if (!isset($mapa[$alias])) continue;
+            $abrev = $principales[$mapa[$alias]]['abrev'];
             $clave = $mac->idcentro_mac . '|' . $abrev . '|' . $r->idmodulo;
             if (!isset($grupos[$clave])) $grupos[$clave] = ['mac' => $mac, 'entidad' => $abrev, 'modulo' => $modulo, 'personas' => []];
         }
-        $consultaRegistros->orderBy('ar.fecha_asistencia')->orderBy('ar.idmac')->orderBy('ar.idmodulo')->orderBy('ar.n_dni')->chunk(2000, function ($lote) use (&$grupos) {
+        $consultaRegistros->orderBy('ar.fecha_asistencia')->orderBy('ar.idmac')->orderBy('ar.idmodulo')->orderBy('ar.n_dni')->chunk(2000, function ($lote) use (&$grupos, $mapa, $principales) {
             foreach ($lote as $r) {
-                $abrev = mb_strtoupper(trim((string)$r->abrev_entidad));
+                $alias = mb_strtoupper(trim((string)$r->abrev_entidad));
+                if (!isset($mapa[$alias])) continue;
+                $abrev = $principales[$mapa[$alias]]['abrev'];
                 $clave = $r->idmac . '|' . $abrev . '|' . $r->idmodulo;
                 if (!isset($grupos[$clave])) continue;
                 $fecha = Carbon::parse($r->fecha_asistencia)->toDateString();
