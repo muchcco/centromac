@@ -515,8 +515,12 @@ class InterrupcionController extends Controller
                     . \Carbon\Carbon::parse($fecha_fin)->format('d-m-Y')
                     . ')';
             }
-            $nombreMacLimpio = preg_replace('/[\\\/:*?"<>|]/', '_', $nombreMac);
-            $nombreMacLimpio = preg_replace('/\s+/', '_', $nombreMacLimpio);
+            $nombreMacLimpio = str_replace(
+                ['\\', '/', ':', '*', '?', '"', '<', '>', '|'],
+                '_',
+                $nombreMac
+            );
+            $nombreMacLimpio = preg_replace('/\s+/', '_', trim($nombreMacLimpio));
             $nombreArchivo = 'Interrupciones_' . $nombreMacLimpio . $rango . '.xlsx';
             return Excel::download(
                 new InterrupcionExport($interrupciones, $nombreMac, $rango),
