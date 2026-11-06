@@ -54,17 +54,38 @@ class InterrupcionController extends Controller
             ->value('nombre_mac');
         if ($user->hasAnyRole(['Administrador', 'Moderador'])) {
             $entidades = DB::table('m_entidad')
-                ->select('identidad', 'abrev_entidad', 'nombre_entidad')
+                ->select(
+                    'identidad',
+                    'abrev_entidad',
+                    'nombre_entidad',
+                    'id_entidad_padre'
+                )
+                ->where('FLAG', 1)
                 ->orderBy('abrev_entidad')
                 ->get();
         } else {
+            $idsAsignados = DB::table('m_mac_entidad')
+                ->where('idcentro_mac', $user->idcentro_mac)
+                ->pluck('identidad');
+            // Incluir padres de las entidades asignadas
+            $idsPadres = DB::table('m_entidad')
+                ->whereIn('identidad', $idsAsignados)
+                ->whereNotNull('id_entidad_padre')
+                ->pluck('id_entidad_padre');
+            $ids = $idsAsignados->merge($idsPadres)->unique();
             $entidades = DB::table('m_entidad')
-                ->join('m_mac_entidad', 'm_mac_entidad.identidad', '=', 'm_entidad.identidad')
-                ->where('m_mac_entidad.idcentro_mac', $user->idcentro_mac)
-                ->select('m_entidad.identidad', 'm_entidad.abrev_entidad', 'm_entidad.nombre_entidad')
-                ->orderBy('m_entidad.abrev_entidad')
+                ->select(
+                    'identidad',
+                    'abrev_entidad',
+                    'nombre_entidad',
+                    'id_entidad_padre'
+                )
+                ->whereIn('identidad', $ids)
+                ->where('FLAG', 1)
+                ->orderBy('abrev_entidad')
                 ->get();
         }
+
         $tipificaciones = DB::table('m_tipo_int_obs')
             ->where('tipo_obs', 'INTERRUPCIÓN')
             ->orderBy('tipo', 'asc')
@@ -104,12 +125,7 @@ class InterrupcionController extends Controller
         if ($fecha_inicio && $fecha_fin) {
             $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
         }
-        if (!empty($entidad)) {
-            $query->whereHas('entidad', function ($q) use ($entidad) {
-                $q->where('ABREV_ENTIDAD', 'like', "%{$entidad}%")
-                    ->orWhere('NOMBRE_ENTIDAD', 'like', "%{$entidad}%");
-            });
-        }
+        $query = $this->filtrarEntidadAgrupada($query, $entidad);
         if (!empty($tipificacion)) {
             $query->whereHas('tipoIntObs', function ($q) use ($tipificacion) {
                 $q->where('nom_tipo_int_obs', 'like', "%{$tipificacion}%")
@@ -451,12 +467,7 @@ class InterrupcionController extends Controller
             if ($fecha_inicio && $fecha_fin) {
                 $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
             }
-            if (!empty($entidad)) {
-                $query->whereHas('entidad', function ($q) use ($entidad) {
-                    $q->where('ABREV_ENTIDAD', 'like', "%{$entidad}%")
-                        ->orWhere('NOMBRE_ENTIDAD', 'like', "%{$entidad}%");
-                });
-            }
+            $query = $this->filtrarEntidadAgrupada($query, $entidad);
             if (!empty($tipificacion)) {
                 $query->whereHas('tipoIntObs', function ($q) use ($tipificacion) {
                     $q->where('nom_tipo_int_obs', 'like', "%{$tipificacion}%")
@@ -535,12 +546,7 @@ class InterrupcionController extends Controller
             if ($fecha_inicio && $fecha_fin) {
                 $query->whereBetween('fecha_inicio', [$fecha_inicio, $fecha_fin]);
             }
-            if (!empty($entidad)) {
-                $query->whereHas('entidad', function ($q) use ($entidad) {
-                    $q->where('ABREV_ENTIDAD', 'like', "%{$entidad}%")
-                        ->orWhere('NOMBRE_ENTIDAD', 'like', "%{$entidad}%");
-                });
-            }
+            $query = $this->filtrarEntidadAgrupada($query, $entidad);
             if (!empty($tipificacion)) {
                 $query->whereHas('tipoIntObs', function ($q) use ($tipificacion) {
                     $q->where('nom_tipo_int_obs', 'like', "%{$tipificacion}%")
@@ -787,5 +793,18 @@ class InterrupcionController extends Controller
         $archivo = $this->directorioAnsMasivo($token) . '/INTERRUPCIONES_ANS.zip';
         abort_unless(is_file($archivo), 404);
         return response()->download($archivo, 'INTERRUPCIONES_ANS_' . now()->format('Ymd_His') . '.zip');
+    }
+
+    private function filtrarEntidadAgrupada($query, $identidad)
+    {
+        if (!empty($identidad)) {
+            $query->whereIn('identidad', function ($sub) use ($identidad) {
+                $sub->select('identidad')
+                    ->from('m_entidad')
+                    ->where('identidad', $identidad)
+                    ->orWhere('id_entidad_padre', $identidad);
+            });
+        }
+        return $query;
     }
 }

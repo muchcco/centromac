@@ -78,18 +78,39 @@
                 </div>
             </div>
         </div>
-        <!-- 🔹 FILTROS ADICIONALES -->
         <div id="extraFiltros" class="mt-2" style="display: none;">
             <div class="row g-3">
                 <!-- ENTIDAD -->
                 <div class="col-md-3">
                     <label class="fw-bold text-dark">Entidad:</label>
-                    <select id="filtro_entidad" class="form-control select2" style="width: 100%;">
+                    <select id="filtro_entidad"
+                        class="form-control select2"
+                        style="width:100%">
                         <option value="">-- Todas las entidades --</option>
-                        @foreach ($entidades as $ent)
-                        <option value="{{ $ent->nombre_entidad }}">
-                            {{ $ent->abrev_entidad }} - {{ $ent->nombre_entidad }}
+                        @foreach ($entidades->whereNull('id_entidad_padre') as $padre)
+                        @php
+                        $hijas = $entidades
+                        ->where('id_entidad_padre', $padre->identidad)
+                        ->sortBy('abrev_entidad');
+                        @endphp
+                        @if ($hijas->isNotEmpty())
+                        <optgroup label="{{ $padre->abrev_entidad }}">
+                            <option value="{{ $padre->identidad }}">
+                                TODAS - {{ $padre->abrev_entidad }}
+                            </option>
+                            @foreach ($hijas as $hija)
+                            <option value="{{ $hija->identidad }}">
+                                {{ $hija->abrev_entidad }}
+                                - {{ $hija->nombre_entidad }}
+                            </option>
+                            @endforeach
+                        </optgroup>
+                        @else
+                        <option value="{{ $padre->identidad }}">
+                            {{ $padre->abrev_entidad }}
+                            - {{ $padre->nombre_entidad }}
                         </option>
+                        @endif
                         @endforeach
                     </select>
                 </div>
@@ -125,7 +146,7 @@
                 </div>
             </div>
         </div>
-        <!-- 🔹 BOTÓN MÁS FILTROS -->
+        <!-- BOTÓN MÁS FILTROS -->
         <div class="mt-3 text-center">
             <button class="btn btn-outline-dark w-100" id="btnToggleFiltros" style="font-weight: 600;">
                 <i class="fa fa-filter"></i> Ver más filtros
