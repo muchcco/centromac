@@ -75,9 +75,13 @@
                     @endif
                 </td>
                 <td>
-                    <a href="{{ config('external.mac_base_url') }}/external-mac/formdata?num_doc={{ $que->NUM_DOC }}"
+                    <a href="https://sismac.mac.pe/external-mac/formdata?num_doc={{ $que->NUM_DOC }}"
                         class="nobtn bandejTool" data-tippy-content="Editar personal" target="_blank"><i
                             class="las la-pen text-secondary font-16 text-success"></i></a>
+ <!-- <a href="{{ config('external.mac_base_url') }}/external-mac/formdata?num_doc={{ $que->NUM_DOC }}"
+                        class="nobtn bandejTool" data-tippy-content="Editar personal" target="_blank"><i
+                            class="las la-pen text-secondary font-16 text-success"></i></a> -->
+
                     {{-- <button class="nobtn bandejTool" data-tippy-content="Editar Entidad"
                         onclick="btnCambiarEntidad('{{ $que->IDPERSONAL }}' )"><i
                             class="las la-building text-secondary font-16 text-info"></i></button> --}}
