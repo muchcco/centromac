@@ -73,7 +73,7 @@
                 <div class="media-body align-self-center">
                     <h5 class="mb-1 fw-bold mt-0">Importante</h5>
                     <span>Si el dashboard no se visualiza, <a
-                            href="https://app.powerbi.com/view?r=eyJrIjoiYzk0NGY0MjctNGYxMS00ZjYzLWI5ZTEtMjAxZjExMTU3OWM2IiwidCI6IjM0YjQ4ZTRlLTI1MTktNDA2MC1hMDllLTViMDVkOTAxYTRkNyJ9"
+                            href="https://app.powerbi.com/view?r=eyJrIjoiOWRmOTc3MmQtZjE2OC00OWU3LTkwZTMtOGIwNmQ5ZTJlMTlkIiwidCI6ImNiZTJiMjUxLWUwZjQtNGFmNi04MDZmLWJiYzQzZDgyZTQzZSIsImMiOjR9"
                             target="_blank" class="text-decoration-underline fw-bold fs-4 text-dark">dar click
                             aquí</a> para abrirlo en una nueva pestaña.</span>
                 </div>
@@ -81,7 +81,7 @@
         </div>
 
             <div class="card-body">
-                <iframe src="https://app.powerbi.com/view?r=eyJrIjoiYzk0NGY0MjctNGYxMS00ZjYzLWI5ZTEtMjAxZjExMTU3OWM2IiwidCI6IjM0YjQ4ZTRlLTI1MTktNDA2MC1hMDllLTViMDVkOTAxYTRkNyJ9" frameborder="0" class="power-bi-dash"></iframe>
+                <iframe src="https://app.powerbi.com/view?r=eyJrIjoiOWRmOTc3MmQtZjE2OC00OWU3LTkwZTMtOGIwNmQ5ZTJlMTlkIiwidCI6ImNiZTJiMjUxLWUwZjQtNGFmNi04MDZmLWJiYzQzZDgyZTQzZSIsImMiOjR9" frameborder="0" class="power-bi-dash"></iframe>
             </div>
         </div>
     </div>
